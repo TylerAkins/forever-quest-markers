@@ -53,6 +53,24 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("OptionalDeps", toc)
         self.assertNotIn("RequiredDeps", toc)
 
+    def test_pins_prefer_blizzard_quest_icon(self) -> None:
+        text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        atlas_at = text.find('ICON_ATLAS = "QuestNormal"')
+        gossip_at = text.find("Interface\\\\GossipFrame\\\\AvailableQuestIcon")
+        fallback_at = text.find("Media\\\\QuestAvailable")
+        self.assertNotEqual(atlas_at, -1)
+        self.assertNotEqual(gossip_at, -1)
+        self.assertNotEqual(fallback_at, -1)
+        self.assertLess(atlas_at, gossip_at)
+        self.assertLess(gossip_at, fallback_at)
+        self.assertIn("tex:SetAtlas(name, true)", text)
+        self.assertIn("TrySetFile(tex, ICON_GOSSIP)", text)
+        self.assertIn("TrySetFile(tex, ICON_FALLBACK)", text)
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
+        toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
+        self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
+
 
 if __name__ == "__main__":
     unittest.main()

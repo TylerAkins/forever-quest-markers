@@ -134,6 +134,9 @@ function ns.PrintStats()
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
         end
+        if status.icon then
+            print("  pin icon: " .. tostring(status.icon))
+        end
     end
 end
 
@@ -152,6 +155,12 @@ function ns.PrintAPIProbe()
     print("  MapCanvasPinMixin: " .. has(MapCanvasPinMixin))
     print("  Settings API: " .. has(Settings and Settings.RegisterAddOnCategory))
     print("  GetQuestGreenRange: " .. has(GetQuestGreenRange))
+    print("  C_Texture.GetAtlasInfo: " .. has(C_Texture and C_Texture.GetAtlasInfo))
+    local atlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestNormal")
+    print("  QuestNormal atlas: " .. has(atlas))
+    if ns.MapPins and ns.MapPins.GetStatus then
+        print("  pin icon: " .. tostring(ns.MapPins:GetStatus().icon or "not painted yet"))
+    end
     local mapID = ns.GetViewedMapID and ns.GetViewedMapID()
     print("  viewed mapID: " .. tostring(mapID))
     local _, raceFile, raceID = UnitRace("player")
