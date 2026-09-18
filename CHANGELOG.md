@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Show Morin Cloudstalker's The Venture Co. and Supervisor Fizsprocket after the Ravaged Caravan crate: object-started source quests that are not in the log count as done
+- Always paint ATT coordinates (plus Morin's crate-end patrol pin); only snap to a live NPC when that NPC is near a pin
+- `/fqp why <id>` prints why a quest is pinned or hidden
+- Merges to `main` publish a moving `latest` pre-release zip; pushing a `v*` tag still creates a numbered release
+
 ## 0.1.4
 
 - Keep windowed and maximized map pins on the map art (A Sacred Burial at Red Rocks)

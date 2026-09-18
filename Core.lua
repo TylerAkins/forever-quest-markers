@@ -38,6 +38,9 @@ end
 function ns.RefreshNow(reason)
     pending = false
     accum = 0
+    if ns.InvalidateCompletionCache then
+        ns.InvalidateCompletionCache()
+    end
     if ns.MapPins then
         ns.MapPins:Refresh(reason or "manual")
     end

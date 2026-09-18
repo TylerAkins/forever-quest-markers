@@ -10,6 +10,16 @@ local ICON_GOSSIP = "Interface\\GossipFrame\\AvailableQuestIcon"
 local ICON_FALLBACK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
+-- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
+local LIVE_NEAR = 0.20
+
+-- Extra static ends of known patrols. ATT stores one coord (usually the village).
+-- Morin Cloudstalker (2988) walks Bloodhoof 54.4,60.4 ↔ crate 53.8,48.3.
+local PATROL_EXTRA = {
+    [2988] = {
+        { mapID = 1412, x = 53.8, y = 48.3 },
+    },
+}
 
 local pool = {}
 local active = {}
@@ -244,6 +254,8 @@ local function ReleasePin(pin)
     pin.reason = nil
     pin.nx = nil
     pin.ny = nil
+    pin.attNx = nil
+    pin.attNy = nil
     pin.live = nil
     pin.titleReady = nil
     pin.quests = nil
@@ -499,6 +511,8 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.reason = reason
     pin.nx = nx
     pin.ny = ny
+    pin.attNx = nx
+    pin.attNy = ny
     pin.live = live and true or nil
     pin.quests = { { id = questID, data = data, reason = reason } }
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
@@ -540,14 +554,34 @@ local function CandidateMapIDs(viewedMapID, byMap)
 end
 
 local function EachCoord(data, fn)
+    local seen = {}
+    local function emit(mapID, x, y)
+        if not mapID or not x or not y then
+            return
+        end
+        local key = tostring(mapID) .. ":" .. tostring(x) .. ":" .. tostring(y)
+        if seen[key] then
+            return
+        end
+        seen[key] = true
+        fn(mapID, x, y)
+    end
     if data.coords then
         for i = 1, #data.coords do
             local coord = data.coords[i]
-            fn(coord[3] or data.mapID, coord[1], coord[2])
+            emit(coord[3] or data.mapID, coord[1], coord[2])
         end
-        return
+    else
+        emit(data.mapID, data.x, data.y)
     end
-    fn(data.mapID, data.x, data.y)
+    local qg = QuestGiverID(data)
+    local extras = qg and PATROL_EXTRA[qg]
+    if extras then
+        for i = 1, #extras do
+            local extra = extras[i]
+            emit(extra.mapID or data.mapID, extra.x, extra.y)
+        end
+    end
 end
 
 local function NpcIDFromGUID(guid)
@@ -681,22 +715,29 @@ function ns.TryQuestGiverPosition(npcID, viewedMapID)
     return nil, nil
 end
 
+local function Dist2(ax, ay, bx, by)
+    if not ax or not ay or not bx or not by then
+        return nil
+    end
+    local dx = ax - bx
+    local dy = ay - by
+    return dx * dx + dy * dy
+end
+
 function MapPins:SnapToQuestGivers()
     local viewedMapID = lastStatus.viewedMap
     local parent = GetCanvas()
     if not viewedMapID or not parent or #active == 0 then
         return
     end
+    local liveByNpc = {}
     for i = 1, #active do
         local pin = active[i]
         local qg = QuestGiverID(pin.data)
-        if qg then
+        if qg and not liveByNpc[qg] then
             local x, y = ns.TryQuestGiverPosition(qg, viewedMapID)
             if x and y then
-                pin.nx = x
-                pin.ny = y
-                pin.live = true
-                ApplyPinPoint(pin, parent)
+                liveByNpc[qg] = { x = x, y = y }
             end
         end
         if pin.questID and not pin.titleReady then
@@ -705,6 +746,41 @@ function MapPins:SnapToQuestGivers()
                 pin.titleReady = true
                 MapPins:OnTitleLoaded(pin.questID)
             end
+        end
+    end
+    local nearest = {}
+    local nearLimit = LIVE_NEAR * LIVE_NEAR
+    for i = 1, #active do
+        local pin = active[i]
+        local qg = QuestGiverID(pin.data)
+        local live = qg and liveByNpc[qg]
+        if live then
+            local d2 = Dist2(pin.attNx or pin.nx, pin.attNy or pin.ny, live.x, live.y)
+            if d2 and d2 <= nearLimit then
+                local best = nearest[qg]
+                if not best or d2 < best.d2 then
+                    nearest[qg] = { pin = pin, d2 = d2 }
+                end
+            end
+        end
+    end
+    local chosen = {}
+    for qg, best in pairs(nearest) do
+        chosen[best.pin] = liveByNpc[qg]
+    end
+    for i = 1, #active do
+        local pin = active[i]
+        local live = chosen[pin]
+        if live then
+            pin.nx = live.x
+            pin.ny = live.y
+            pin.live = true
+            ApplyPinPoint(pin, parent)
+        elseif pin.live then
+            pin.nx = pin.attNx or pin.nx
+            pin.ny = pin.attNy or pin.ny
+            pin.live = nil
+            ApplyPinPoint(pin, parent)
         end
     end
 end
@@ -770,22 +846,16 @@ function MapPins:Refresh(reason)
                     if data then
                         local available, why = ns.IsQuestAvailable(questID, data)
                         if available then
-                            local qg = QuestGiverID(data)
-                            local liveX, liveY = ns.TryQuestGiverPosition(qg, viewedMapID)
-                            if liveX then
-                                if PlacePin(canvas, liveX, liveY, questID, data, why, true) then
-                                    painted = painted + 1
-                                end
-                            else
-                                EachCoord(data, function(questMapID, x, y)
-                                    local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
-                                    if nx and ny then
-                                        if PlacePin(canvas, nx, ny, questID, data, why, false) then
-                                            painted = painted + 1
-                                        end
+                            -- Always paint ATT (and extra patrol ends). Live NPC snap
+                            -- only moves a pin that is already near those coords.
+                            EachCoord(data, function(questMapID, x, y)
+                                local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
+                                if nx and ny then
+                                    if PlacePin(canvas, nx, ny, questID, data, why, false) then
+                                        painted = painted + 1
                                     end
-                                end)
-                            end
+                                end
+                            end)
                         elseif ns.GetOption("debug") and why == "low-level" then
                             -- Intentionally silent; /fqp debug is for tooltips of visible pins.
                         end
