@@ -90,8 +90,25 @@ local function CanvasFromBlizzardPins()
     return nil
 end
 
+local function IsUsableCanvas(frame)
+    if not frame or not WorldMapFrame then
+        return false
+    end
+    -- The map art, never the window or the scroll viewport. Those stretch with
+    -- the quest-log layout so north-edge pins (A Sacred Burial) vanish unless
+    -- the map is maximized.
+    if frame == WorldMapFrame then
+        return false
+    end
+    local scroll = WorldMapFrame.ScrollContainer
+    if scroll and frame == scroll and scroll.Child then
+        return false
+    end
+    return true
+end
+
 local function GetCanvas()
-    if canvasCache and canvasCache.GetWidth and (canvasCache:GetWidth() or 0) >= 1 then
+    if canvasCache and canvasCache.GetWidth and (canvasCache:GetWidth() or 0) >= 1 and IsUsableCanvas(canvasCache) then
         lastStatus.parent = canvasCacheName
         return canvasCache
     end
@@ -101,33 +118,33 @@ local function GetCanvas()
     end
     if WorldMapFrame.GetCanvas then
         local canvas = WorldMapFrame:GetCanvas()
-        if canvas then
+        if IsUsableCanvas(canvas) then
             return AcceptCanvas(canvas, "WorldMapFrame:GetCanvas")
         end
     end
     local scroll = WorldMapFrame.ScrollContainer
     if scroll then
-        if scroll.Child then
+        if IsUsableCanvas(scroll.Child) then
             return AcceptCanvas(scroll.Child, "ScrollContainer.Child")
         end
         if scroll.GetCanvas then
             local canvas = scroll:GetCanvas()
-            if canvas then
+            if IsUsableCanvas(canvas) then
                 return AcceptCanvas(canvas, "ScrollContainer:GetCanvas")
             end
         end
     end
     local blizzard = CanvasFromBlizzardPins()
-    if blizzard then
+    if blizzard and IsUsableCanvas(blizzard) then
         return blizzard
     end
-    if WorldMapDetailFrame then
+    if IsUsableCanvas(WorldMapDetailFrame) then
         return AcceptCanvas(WorldMapDetailFrame, "WorldMapDetailFrame")
     end
-    if WorldMapButton then
+    if IsUsableCanvas(WorldMapButton) then
         return AcceptCanvas(WorldMapButton, "WorldMapButton")
     end
-    return AcceptCanvas(WorldMapFrame, "WorldMapFrame")
+    return nil
 end
 
 function ns.GetViewedMapID()
@@ -229,6 +246,7 @@ local function ReleasePin(pin)
     pin.ny = nil
     pin.live = nil
     pin.titleReady = nil
+    pin.quests = nil
     pool[#pool + 1] = pin
 end
 
@@ -257,22 +275,36 @@ local function QuestGiverID(data)
 end
 
 local function ShowTooltip(pin)
-    if not pin.questID then
+    if not pin.questID and not (pin.quests and pin.quests[1]) then
         return
     end
     hoveredPin = pin
-    ns.PrefetchQuestInfo(pin.questID, pin.data)
+    local quests = pin.quests
+    if not quests or #quests == 0 then
+        quests = { { id = pin.questID, data = pin.data, reason = pin.reason } }
+    end
+    for i = 1, #quests do
+        ns.PrefetchQuestInfo(quests[i].id, quests[i].data)
+    end
     GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
-    local title = ns.GetQuestTitle(pin.questID)
     local debugOn = ns.GetOption("debug")
-    if title then
-        GameTooltip:SetText(title, 1, 0.82, 0)
+    local primaryTitle = ns.GetQuestTitle(quests[1].id)
+    if primaryTitle then
+        GameTooltip:SetText(primaryTitle, 1, 0.82, 0)
     elseif debugOn then
-        GameTooltip:SetText("Quest " .. tostring(pin.questID), 1, 0.82, 0)
+        GameTooltip:SetText("Quest " .. tostring(quests[1].id), 1, 0.82, 0)
     else
         GameTooltip:SetText("Quest", 1, 0.82, 0)
     end
-    local qg = QuestGiverID(pin.data)
+    for i = 2, #quests do
+        local extraTitle = ns.GetQuestTitle(quests[i].id)
+        if extraTitle then
+            GameTooltip:AddLine(extraTitle, 1, 0.82, 0)
+        elseif debugOn then
+            GameTooltip:AddLine("Quest " .. tostring(quests[i].id), 1, 0.82, 0)
+        end
+    end
+    local qg = QuestGiverID(quests[1].data or pin.data)
     local npcName = qg and ns.GetNPCName(qg) or nil
     if npcName then
         GameTooltip:AddLine(npcName, 1, 1, 1)
@@ -282,7 +314,9 @@ local function ShowTooltip(pin)
     if debugOn then
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Debug", 0.4, 0.8, 1)
-        GameTooltip:AddLine("Quest ID: " .. tostring(pin.questID), 0.6, 0.8, 1)
+        for i = 1, #quests do
+            GameTooltip:AddLine("Quest ID: " .. tostring(quests[i].id), 0.6, 0.8, 1)
+        end
         if qg then
             GameTooltip:AddLine("NPC ID: " .. tostring(qg), 0.6, 0.8, 1)
         end
@@ -316,13 +350,42 @@ local function ShowTooltip(pin)
 end
 
 function MapPins:OnTitleLoaded(questID)
-    if hoveredPin and hoveredPin.questID == questID then
+    if not hoveredPin then
+        return
+    end
+    if hoveredPin.questID == questID then
         ShowTooltip(hoveredPin)
+        return
+    end
+    local quests = hoveredPin.quests
+    if quests then
+        for i = 1, #quests do
+            if quests[i].id == questID then
+                ShowTooltip(hoveredPin)
+                return
+            end
+        end
     end
 end
 
 local function IsNormalized(x, y)
     return x and y and x >= 0 and y >= 0 and x <= 1 and y <= 1 and not (x == 0 and y == 0)
+end
+
+local function GetCanvasScale(parent)
+    if WorldMapFrame and WorldMapFrame.GetCanvasScale then
+        local scale = WorldMapFrame:GetCanvasScale()
+        if type(scale) == "number" and scale > 0 then
+            return scale
+        end
+    end
+    if parent and parent.GetScale then
+        local scale = parent:GetScale()
+        if type(scale) == "number" and scale > 0 then
+            return scale
+        end
+    end
+    return 1
 end
 
 local function CanvasOffsets(parent, nx, ny)
@@ -334,7 +397,6 @@ local function CanvasOffsets(parent, nx, ny)
     if not width or not height or width < 1 or height < 1 then
         return nil, nil
     end
-    -- Pins ignore parent scale, so offsets stay in the canvas's unscaled space.
     return width * nx, -height * ny
 end
 
@@ -361,9 +423,21 @@ local function ApplyPinPoint(pin, parent)
     if parent and pin.GetParent and pin:GetParent() ~= parent then
         pin:SetParent(parent)
     end
+    -- Match MapCanvas ApplyPinPosition: pin scale counters canvas zoom so the
+    -- bang stays PIN_SIZE on screen in both windowed and maximized layouts.
+    local canvasScale = GetCanvasScale(parent)
+    if pin.SetIgnoreParentScale then
+        pin:SetIgnoreParentScale(false)
+    end
+    pin:SetScale(1 / canvasScale)
+    pin:SetSize(PIN_SIZE, PIN_SIZE)
+    local pinScale = pin.GetScale and pin:GetScale() or 1
+    if not pinScale or pinScale == 0 then
+        pinScale = 1
+    end
     RaisePin(pin, parent)
     pin:ClearAllPoints()
-    pin:SetPoint("CENTER", parent, "TOPLEFT", ox, oy)
+    pin:SetPoint("CENTER", parent, "TOPLEFT", ox / pinScale, oy / pinScale)
     return true
 end
 
@@ -391,7 +465,7 @@ local function AcquirePin(parent)
     end
     pin:SetParent(parent)
     if pin.SetIgnoreParentScale then
-        pin:SetIgnoreParentScale(true)
+        pin:SetIgnoreParentScale(false)
     end
     pin:SetScale(1)
     pin:SetSize(PIN_SIZE, PIN_SIZE)
@@ -400,7 +474,25 @@ local function AcquirePin(parent)
     return pin
 end
 
+local function SameSpot(ax, ay, bx, by)
+    if not ax or not ay or not bx or not by then
+        return false
+    end
+    local dx = ax - bx
+    local dy = ay - by
+    return (dx * dx + dy * dy) < (0.002 * 0.002)
+end
+
 local function PlacePin(parent, nx, ny, questID, data, reason, live)
+    for i = 1, #active do
+        local existing = active[i]
+        if SameSpot(existing.nx, existing.ny, nx, ny) then
+            existing.quests = existing.quests or { { id = existing.questID, data = existing.data, reason = existing.reason } }
+            existing.quests[#existing.quests + 1] = { id = questID, data = data, reason = reason }
+            ns.PrefetchQuestInfo(questID, data)
+            return true
+        end
+    end
     local pin = AcquirePin(parent)
     pin.questID = questID
     pin.data = data
@@ -408,6 +500,7 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.nx = nx
     pin.ny = ny
     pin.live = live and true or nil
+    pin.quests = { { id = questID, data = data, reason = reason } }
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
     ApplyPinPoint(pin, parent)
     pin:Show()
@@ -508,8 +601,16 @@ local function UnitMapPosition(unit, mapID)
                 local ok2, uiMapID, mapPos = pcall(C_Map.GetMapPosFromWorldPos, instance, world)
                 if ok2 then
                     local x, y = MapPosFromVector(mapPos)
-                    if IsNormalized(x, y) and uiMapID == mapID then
-                        return x, y
+                    if IsNormalized(x, y) then
+                        if uiMapID == mapID then
+                            return x, y
+                        end
+                        if uiMapID and ns.ProjectToViewedMap then
+                            local nx, ny = ns.ProjectToViewedMap(uiMapID, x * 100, y * 100, mapID)
+                            if nx and ny then
+                                return nx, ny
+                            end
+                        end
                     end
                 end
             end
@@ -727,6 +828,12 @@ function MapPins:HookMap()
         hooksecurefunc(WorldMapFrame, "OnCanvasScaleChanged", function()
             InvalidateCanvas()
             MapPins:RepositionAll()
+        end)
+    end
+    if WorldMapFrame.SynchronizeDisplayState then
+        hooksecurefunc(WorldMapFrame, "SynchronizeDisplayState", function()
+            InvalidateCanvas()
+            ns.RequestRefresh("map-display")
         end)
     end
     WorldMapFrame:HookScript("OnShow", function()
