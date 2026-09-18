@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Keep quest bangs a fixed screen size (do not inherit map zoom or the native QuestNormal atlas size)
+- Draw pins above map tiles so they cannot disappear under the zone art
+- Stop dropping a pin when the first layout pass has no canvas size yet
+
 ## 0.1.2
 
 - Options for auto-accept and auto-turn in when talking to NPCs
