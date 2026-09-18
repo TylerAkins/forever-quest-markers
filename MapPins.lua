@@ -3,11 +3,13 @@ local ADDON_NAME, ns = ...
 ns.MapPins = ns.MapPins or {}
 local MapPins = ns.MapPins
 
--- Blizzard’s retail world-map / minimap available-quest bang, then the gossip
--- yellow !, then the bundled TGA only if neither client texture exists.
-local ICON_ATLAS = "QuestNormal"
-local ICON_GOSSIP = "Interface\\GossipFrame\\AvailableQuestIcon"
+-- Forever's QuestNormal atlas and gossip AvailableQuestIcon can SetTexture /
+-- SetAtlas successfully and still draw no pixels (hoverable empty pin). Never
+-- overlay those client files: a successful empty bind covers anything under it.
+-- Paint a solid fill that always draws, then the bundled TGA that rendered in 0.1.0.
 local ICON_FALLBACK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
+local ICON_WHITE = "Interface\\Buttons\\WHITE8X8"
+local FILL_R, FILL_G, FILL_B, FILL_A = 1, 0.82, 0, 1
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
@@ -191,34 +193,15 @@ function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
     return minX + ((maxX - minX) * nx), minY + ((maxY - minY) * ny)
 end
 
--- Forever can report QuestNormal from GetAtlasInfo and still draw nothing
--- (hoverable empty pin). Require a real file binding before using an atlas.
-local function AtlasLooksReal(name)
-    if not (C_Texture and C_Texture.GetAtlasInfo) then
-        return false
-    end
-    local info = C_Texture.GetAtlasInfo(name)
-    if type(info) ~= "table" then
-        return false
-    end
-    if type(info.fileDataID) == "number" and info.fileDataID > 0 then
-        return true
-    end
-    if type(info.filename) == "string" and info.filename ~= "" then
-        return true
-    end
-    if type(info.file) == "string" and info.file ~= "" then
-        return true
-    end
-    return false
-end
-
-local function FinishTexture(tex)
+local function FinishLayer(tex, subLevel, vertexR, vertexG, vertexB, vertexA)
     if tex.SetDrawLayer then
-        tex:SetDrawLayer("OVERLAY", 7)
+        tex:SetDrawLayer("OVERLAY", subLevel or 7)
+    end
+    if tex.SetBlendMode then
+        pcall(tex.SetBlendMode, tex, "BLEND")
     end
     if tex.SetVertexColor then
-        tex:SetVertexColor(1, 1, 1, 1)
+        tex:SetVertexColor(vertexR or 1, vertexG or 1, vertexB or 1, vertexA or 1)
     end
     if tex.SetAlpha then
         tex:SetAlpha(1)
@@ -229,15 +212,38 @@ local function FinishTexture(tex)
     tex:Show()
 end
 
-local function TrySetAtlas(tex, name)
-    if not tex.SetAtlas or not AtlasLooksReal(name) then
+-- Solid color always draws. File SetTexture can pcall-succeed with no pixels.
+local function PaintFill(tex)
+    if not tex then
         return false
     end
-    local ok = pcall(function()
-        tex:SetAtlas(name, false)
-        FinishTexture(tex)
-    end)
-    return ok and true or false
+    if tex.SetColorTexture then
+        local ok = pcall(function()
+            tex:SetColorTexture(FILL_R, FILL_G, FILL_B, FILL_A)
+            FinishLayer(tex, 6, 1, 1, 1, 1)
+        end)
+        if ok then
+            return true
+        end
+    end
+    if tex.SetTexture then
+        -- Pre-SetColorTexture clients: numeric SetTexture is a solid color.
+        local ok = pcall(function()
+            tex:SetTexture(FILL_R, FILL_G, FILL_B, FILL_A)
+            FinishLayer(tex, 6, 1, 1, 1, 1)
+        end)
+        if ok then
+            return true
+        end
+        ok = pcall(function()
+            tex:SetTexture(ICON_WHITE)
+            FinishLayer(tex, 6, FILL_R, FILL_G, FILL_B, FILL_A)
+        end)
+        if ok then
+            return true
+        end
+    end
+    return false
 end
 
 local function TrySetFile(tex, path)
@@ -249,31 +255,42 @@ local function TrySetFile(tex, path)
             tex:SetTexCoord(0, 1, 0, 1)
         end
         tex:SetTexture(path)
-        FinishTexture(tex)
+        FinishLayer(tex, 7, 1, 1, 1, 1)
     end)
     return ok and true or false
 end
 
+local function EnsurePinTextures(pin)
+    if not pin.Fill then
+        pin.Fill = pin:CreateTexture(nil, "ARTWORK")
+        pin.Fill:SetAllPoints()
+    end
+    if not pin.Texture then
+        pin.Texture = pin:CreateTexture(nil, "OVERLAY")
+        pin.Texture:SetAllPoints()
+    end
+    return pin.Fill, pin.Texture
+end
+
 local function SetPinTexture(pin)
-    local tex = pin.Texture
-    if not tex then
+    local fill, tex = EnsurePinTextures(pin)
+    if tex and tex.Hide then
+        tex:Hide()
+    end
+    -- Fill stays visible even if the TGA overlay is missing. Do not bind gossip
+    -- or QuestNormal on the overlay: those pcall-succeed empty and hide the fill.
+    if PaintFill(fill) then
+        lastStatus.icon = "fill"
+    else
+        lastStatus.icon = "none"
+    end
+    if TrySetFile(tex, ICON_FALLBACK) or TrySetFile(tex, ICON_FALLBACK .. ".tga") then
+        lastStatus.icon = "fill+QuestAvailable.tga"
         return
     end
-    -- Gossip bang first: it is the Forever TOC icon and always a real file.
-    -- QuestNormal on this client can SetAtlas without drawing anything.
-    if TrySetFile(tex, ICON_GOSSIP) then
-        lastStatus.icon = "texture:AvailableQuestIcon"
-        return
+    if tex and tex.Hide then
+        tex:Hide()
     end
-    if TrySetAtlas(tex, ICON_ATLAS) then
-        lastStatus.icon = "atlas:" .. ICON_ATLAS
-        return
-    end
-    if TrySetFile(tex, ICON_FALLBACK) then
-        lastStatus.icon = "texture:QuestAvailable.tga"
-        return
-    end
-    lastStatus.icon = "none"
 end
 
 local function ReleasePin(pin)
@@ -455,6 +472,14 @@ local function RaisePin(pin, parent)
     -- Map detail layers sit well above the canvas default; +20 was under the art
     -- so some bangs disappeared depending on zoom/layer order.
     pin:SetFrameLevel(base + 400)
+    -- Keep the pin on the canvas strata. HIGH pulled pins out of the map child
+    -- and they stopped compositing on Forever's world map.
+    if pin.SetFrameStrata and parent and parent.GetFrameStrata then
+        local strata = parent:GetFrameStrata()
+        if strata then
+            pcall(pin.SetFrameStrata, pin, strata)
+        end
+    end
 end
 
 local function ApplyPinPoint(pin, parent)
@@ -501,6 +526,8 @@ local function AcquirePin(parent)
         if pin.EnableMouse then
             pin:EnableMouse(true)
         end
+        pin.Fill = pin:CreateTexture(nil, "ARTWORK")
+        pin.Fill:SetAllPoints()
         pin.Texture = pin:CreateTexture(nil, "OVERLAY")
         pin.Texture:SetAllPoints()
         pin:SetScript("OnEnter", ShowTooltip)

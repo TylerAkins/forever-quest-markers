@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Draw a solid yellow fill on every map pin so a hoverable pin cannot be invisible
+- Overlay only the bundled `QuestAvailable.tga` (the texture that actually rendered in 0.1.0)
+- Stop binding Forever's empty `AvailableQuestIcon` / `QuestNormal` on top of that fill — `SetTexture`/`SetAtlas` succeed with no pixels and hide the marker
+
 ## 0.1.6
 
 - Draw the gossip yellow ! (`AvailableQuestIcon`) instead of Forever's empty `QuestNormal` atlas so pins are visible, not just hoverable
