@@ -1,0 +1,19 @@
+# https://github.com/BigWigsMods/packager
+package-as: ForeverQuestPins
+
+ignore:
+  - .git
+  - .github
+  - .cursor
+  - .gitignore
+  - .pkgmeta
+  - ATTRIBUTION.md
+  - README.md
+  - tests
+  - tools
+  - Database/build_report.json
+  - "**/.DS_Store"
+  - "**/Thumbs.db"
+  - "**/__pycache__"
+
+manual-changelog: CHANGELOG.md

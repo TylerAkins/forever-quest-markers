@@ -1,0 +1,94 @@
+name: Update ATT database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Checkout All The Things
+        uses: actions/checkout@v4
+        with:
+          repository: ATTWoWAddon/AllTheThings
+          path: .cache/AllTheThings
+          fetch-depth: 1
+          sparse-checkout: |
+            .contrib/.db/forever
+            .contrib/Parser/lib/Constants
+          sparse-checkout-cone-mode: false
+
+      - name: Read previous stats
+        id: before
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("Database/build_report.json")
+          data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+          output = os.environ["GITHUB_OUTPUT"]
+          with open(output, "a", encoding="utf-8") as handle:
+              handle.write(f"old_sha={data.get('att_sha', 'unknown')}\n")
+              handle.write(f"old_quests={data.get('quests_emitted', 0)}\n")
+          PY
+
+      - name: Generate database
+        run: python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
+
+      - name: Tests
+        run: |
+          python3 tests/test_build_quest_db.py
+          python3 tests/test_validate_generated.py
+          python3 tests/test_addon_lua.py
+
+      - name: Read new stats
+        id: after
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("Database/build_report.json").read_text(encoding="utf-8"))
+          output = os.environ["GITHUB_OUTPUT"]
+          with open(output, "a", encoding="utf-8") as handle:
+              handle.write(f"sha={data.get('att_sha', 'unknown')}\n")
+              handle.write(f"quests={data.get('quests_emitted', 0)}\n")
+              handle.write(f"coords={data.get('quests_with_coords', 0)}\n")
+          PY
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: att-db-update
+          delete-branch: true
+          commit-message: "chore: update ATT Forever quest database"
+          title: "chore: automated ATT Forever DB update (${{ steps.after.outputs.sha }})"
+          body: |
+            Automated regeneration of `Database/` from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data.
+
+            | | SHA | Quests with coordinates |
+            |---|---|---|
+            | Previous | `${{ steps.before.outputs.old_sha }}` | ${{ steps.before.outputs.old_quests }} |
+            | Updated | `${{ steps.after.outputs.sha }}` | ${{ steps.after.outputs.quests }} (${{ steps.after.outputs.coords }} coord records) |
+
+            This PR only contains generated database files when ATT data changed.
+          add-paths: |
+            Database/ForeverQuests.lua
+            Database/Metadata.lua
+            Database/build_report.json
