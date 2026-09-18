@@ -74,6 +74,7 @@ function ns.SlashCommand(msg)
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
         print("  /fqp apis     Print which Forever map/quest APIs are present")
+        print("  /fqp why <id> Show why a quest is pinned or hidden")
         return
     end
 
@@ -126,6 +127,12 @@ function ns.SlashCommand(msg)
         return
     end
 
+    local whyID = msg:match("^why%s+(%d+)$")
+    if whyID then
+        ns.PrintQuestWhy(tonumber(whyID))
+        return
+    end
+
     Print("Unknown command. Type /fqp help")
 end
 
@@ -159,12 +166,66 @@ function ns.PrintStats()
     end
 end
 
+function ns.PrintQuestWhy(questID)
+    if ns.InvalidateCompletionCache then
+        ns.InvalidateCompletionCache()
+    end
+    if not questID then
+        Print("Usage: /fqp why <questID>")
+        return
+    end
+    local data = ns.Quests and ns.Quests[questID]
+    if not data then
+        Print("Quest " .. tostring(questID) .. " is not in the ATT start database.")
+        return
+    end
+    local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
+    local available, reason = ns.IsQuestAvailable(questID, data)
+    Print(("Quest %s%s: %s (%s)"):format(
+        tostring(questID),
+        title and (" " .. title) or "",
+        available and "would pin" or "hidden",
+        tostring(reason)
+    ))
+    print(("  completed=%s in-log=%s"):format(
+        tostring(not not ns.IsQuestFlaggedCompleted(questID)),
+        tostring(not not ns.IsOnQuest(questID))
+    ))
+    local qg = data.qg or (data.qgs and data.qgs[1])
+    print(("  map %s @ %.1f, %.1f qg=%s faction=%s minLevel=%s"):format(
+        tostring(data.mapID),
+        data.x or 0,
+        data.y or 0,
+        tostring(qg or "object"),
+        tostring(data.faction or "-"),
+        tostring(data.minLevel or "-")
+    ))
+    local sources = data.sourceQuests
+    if not sources or #sources == 0 then
+        print("  sourceQuests: none")
+        return
+    end
+    for i = 1, #sources do
+        local srcID = sources[i]
+        local src = ns.Quests and ns.Quests[srcID]
+        print(("  source %s: flagged=%s in-log=%s object=%s treated-complete=%s"):format(
+            tostring(srcID),
+            tostring(not not ns.IsQuestFlaggedCompleted(srcID)),
+            tostring(not not ns.IsOnQuest(srcID)),
+            tostring((src and not ns.HasQuestGiver(src)) or false),
+            tostring(not not ns.IsSourceSatisfied(srcID))
+        ))
+    end
+end
+
 function ns.PrintAPIProbe()
     local function has(value)
         return value and "yes" or "no"
     end
     Print("API probe (verify these on Interface 16001):")
     print("  C_QuestLog.IsQuestFlaggedCompleted: " .. has(C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted))
+    print("  C_QuestLog.GetAllCompletedQuestIDs: " .. has(C_QuestLog and C_QuestLog.GetAllCompletedQuestIDs))
+    print("  GetQuestsCompleted: " .. has(GetQuestsCompleted))
     print("  HasQuestCompletionAPI: " .. has(ns.HasQuestCompletionAPI and ns.HasQuestCompletionAPI()))
     print("  C_QuestLog.IsOnQuest: " .. has(C_QuestLog and C_QuestLog.IsOnQuest))
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
@@ -328,7 +389,7 @@ function ns.TryRegisterSettings()
 
         local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
         slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
-        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug")
+        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
     end)
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, "Forever Quest Pins")

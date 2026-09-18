@@ -47,6 +47,12 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("sourceQuestNumRequired", text)
         self.assertIn("function ns.HasQuestCompletionAPI()", text)
         self.assertIn("GetQuestsCompleted", text)
+        self.assertIn("GetAllCompletedQuestIDs", text)
+        self.assertIn("function ns.IsSourceSatisfied(questID)", text)
+        self.assertIn("function ns.HasQuestGiver(data)", text)
+        self.assertIn("Object-started prereqs", text)
+        self.assertIn("The Venture Co.", text)
+        self.assertIn("Supervisor Fizsprocket", text)
 
     def test_no_herebedragons_or_att_runtime_dep(self) -> None:
         combined = "\n".join((ROOT / rel).read_text(encoding="utf-8") for rel in LUA_FILES)
@@ -163,6 +169,26 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("OnCanvasScaleChanged", text)
         self.assertIn("canvas-zero", text)
         self.assertIn("map-show-layout", text)
+
+    def test_object_started_prereqs_and_morin_patrol(self) -> None:
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        self.assertIn("not in the log and its own source quests are met", eligibility)
+        self.assertIn("function ns.InvalidateCompletionCache()", eligibility)
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("PATROL_EXTRA", pins)
+        self.assertIn("[2988]", pins)
+        self.assertIn("LIVE_NEAR", pins)
+        self.assertIn("Always paint ATT", pins)
+        self.assertNotIn("local liveX, liveY = ns.TryQuestGiverPosition", pins)
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        self.assertIn('msg:match("^why%s+(%d+)$")', config)
+        self.assertIn("function ns.PrintQuestWhy(questID)", config)
+        db = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
+        self.assertIn("[749] = { mapID=1412, x=54.4, y=60.4, qg=2988", db)
+        self.assertIn("[751] = { mapID=1412, x=53.8, y=48.3, sourceQuests={ 749 }", db)
+        self.assertNotRegex(db, r"\[751\] = \{[^}]*qg=")
+        self.assertIn("[764] = { mapID=1412, x=54.4, y=60.4, qg=2988, sourceQuests={ 751 }", db)
+        self.assertIn("[765] = { mapID=1412, x=54.4, y=60.4, qg=2988, sourceQuests={ 751 }", db)
 
 
 if __name__ == "__main__":
