@@ -535,8 +535,12 @@ def _install_constructors(env: Environment) -> None:
     def faction(faction_id: Any, t: Any = None) -> LuaTable:
         return _struct("factionID", faction_id, t)
 
-    def header(header_id: Any, t: Any = None) -> LuaTable:
-        return _struct("headerID", header_id, t)
+    def header(header_id: Any, t: Any = None, *rest: Any) -> LuaTable:
+        last = t
+        for arg in rest:
+            if isinstance(arg, LuaTable):
+                last = arg
+        return _struct("headerID", header_id, last)
 
     def objective(obj_id: Any, t: Any = None) -> LuaTable:
         return _struct("objectiveID", obj_id, t)
@@ -584,6 +588,14 @@ def _install_constructors(env: Environment) -> None:
 
     def pvp(t: Any) -> Any:
         return bubbleDown(_dict_to_lua({"pvp": True}), t)
+
+    def applyevent(event_id: Any, data: Any = None) -> Any:
+        payload: dict[str, Any] = {"isYearly": True}
+        if isinstance(event_id, int):
+            payload["e"] = event_id
+        elif isinstance(event_id, float) and event_id.is_integer():
+            payload["e"] = int(event_id)
+        return _bubble_down(_dict_to_lua(payload), data)
 
     def root(category: Any, g: Any = None) -> Any:
         env["_roots"].append({"category": category, "data": g})
@@ -686,9 +698,9 @@ def _install_constructors(env: Environment) -> None:
         "getmetatable": lambda _t: None,
         "rawget": lambda t, k: t.get(k) if isinstance(t, LuaTable) else None,
         "rawset": lambda t, k, v: t.set(k, v) if isinstance(t, LuaTable) else None,
-        "applyevent": identity_last,
+        "applyevent": applyevent,
         "applyclassicphase": identity_last,
-        "applyeventself": identity_last,
+        "applyeventself": applyevent,
         "bubbleDownFiltered": lambda data, _filter, t=None: _bubble_down(data, t),
         "bubbleDownAndReplace": _bubble_down,
     }

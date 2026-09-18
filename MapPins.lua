@@ -224,18 +224,31 @@ local function PlacePin(parent, nx, ny, questID, data, reason)
     active[#active + 1] = pin
 end
 
-local function CandidateMapIDs(viewedMapID)
-    local maps = { viewedMapID }
+local function CandidateMapIDs(viewedMapID, byMap)
+    local maps = {}
+    local seen = {}
+    local function add(mapID)
+        if mapID and not seen[mapID] then
+            seen[mapID] = true
+            maps[#maps + 1] = mapID
+        end
+    end
+    add(viewedMapID)
     if C_Map and C_Map.GetMapChildrenInfo then
         local children = C_Map.GetMapChildrenInfo(viewedMapID, nil, true)
         if type(children) == "table" then
             for i = 1, #children do
                 local info = children[i]
                 local childID = type(info) == "table" and (info.mapID or info[1]) or info
-                if childID then
-                    maps[#maps + 1] = childID
-                end
+                add(childID)
             end
+        end
+    end
+    -- Continent / parent views: try every known quest map and let
+    -- ProjectToViewedMap drop maps that do not belong on this canvas.
+    if type(byMap) == "table" then
+        for mapID in pairs(byMap) do
+            add(mapID)
         end
     end
     return maps
@@ -289,7 +302,7 @@ function MapPins:Refresh(reason)
     local quests = ns.Quests or {}
     local painted = 0
     local seen = {}
-    local maps = CandidateMapIDs(viewedMapID)
+    local maps = CandidateMapIDs(viewedMapID, byMap)
 
     for mapIndex = 1, #maps do
         local mapID = maps[mapIndex]

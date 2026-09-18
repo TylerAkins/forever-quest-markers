@@ -161,6 +161,11 @@ def load_forever_constants(att_root: str | Path) -> BuildContext:
     if timelines_path.is_file():
         ctx.timelines.update(_load_str_assignments(timelines_path))
 
+    parser_timelines = root / ".contrib" / "Parser" / "lib" / "Constants" / "Timelines.lua"
+    if parser_timelines.is_file():
+        for name, value in _load_str_assignments(parser_timelines).items():
+            ctx.timelines.setdefault(name, value)
+
     return ctx
 
 

@@ -44,6 +44,7 @@ class AddonLuaTests(unittest.TestCase):
         text = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
         self.assertIn("function ns.IsQuestAvailable(questID, data)", text)
         self.assertIn("sourceQuestNumRequired", text)
+        self.assertIn("function ns.HasQuestCompletionAPI()", text)
 
     def test_no_herebedragons_or_att_runtime_dep(self) -> None:
         combined = "\n".join((ROOT / rel).read_text(encoding="utf-8") for rel in LUA_FILES)
@@ -70,6 +71,19 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
+
+    def test_seasonal_pins_are_opt_in(self) -> None:
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        self.assertIn("function ns.IsEventActive(eventID)", eligibility)
+        self.assertIn('return false, "seasonal"', eligibility)
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        self.assertIn("showSeasonal = false", config)
+        self.assertIn('msg == "seasonal"', config)
+
+    def test_pins_try_every_known_map_on_the_viewed_canvas(self) -> None:
+        text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("local function CandidateMapIDs(viewedMapID, byMap)", text)
+        self.assertIn("for mapID in pairs(byMap) do", text)
 
 
 if __name__ == "__main__":

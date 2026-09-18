@@ -21,6 +21,10 @@ function ns.IsQuestFlaggedCompleted(questID)
     return false
 end
 
+function ns.HasQuestCompletionAPI()
+    return (C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted) or IsQuestFlaggedCompleted or false
+end
+
 function ns.IsOnQuest(questID)
     if not questID then
         return false
@@ -72,6 +76,25 @@ function ns.GetPlayerFaction()
     return UnitFactionGroup("player")
 end
 
+function ns.IsEventActive(eventID)
+    if not eventID then
+        return false
+    end
+    if C_Calendar and C_Calendar.IsEventActive then
+        local ok, active = pcall(C_Calendar.IsEventActive, eventID)
+        if ok and active then
+            return true
+        end
+    end
+    if IsHolidayActive then
+        local ok, active = pcall(IsHolidayActive, eventID)
+        if ok and active then
+            return true
+        end
+    end
+    return false
+end
+
 local function CountCompleted(questIDs)
     local count = 0
     for i = 1, #questIDs do
@@ -89,6 +112,9 @@ local function SourceQuestsMet(data)
     local sourceQuests = data.sourceQuests
     if not sourceQuests or #sourceQuests == 0 then
         return true, "no-prereq"
+    end
+    if not ns.HasQuestCompletionAPI() then
+        return true, "prereq-unknown"
     end
     local required = data.sourceQuestNumRequired
     local completed = CountCompleted(sourceQuests)
@@ -135,6 +161,12 @@ function ns.IsQuestAvailable(questID, data)
     end
     if ns.IsOnQuest(questID) then
         return false, "in-log"
+    end
+
+    if (data.isYearly or data.event) and not ns.GetOption("showSeasonal") then
+        if not ns.IsEventActive(data.event) then
+            return false, "seasonal"
+        end
     end
 
     local altQuests = data.altQuests

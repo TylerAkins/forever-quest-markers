@@ -4,6 +4,7 @@ ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
     showTrivial = true,
+    showSeasonal = false,
     debug = false,
 }
 
@@ -64,6 +65,7 @@ function ns.SlashCommand(msg)
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins")
+        print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -90,6 +92,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "trivial" then
         ToggleFlag("showTrivial", "Show trivial quests")
+        return
+    end
+    if msg == "seasonal" then
+        ToggleFlag("showSeasonal", "Show seasonal/holiday pins")
         return
     end
     if msg == "refresh" then
@@ -146,6 +152,7 @@ function ns.PrintAPIProbe()
     end
     Print("API probe (verify these on Interface 16001):")
     print("  C_QuestLog.IsQuestFlaggedCompleted: " .. has(C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted))
+    print("  HasQuestCompletionAPI: " .. has(ns.HasQuestCompletionAPI and ns.HasQuestCompletionAPI()))
     print("  C_QuestLog.IsOnQuest: " .. has(C_QuestLog and C_QuestLog.IsOnQuest))
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
     print("  C_Map.GetMapRectOnMap: " .. has(C_Map and C_Map.GetMapRectOnMap))
