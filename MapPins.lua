@@ -8,7 +8,7 @@ local MapPins = ns.MapPins
 local ICON_ATLAS = "QuestNormal"
 local ICON_GOSSIP = "Interface\\GossipFrame\\AvailableQuestIcon"
 local ICON_FALLBACK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
-local PIN_SIZE = 32
+local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 
 local pool = {}
@@ -177,7 +177,9 @@ local function TrySetAtlas(tex, name)
         return false
     end
     local ok = pcall(function()
-        tex:SetAtlas(name, true)
+        -- useAtlasSize=false so the bang stays PIN_SIZE instead of the
+        -- native QuestNormal atlas (often 64px, then scaled by map zoom).
+        tex:SetAtlas(name, false)
         tex:SetAllPoints()
     end)
     return ok and true or false
@@ -319,7 +321,11 @@ function MapPins:OnTitleLoaded(questID)
     end
 end
 
-local function CanvasOffsets(parent, nx, ny, pin)
+local function IsNormalized(x, y)
+    return x and y and x >= 0 and y >= 0 and x <= 1 and y <= 1 and not (x == 0 and y == 0)
+end
+
+local function CanvasOffsets(parent, nx, ny)
     if not parent or not nx or not ny or not parent.GetWidth then
         return nil, nil
     end
@@ -328,77 +334,34 @@ local function CanvasOffsets(parent, nx, ny, pin)
     if not width or not height or width < 1 or height < 1 then
         return nil, nil
     end
-    local scale = pin and pin.GetScale and pin:GetScale() or 1
-    if not scale or scale == 0 then
-        scale = 1
-    end
-    -- Match MapCanvasMixin.ApplyPinPosition: offsets are in the parent's
-    -- unscaled space, divided by the pin's own scale.
-    return (width * nx) / scale, -(height * ny) / scale
+    -- Pins ignore parent scale, so offsets stay in the canvas's unscaled space.
+    return width * nx, -height * ny
 end
 
-local function EnsurePinMapAPI(pin)
-    if pin._fqpMapAPI then
-        return
+local function RaisePin(pin, parent)
+    parent = parent or pin:GetParent()
+    if pin.UseFrameLevelType then
+        pcall(pin.UseFrameLevelType, pin, "PIN_FRAME_LEVEL_AREA_POI")
     end
-    pin._fqpMapAPI = true
-    pin.owningMap = WorldMapFrame
-    pin.GetMap = pin.GetMap or function(self)
-        return self.owningMap or WorldMapFrame
+    local base = 0
+    if parent and parent.GetFrameLevel then
+        base = parent:GetFrameLevel() or 0
     end
-    pin.GetNudgeVector = pin.GetNudgeVector or function()
-        return nil
-    end
-    pin.GetNudgeFactor = pin.GetNudgeFactor or function()
-        return 0
-    end
-    pin.GetNudgeTargetFactor = pin.GetNudgeTargetFactor or function()
-        return 0
-    end
-    pin.GetNudgeZoomFactor = pin.GetNudgeZoomFactor or function()
-        return 1
-    end
-    pin.IgnoresNudging = pin.IgnoresNudging or function()
-        return true
-    end
-    pin.GetNudgeSourceRadius = pin.GetNudgeSourceRadius or function()
-        return 0
-    end
-    pin.ApplyFrameLevel = pin.ApplyFrameLevel or function(self)
-        local parent = self:GetParent()
-        if parent and parent.GetFrameLevel then
-            self:SetFrameLevel(parent:GetFrameLevel() + 20)
-        end
-    end
-end
-
-local function TrySetPinPosition(pin)
-    if not pin.nx or not pin.ny then
-        return false
-    end
-    if not (WorldMapFrame and WorldMapFrame.SetPinPosition) then
-        return false
-    end
-    EnsurePinMapAPI(pin)
-    pin.normalizedX = pin.nx
-    pin.normalizedY = pin.ny
-    local ok = pcall(WorldMapFrame.SetPinPosition, WorldMapFrame, pin, pin.nx, pin.ny)
-    if ok then
-        lastStatus.parent = "SetPinPosition"
-        return true
-    end
-    return false
+    -- Map detail layers sit well above the canvas default; +20 was under the art
+    -- so some bangs disappeared depending on zoom/layer order.
+    pin:SetFrameLevel(base + 400)
 end
 
 local function ApplyPinPoint(pin, parent)
-    if TrySetPinPosition(pin) then
-        return true
-    end
     parent = parent or pin:GetParent() or GetCanvas()
-    local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny, pin)
+    local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny)
     if not ox then
         return false
     end
+    if parent and pin.GetParent and pin:GetParent() ~= parent then
+        pin:SetParent(parent)
+    end
+    RaisePin(pin, parent)
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", parent, "TOPLEFT", ox, oy)
     return true
@@ -415,7 +378,6 @@ local function AcquirePin(parent)
     local pin = table.remove(pool)
     if not pin then
         pin = CreateFrame("Button", nil, parent)
-        pin:SetSize(PIN_SIZE, PIN_SIZE)
         pin:RegisterForClicks("LeftButtonUp")
         pin.Texture = pin:CreateTexture(nil, "OVERLAY")
         pin.Texture:SetAllPoints()
@@ -428,7 +390,12 @@ local function AcquirePin(parent)
         end)
     end
     pin:SetParent(parent)
-    pin:SetFrameLevel((parent.GetFrameLevel and parent:GetFrameLevel() or 0) + 20)
+    if pin.SetIgnoreParentScale then
+        pin:SetIgnoreParentScale(true)
+    end
+    pin:SetScale(1)
+    pin:SetSize(PIN_SIZE, PIN_SIZE)
+    RaisePin(pin, parent)
     SetPinTexture(pin)
     return pin
 end
@@ -442,10 +409,7 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.ny = ny
     pin.live = live and true or nil
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
-    if not ApplyPinPoint(pin, parent) then
-        ReleasePin(pin)
-        return false
-    end
+    ApplyPinPoint(pin, parent)
     pin:Show()
     active[#active + 1] = pin
     ns.PrefetchQuestInfo(questID, data)
@@ -528,7 +492,7 @@ local function UnitMapPosition(unit, mapID)
         local ok, pos = pcall(C_Map.GetPlayerMapPosition, mapID, unit)
         if ok then
             local x, y = MapPosFromVector(pos)
-            if x and y and x > 0 and y > 0 then
+            if IsNormalized(x, y) then
                 return x, y
             end
         end
@@ -544,7 +508,7 @@ local function UnitMapPosition(unit, mapID)
                 local ok2, uiMapID, mapPos = pcall(C_Map.GetMapPosFromWorldPos, instance, world)
                 if ok2 then
                     local x, y = MapPosFromVector(mapPos)
-                    if x and (uiMapID == nil or uiMapID == mapID) then
+                    if IsNormalized(x, y) and uiMapID == mapID then
                         return x, y
                     end
                 end
