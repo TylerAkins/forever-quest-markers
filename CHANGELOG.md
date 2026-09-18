@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Options for auto-accept and auto-turn in when talking to NPCs
+- Settings panel checkboxes; `/fqp accept` and `/fqp turnin` toggles
+- Hold Shift to skip automation for one NPC interaction
+- Auto-turn in does not pick when a quest has multiple rewards
+
 ## 0.1.1
 
 - Use Blizzard’s retail available-quest icon (`QuestNormal`) on map pins
