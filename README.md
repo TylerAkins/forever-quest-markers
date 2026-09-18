@@ -33,7 +33,7 @@ Generated files:
 - `Database/Metadata.lua` — ATT commit SHA and quest counts
 - `Database/build_report.json` — machine-readable conversion summary (not shipped in the player zip)
 
-Pins use Blizzard’s retail available-quest atlas (`QuestNormal`). If that atlas is missing, they fall back to `Interface\GossipFrame\AvailableQuestIcon`, then to `Media/QuestAvailable.tga`. The addon does not depend on Questie, ATT, TomTom, or HereBeDragons.
+Pins use Blizzard’s gossip yellow ! (`Interface\GossipFrame\AvailableQuestIcon`) because Forever’s `QuestNormal` atlas can bind without drawing. If that file is missing they fall back to `QuestNormal`, then to `Media/QuestAvailable.tga`. The addon does not depend on Questie, ATT, TomTom, or HereBeDragons.
 
 ## Commands
 
