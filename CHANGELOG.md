@@ -10,6 +10,7 @@
 - Prefetch quest titles so names are ready before the first hover
 - Place pins on the map canvas (`WorldMapFrame:GetCanvas` / `ScrollContainer.Child`) so they stay on coordinates when the map is resized or reopened
 - Snap wandering quest-giver pins (for example Morin Cloudstalker / Ravaged Caravan) to the NPC while they are visible
+- Keep pins glued to the map art: same parent as Blizzard's player/quest pins, `SetPinPosition` when available, and re-apply coordinates every frame so resize/reopen cannot drift
 
 ## 0.1.1
 
