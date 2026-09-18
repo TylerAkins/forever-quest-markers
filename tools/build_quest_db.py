@@ -22,7 +22,8 @@ from att_dsl.preprocessor import PreprocessError, preprocess
 
 
 ATT_REPO_URL = "https://github.com/ATTWoWAddon/AllTheThings.git"
-SKIP_DIR_NAMES = {".config", "zzold", ".wago", ".git"}
+SKIP_DIR_NAMES = {".config", ".wago", ".git"}
+ZZOLD_DIR_NAME = "zzold"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,11 +35,12 @@ def main(argv: list[str] | None = None) -> int:
     if not forever_db.is_dir():
         raise SystemExit(f"Forever database not found: {forever_db}")
 
-    files = _lua_files(forever_db)
-    result = ExtractResult()
+    live_files, zzold_files = _lua_files(forever_db)
+    files = live_files + zzold_files
+    result = ExtractResult(patch=ctx.patch)
     errors: list[str] = []
 
-    for path in files:
+    for path in live_files:
         rel = path.relative_to(forever_db).as_posix()
         try:
             _parse_file(path, rel, ctx, result)
@@ -49,10 +51,40 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {message}", file=sys.stderr)
 
     if errors and not args.keep_going:
-        print(f"Failed to parse {len(errors)} file(s).", file=sys.stderr)
+        print(f"Failed to parse {len(errors)} live file(s).", file=sys.stderr)
         return 1
 
+    zzold_result = ExtractResult(patch=ctx.patch)
+    zzold_errors: list[str] = []
+    for path in zzold_files:
+        rel = path.relative_to(forever_db).as_posix()
+        try:
+            _parse_file(path, rel, ctx, zzold_result)
+            zzold_result.files_parsed += 1
+        except (ParseError, PreprocessError, ValueError) as exc:
+            message = f"{rel}: {exc}"
+            zzold_errors.append(message)
+            print(f"ERROR: {message}", file=sys.stderr)
+
+    if zzold_errors and not args.keep_going:
+        print(f"Failed to parse {len(zzold_errors)} zzOLD file(s).", file=sys.stderr)
+        return 1
+
+    zzold_fallback = 0
+    for quest_id, record in zzold_result.quests.items():
+        if quest_id not in result.quests:
+            result.quests[quest_id] = record
+            zzold_fallback += 1
+    result.quests_seen += zzold_result.quests_seen
+    result.quests_with_coords = len(result.quests)
+    result.files_parsed += zzold_result.files_parsed
+    for reason, count in zzold_result.excluded.items():
+        result.excluded[reason] = result.excluded.get(reason, 0) + count
+    errors.extend(zzold_errors)
+
     stats = _stats(result, sha, files, errors)
+    stats["zzold_files_parsed"] = zzold_result.files_parsed
+    stats["zzold_fallback_quests"] = zzold_fallback
     out_dir = Path(args.out)
     write_outputs(out_dir, result.quests, sha, ATT_REPO_URL, stats)
 
@@ -135,14 +167,18 @@ def _git_sha(repo: Path) -> str:
     return completed.stdout.strip()
 
 
-def _lua_files(forever_db: Path) -> list[Path]:
-    files: list[Path] = []
+def _lua_files(forever_db: Path) -> tuple[list[Path], list[Path]]:
+    live: list[Path] = []
+    zzold: list[Path] = []
     for path in sorted(forever_db.rglob("*.lua")):
         rel_parts = {part.lower() for part in path.relative_to(forever_db).parts}
         if rel_parts & SKIP_DIR_NAMES:
             continue
-        files.append(path)
-    return files
+        if ZZOLD_DIR_NAME in rel_parts:
+            zzold.append(path)
+        else:
+            live.append(path)
+    return live, zzold
 
 
 def _parse_file(path: Path, rel: str, ctx: BuildContext, result: ExtractResult) -> None:
@@ -191,6 +227,8 @@ def _log_summary(stats: dict[str, object]) -> None:
     print(f"Quests with coordinates: {stats['quests_with_coords']}")
     print(f"Coordinate pins: {stats['coord_pins']}")
     print(f"Maps indexed: {stats['map_count']}")
+    if stats.get("zzold_fallback_quests"):
+        print(f"zzOLD fallback quests: {stats['zzold_fallback_quests']}")
     excluded = stats["excluded"]
     if excluded:
         print("Excluded:")

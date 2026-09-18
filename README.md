@@ -39,6 +39,7 @@ Pins use Blizzard’s retail available-quest atlas (`QuestNormal`). If that atla
 | `/fqp` | Help |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level/trivial pins (only hides them when `GetQuestGreenRange` exists) |
+| `/fqp seasonal` | Toggle holiday/seasonal pins (Lunar Festival elders, Darkmoon Faire, etc.; off by default) |
 | `/fqp debug` | Extra tooltip fields and diagnostics |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
@@ -66,12 +67,12 @@ python3 tests/test_addon_lua.py
 
 ## Beta limitations
 
-Forever’s ATT tree is still being filled in. Zones that ATT has not yet migrated out of `zzOLD` will not have pins until ATT publishes them in `.contrib/.db/forever/` (excluding `zzOLD`). Daily conversion PRs pick those up automatically.
+Forever’s ATT tree is still being filled in. Zone files that have not yet been migrated out of `zzOLD` are used as a **fallback** for quest IDs missing from the live Forever tree. Cata-and-later `ADDED_*` entries are skipped; classic quests marked `REMOVED_4_0_3` are kept. Daily conversion PRs pick up live ATT updates automatically.
 
 Other current limits:
 
 - Item-started quests with no map coordinate are omitted
-- Holiday / battleground quests may appear even when the event is inactive
+- Holiday / battleground quests are hidden unless `/fqp seasonal` is enabled or the client reports the event as active
 - Continent-map projection needs `C_Map.GetMapRectOnMap`; without it, pins only show on the quest’s own UiMapID
 - Unknown Forever-only race IDs (for example Skyborne) are stored but not used to hide pins
 - Reputation gates from ATT are parsed where present but not yet used to hide pins
