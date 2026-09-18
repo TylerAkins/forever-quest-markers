@@ -4,6 +4,7 @@ ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
     showTrivial = true,
+    showSeasonal = false,
     debug = false,
 }
 
@@ -64,6 +65,7 @@ function ns.SlashCommand(msg)
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins")
+        print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -90,6 +92,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "trivial" then
         ToggleFlag("showTrivial", "Show trivial quests")
+        return
+    end
+    if msg == "seasonal" then
+        ToggleFlag("showSeasonal", "Show seasonal/holiday pins")
         return
     end
     if msg == "refresh" then
@@ -134,6 +140,9 @@ function ns.PrintStats()
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
         end
+        if status.icon then
+            print("  pin icon: " .. tostring(status.icon))
+        end
     end
 end
 
@@ -143,6 +152,7 @@ function ns.PrintAPIProbe()
     end
     Print("API probe (verify these on Interface 16001):")
     print("  C_QuestLog.IsQuestFlaggedCompleted: " .. has(C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted))
+    print("  HasQuestCompletionAPI: " .. has(ns.HasQuestCompletionAPI and ns.HasQuestCompletionAPI()))
     print("  C_QuestLog.IsOnQuest: " .. has(C_QuestLog and C_QuestLog.IsOnQuest))
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
     print("  C_Map.GetMapRectOnMap: " .. has(C_Map and C_Map.GetMapRectOnMap))
@@ -152,6 +162,12 @@ function ns.PrintAPIProbe()
     print("  MapCanvasPinMixin: " .. has(MapCanvasPinMixin))
     print("  Settings API: " .. has(Settings and Settings.RegisterAddOnCategory))
     print("  GetQuestGreenRange: " .. has(GetQuestGreenRange))
+    print("  C_Texture.GetAtlasInfo: " .. has(C_Texture and C_Texture.GetAtlasInfo))
+    local atlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestNormal")
+    print("  QuestNormal atlas: " .. has(atlas))
+    if ns.MapPins and ns.MapPins.GetStatus then
+        print("  pin icon: " .. tostring(ns.MapPins:GetStatus().icon or "not painted yet"))
+    end
     local mapID = ns.GetViewedMapID and ns.GetViewedMapID()
     print("  viewed mapID: " .. tostring(mapID))
     local _, raceFile, raceID = UnitRace("player")

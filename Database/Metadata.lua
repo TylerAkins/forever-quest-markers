@@ -9,8 +9,8 @@ ns.Metadata = {
 	source = "ATTWoWAddon/AllTheThings",
 	attCommit = "0d437c53eb95e7093f43952eee8ebd0bdc82bcf6",
 	attRef = "https://github.com/ATTWoWAddon/AllTheThings.git",
-	questCount = 586,
-	coordCount = 774,
-	filesParsed = 24,
+	questCount = 3527,
+	coordCount = 3871,
+	filesParsed = 152,
 	generatedBy = "tools/build_quest_db.py",
 }

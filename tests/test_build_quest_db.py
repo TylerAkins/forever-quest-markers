@@ -32,6 +32,7 @@ def _ctx() -> BuildContext:
             "NORTHSHIRE_VALLEY": 425,
             "DUN_MOROGH": 1426,
             "ORGRIMMAR": 1454,
+            "MULGORE": 1412,
         },
         timelines={"ADDED_1_60_1": "added 1.60.1.69893"},
     )
@@ -134,6 +135,24 @@ class EmitTests(unittest.TestCase):
         self.assertIn("[92460]", first)
         self.assertIn("ns.ByMap", first)
         self.assertIn("[2521]", first)
+
+
+class MulgoreTimelineTests(unittest.TestCase):
+    def test_pre_cata_quests_kept_and_holiday_flagged(self) -> None:
+        result = _extract_fixture("mulgore.lua")
+        self.assertIn(754, result.quests)
+        self.assertIn(748, result.quests)
+        self.assertNotIn(24440, result.quests)
+        winterhoof = result.quests[754]
+        self.assertEqual(winterhoof.coords[0].map_id, 1412)
+        self.assertAlmostEqual(winterhoof.coords[0].x, 48.5)
+        self.assertAlmostEqual(winterhoof.coords[0].y, 60.4)
+        self.assertEqual(winterhoof.qgs, [2948])
+        self.assertEqual(winterhoof.source_quests, [748])
+        elder = result.quests[8673]
+        self.assertTrue(elder.is_yearly)
+        self.assertAlmostEqual(elder.coords[0].x, 48.4)
+        self.assertAlmostEqual(elder.coords[0].y, 53.2)
 
 
 if __name__ == "__main__":

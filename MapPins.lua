@@ -3,8 +3,12 @@ local ADDON_NAME, ns = ...
 ns.MapPins = ns.MapPins or {}
 local MapPins = ns.MapPins
 
-local ICON = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
-local PIN_SIZE = 22
+-- Blizzard’s retail world-map / minimap available-quest bang, then the gossip
+-- yellow !, then the bundled TGA only if neither client texture exists.
+local ICON_ATLAS = "QuestNormal"
+local ICON_GOSSIP = "Interface\\GossipFrame\\AvailableQuestIcon"
+local ICON_FALLBACK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
+local PIN_SIZE = 32
 
 local pool = {}
 local active = {}
@@ -13,6 +17,7 @@ local lastStatus = {
     count = 0,
     mode = "none",
     lastError = nil,
+    icon = nil,
 }
 
 local function Norm(x, y)
@@ -73,10 +78,57 @@ function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
     return minX + ((maxX - minX) * nx), minY + ((maxY - minY) * ny)
 end
 
-local function SetPinTexture(pin)
-    if pin.Texture then
-        pin.Texture:SetTexture(ICON)
+local function AtlasExists(name)
+    if C_Texture and C_Texture.GetAtlasInfo then
+        return C_Texture.GetAtlasInfo(name) ~= nil
     end
+    -- No lookup API: try SetAtlas and keep it if it does not error.
+    return true
+end
+
+local function TrySetAtlas(tex, name)
+    if not tex.SetAtlas or not AtlasExists(name) then
+        return false
+    end
+    local ok = pcall(function()
+        tex:SetAtlas(name, true)
+        tex:SetAllPoints()
+    end)
+    return ok and true or false
+end
+
+local function TrySetFile(tex, path)
+    if not tex.SetTexture or not path then
+        return false
+    end
+    local ok = pcall(function()
+        if tex.SetTexCoord then
+            tex:SetTexCoord(0, 1, 0, 1)
+        end
+        tex:SetTexture(path)
+        tex:SetAllPoints()
+    end)
+    return ok and true or false
+end
+
+local function SetPinTexture(pin)
+    local tex = pin.Texture
+    if not tex then
+        return
+    end
+    if TrySetAtlas(tex, ICON_ATLAS) then
+        lastStatus.icon = "atlas:" .. ICON_ATLAS
+        return
+    end
+    if TrySetFile(tex, ICON_GOSSIP) then
+        lastStatus.icon = "texture:AvailableQuestIcon"
+        return
+    end
+    if TrySetFile(tex, ICON_FALLBACK) then
+        lastStatus.icon = "texture:QuestAvailable.tga"
+        return
+    end
+    lastStatus.icon = "none"
 end
 
 local function ReleasePin(pin)
@@ -172,18 +224,31 @@ local function PlacePin(parent, nx, ny, questID, data, reason)
     active[#active + 1] = pin
 end
 
-local function CandidateMapIDs(viewedMapID)
-    local maps = { viewedMapID }
+local function CandidateMapIDs(viewedMapID, byMap)
+    local maps = {}
+    local seen = {}
+    local function add(mapID)
+        if mapID and not seen[mapID] then
+            seen[mapID] = true
+            maps[#maps + 1] = mapID
+        end
+    end
+    add(viewedMapID)
     if C_Map and C_Map.GetMapChildrenInfo then
         local children = C_Map.GetMapChildrenInfo(viewedMapID, nil, true)
         if type(children) == "table" then
             for i = 1, #children do
                 local info = children[i]
                 local childID = type(info) == "table" and (info.mapID or info[1]) or info
-                if childID then
-                    maps[#maps + 1] = childID
-                end
+                add(childID)
             end
+        end
+    end
+    -- Continent / parent views: try every known quest map and let
+    -- ProjectToViewedMap drop maps that do not belong on this canvas.
+    if type(byMap) == "table" then
+        for mapID in pairs(byMap) do
+            add(mapID)
         end
     end
     return maps
@@ -237,7 +302,7 @@ function MapPins:Refresh(reason)
     local quests = ns.Quests or {}
     local painted = 0
     local seen = {}
-    local maps = CandidateMapIDs(viewedMapID)
+    local maps = CandidateMapIDs(viewedMapID, byMap)
 
     for mapIndex = 1, #maps do
         local mapID = maps[mapIndex]

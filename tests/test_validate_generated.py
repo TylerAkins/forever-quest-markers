@@ -57,6 +57,17 @@ class GeneratedDatabaseTests(unittest.TestCase):
                 rf"\[{quest_id}\] = \{{ mapID=\d+, x=-?\d",
             )
 
+    def test_mulgore_zone_quest_and_holiday_flag(self) -> None:
+        text = _read("ForeverQuests.lua")
+        self.assertRegex(
+            text,
+            r"\[754\] = \{ mapID=1412, x=48\.5, y=60\.4",
+        )
+        self.assertRegex(
+            text,
+            r"\[8673\] = \{[^}]*isYearly=true",
+        )
+
 
 if __name__ == "__main__":
     if not (DB / "ForeverQuests.lua").is_file():
