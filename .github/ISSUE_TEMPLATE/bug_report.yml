@@ -1,0 +1,112 @@
+name: Bug report
+description: Something in Forever Quest Pins isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Fill in what you can — more detail = faster fix.
+        Please check [existing issues](https://github.com/TylerAkins/forever-quest-markers/issues) first.
+
+  - type: input
+    id: fqp-version
+    attributes:
+      label: Forever Quest Pins version
+      description: From the addon `.toc` (`## Version:`) or the release zip name (e.g. 0.1.0).
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: wow-flavor
+    attributes:
+      label: WoW client
+      options:
+        - World of Warcraft Forever (Interface 16001)
+        - Other (describe in Additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: wow-build
+    attributes:
+      label: Game build / interface (if known)
+      description: Optional. Character select → bottom-left build, or TOC Interface value (e.g. 16001).
+      placeholder: "1.60.1 / 16001"
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Short description of the bug.
+      placeholder: Yellow ! pins do not appear on Zephras Isle…
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: Available unaccepted quests show as yellow bangs on the world map…
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps help a lot.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproducible
+    attributes:
+      label: How often does it happen?
+      options:
+        - Always
+        - Sometimes
+        - Once / rare
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: Area affected (check all that apply)
+      options:
+        - label: World map pins
+        - label: Pin tooltips
+        - label: Quest eligibility / hiding
+        - label: Options / slash commands
+        - label: Generated ATT database
+        - label: Other / not sure
+
+  - type: textarea
+    id: other-addons
+    attributes:
+      label: Other addons
+      description: Especially All The Things, Questie, TomTom, or anything that also draws world-map pins. `/fqp stats` and `/fqp apis` output is helpful for map issues.
+      placeholder: |
+        All The Things: yes/no
+        Questie: yes/no
+        Others:
+
+  - type: textarea
+    id: errors
+    attributes:
+      label: Lua errors / chat output
+      description: Paste any red errors, or output from `/fqp stats` / `/fqp apis` / `/fqp debug` if relevant. Wrap in a code block.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, character faction/race/class/level, zone, quest IDs, ATT commit from `/fqp stats`, etc.
