@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+- Draw the gossip yellow ! (`AvailableQuestIcon`) instead of Forever's empty `QuestNormal` atlas so pins are visible, not just hoverable
+- Treat ATT breadcrumb sources as skippable (Gornek's Cutting Teeth is no longer blocked by Kaltunk's "Your Place in the World")
+- Remember quests an NPC just offered, including Forever-only starts missing from ATT (Wayward Weapons)
+
 ## 0.1.5
 
 - Show Morin Cloudstalker's The Venture Co. and Supervisor Fizsprocket after the Ravaged Caravan crate: object-started source quests that are not in the log count as done

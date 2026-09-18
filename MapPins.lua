@@ -34,6 +34,7 @@ local lastStatus = {
     lastError = nil,
     icon = nil,
     parent = nil,
+    paintedIDs = {},
 }
 
 local BLIZZARD_PIN_TEMPLATES = {
@@ -190,23 +191,51 @@ function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
     return minX + ((maxX - minX) * nx), minY + ((maxY - minY) * ny)
 end
 
-local function AtlasExists(name)
-    if C_Texture and C_Texture.GetAtlasInfo then
-        return C_Texture.GetAtlasInfo(name) ~= nil
+-- Forever can report QuestNormal from GetAtlasInfo and still draw nothing
+-- (hoverable empty pin). Require a real file binding before using an atlas.
+local function AtlasLooksReal(name)
+    if not (C_Texture and C_Texture.GetAtlasInfo) then
+        return false
     end
-    -- No lookup API: try SetAtlas and keep it if it does not error.
-    return true
+    local info = C_Texture.GetAtlasInfo(name)
+    if type(info) ~= "table" then
+        return false
+    end
+    if type(info.fileDataID) == "number" and info.fileDataID > 0 then
+        return true
+    end
+    if type(info.filename) == "string" and info.filename ~= "" then
+        return true
+    end
+    if type(info.file) == "string" and info.file ~= "" then
+        return true
+    end
+    return false
+end
+
+local function FinishTexture(tex)
+    if tex.SetDrawLayer then
+        tex:SetDrawLayer("OVERLAY", 7)
+    end
+    if tex.SetVertexColor then
+        tex:SetVertexColor(1, 1, 1, 1)
+    end
+    if tex.SetAlpha then
+        tex:SetAlpha(1)
+    end
+    if tex.SetAllPoints then
+        tex:SetAllPoints()
+    end
+    tex:Show()
 end
 
 local function TrySetAtlas(tex, name)
-    if not tex.SetAtlas or not AtlasExists(name) then
+    if not tex.SetAtlas or not AtlasLooksReal(name) then
         return false
     end
     local ok = pcall(function()
-        -- useAtlasSize=false so the bang stays PIN_SIZE instead of the
-        -- native QuestNormal atlas (often 64px, then scaled by map zoom).
         tex:SetAtlas(name, false)
-        tex:SetAllPoints()
+        FinishTexture(tex)
     end)
     return ok and true or false
 end
@@ -220,7 +249,7 @@ local function TrySetFile(tex, path)
             tex:SetTexCoord(0, 1, 0, 1)
         end
         tex:SetTexture(path)
-        tex:SetAllPoints()
+        FinishTexture(tex)
     end)
     return ok and true or false
 end
@@ -230,12 +259,14 @@ local function SetPinTexture(pin)
     if not tex then
         return
     end
-    if TrySetAtlas(tex, ICON_ATLAS) then
-        lastStatus.icon = "atlas:" .. ICON_ATLAS
-        return
-    end
+    -- Gossip bang first: it is the Forever TOC icon and always a real file.
+    -- QuestNormal on this client can SetAtlas without drawing anything.
     if TrySetFile(tex, ICON_GOSSIP) then
         lastStatus.icon = "texture:AvailableQuestIcon"
+        return
+    end
+    if TrySetAtlas(tex, ICON_ATLAS) then
+        lastStatus.icon = "atlas:" .. ICON_ATLAS
         return
     end
     if TrySetFile(tex, ICON_FALLBACK) then
@@ -270,6 +301,7 @@ function MapPins:Clear()
     end
     wipe(active)
     lastStatus.count = 0
+    lastStatus.paintedIDs = {}
 end
 
 local function QuestGiverID(data)
@@ -447,6 +479,8 @@ local function ApplyPinPoint(pin, parent)
         pinScale = 1
     end
     RaisePin(pin, parent)
+    pin:SetAlpha(1)
+    pin:Show()
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", parent, "TOPLEFT", ox / pinScale, oy / pinScale)
     return true
@@ -464,6 +498,9 @@ local function AcquirePin(parent)
     if not pin then
         pin = CreateFrame("Button", nil, parent)
         pin:RegisterForClicks("LeftButtonUp")
+        if pin.EnableMouse then
+            pin:EnableMouse(true)
+        end
         pin.Texture = pin:CreateTexture(nil, "OVERLAY")
         pin.Texture:SetAllPoints()
         pin:SetScript("OnEnter", ShowTooltip)
@@ -818,6 +855,7 @@ function MapPins:Refresh(reason)
         return
     end
     lastStatus.zeroRetries = 0
+    lastStatus.paintedIDs = {}
 
     local byMap = ns.ByMap or {}
     local quests = ns.Quests or {}
@@ -825,34 +863,42 @@ function MapPins:Refresh(reason)
     local seen = {}
     local maps = CandidateMapIDs(viewedMapID, byMap)
 
+    local function consider(questID)
+        if not questID or seen[questID] then
+            return
+        end
+        seen[questID] = true
+        local data = quests[questID]
+        if not data then
+            return
+        end
+        local available, why = ns.IsQuestAvailable(questID, data)
+        if not available then
+            return
+        end
+        EachCoord(data, function(questMapID, x, y)
+            local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
+            if nx and ny then
+                if PlacePin(canvas, nx, ny, questID, data, why, false) then
+                    painted = painted + 1
+                    lastStatus.paintedIDs[questID] = true
+                end
+            end
+        end)
+    end
+
     for mapIndex = 1, #maps do
         local mapID = maps[mapIndex]
         local list = byMap[mapID]
         if list then
             for i = 1, #list do
-                local questID = list[i]
-                if not seen[questID] then
-                    seen[questID] = true
-                    local data = quests[questID]
-                    if data then
-                        local available, why = ns.IsQuestAvailable(questID, data)
-                        if available then
-                            -- Always paint ATT (and extra patrol ends). Live NPC snap
-                            -- only moves a pin that is already near those coords.
-                            EachCoord(data, function(questMapID, x, y)
-                                local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
-                                if nx and ny then
-                                    if PlacePin(canvas, nx, ny, questID, data, why, false) then
-                                        painted = painted + 1
-                                    end
-                                end
-                            end)
-                        elseif ns.GetOption("debug") and why == "low-level" then
-                            -- Intentionally silent; /fqp debug is for tooltips of visible pins.
-                        end
-                    end
-                end
+                consider(list[i])
             end
+        end
+    end
+    if ns.offeredQuestIDs then
+        for questID in pairs(ns.offeredQuestIDs) do
+            consider(questID)
         end
     end
 
