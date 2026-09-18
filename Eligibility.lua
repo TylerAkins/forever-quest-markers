@@ -44,22 +44,135 @@ function ns.IsOnQuest(questID)
     return false
 end
 
+local titleCache = {}
+local npcNameCache = {}
+local requestedTitles = {}
+local npcTip
+
+local function RememberTitle(questID, title)
+    if questID and type(title) == "string" and title ~= "" then
+        titleCache[questID] = title
+        return title
+    end
+    return nil
+end
+
+local function ReadQuestTitle(questID)
+    local title = Call(C_QuestLog, "GetTitleForQuestID", questID)
+    if RememberTitle(questID, title) then
+        return titleCache[questID]
+    end
+    title = Call(C_QuestLog, "GetQuestInfo", questID)
+    if type(title) == "string" then
+        return RememberTitle(questID, title)
+    end
+    if type(title) == "table" then
+        return RememberTitle(questID, title.title)
+    end
+    return nil
+end
+
+function ns.RequestQuestTitle(questID)
+    if not questID or requestedTitles[questID] or titleCache[questID] then
+        return
+    end
+    requestedTitles[questID] = true
+    Call(C_QuestLog, "RequestLoadQuestByID", questID)
+end
+
 function ns.GetQuestTitle(questID)
     if not questID then
         return nil
     end
-    local title = Call(C_QuestLog, "GetTitleForQuestID", questID)
-    if title and title ~= "" then
+    if titleCache[questID] then
+        return titleCache[questID]
+    end
+    local title = ReadQuestTitle(questID)
+    if title then
         return title
     end
-    title = Call(C_QuestLog, "GetQuestInfo", questID)
-    if type(title) == "string" and title ~= "" then
-        return title
+    ns.RequestQuestTitle(questID)
+    return nil
+end
+
+function ns.OnQuestDataLoad(questID)
+    if not questID then
+        return
     end
-    if type(title) == "table" and title.title then
-        return title.title
+    requestedTitles[questID] = nil
+    local title = ReadQuestTitle(questID)
+    if title and ns.MapPins and ns.MapPins.OnTitleLoaded then
+        ns.MapPins:OnTitleLoaded(questID)
+    end
+end
+
+local function CacheNPCName(npcID, name)
+    if npcID and type(name) == "string" and name ~= "" and name ~= "Unknown" then
+        npcNameCache[npcID] = name
+        return name
     end
     return nil
+end
+
+local function NPCNameFromTooltipInfo(npcID)
+    if not (C_TooltipInfo and C_TooltipInfo.GetHyperlink) then
+        return nil
+    end
+    local ok, info = pcall(C_TooltipInfo.GetHyperlink, "unit:Creature-0-0-0-0-" .. npcID .. "-0000000000")
+    if not ok or type(info) ~= "table" then
+        return nil
+    end
+    local lines = info.lines
+    local first = lines and lines[1]
+    local text = first and (first.leftText or first.LeftText)
+    return CacheNPCName(npcID, text)
+end
+
+local function EnsureNPCTooltip()
+    if npcTip then
+        return npcTip
+    end
+    local ok, tip = pcall(CreateFrame, "GameTooltip", "ForeverQuestPinsNpcTip", UIParent, "GameTooltipTemplate")
+    if not ok then
+        return nil
+    end
+    npcTip = tip
+    npcTip:SetOwner(UIParent, "ANCHOR_NONE")
+    return npcTip
+end
+
+local function NPCNameFromScanner(npcID)
+    local tip = EnsureNPCTooltip()
+    if not tip or not tip.SetHyperlink then
+        return nil
+    end
+    tip:ClearLines()
+    local ok = pcall(tip.SetHyperlink, tip, "unit:Creature-0-0-0-0-" .. npcID .. "-0000000000")
+    if not ok then
+        return nil
+    end
+    local fontString = _G["ForeverQuestPinsNpcTipTextLeft1"]
+    local text = fontString and fontString.GetText and fontString:GetText()
+    return CacheNPCName(npcID, text)
+end
+
+function ns.GetNPCName(npcID)
+    if not npcID then
+        return nil
+    end
+    if npcNameCache[npcID] then
+        return npcNameCache[npcID]
+    end
+    return NPCNameFromTooltipInfo(npcID) or NPCNameFromScanner(npcID)
+end
+
+function ns.PrefetchQuestInfo(questID, data)
+    ns.GetQuestTitle(questID)
+    ns.RequestQuestTitle(questID)
+    local qg = data and (data.qg or (data.qgs and data.qgs[1]))
+    if qg then
+        ns.GetNPCName(qg)
+    end
 end
 
 function ns.GetPlayerRaceID()

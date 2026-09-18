@@ -106,6 +106,52 @@ class AddonLuaTests(unittest.TestCase):
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertLess(toc.find("AutoQuests.lua"), toc.find("Core.lua"))
 
+    def test_debug_option_in_settings_panel(self) -> None:
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        self.assertIn("debug = false", config)
+        self.assertIn("Debug tooltips", config)
+        self.assertLess(config.find('"autoTurnIn"'), config.find("Debug tooltips"))
+        self.assertIn('msg == "debug"', config)
+
+    def test_tooltips_use_names_unless_debug(self) -> None:
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        self.assertIn("function ns.GetNPCName(npcID)", eligibility)
+        self.assertIn("function ns.PrefetchQuestInfo(questID, data)", eligibility)
+        self.assertIn("RequestLoadQuestByID", eligibility)
+        self.assertIn("function ns.OnQuestDataLoad(questID)", eligibility)
+        self.assertIn("ns.GetNPCName(qg)", pins)
+        self.assertIn("GameTooltip:AddLine(npcName, 1, 1, 1)", pins)
+        debug_flag_at = pins.find("if debugOn then")
+        quest_id_at = pins.find('GameTooltip:AddLine("Quest ID: " .. tostring(pin.questID)')
+        self.assertNotEqual(debug_flag_at, -1)
+        self.assertNotEqual(quest_id_at, -1)
+        self.assertLess(debug_flag_at, quest_id_at)
+        self.assertNotIn(
+            'GameTooltip:AddLine("Quest giver NPC " .. tostring(qg), 0.8, 0.8, 0.8)',
+            pins[:debug_flag_at],
+        )
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertIn("QUEST_DATA_LOAD", core)
+
+    def test_pins_parent_to_map_canvas_not_viewport(self) -> None:
+        text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        get_canvas_at = text.find("WorldMapFrame:GetCanvas")
+        child_at = text.find("scroll.Child")
+        detail_at = text.find("WorldMapDetailFrame")
+        viewport_fallback_at = text.rfind('lastStatus.parent = "ScrollContainer"')
+        self.assertNotEqual(get_canvas_at, -1)
+        self.assertNotEqual(child_at, -1)
+        self.assertNotEqual(detail_at, -1)
+        self.assertLess(get_canvas_at, child_at)
+        self.assertLess(child_at, detail_at)
+        self.assertGreater(viewport_fallback_at, detail_at)
+        self.assertIn("function ns.TryQuestGiverPosition(npcID, viewedMapID)", text)
+        self.assertIn("function MapPins:SnapToQuestGivers()", text)
+        self.assertIn("OnCanvasScaleChanged", text)
+        self.assertIn("canvas-zero", text)
+        self.assertIn("map-show-layout", text)
+
 
 if __name__ == "__main__":
     unittest.main()
