@@ -12,6 +12,7 @@ LUA_FILES = [
     "Config.lua",
     "Eligibility.lua",
     "MapPins.lua",
+    "AutoQuests.lua",
     "Core.lua",
     "Database/Metadata.lua",
     "Database/ForeverQuests.lua",
@@ -84,6 +85,26 @@ class AddonLuaTests(unittest.TestCase):
         text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
         self.assertIn("local function CandidateMapIDs(viewedMapID, byMap)", text)
         self.assertIn("for mapID in pairs(byMap) do", text)
+
+    def test_auto_quest_options(self) -> None:
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        self.assertIn("autoAccept = false", config)
+        self.assertIn("autoTurnIn = false", config)
+        self.assertIn('msg == "accept"', config)
+        self.assertIn('msg == "turnin"', config)
+        self.assertIn('CreateOptionCheckbox', config)
+        auto = (ROOT / "AutoQuests.lua").read_text(encoding="utf-8")
+        self.assertIn('"GOSSIP_SHOW"', auto)
+        self.assertIn("function TryAcceptDetail()", auto)
+        self.assertIn("function TryChooseReward()", auto)
+        self.assertIn("GetNumQuestChoices", auto)
+        self.assertIn("if choices > 1 then", auto)
+        self.assertIn("IsShiftKeyDown", auto)
+        self.assertIn("AcceptQuest", auto)
+        self.assertIn("GetQuestReward", auto)
+        self.assertIn("ConfirmAcceptQuest", auto)
+        toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
+        self.assertLess(toc.find("AutoQuests.lua"), toc.find("Core.lua"))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ ns.defaults = {
     enabled = true,
     showTrivial = true,
     showSeasonal = false,
+    autoAccept = false,
+    autoTurnIn = false,
     debug = false,
 }
 
@@ -66,6 +68,8 @@ function ns.SlashCommand(msg)
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
+        print("  /fqp accept   Toggle auto-accept quests")
+        print("  /fqp turnin   Toggle auto-turn in quests")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -96,6 +100,14 @@ function ns.SlashCommand(msg)
     end
     if msg == "seasonal" then
         ToggleFlag("showSeasonal", "Show seasonal/holiday pins")
+        return
+    end
+    if msg == "accept" then
+        ToggleFlag("autoAccept", "Auto-accept quests")
+        return
+    end
+    if msg == "turnin" then
+        ToggleFlag("autoTurnIn", "Auto-turn in quests")
         return
     end
     if msg == "refresh" then
@@ -162,6 +174,10 @@ function ns.PrintAPIProbe()
     print("  MapCanvasPinMixin: " .. has(MapCanvasPinMixin))
     print("  Settings API: " .. has(Settings and Settings.RegisterAddOnCategory))
     print("  GetQuestGreenRange: " .. has(GetQuestGreenRange))
+    print("  C_GossipInfo.GetAvailableQuests: " .. has(C_GossipInfo and C_GossipInfo.GetAvailableQuests))
+    print("  C_GossipInfo.GetActiveQuests: " .. has(C_GossipInfo and C_GossipInfo.GetActiveQuests))
+    print("  AcceptQuest: " .. has(AcceptQuest))
+    print("  GetQuestReward: " .. has(GetQuestReward))
     print("  C_Texture.GetAtlasInfo: " .. has(C_Texture and C_Texture.GetAtlasInfo))
     local atlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestNormal")
     print("  QuestNormal atlas: " .. has(atlas))
@@ -190,6 +206,47 @@ function ns.RegisterSlash()
     end
 end
 
+local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
+    local box
+    local ok, created = pcall(CreateFrame, "CheckButton", nil, parent, "UICheckButtonTemplate")
+    if ok then
+        box = created
+    else
+        box = CreateFrame("CheckButton", nil, parent)
+        box:SetSize(26, 26)
+    end
+    local text = box.Text
+    if not text then
+        text = box:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        text:SetPoint("LEFT", box, "RIGHT", 4, 1)
+        box.Text = text
+    end
+    text:SetText(label)
+    box:SetScript("OnClick", function(self)
+        local value = self:GetChecked() and true or false
+        ns.SetOption(optionKey, value)
+        if optionKey == "enabled" and not value and ns.MapPins then
+            ns.MapPins:Clear()
+        end
+    end)
+    box:SetScript("OnShow", function(self)
+        self:SetChecked(not not ns.GetOption(optionKey))
+    end)
+    if tooltip then
+        box:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(label, 1, 0.82, 0)
+            GameTooltip:AddLine(tooltip, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        box:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
+    box:SetChecked(not not ns.GetOption(optionKey))
+    return box
+end
+
 function ns.TryRegisterSettings()
     if not Settings or not Settings.RegisterCanvasLayoutCategory then
         return false
@@ -212,7 +269,51 @@ function ns.TryRegisterSettings()
         help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
         help:SetWidth(500)
         help:SetJustifyH("LEFT")
-        help:SetText("Yellow ! markers on the world map for quests you can accept but have not already taken. Use /fqp for commands.")
+        help:SetText("Yellow ! markers on the world map for quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+
+        local pins = CreateOptionCheckbox(
+            self,
+            "enabled",
+            "Show quest-start pins",
+            "Yellow start markers on the world map for unaccepted quests."
+        )
+        pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
+
+        local trivial = CreateOptionCheckbox(
+            self,
+            "showTrivial",
+            "Show trivial / low-level pins",
+            "Only hides trivial pins when GetQuestGreenRange exists."
+        )
+        trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
+
+        local seasonal = CreateOptionCheckbox(
+            self,
+            "showSeasonal",
+            "Show seasonal / holiday pins",
+            "Lunar Festival elders, Darkmoon Faire, and other event quests."
+        )
+        seasonal:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
+
+        local accept = CreateOptionCheckbox(
+            self,
+            "autoAccept",
+            "Auto-accept quests",
+            "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
+        )
+        accept:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
+
+        local turnin = CreateOptionCheckbox(
+            self,
+            "autoTurnIn",
+            "Auto-turn in quests",
+            "Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."
+        )
+        turnin:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
+
+        local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        slash:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 8, -12)
+        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin")
     end)
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, "Forever Quest Pins")

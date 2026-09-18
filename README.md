@@ -18,7 +18,7 @@ Restart the game (or `/reload`) and enable the addon at character select if need
 - Only quests that appear acceptable for this character
 - Hidden when the quest is already completed, already in the log, blocked by ATT source quests, or clearly the wrong faction / race / class / level
 
-It does **not** track objectives, turn-ins, or quest-log progress. Use the built-in Forever tracker for that.
+It does **not** track objectives, turn-ins, or quest-log progress. Use the built-in Forever tracker for that. Optional auto-accept and auto-turn-in can be enabled in the addon options or with `/fqp accept` and `/fqp turnin`.
 
 ## Data source
 
@@ -40,6 +40,8 @@ Pins use Blizzard’s retail available-quest atlas (`QuestNormal`). If that atla
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level/trivial pins (only hides them when `GetQuestGreenRange` exists) |
 | `/fqp seasonal` | Toggle holiday/seasonal pins (Lunar Festival elders, Darkmoon Faire, etc.; off by default) |
+| `/fqp accept` | Toggle auto-accept quests when talking to NPCs |
+| `/fqp turnin` | Toggle auto-turn in completed quests |
 | `/fqp debug` | Extra tooltip fields and diagnostics |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
