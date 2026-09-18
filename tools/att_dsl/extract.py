@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
+from .constants import DEFAULT_FOREVER_PATCH, parse_version_token
 from .evaluator import FactionRaces, LuaTable, Unresolved
 
 
@@ -55,6 +57,7 @@ class QuestRecord:
     repeatable: bool = False
     is_breadcrumb: bool = False
     is_world_quest: bool = False
+    event: int | None = None
     source_file: str = ""
 
 
@@ -66,6 +69,7 @@ class ExtractResult:
     quests_seen: int = 0
     quests_with_coords: int = 0
     warnings: list[str] = field(default_factory=list)
+    patch: tuple[int, int, int, int] = DEFAULT_FOREVER_PATCH
 
     def bump_excluded(self, reason: str) -> None:
         self.excluded[reason] = self.excluded.get(reason, 0) + 1
@@ -81,6 +85,8 @@ class _Context:
     npc_id: int | None = None
     npc_coord: list[Coord] | None = None
     source_file: str = ""
+    is_yearly: bool = False
+    event: Any = None
 
 
 def extract_from_roots(roots: list[Any], source_file: str, result: ExtractResult) -> None:
@@ -154,6 +160,8 @@ def _child_context(table: LuaTable, ctx: _Context) -> _Context:
         coords = _parse_coords(table, map_id)
         if coords:
             npc_coord = coords
+    is_yearly = bool(table.get("isYearly")) if table.get("isYearly") is not None else ctx.is_yearly
+    event = table.get("e") if table.get("e") is not None else ctx.event
     return _Context(
         map_id=map_id,
         races=races,
@@ -163,6 +171,8 @@ def _child_context(table: LuaTable, ctx: _Context) -> _Context:
         npc_id=npc_id,
         npc_coord=npc_coord,
         source_file=ctx.source_file,
+        is_yearly=is_yearly,
+        event=event,
     )
 
 
@@ -172,7 +182,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
         return
     result.quests_seen += 1
 
-    if _should_exclude_timeline(table.get("timeline") or ctx.timeline):
+    if _should_exclude_timeline(table.get("timeline") or ctx.timeline, result.patch):
         result.bump_excluded("timeline")
         return
     if table.get("isWorldQuest"):
@@ -213,11 +223,12 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
         max_level=max_level,
         is_daily=bool(table.get("isDaily")),
         is_weekly=bool(table.get("isWeekly")),
-        is_yearly=bool(table.get("isYearly")),
+        is_yearly=bool(table.get("isYearly") if table.get("isYearly") is not None else ctx.is_yearly),
         is_monthly=bool(table.get("isMonthly")),
         repeatable=bool(table.get("repeatable")),
         is_breadcrumb=bool(table.get("isBreadcrumb")),
         is_world_quest=bool(table.get("isWorldQuest")),
+        event=_as_int(table.get("e") if table.get("e") is not None else ctx.event),
         source_file=ctx.source_file,
     )
 
@@ -250,6 +261,10 @@ def _merge_records(dst: QuestRecord, src: QuestRecord) -> None:
         dst.max_level = src.max_level
     if dst.source_quest_num_required is None:
         dst.source_quest_num_required = src.source_quest_num_required
+    if not dst.is_yearly:
+        dst.is_yearly = src.is_yearly
+    if dst.event is None:
+        dst.event = src.event
 
 
 def _unique(values: list[int] | list[str]) -> list:
@@ -391,30 +406,64 @@ def _parse_level(raw: Any) -> tuple[int | None, int | None]:
     return values[0], values[1]
 
 
-def _should_exclude_timeline(raw: Any) -> bool:
-    """Drop never-implemented / deleted content when ATT marks it as such."""
+_TIMELINE_TEXT_RE = re.compile(
+    r"^(created|added|removed|deleted)\s+(\d+(?:\.\d+)*)",
+    re.IGNORECASE,
+)
+_TIMELINE_NAME_RE = re.compile(
+    r"^(CREATED|ADDED|REMOVED|DELETED)_(\d+)_(\d+)(?:_(\d+))?",
+    re.IGNORECASE,
+)
+
+
+def _timeline_kind_version(raw: Any) -> tuple[str, tuple[int, int, int, int]] | None:
+    if isinstance(raw, Unresolved):
+        text = raw.name
+    else:
+        text = str(raw).strip()
+    match = _TIMELINE_TEXT_RE.match(text)
+    if match:
+        version = parse_version_token(match.group(2))
+        if version is None:
+            return None
+        return match.group(1).lower(), version
+    match = _TIMELINE_NAME_RE.match(text)
+    if match:
+        patch = match.group(4) or "0"
+        version = (int(match.group(2)), int(match.group(3)), int(patch), 0)
+        return match.group(1).lower(), version
+    return None
+
+
+def _should_exclude_timeline(raw: Any, patch: tuple[int, int, int, int]) -> bool:
+    """Drop content that does not exist on Forever's current patch."""
     events = _sequence(raw)
     if not events and isinstance(raw, str):
         events = [raw]
+    added: list[tuple[int, int, int, int]] = []
+    removed: list[tuple[int, int, int, int]] = []
     created = False
-    added = False
-    removed = False
     deleted = False
     for event in events:
-        text = str(event).lower()
-        if text.startswith("created"):
+        parsed = _timeline_kind_version(event)
+        if parsed is None:
+            continue
+        kind, version = parsed
+        if kind == "added":
+            added.append(version)
+        elif kind == "removed":
+            removed.append(version)
+        elif kind == "created":
             created = True
-        elif text.startswith("added"):
-            added = True
-        elif text.startswith("removed"):
-            removed = True
-        elif text.startswith("deleted"):
+        elif kind == "deleted":
             deleted = True
-    if created and not added:
-        return True
     if deleted:
         return True
-    if removed and not added:
+    if created and not added:
+        return True
+    if added and not any(version <= patch for version in added):
+        return True
+    if any(version <= patch for version in removed):
         return True
     return False
 
