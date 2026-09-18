@@ -16,6 +16,8 @@ local active = {}
 local hoveredPin
 local liveAccum = 0
 local lastLive = {}
+local canvasCache
+local canvasCacheName
 local lastStatus = {
     viewedMap = nil,
     count = 0,
@@ -23,6 +25,17 @@ local lastStatus = {
     lastError = nil,
     icon = nil,
     parent = nil,
+}
+
+local BLIZZARD_PIN_TEMPLATES = {
+    "GroupMembersPinTemplate",
+    "WorldMapUnitPinTemplate",
+    "QuestPinTemplate",
+    "AreaPOIPinTemplate",
+    "DungeonEntrancePinTemplate",
+    "FlightPointPinTemplate",
+    "WaypointLocationPinTemplate",
+    "MapHighlightPinTemplate",
 }
 
 local function Norm(x, y)
@@ -35,10 +48,53 @@ local function Norm(x, y)
     return x, y
 end
 
--- The map *art* frame, never the scroll viewport. Parenting to ScrollContainer
--- places pins in window-pixel space, so they drift when the map is resized,
--- zoomed, or reopened.
+local function InvalidateCanvas()
+    canvasCache = nil
+    canvasCacheName = nil
+end
+
+local function AcceptCanvas(frame, name)
+    if not frame then
+        return nil
+    end
+    lastStatus.parent = name
+    if frame.GetWidth and (frame:GetWidth() or 0) >= 1 then
+        canvasCache = frame
+        canvasCacheName = name
+    end
+    return frame
+end
+
+-- Same parent Blizzard uses for the player arrow / quest pins. Never the
+-- ScrollContainer viewport: that is window-pixel space and drifts on resize.
+local function CanvasFromBlizzardPins()
+    if not (WorldMapFrame and WorldMapFrame.EnumeratePinsByTemplate) then
+        return nil
+    end
+    for i = 1, #BLIZZARD_PIN_TEMPLATES do
+        local template = BLIZZARD_PIN_TEMPLATES[i]
+        local found
+        local ok = pcall(function()
+            for pin in WorldMapFrame:EnumeratePinsByTemplate(template) do
+                local parent = pin and pin.GetParent and pin:GetParent()
+                if parent then
+                    found = parent
+                    break
+                end
+            end
+        end)
+        if ok and found then
+            return AcceptCanvas(found, "blizzard:" .. template)
+        end
+    end
+    return nil
+end
+
 local function GetCanvas()
+    if canvasCache and canvasCache.GetWidth and (canvasCache:GetWidth() or 0) >= 1 then
+        lastStatus.parent = canvasCacheName
+        return canvasCache
+    end
     lastStatus.parent = nil
     if not WorldMapFrame then
         return nil
@@ -46,38 +102,32 @@ local function GetCanvas()
     if WorldMapFrame.GetCanvas then
         local canvas = WorldMapFrame:GetCanvas()
         if canvas then
-            lastStatus.parent = "WorldMapFrame:GetCanvas"
-            return canvas
+            return AcceptCanvas(canvas, "WorldMapFrame:GetCanvas")
         end
     end
     local scroll = WorldMapFrame.ScrollContainer
     if scroll then
         if scroll.Child then
-            lastStatus.parent = "ScrollContainer.Child"
-            return scroll.Child
+            return AcceptCanvas(scroll.Child, "ScrollContainer.Child")
         end
         if scroll.GetCanvas then
             local canvas = scroll:GetCanvas()
             if canvas then
-                lastStatus.parent = "ScrollContainer:GetCanvas"
-                return canvas
+                return AcceptCanvas(canvas, "ScrollContainer:GetCanvas")
             end
         end
     end
+    local blizzard = CanvasFromBlizzardPins()
+    if blizzard then
+        return blizzard
+    end
     if WorldMapDetailFrame then
-        lastStatus.parent = "WorldMapDetailFrame"
-        return WorldMapDetailFrame
+        return AcceptCanvas(WorldMapDetailFrame, "WorldMapDetailFrame")
     end
     if WorldMapButton then
-        lastStatus.parent = "WorldMapButton"
-        return WorldMapButton
+        return AcceptCanvas(WorldMapButton, "WorldMapButton")
     end
-    if scroll then
-        lastStatus.parent = "ScrollContainer"
-        return scroll
-    end
-    lastStatus.parent = "WorldMapFrame"
-    return WorldMapFrame
+    return AcceptCanvas(WorldMapFrame, "WorldMapFrame")
 end
 
 function ns.GetViewedMapID()
@@ -269,7 +319,7 @@ function MapPins:OnTitleLoaded(questID)
     end
 end
 
-local function CanvasOffsets(parent, nx, ny)
+local function CanvasOffsets(parent, nx, ny, pin)
     if not parent or not nx or not ny or not parent.GetWidth then
         return nil, nil
     end
@@ -278,20 +328,87 @@ local function CanvasOffsets(parent, nx, ny)
     if not width or not height or width < 1 or height < 1 then
         return nil, nil
     end
-    -- SetPoint offsets are in the parent's unscaled space (same as Blizzard
-    -- ApplyPinPosition with pin scale 1).
-    return width * nx, -height * ny
+    local scale = pin and pin.GetScale and pin:GetScale() or 1
+    if not scale or scale == 0 then
+        scale = 1
+    end
+    -- Match MapCanvasMixin.ApplyPinPosition: offsets are in the parent's
+    -- unscaled space, divided by the pin's own scale.
+    return (width * nx) / scale, -(height * ny) / scale
+end
+
+local function EnsurePinMapAPI(pin)
+    if pin._fqpMapAPI then
+        return
+    end
+    pin._fqpMapAPI = true
+    pin.owningMap = WorldMapFrame
+    pin.GetMap = pin.GetMap or function(self)
+        return self.owningMap or WorldMapFrame
+    end
+    pin.GetNudgeVector = pin.GetNudgeVector or function()
+        return nil
+    end
+    pin.GetNudgeFactor = pin.GetNudgeFactor or function()
+        return 0
+    end
+    pin.GetNudgeTargetFactor = pin.GetNudgeTargetFactor or function()
+        return 0
+    end
+    pin.GetNudgeZoomFactor = pin.GetNudgeZoomFactor or function()
+        return 1
+    end
+    pin.IgnoresNudging = pin.IgnoresNudging or function()
+        return true
+    end
+    pin.GetNudgeSourceRadius = pin.GetNudgeSourceRadius or function()
+        return 0
+    end
+    pin.ApplyFrameLevel = pin.ApplyFrameLevel or function(self)
+        local parent = self:GetParent()
+        if parent and parent.GetFrameLevel then
+            self:SetFrameLevel(parent:GetFrameLevel() + 20)
+        end
+    end
+end
+
+local function TrySetPinPosition(pin)
+    if not pin.nx or not pin.ny then
+        return false
+    end
+    if not (WorldMapFrame and WorldMapFrame.SetPinPosition) then
+        return false
+    end
+    EnsurePinMapAPI(pin)
+    pin.normalizedX = pin.nx
+    pin.normalizedY = pin.ny
+    local ok = pcall(WorldMapFrame.SetPinPosition, WorldMapFrame, pin, pin.nx, pin.ny)
+    if ok then
+        lastStatus.parent = "SetPinPosition"
+        return true
+    end
+    return false
 end
 
 local function ApplyPinPoint(pin, parent)
-    parent = parent or pin:GetParent()
-    local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny)
+    if TrySetPinPosition(pin) then
+        return true
+    end
+    parent = parent or pin:GetParent() or GetCanvas()
+    local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny, pin)
     if not ox then
         return false
     end
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", parent, "TOPLEFT", ox, oy)
     return true
+end
+
+function MapPins:RepositionAll()
+    local canvas = GetCanvas()
+    for i = 1, #active do
+        ApplyPinPoint(active[i], canvas)
+    end
 end
 
 local function AcquirePin(parent)
@@ -317,10 +434,6 @@ local function AcquirePin(parent)
 end
 
 local function PlacePin(parent, nx, ny, questID, data, reason, live)
-    local ox, oy = CanvasOffsets(parent, nx, ny)
-    if not ox then
-        return false
-    end
     local pin = AcquirePin(parent)
     pin.questID = questID
     pin.data = data
@@ -329,8 +442,10 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.ny = ny
     pin.live = live and true or nil
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
-    pin:ClearAllPoints()
-    pin:SetPoint("CENTER", parent, "TOPLEFT", ox, oy)
+    if not ApplyPinPoint(pin, parent) then
+        ReleasePin(pin)
+        return false
+    end
     pin:Show()
     active[#active + 1] = pin
     ns.PrefetchQuestInfo(questID, data)
@@ -622,13 +737,14 @@ function MapPins:Refresh(reason)
     end
 end
 
-local function HookSize(frame, reason)
+local function HookSize(frame)
     if not frame or not frame.HookScript or frame.ForeverQuestPinsSizeHooked then
         return
     end
     frame.ForeverQuestPinsSizeHooked = true
     frame:HookScript("OnSizeChanged", function()
-        ns.RequestRefresh(reason)
+        InvalidateCanvas()
+        MapPins:RepositionAll()
     end)
 end
 
@@ -639,27 +755,29 @@ function MapPins:HookMap()
     self.hooked = true
     if WorldMapFrame.OnMapChanged then
         hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
+            InvalidateCanvas()
             ns.RequestRefresh("map-changed")
         end)
     end
     if WorldMapFrame.OnCanvasScaleChanged then
         hooksecurefunc(WorldMapFrame, "OnCanvasScaleChanged", function()
-            local canvas = GetCanvas()
-            for i = 1, #active do
-                ApplyPinPoint(active[i], canvas)
-            end
+            InvalidateCanvas()
+            MapPins:RepositionAll()
         end)
     end
     WorldMapFrame:HookScript("OnShow", function()
-        HookSize(GetCanvas(), "canvas-size")
+        InvalidateCanvas()
+        HookSize(GetCanvas())
         ns.RequestRefresh("map-show")
         if C_Timer and C_Timer.After then
             C_Timer.After(0, function()
+                InvalidateCanvas()
                 ns.RequestRefresh("map-show-layout")
             end)
         end
     end)
     WorldMapFrame:HookScript("OnHide", function()
+        InvalidateCanvas()
         MapPins:Clear()
     end)
     WorldMapFrame:HookScript("OnUpdate", function(_, elapsed)
@@ -667,6 +785,7 @@ function MapPins:HookMap()
             liveAccum = 0
             return
         end
+        MapPins:RepositionAll()
         liveAccum = liveAccum + elapsed
         if liveAccum < LIVE_SNAP_GAP then
             return
@@ -674,11 +793,9 @@ function MapPins:HookMap()
         liveAccum = 0
         MapPins:SnapToQuestGivers()
     end)
-    HookSize(WorldMapFrame.ScrollContainer, "map-size")
-    HookSize(WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer.Child, "canvas-size")
-    HookSize(WorldMapDetailFrame, "detail-size")
-    local canvas = GetCanvas()
-    if canvas then
-        HookSize(canvas, "canvas-size")
-    end
+    HookSize(WorldMapFrame)
+    HookSize(WorldMapFrame.ScrollContainer)
+    HookSize(WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer.Child)
+    HookSize(WorldMapDetailFrame)
+    HookSize(GetCanvas())
 end
