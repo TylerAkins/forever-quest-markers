@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Tests for the ATT Forever quest-database converter."""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+TOOLS = ROOT / "tools"
+sys.path.insert(0, str(TOOLS))
+
+from att_dsl.constants import BuildContext, DEFAULT_FOREVER_PATCH
+from att_dsl.emit import emit_lua_database
+from att_dsl.evaluator import evaluate_chunk, new_environment
+from att_dsl.extract import ExtractResult, extract_from_roots
+from att_dsl.parser import ParseError, parse_lua
+from att_dsl.preprocessor import preprocess
+
+
+FIXTURES = ROOT / "tests" / "fixtures"
+
+
+def _ctx() -> BuildContext:
+    return BuildContext(
+        patch=DEFAULT_FOREVER_PATCH,
+        maps={
+            "ZEPHRAS_ISLE": 2521,
+            "EASTERN_KINGDOMS": 1415,
+            "ELWYNN_FOREST": 1429,
+            "NORTHSHIRE_VALLEY": 425,
+            "DUN_MOROGH": 1426,
+            "ORGRIMMAR": 1454,
+        },
+        timelines={"ADDED_1_60_1": "added 1.60.1.69893"},
+    )
+
+
+def _extract_fixture(name: str) -> ExtractResult:
+    path = FIXTURES / name
+    source = preprocess(path.read_text(encoding="utf-8"), _ctx())
+    chunk = parse_lua(source, filename=name)
+    env = new_environment(_ctx())
+    evaluate_chunk(chunk, env)
+    result = ExtractResult()
+    extract_from_roots(env.get("_roots", []), name, result)
+    return result
+
+
+class PreprocessorTests(unittest.TestCase):
+    def test_forever_keeps_before_cata_and_drops_sod(self) -> None:
+        result = _extract_fixture("preprocessor.lua")
+        self.assertIn(1001, result.quests)
+        self.assertEqual(result.quests[1001].faction, "Alliance")
+        self.assertIn(1003, result.quests)
+        self.assertNotIn(1002, result.quests)
+
+
+class ParserFailureTests(unittest.TestCase):
+    def test_malformed_table_fails_loudly(self) -> None:
+        with self.assertRaises(ParseError):
+            parse_lua("q(1, { qg = 2, ", filename="broken.lua")
+
+
+class ZephrasTests(unittest.TestCase):
+    def test_inherits_zone_races_and_map(self) -> None:
+        result = _extract_fixture("zephras.lua")
+        self.assertEqual(set(result.quests), {92460, 92461, 92462})
+        start = result.quests[92460]
+        self.assertEqual(start.coords[0].map_id, 2521)
+        self.assertAlmostEqual(start.coords[0].x, 42.8)
+        self.assertAlmostEqual(start.coords[0].y, 23.4)
+        self.assertEqual(start.qgs, [251362])
+        self.assertEqual(start.unresolved_races, ["SKYBORNE_ALLIANCE", "SKYBORNE_HORDE"])
+        follow = result.quests[92461]
+        self.assertEqual(follow.source_quests, [92460])
+        self.assertAlmostEqual(follow.coords[0].x, 42.1)
+
+
+class ElwynnTests(unittest.TestCase):
+    def test_alliance_and_class_restrictions(self) -> None:
+        result = _extract_fixture("elwynn.lua")
+        threat = result.quests[783]
+        self.assertEqual(threat.faction, "Alliance")
+        self.assertEqual(threat.qgs, [823])
+
+        paladin = result.quests[3101]
+        self.assertEqual(paladin.races, [1])
+        self.assertEqual(paladin.classes, [2])
+        self.assertEqual(paladin.qgs, [197])
+        self.assertEqual(paladin.source_quests, [7])
+
+    def test_objective_coords_are_not_used_as_start_pins(self) -> None:
+        result = _extract_fixture("elwynn.lua")
+        bounty = result.quests[6]
+        self.assertEqual(len(bounty.coords), 1)
+        self.assertAlmostEqual(bounty.coords[0].x, 48.1)
+        self.assertAlmostEqual(bounty.coords[0].y, 42.9)
+        self.assertEqual(bounty.min_level, 2)
+
+    def test_or_source_quests_and_alt_quests(self) -> None:
+        result = _extract_fixture("elwynn.lua")
+        either = result.quests[90001]
+        self.assertEqual(either.source_quests, [10, 11, 12])
+        self.assertEqual(either.source_quest_num_required, 1)
+        warlock = result.quests[1599]
+        self.assertEqual(warlock.alt_quests, [1598])
+        self.assertEqual(warlock.coords[0].map_id, 1426)
+
+    def test_item_started_without_coords_is_excluded(self) -> None:
+        result = _extract_fixture("elwynn.lua")
+        self.assertNotIn(90002, result.quests)
+        self.assertGreaterEqual(result.excluded.get("no_coords", 0), 1)
+
+
+class LocalAssignmentTests(unittest.TestCase):
+    def test_altquests_from_local_table_and_level_range(self) -> None:
+        result = _extract_fixture("locals.lua")
+        quest = result.quests[8368]
+        self.assertEqual(quest.alt_quests, [100, 101, 102])
+        self.assertEqual(quest.faction, "Horde")
+        self.assertEqual(quest.min_level, 10)
+        self.assertEqual(quest.max_level, 19)
+
+
+class EmitTests(unittest.TestCase):
+    def test_lua_output_is_deterministic(self) -> None:
+        result = _extract_fixture("zephras.lua")
+        first = emit_lua_database(result.quests, "abc123")
+        second = emit_lua_database(result.quests, "abc123")
+        self.assertEqual(first, second)
+        self.assertIn("ATT commit: abc123", first)
+        self.assertIn("[92460]", first)
+        self.assertIn("ns.ByMap", first)
+        self.assertIn("[2521]", first)
+
+
+if __name__ == "__main__":
+    unittest.main()
