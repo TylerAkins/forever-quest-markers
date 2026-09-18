@@ -190,6 +190,18 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("[764] = { mapID=1412, x=54.4, y=60.4, qg=2988, sourceQuests={ 751 }", db)
         self.assertIn("[765] = { mapID=1412, x=54.4, y=60.4, qg=2988, sourceQuests={ 751 }", db)
 
+    def test_release_workflow_has_versioned_and_latest(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        self.assertIn('- "v*"', text)
+        self.assertIn("branches:", text)
+        self.assertIn("main", text)
+        self.assertIn("versioned:", text)
+        self.assertIn("latest:", text)
+        self.assertIn("{package-name}-latest{classic}", text)
+        self.assertIn('git tag -f latest', text)
+        self.assertIn("gh release create latest", text)
+        self.assertIn("uses: BigWigsMods/packager@v2", text)
+
 
 if __name__ == "__main__":
     unittest.main()

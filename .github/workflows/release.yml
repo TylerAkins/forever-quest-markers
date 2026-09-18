@@ -4,12 +4,17 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  # Numbered GitHub Release from an annotated v* tag (v0.1.5, etc.).
+  versioned:
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
     env:
       GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
@@ -21,3 +26,59 @@ jobs:
 
       - name: Package and publish GitHub Release
         uses: BigWigsMods/packager@v2
+
+  # Rolling pre-release on every merge to main. Does not replace the GitHub
+  # "latest" badge on v* releases. Zip name is always ForeverQuestPins-latest-forever.zip.
+  latest:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python tests
+        run: |
+          python3 tests/test_build_quest_db.py
+          python3 tests/test_validate_generated.py
+          python3 tests/test_addon_lua.py
+
+      - name: Package addon zip
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -d -n "{package-name}-latest{classic}"
+
+      - name: Publish moving latest tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          SHORT="$(echo "$SHA" | cut -c1-7)"
+          NOTES="Rolling Forever Quest Pins zip from \`main\` (\`${SHORT}\`).
+
+          This tag moves on every merge to main. Numbered releases (\`v0.1.4\`, \`v0.1.5\`, …) are still created by pushing a \`v*\` tag.
+
+          Commit: ${SHA}"
+          shopt -s nullglob
+          zips=(.release/ForeverQuestPins-latest*.zip)
+          if (( ${#zips[@]} == 0 )); then
+            echo "No ForeverQuestPins-latest zip in .release" >&2
+            ls -la .release || true
+            exit 1
+          fi
+          git fetch origin "refs/tags/latest:refs/tags/latest" || true
+          git tag -f latest "$SHA"
+          git push -f origin refs/tags/latest
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest "${zips[@]}" --clobber
+            printf '%s\n' "$NOTES" | gh release edit latest --title "Latest" --prerelease --target "$SHA" --notes-file -
+          else
+            printf '%s\n' "$NOTES" | gh release create latest "${zips[@]}" --title "Latest" --prerelease --target "$SHA" --notes-file -
+          fi
