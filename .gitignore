@@ -1,0 +1,28 @@
+# Git
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.bak
+*~
+
+# Editors / agents
+.idea/
+.vscode/
+*.swp
+*.swo
+.cursor/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Local ATT checkout / scratch
+.cache/
+*.zip
+.release/

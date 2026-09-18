@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check TOC and tree
+        run: |
+          set -euo pipefail
+          test -f ForeverQuestPins.toc
+          grep -qE '^## Interface: 16001' ForeverQuestPins.toc
+          grep -qE '^## Version:' ForeverQuestPins.toc
+          grep -qE '^## SavedVariables: ForeverQuestPinsDB_Settings' ForeverQuestPins.toc
+          test -f Media/QuestAvailable.tga
+          test -f Database/ForeverQuests.lua
+          test -f Database/Metadata.lua
+          test -f LICENSE
+          test -f ATTRIBUTION.md
+
+      - name: Python tests
+        run: |
+          python3 tests/test_build_quest_db.py
+          python3 tests/test_validate_generated.py
+          python3 tests/test_addon_lua.py
+
+      - name: Read pinned ATT SHA
+        id: att
+        run: |
+          set -euo pipefail
+          SHA=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path("Database/Metadata.lua").read_text(encoding="utf-8")
+          match = re.search(r'attCommit = "([0-9a-f]+)"', text)
+          if not match:
+              raise SystemExit("attCommit missing from Database/Metadata.lua")
+          print(match.group(1))
+          PY
+          )
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout ATT at pinned SHA
+        uses: actions/checkout@v4
+        with:
+          repository: ATTWoWAddon/AllTheThings
+          ref: ${{ steps.att.outputs.sha }}
+          path: .cache/AllTheThings
+          sparse-checkout: |
+            .contrib/.db/forever
+            .contrib/Parser/lib/Constants
+          sparse-checkout-cone-mode: false
+
+      - name: Regenerate database and fail on drift
+        run: |
+          set -euo pipefail
+          python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
+          git diff --exit-code -- Database/ForeverQuests.lua Database/Metadata.lua Database/build_report.json
+
+      - name: Dry-run package
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -d
