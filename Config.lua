@@ -75,6 +75,7 @@ function ns.SlashCommand(msg)
         print("  /fqp stats    Print database and pin counts")
         print("  /fqp apis     Print which Forever map/quest APIs are present")
         print("  /fqp why <id> Show why a quest is pinned or hidden")
+        print("  /fqp available List quests that should pin on this map")
         return
     end
 
@@ -124,6 +125,11 @@ function ns.SlashCommand(msg)
     end
     if msg == "apis" then
         ns.PrintAPIProbe()
+        return
+    end
+
+    if msg == "available" then
+        ns.PrintAvailableOnMap()
         return
     end
 
@@ -200,6 +206,15 @@ function ns.PrintQuestWhy(questID)
         tostring(data.faction or "-"),
         tostring(data.minLevel or "-")
     ))
+    local viewedMapID = ns.GetViewedMapID and ns.GetViewedMapID()
+    if available and ns.ProjectToViewedMap and viewedMapID then
+        local nx, ny = ns.ProjectToViewedMap(data.mapID, data.x, data.y, viewedMapID)
+        if nx and ny then
+            print(("  would paint on map %s at %.1f, %.1f"):format(tostring(viewedMapID), nx * 100, ny * 100))
+        else
+            print("  would pin but coords do not project onto the viewed map")
+        end
+    end
     local sources = data.sourceQuests
     if not sources or #sources == 0 then
         print("  sourceQuests: none")
@@ -216,6 +231,43 @@ function ns.PrintQuestWhy(questID)
             tostring(not not ns.IsSourceSatisfied(srcID))
         ))
     end
+end
+
+function ns.PrintAvailableOnMap()
+    local viewedMapID = ns.GetViewedMapID and ns.GetViewedMapID()
+    if not viewedMapID then
+        Print("No viewed map. Open the world map first.")
+        return
+    end
+    if ns.InvalidateCompletionCache then
+        ns.InvalidateCompletionCache()
+    end
+    local byMap = ns.ByMap or {}
+    local quests = ns.Quests or {}
+    local list = byMap[viewedMapID]
+    local count = 0
+    Print("Would pin on map " .. tostring(viewedMapID) .. ":")
+    if list then
+        for i = 1, #list do
+            local questID = list[i]
+            local data = quests[questID]
+            if data then
+                local available, reason = ns.IsQuestAvailable(questID, data)
+                if available then
+                    count = count + 1
+                    local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
+                    print(("  %s %s @ %.1f, %.1f (%s)"):format(
+                        tostring(questID),
+                        title or "",
+                        data.x or 0,
+                        data.y or 0,
+                        tostring(reason)
+                    ))
+                end
+            end
+        end
+    end
+    print("  count " .. tostring(count))
 end
 
 function ns.PrintAPIProbe()
