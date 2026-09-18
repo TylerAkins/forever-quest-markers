@@ -308,6 +308,11 @@ SourceSatisfied = function(questID)
         return true
     end
     local data = ns.Quests and ns.Quests[questID]
+    -- Breadcrumbs are skippable. Kaltunk's "Your Place in the World" (4641)
+    -- must not hide Gornek's Cutting Teeth (788).
+    if data and data.isBreadcrumb then
+        return true
+    end
     if not data or ns.HasQuestGiver(data) then
         return false
     end
@@ -351,6 +356,73 @@ function ns.IsSourceSatisfied(questID)
     return SourceSatisfied(questID)
 end
 
+ns.offeredQuestIDs = ns.offeredQuestIDs or {}
+ns.lastOffer = nil
+
+function ns.IsOffered(questID)
+    return questID and ns.offeredQuestIDs[questID] and true or false
+end
+
+function ns.SetLastOfferNPC(qg, mapID, x, y)
+    ns.lastOffer = { qg = qg, mapID = mapID, x = x, y = y }
+end
+
+function ns.NoteOfferedQuest(questID)
+    questID = tonumber(questID)
+    if not questID then
+        return
+    end
+    ns.offeredQuestIDs[questID] = true
+    if ns.Quests and ns.Quests[questID] then
+        return
+    end
+    local offer = ns.lastOffer
+    if not offer or not offer.mapID or not offer.x or not offer.y then
+        return
+    end
+    ns.Quests = ns.Quests or {}
+    ns.ByMap = ns.ByMap or {}
+    ns.Quests[questID] = {
+        mapID = offer.mapID,
+        x = offer.x,
+        y = offer.y,
+        qg = offer.qg,
+    }
+    local list = ns.ByMap[offer.mapID]
+    if not list then
+        list = {}
+        ns.ByMap[offer.mapID] = list
+    end
+    list[#list + 1] = questID
+end
+
+function ns.CaptureOfferContext()
+    local guid = UnitGUID and (UnitGUID("npc") or UnitGUID("questnpc") or UnitGUID("target"))
+    local qg
+    if type(guid) == "string" then
+        qg = tonumber(guid:match("Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
+    end
+    local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+    if not mapID and ns.GetViewedMapID then
+        mapID = ns.GetViewedMapID()
+    end
+    local x, y
+    if mapID and C_Map and C_Map.GetPlayerMapPosition then
+        local ok, pos = pcall(C_Map.GetPlayerMapPosition, mapID, "player")
+        if ok and pos then
+            if pos.GetXY then
+                x, y = pos:GetXY()
+            else
+                x, y = pos.x, pos.y
+            end
+        end
+    end
+    if x and y and x <= 1 and y <= 1 then
+        x, y = x * 100, y * 100
+    end
+    ns.SetLastOfferNPC(qg, mapID, x, y)
+end
+
 local function IsTrivial(data)
     local minLevel = data.minLevel
     if not minLevel then
@@ -379,6 +451,9 @@ function ns.IsQuestAvailable(questID, data)
     end
     if ns.IsOnQuest(questID) then
         return false, "in-log"
+    end
+    if ns.IsOffered and ns.IsOffered(questID) then
+        return true, "npc-offered"
     end
 
     if (data.isYearly or data.event) and not ns.GetOption("showSeasonal") then

@@ -215,6 +215,12 @@ function ns.PrintQuestWhy(questID)
             print("  would pin but coords do not project onto the viewed map")
         end
     end
+    if ns.MapPins and ns.MapPins.GetStatus then
+        local status = ns.MapPins:GetStatus()
+        local painted = status.paintedIDs and status.paintedIDs[questID]
+        print("  painted last refresh: " .. (painted and "yes" or "no"))
+        print("  map mode " .. tostring(status.mode) .. " parent " .. tostring(status.parent or "?") .. " icon " .. tostring(status.icon or "?"))
+    end
     local sources = data.sourceQuests
     if not sources or #sources == 0 then
         print("  sourceQuests: none")
@@ -244,27 +250,56 @@ function ns.PrintAvailableOnMap()
     end
     local byMap = ns.ByMap or {}
     local quests = ns.Quests or {}
-    local list = byMap[viewedMapID]
+    local seen = {}
     local count = 0
     Print("Would pin on map " .. tostring(viewedMapID) .. ":")
+    local function consider(questID)
+        if not questID or seen[questID] then
+            return
+        end
+        seen[questID] = true
+        local data = quests[questID]
+        if not data then
+            return
+        end
+        local available, reason = ns.IsQuestAvailable(questID, data)
+        if not available then
+            return
+        end
+        if ns.ProjectToViewedMap then
+            local nx = ns.ProjectToViewedMap(data.mapID, data.x, data.y, viewedMapID)
+            if not nx then
+                return
+            end
+        elseif data.mapID ~= viewedMapID then
+            return
+        end
+        count = count + 1
+        local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
+        print(("  %s %s @ %.1f, %.1f (%s)"):format(
+            tostring(questID),
+            title or "",
+            data.x or 0,
+            data.y or 0,
+            tostring(reason)
+        ))
+    end
+    local list = byMap[viewedMapID]
     if list then
         for i = 1, #list do
-            local questID = list[i]
-            local data = quests[questID]
-            if data then
-                local available, reason = ns.IsQuestAvailable(questID, data)
-                if available then
-                    count = count + 1
-                    local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
-                    print(("  %s %s @ %.1f, %.1f (%s)"):format(
-                        tostring(questID),
-                        title or "",
-                        data.x or 0,
-                        data.y or 0,
-                        tostring(reason)
-                    ))
-                end
+            consider(list[i])
+        end
+    end
+    for mapID, ids in pairs(byMap) do
+        if mapID ~= viewedMapID then
+            for i = 1, #ids do
+                consider(ids[i])
             end
+        end
+    end
+    if ns.offeredQuestIDs then
+        for questID in pairs(ns.offeredQuestIDs) do
+            consider(questID)
         end
     end
     print("  count " .. tostring(count))

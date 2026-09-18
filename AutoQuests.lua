@@ -266,6 +266,22 @@ local function Defer(label, fn)
 end
 
 function AutoQuests:OnGossipShow()
+    if ns.CaptureOfferContext then
+        ns.CaptureOfferContext()
+    end
+    local list = GossipAvailableList()
+    if list then
+        for i = 1, #list do
+            local info = list[i]
+            local questID = info and (info.questID or info.questId)
+            if ns.NoteOfferedQuest then
+                ns.NoteOfferedQuest(questID)
+            end
+        end
+        if ns.RequestRefresh then
+            ns.RequestRefresh("gossip-offered")
+        end
+    end
     Defer("gossip", function()
         if TryTurnInGossip() then
             return
@@ -275,6 +291,9 @@ function AutoQuests:OnGossipShow()
 end
 
 function AutoQuests:OnQuestGreeting()
+    if ns.CaptureOfferContext then
+        ns.CaptureOfferContext()
+    end
     Defer("greeting", function()
         if TryTurnInGreeting() then
             return
@@ -284,6 +303,15 @@ function AutoQuests:OnQuestGreeting()
 end
 
 function AutoQuests:OnQuestDetail()
+    if ns.CaptureOfferContext then
+        ns.CaptureOfferContext()
+    end
+    if GetQuestID and ns.NoteOfferedQuest then
+        ns.NoteOfferedQuest(GetQuestID())
+        if ns.RequestRefresh then
+            ns.RequestRefresh("detail-offered")
+        end
+    end
     Defer("detail", function()
         TryAcceptDetail()
     end)
