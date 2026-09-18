@@ -11,18 +11,28 @@ function ns.IsQuestFlaggedCompleted(questID)
     if not questID then
         return false
     end
-    local flagged = Call(C_QuestLog, "IsQuestFlaggedCompleted", questID)
-    if flagged ~= nil then
-        return flagged and true or false
+    if Call(C_QuestLog, "IsQuestFlaggedCompleted", questID) then
+        return true
     end
-    if IsQuestFlaggedCompleted then
-        return IsQuestFlaggedCompleted(questID) and true or false
+    if IsQuestFlaggedCompleted and IsQuestFlaggedCompleted(questID) then
+        return true
+    end
+    -- Some Forever builds leave object-started quests (the Ravaged Caravan
+    -- crate) out of C_QuestLog but still return them from GetQuestsCompleted.
+    if GetQuestsCompleted then
+        local ok, completed = pcall(GetQuestsCompleted)
+        if ok and type(completed) == "table" and completed[questID] then
+            return true
+        end
     end
     return false
 end
 
 function ns.HasQuestCompletionAPI()
-    return (C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted) or IsQuestFlaggedCompleted or false
+    return (C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted)
+        or IsQuestFlaggedCompleted
+        or GetQuestsCompleted
+        or false
 end
 
 function ns.IsOnQuest(questID)
