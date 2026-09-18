@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Keep windowed and maximized map pins on the map art (A Sacred Burial at Red Rocks)
+- Stack overlapping starts onto one bang so Morin Cloudstalker’s two follow-ups show as one pin with both names
+- Project live NPC positions from continent coords onto the zone map
+- Treat `GetQuestsCompleted` as a fallback so object-started prereqs (the Ravaged Caravan crate) can unlock follow-ups
+
 ## 0.1.3
 
 - Keep quest bangs a fixed screen size (do not inherit map zoom or the native QuestNormal atlas size)
