@@ -25,7 +25,6 @@ local pool = {}
 local active = {}
 local hoveredPin
 local liveAccum = 0
-local lastLive = {}
 local canvasCache
 local canvasCacheName
 local lastStatus = {
@@ -615,7 +614,10 @@ local function UnitMapPosition(unit, mapID)
     if UnitExists and not UnitExists(unit) then
         return nil, nil
     end
-    if C_Map and C_Map.GetPlayerMapPosition then
+    -- GetPlayerMapPosition is player-only on retail-style clients. Using it for
+    -- target/nameplate can return the player's point (or a dummy 0-1 value) and
+    -- v0.1.4 then replaced Morin's ATT bang with that, so 764 vanished.
+    if unit == "player" and C_Map and C_Map.GetPlayerMapPosition then
         local ok, pos = pcall(C_Map.GetPlayerMapPosition, mapID, unit)
         if ok then
             local x, y = MapPosFromVector(pos)
@@ -660,25 +662,18 @@ local function UnitMatchesNpc(unit, npcID)
     return NpcIDFromGUID(UnitGUID(unit)) == npcID
 end
 
--- When a quest giver is on screen (target, mouseover, nameplate), put the pin
--- on the NPC instead of ATT's single static coordinate. Patrol NPCs such as
--- Morin Cloudstalker otherwise sit at the village end of their path.
+-- Live snap only while the NPC is actually visible. Never reuse a stale last
+-- position: that was replacing The Venture Co. (764) with a continent coord
+-- that sat off the Mulgore map.
 function ns.TryQuestGiverPosition(npcID, viewedMapID)
     if not npcID or not viewedMapID then
-        return nil, nil
-    end
-    local function remember(x, y)
-        if x and y then
-            lastLive[npcID] = { x = x, y = y, mapID = viewedMapID }
-            return x, y
-        end
         return nil, nil
     end
     local units = { "target", "focus", "mouseover", "npc", "questnpc" }
     for i = 1, #units do
         local unit = units[i]
         if UnitMatchesNpc(unit, npcID) then
-            local x, y = remember(UnitMapPosition(unit, viewedMapID))
+            local x, y = UnitMapPosition(unit, viewedMapID)
             if x then
                 return x, y
             end
@@ -691,7 +686,7 @@ function ns.TryQuestGiverPosition(npcID, viewedMapID)
                 local plate = plates[i]
                 local unit = plate and (plate.namePlateUnitToken or plate.unitToken)
                 if unit and UnitMatchesNpc(unit, npcID) then
-                    local x, y = remember(UnitMapPosition(unit, viewedMapID))
+                    local x, y = UnitMapPosition(unit, viewedMapID)
                     if x then
                         return x, y
                     end
@@ -702,15 +697,11 @@ function ns.TryQuestGiverPosition(npcID, viewedMapID)
     for i = 1, 40 do
         local unit = "nameplate" .. i
         if UnitMatchesNpc(unit, npcID) then
-            local x, y = remember(UnitMapPosition(unit, viewedMapID))
+            local x, y = UnitMapPosition(unit, viewedMapID)
             if x then
                 return x, y
             end
         end
-    end
-    local saved = lastLive[npcID]
-    if saved and saved.mapID == viewedMapID then
-        return saved.x, saved.y
     end
     return nil, nil
 end

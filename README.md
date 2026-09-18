@@ -50,6 +50,7 @@ Pins use Blizzard’s retail available-quest atlas (`QuestNormal`). If that atla
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
 | `/fqp apis` | Print which Forever map/quest APIs this client exposes |
 | `/fqp why <id>` | Print why a quest is pinned or hidden (completion, log, source quests) |
+| `/fqp available` | List quests that should pin on the currently viewed map |
 
 ## Automated database updates
 

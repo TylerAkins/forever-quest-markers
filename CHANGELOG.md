@@ -3,8 +3,8 @@
 ## 0.1.5
 
 - Show Morin Cloudstalker's The Venture Co. and Supervisor Fizsprocket after the Ravaged Caravan crate: object-started source quests that are not in the log count as done
-- Always paint ATT coordinates (plus Morin's crate-end patrol pin); only snap to a live NPC when that NPC is near a pin
-- `/fqp why <id>` prints why a quest is pinned or hidden
+- Always paint ATT coordinates (plus Morin's crate-end patrol pin); never replace that bang with a live NPC / stale last-seen coord (that hid The Venture Co.)
+- `/fqp why <id>` prints why a quest is pinned or hidden; `/fqp available` lists starts that should pin on the open map
 - Merges to `main` publish a moving `latest` pre-release zip; pushing a `v*` tag still creates a numbered release
 
 ## 0.1.4
