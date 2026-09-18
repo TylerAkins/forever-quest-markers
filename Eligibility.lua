@@ -7,6 +7,54 @@ local function Call(apiTable, name, ...)
     end
 end
 
+local completedLookup
+local completedLookupReady = false
+
+function ns.InvalidateCompletionCache()
+    completedLookup = nil
+    completedLookupReady = false
+end
+
+local function CompletedLookup()
+    if completedLookupReady then
+        return completedLookup
+    end
+    completedLookupReady = true
+    local lookup = {}
+    if GetQuestsCompleted then
+        local ok, completed = pcall(GetQuestsCompleted)
+        if ok and type(completed) == "table" then
+            for key, value in pairs(completed) do
+                if type(value) == "number" then
+                    lookup[value] = true
+                elseif value then
+                    local id = tonumber(key)
+                    if id then
+                        lookup[id] = true
+                    end
+                end
+            end
+        end
+    end
+    local ids = Call(C_QuestLog, "GetAllCompletedQuestIDs")
+    if type(ids) == "table" then
+        for key, value in pairs(ids) do
+            if type(value) == "number" then
+                lookup[value] = true
+            elseif value and type(key) == "number" then
+                lookup[key] = true
+            elseif value then
+                local id = tonumber(key)
+                if id then
+                    lookup[id] = true
+                end
+            end
+        end
+    end
+    completedLookup = lookup
+    return lookup
+end
+
 function ns.IsQuestFlaggedCompleted(questID)
     if not questID then
         return false
@@ -14,25 +62,42 @@ function ns.IsQuestFlaggedCompleted(questID)
     if Call(C_QuestLog, "IsQuestFlaggedCompleted", questID) then
         return true
     end
+    if Call(C_QuestLog, "IsQuestFlaggedCompletedOnAccount", questID) then
+        return true
+    end
     if IsQuestFlaggedCompleted and IsQuestFlaggedCompleted(questID) then
         return true
     end
     -- Some Forever builds leave object-started quests (the Ravaged Caravan
-    -- crate) out of C_QuestLog but still return them from GetQuestsCompleted.
-    if GetQuestsCompleted then
-        local ok, completed = pcall(GetQuestsCompleted)
-        if ok and type(completed) == "table" and completed[questID] then
-            return true
-        end
+    -- crate) out of C_QuestLog but still return them from GetQuestsCompleted
+    -- or GetAllCompletedQuestIDs.
+    local lookup = CompletedLookup()
+    if lookup and lookup[questID] then
+        return true
     end
     return false
 end
 
 function ns.HasQuestCompletionAPI()
     return (C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted)
+        or (C_QuestLog and C_QuestLog.IsQuestFlaggedCompletedOnAccount)
+        or (C_QuestLog and C_QuestLog.GetAllCompletedQuestIDs)
         or IsQuestFlaggedCompleted
         or GetQuestsCompleted
         or false
+end
+
+function ns.HasQuestGiver(data)
+    if not data then
+        return false
+    end
+    if data.qg then
+        return true
+    end
+    if data.qgs and data.qgs[1] then
+        return true
+    end
+    return false
 end
 
 function ns.IsOnQuest(questID)
@@ -218,20 +283,46 @@ function ns.IsEventActive(eventID)
     return false
 end
 
-local function CountCompleted(questIDs)
+-- ATT: sourceQuests is AND unless sourceQuestNumRequired is set.
+-- sourceQuestNumRequired = 1 means any one prerequisite (OR).
+-- sourceQuestNumRequired = 0 means no prerequisite is required.
+--
+-- Object-started prereqs (no quest-giver NPC) often never flag completed on
+-- Forever. The Ravaged Caravan crate (751) is the gate for Morin Cloudstalker's
+-- The Venture Co. (764) and Supervisor Fizsprocket (765). If that source is
+-- not in the log and its own source quests are met, treat it as satisfied.
+local SourceSatisfied, SourceQuestsMet, CountCompleted
+
+CountCompleted = function(questIDs)
     local count = 0
     for i = 1, #questIDs do
-        if ns.IsQuestFlaggedCompleted(questIDs[i]) then
+        if SourceSatisfied(questIDs[i]) then
             count = count + 1
         end
     end
     return count
 end
 
--- ATT: sourceQuests is AND unless sourceQuestNumRequired is set.
--- sourceQuestNumRequired = 1 means any one prerequisite (OR).
--- sourceQuestNumRequired = 0 means no prerequisite is required.
-local function SourceQuestsMet(data)
+SourceSatisfied = function(questID)
+    if ns.IsQuestFlaggedCompleted(questID) then
+        return true
+    end
+    local data = ns.Quests and ns.Quests[questID]
+    if not data or ns.HasQuestGiver(data) then
+        return false
+    end
+    if ns.IsOnQuest(questID) then
+        return false
+    end
+    local sources = data.sourceQuests
+    if not sources or #sources == 0 then
+        return false
+    end
+    local ok = SourceQuestsMet(data)
+    return ok
+end
+
+SourceQuestsMet = function(data)
     local sourceQuests = data.sourceQuests
     if not sourceQuests or #sourceQuests == 0 then
         return true, "no-prereq"
@@ -254,6 +345,10 @@ local function SourceQuestsMet(data)
         return false, "prereq-count"
     end
     return true, "prereq-count"
+end
+
+function ns.IsSourceSatisfied(questID)
+    return SourceSatisfied(questID)
 end
 
 local function IsTrivial(data)
