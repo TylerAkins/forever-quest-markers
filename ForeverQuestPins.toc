@@ -15,4 +15,5 @@ Database\ForeverQuests.lua
 Config.lua
 Eligibility.lua
 MapPins.lua
+AutoQuests.lua
 Core.lua
