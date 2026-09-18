@@ -8,7 +8,10 @@ World of Warcraft Forever already includes Blizzard’s modern quest tracker and
 
 ## Install
 
-Download the latest **addon zip** from [Releases](https://github.com/TylerAkins/forever-quest-markers/releases) (not GitHub’s “Source code” archive). Extract so the folder is named exactly `ForeverQuestPins`, then copy it into your Forever `Interface\AddOns\` directory.
+Download an **addon zip** from [Releases](https://github.com/TylerAkins/forever-quest-markers/releases) (not GitHub’s “Source code” archive). Extract so the folder is named exactly `ForeverQuestPins`, then copy it into your Forever `Interface\AddOns\` directory.
+
+- **Stable:** the newest `v*` release (for example `ForeverQuestPins-v0.1.4-forever.zip`)
+- **Current `main`:** the [Latest](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release (`ForeverQuestPins-latest-forever.zip`), rebuilt on every merge to `main`
 
 Restart the game (or `/reload`) and enable the addon at character select if needed.
 
