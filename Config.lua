@@ -144,10 +144,11 @@ function ns.PrintStats()
     Print(("ATT %s | %d quests | %d maps"):format(tostring(meta.attCommit or "?"), count, maps))
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
-        print(("  viewed map %s | painted %s | mode %s"):format(
+        print(("  viewed map %s | painted %s | mode %s | parent %s"):format(
             tostring(status.viewedMap),
             tostring(status.count),
-            tostring(status.mode)
+            tostring(status.mode),
+            tostring(status.parent or "?")
         ))
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
@@ -167,6 +168,8 @@ function ns.PrintAPIProbe()
     print("  HasQuestCompletionAPI: " .. has(ns.HasQuestCompletionAPI and ns.HasQuestCompletionAPI()))
     print("  C_QuestLog.IsOnQuest: " .. has(C_QuestLog and C_QuestLog.IsOnQuest))
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
+    print("  C_QuestLog.RequestLoadQuestByID: " .. has(C_QuestLog and C_QuestLog.RequestLoadQuestByID))
+    print("  C_TooltipInfo.GetHyperlink: " .. has(C_TooltipInfo and C_TooltipInfo.GetHyperlink))
     print("  C_Map.GetMapRectOnMap: " .. has(C_Map and C_Map.GetMapRectOnMap))
     print("  C_Map.GetMapChildrenInfo: " .. has(C_Map and C_Map.GetMapChildrenInfo))
     print("  WorldMapFrame.AddDataProvider: " .. has(WorldMapFrame and WorldMapFrame.AddDataProvider))
@@ -182,7 +185,9 @@ function ns.PrintAPIProbe()
     local atlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestNormal")
     print("  QuestNormal atlas: " .. has(atlas))
     if ns.MapPins and ns.MapPins.GetStatus then
-        print("  pin icon: " .. tostring(ns.MapPins:GetStatus().icon or "not painted yet"))
+        local status = ns.MapPins:GetStatus()
+        print("  pin icon: " .. tostring(status.icon or "not painted yet"))
+        print("  pin parent: " .. tostring(status.parent or "not painted yet"))
     end
     local mapID = ns.GetViewedMapID and ns.GetViewedMapID()
     print("  viewed mapID: " .. tostring(mapID))
@@ -311,9 +316,17 @@ function ns.TryRegisterSettings()
         )
         turnin:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
 
+        local debugBox = CreateOptionCheckbox(
+            self,
+            "debug",
+            "Debug tooltips",
+            "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
+        )
+        debugBox:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
+
         local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-        slash:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 8, -12)
-        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin")
+        slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
+        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug")
     end)
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, "Forever Quest Pins")

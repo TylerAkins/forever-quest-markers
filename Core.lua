@@ -57,6 +57,13 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         end
         return
     end
+    if event == "QUEST_DATA_LOAD" then
+        local questID = ...
+        if ns.OnQuestDataLoad then
+            ns.OnQuestDataLoad(questID)
+        end
+        return
+    end
     if event == "PLAYER_LOGIN" then
         if ns.MapPins then
             ns.MapPins:HookMap()
@@ -80,6 +87,8 @@ end)
 for i = 1, #WATCHED_EVENTS do
     eventFrame:RegisterEvent(WATCHED_EVENTS[i])
 end
+-- Not present on every Forever build; ignore if the client rejects it.
+pcall(eventFrame.RegisterEvent, eventFrame, "QUEST_DATA_LOAD")
 
 if WorldMapFrame then
     -- WorldMapFrame exists at load on some clients; hook immediately too.

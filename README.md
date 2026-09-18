@@ -42,7 +42,7 @@ Pins use Blizzard’s retail available-quest atlas (`QuestNormal`). If that atla
 | `/fqp seasonal` | Toggle holiday/seasonal pins (Lunar Festival elders, Darkmoon Faire, etc.; off by default) |
 | `/fqp accept` | Toggle auto-accept quests when talking to NPCs |
 | `/fqp turnin` | Toggle auto-turn in completed quests |
-| `/fqp debug` | Extra tooltip fields and diagnostics |
+| `/fqp debug` | Toggle debug tooltips (quest/NPC IDs and pin diagnostics); also a checkbox in the addon options |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
 | `/fqp apis` | Print which Forever map/quest APIs this client exposes |
@@ -76,6 +76,7 @@ Other current limits:
 - Item-started quests with no map coordinate are omitted
 - Holiday / battleground quests are hidden unless `/fqp seasonal` is enabled or the client reports the event as active
 - Continent-map projection needs `C_Map.GetMapRectOnMap`; without it, pins only show on the quest’s own UiMapID
+- Wandering quest givers use ATT’s static coordinate until the NPC is visible (nameplate, target, or mouseover), then the pin follows them
 - Unknown Forever-only race IDs (for example Skyborne) are stored but not used to hide pins
 - Reputation gates from ATT are parsed where present but not yet used to hide pins
 
