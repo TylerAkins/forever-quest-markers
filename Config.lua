@@ -49,13 +49,18 @@ end
 
 -- Same pattern as HideAnything: if not HideAnythingDB then HideAnythingDB = {} end
 -- Never replace an existing table; Forever serializes the original reference.
-local function EnsureBareGlobal(name, current)
-    local live = LiveGlobal(name, current)
-    if type(live) ~= "table" then
-        live = {}
+local function BindSavedTable(name, allowCreate)
+    local live = LiveGlobal(name, nil)
+    if type(live) == "table" then
+        AssignGlobal(name, live)
+        return live
     end
-    AssignGlobal(name, live)
-    return live
+    if allowCreate then
+        live = {}
+        AssignGlobal(name, live)
+        return live
+    end
+    return nil
 end
 
 local function ApplyDirty(dest)
@@ -68,31 +73,51 @@ local function ApplyDirty(dest)
     return dest
 end
 
-function ns.InitSettings()
-    -- Prefer a table Forever just injected; do not copy default-filled
-    -- placeholders over it (that looked like "options never persist").
-    local account = EnsureBareGlobal(SV_NAME, ForeverQuestPinsDB_Settings)
-    ForeverQuestPinsDB_Settings = account
+local function SyncPersistedOptions(account, character)
+    if type(account) ~= "table" or type(character) ~= "table" then
+        return account
+    end
+    -- Forever often persists the per-character table more reliably than account-wide.
+    for key in pairs(ns.defaults) do
+        if character[key] ~= nil then
+            account[key] = character[key]
+        elseif account[key] ~= nil then
+            character[key] = account[key]
+        end
+    end
+    CopyDefaults(ns.defaults, account)
+    for key in pairs(ns.defaults) do
+        character[key] = account[key]
+    end
+    return account
+end
 
-    local character = EnsureBareGlobal(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
+function ns.InitSettings(allowCreate)
+    allowCreate = allowCreate == true
+    local account = BindSavedTable(SV_NAME, allowCreate)
+    local character = BindSavedTable(CHAR_SV_NAME, allowCreate)
+    if not account and not character then
+        return ns.db
+    end
+    if not account then
+        account = {}
+        AssignGlobal(SV_NAME, account)
+    end
+    if not character then
+        character = {}
+        AssignGlobal(CHAR_SV_NAME, character)
+    end
+    ForeverQuestPinsDB_Settings = account
     ForeverQuestPinsCharacterSettings = character
 
     if ns.db and ns.db ~= account then
         ApplyDirty(account)
     end
 
-    if not ns.settingsBound then
-        for key in pairs(ns.defaults) do
-            if account[key] == nil and character[key] ~= nil then
-                account[key] = character[key]
-            end
-        end
-    end
+    SyncPersistedOptions(account, character)
+    ApplyDirty(account)
+    ApplyDirty(character)
 
-    CopyDefaults(ns.defaults, account)
-    for key in pairs(ns.defaults) do
-        character[key] = account[key]
-    end
     ns.db = account
     ns.settingsBound = true
     return account
@@ -103,8 +128,12 @@ function ns.ResolveSettings()
         return ns.db
     end
     local account = LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings)
+    local character = LiveGlobal(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
     if type(account) == "table" and account ~= ns.db then
         ApplyDirty(account)
+        if type(character) == "table" then
+            SyncPersistedOptions(account, character)
+        end
         ForeverQuestPinsDB_Settings = account
         AssignGlobal(SV_NAME, account)
         ns.db = account
@@ -113,7 +142,7 @@ function ns.ResolveSettings()
 end
 
 function ns.FlushSettings()
-    local db = ns.InitSettings()
+    local db = ns.InitSettings(true)
     ApplyDirty(db)
     ApplyDirty(ForeverQuestPinsDB_Settings)
     ApplyDirty(ForeverQuestPinsCharacterSettings)
@@ -121,7 +150,7 @@ function ns.FlushSettings()
 end
 
 function ns.WipeSettings()
-    ns.InitSettings()
+    ns.InitSettings(true)
     for key, value in pairs(ns.defaults) do
         dirty[key] = value
         if type(ns.db) == "table" then
@@ -144,6 +173,10 @@ function ns.GetSettings()
 end
 
 function ns.GetOption(key)
+    local character = ForeverQuestPinsCharacterSettings
+    if type(character) == "table" and character[key] ~= nil then
+        return character[key]
+    end
     local settings = ns.ResolveSettings() or ns.db
     if settings and settings[key] ~= nil then
         return settings[key]
@@ -161,13 +194,11 @@ function ns.SetOption(key, value)
         ns.db = live
     end
     live[key] = value
-    if ns.settingsBound then
-        if type(ForeverQuestPinsDB_Settings) == "table" then
-            ForeverQuestPinsDB_Settings[key] = value
-        end
-        if type(ForeverQuestPinsCharacterSettings) == "table" then
-            ForeverQuestPinsCharacterSettings[key] = value
-        end
+    if type(ForeverQuestPinsDB_Settings) == "table" then
+        ForeverQuestPinsDB_Settings[key] = value
+    end
+    if type(ForeverQuestPinsCharacterSettings) == "table" then
+        ForeverQuestPinsCharacterSettings[key] = value
     end
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
@@ -330,7 +361,7 @@ function ns.PrintStats()
 end
 
 function ns.PrintSettingsDebug()
-    ns.InitSettings()
+    ns.InitSettings(true)
     local account = ForeverQuestPinsDB_Settings
     local character = ForeverQuestPinsCharacterSettings
     Print("SavedVariables ForeverQuestPinsDB_Settings:")
