@@ -49,6 +49,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("/fqp why", readme)
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.1.10", changelog)
         self.assertIn("## 0.1.9", changelog)
         self.assertIn("## 0.1.8", changelog)
         attribution = (ROOT / "ATTRIBUTION.md").read_text(encoding="utf-8")
@@ -153,6 +154,29 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("ConfirmAcceptQuest", auto)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertLess(toc.find("AutoQuests.lua"), toc.find("Core.lua"))
+        self.assertIn("function ns.HydrateSettings()", config)
+        self.assertIn("function ns.InitSettings()", config)
+        self.assertIn("settingsReady", config)
+        self.assertIn("box.ApplySaved", config)
+        self.assertIn("function ns.SyncSettingsCheckboxes()", config)
+        self.assertIn("ns.SyncSettingsCheckboxes()", config)
+        self.assertIn("if applying or not settingsReady then", config)
+        hydrate_at = config.find("function ns.HydrateSettings()")
+        init_at = config.find("function ns.InitSettings()")
+        hydrate = config[hydrate_at:init_at]
+        self.assertIn("return nil", hydrate)
+        self.assertNotIn("_G[SV_NAME] =", hydrate)
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        loaded_at = core.find('if event == "ADDON_LOADED" then')
+        loaded_end = core.find('if event == "QUEST_DATA_LOAD" then', loaded_at)
+        loaded = core[loaded_at:loaded_end]
+        self.assertIn("ns.HydrateSettings()", loaded)
+        self.assertNotIn("ns.InitSettings()", loaded)
+        login_at = core.find('if event == "PLAYER_LOGIN" then')
+        login_end = core.find("ns.RequestRefresh(event)", login_at)
+        login = core[login_at:login_end]
+        self.assertIn("ns.InitSettings()", login)
+        self.assertIn("ns.SyncSettingsCheckboxes()", login)
 
     def test_debug_option_in_settings_panel(self) -> None:
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")

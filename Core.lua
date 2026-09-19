@@ -52,7 +52,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON_NAME then
             return
         end
-        ns.InitSettings()
+        -- Hydrate only: do not create a defaults table here. Forever can
+        -- load SavedVariables after ADDON_LOADED; assigning first would
+        -- skip the saved file and uncheck auto-accept / auto-turn-in.
+        ns.HydrateSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
         if ns.MapPins then
@@ -68,6 +71,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
+        ns.InitSettings()
+        if ns.SyncSettingsCheckboxes then
+            ns.SyncSettingsCheckboxes()
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
