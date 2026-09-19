@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.21 — 2026-09-19
+
+- Simplify settings persistence to one authoritative account-wide table initialized once on `ADDON_LOADED`.
+- Migrate missing values from the legacy per-character table without continuing to synchronize two competing stores.
+- Mirror the seven boolean options into a custom CVar as a temporary fallback for Forever 1.60.1 builds that restore CVars but skip addon SavedVariables.
+
 ## 0.1.20 — 2026-09-19
 
 - Fix options resetting after `/reload` again: do not create empty SavedVariables on `ADDON_LOADED` before Forever injects saved tables; prefer the per-character table when merging; always write both SavedVariables on change.

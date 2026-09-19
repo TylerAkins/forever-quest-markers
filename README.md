@@ -37,7 +37,7 @@ Extract so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, t
 
 ## Settings
 
-Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon stores choices in standard SavedVariables. Forever Beta build 1.60.1.69913 has a client-wide bug that can fail to load every addon's SavedVariables after restarting the client; no addon-side load-order workaround is currently known.
+Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon stores choices in one account-wide SavedVariables table. On Forever 1.60.1, it also mirrors these seven boolean options to a custom CVar because that client can restore CVars while skipping addon SavedVariables.
 
 | Option | Default |
 |--------|---------|
@@ -72,7 +72,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 
 Forever’s quest data is still moving. Missing or extra pins are often an upstream ATT gap, not a pin bug.
 
-- **Saved settings:** Forever Beta 1.60.1.69913 can write SavedVariables without loading them on the next client start. This affects many addons and cannot be repaired by an addon while the client omits the saved data.
+- **Saved settings:** Forever Beta 1.60.1.69913 can write SavedVariables without loading them on the next client start. The addon uses a small CVar mirror as a temporary fallback for its boolean options; addons with larger or structured settings may still reset.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
 - **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
 - **Item-started** quests with no map coordinate are omitted
