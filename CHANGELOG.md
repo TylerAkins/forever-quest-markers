@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.17 — 2026-09-19
+
+- Bind options the way working Forever addons do (Quest Master / AceDB, HideAnything): one SavedVariables table, created on `ADDON_LOADED` if missing, mutated in place, never replaced; write the same keys onto the per-character table; flush on logout. Drop `LoadSavedVariablesFirst` and the late-bind scratch buffer that left Forever serializing an empty table.
+
 ## 0.1.16 — 2026-09-19
 
 - Store settings in a separate per-character SavedVariables table (`ForeverQuestPinsCharacterSettings`) because Forever is not persisting this addon’s account-wide table; request SavedVariables before addon files load
