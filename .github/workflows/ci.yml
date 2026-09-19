@@ -32,6 +32,11 @@ jobs:
           test -f Database/Metadata.lua
           test -f LICENSE
           test -f ATTRIBUTION.md
+          test -f README.md
+          test -f CHANGELOG.md
+          test -f docs/DEVELOPMENT.md
+          grep -qE '^## X-Website:' ForeverQuestPins.toc
+          grep -qE '^## X-Issues:' ForeverQuestPins.toc
 
       - name: Python tests
         run: |

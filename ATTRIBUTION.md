@@ -2,15 +2,15 @@
 
 ## All The Things
 
-Quest coordinates, quest-giver IDs, source quests, and eligibility fields in `Database/` are converted from the [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever database.
+Quest coordinates, quest-giver IDs, source quests, and eligibility fields in `Database/` are **converted** from the [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever database.
 
 - Upstream: https://github.com/ATTWoWAddon/AllTheThings
 - License: MIT
-- This repository does **not** bundle the ATT addon
-- This repository does **not** claim ownership of ATT data
-- Runtime ATT is not required
+- This repository does not bundle the ATT addon and does not require it at runtime
+- This repository does not claim ownership of ATT data
+- Each generated Lua file records the ATT commit SHA used for that conversion
 
-The MIT license requires that ATT’s copyright notice be preserved for derived portions. The ATT MIT notice is reproduced below.
+The MIT license requires that ATT’s copyright notice be preserved for derived portions:
 
 ```
 MIT License
@@ -36,14 +36,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-Generated Lua files also record the exact ATT commit SHA used for that conversion.
+## Addon code
 
-## Original addon code
+Forever Quest Pins is original GPLv3 code: a native-map overlay and its own ATT converter. Tracker UI, Questie integration, and HereBeDragons usage from other addons were not copied.
 
-Tracker-style UI, Questie integration, and HereBeDragons usage from other addons were **not** copied. Forever Quest Pins is a small native-map overlay with its own ATT converter.
-
-Map pins use Blizzard’s `QuestNormal` atlas, then `Media/QuestAvailable.tga` if `SetAtlas` errors.
+Map pins use Blizzard’s `QuestNormal` atlas. `Media/QuestAvailable.tga` is original fallback art used only if `SetAtlas` errors.
 
 ## License
 
-Addon source is **GPLv3** ([LICENSE](LICENSE)). ATT-derived data remains MIT-licensed as described above.
+- Addon source: **GPLv3** ([LICENSE](LICENSE))
+- ATT-derived `Database/` records: **MIT**, as above
