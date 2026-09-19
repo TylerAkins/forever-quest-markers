@@ -26,3 +26,4 @@ venv/
 .cache/
 *.zip
 .release/
+.compiled/

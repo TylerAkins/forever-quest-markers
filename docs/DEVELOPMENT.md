@@ -48,9 +48,22 @@ It never pushes generated data straight to `main`.
 python3 tests/test_build_quest_db.py
 python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
+python3 tests/test_compile_addon.py
 ```
 
 CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
+
+## Local builds
+
+Build a clean, directly installable addon folder with:
+
+```bash
+python3 tools/compile_addon.py
+```
+
+Each run deletes the previous `.compiled/ForeverQuestPins` directory and recreates it from the files shipped by `.pkgmeta`. The generated TOC uses the current Git description as its version. Copy `.compiled/ForeverQuestPins` directly into the client's `Interface/AddOns` directory.
+
+Use `python3 tools/compile_addon.py --dry-run` to list the files without changing `.compiled/`.
 
 ## Releases
 
