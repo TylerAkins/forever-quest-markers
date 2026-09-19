@@ -40,6 +40,7 @@ Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 
 - Daily at 06:00 UTC, and on manual **Run workflow**
 - Opens a versioned PR only when the shipped quest records changed; ATT SHA-only updates are ignored
+- Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and adds an ATT database entry to `CHANGELOG.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
