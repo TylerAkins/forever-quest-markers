@@ -52,9 +52,11 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON_NAME then
             return
         end
-        ns.InitSettings()
+        ns.HydrateSettings()
         ns.RegisterSlash()
-        ns.TryRegisterSettings()
+        if ns.EnsureSettingsDB(false) then
+            ns.TryRegisterSettings()
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -68,10 +70,25 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
-        ns.InitSettings()
-        ns.TryRegisterSettings()
+        ns.HydrateSettings()
+        if ns.EnsureSettingsDB(false) then
+            ns.TryRegisterSettings()
+            if ns.SyncSettingsCheckboxes then
+                ns.SyncSettingsCheckboxes()
+            end
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
+        end
+        ns.RequestRefresh(event)
+        return
+    end
+    if event == "PLAYER_ENTERING_WORLD" then
+        ns.allowCreateSettings = true
+        ns.InitSettings()
+        ns.TryRegisterSettings()
+        if ns.SyncSettingsCheckboxes then
+            ns.SyncSettingsCheckboxes()
         end
         ns.RequestRefresh(event)
         return

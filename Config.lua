@@ -10,8 +10,8 @@ ns.defaults = {
     debug = false,
 }
 
-ForeverQuestPinsDB_Settings = ForeverQuestPinsDB_Settings or {}
-
+local SV_NAME = "ForeverQuestPinsDB_Settings"
+local sessionScratch = nil
 local optionChecks = {}
 
 local function CopyDefaults(src, dest)
@@ -26,19 +26,66 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
--- TOC SavedVariables: ForeverQuestPinsDB_Settings is loaded before ADDON_LOADED.
--- Fill missing keys only; do not replace the table.
+local function ReadSaved()
+    local fromGlobal = _G[SV_NAME]
+    if type(fromGlobal) == "table" then
+        return fromGlobal
+    end
+    if type(ForeverQuestPinsDB_Settings) == "table" then
+        return ForeverQuestPinsDB_Settings
+    end
+    return nil
+end
+
+local function PublishSaved(sv)
+    ForeverQuestPinsDB_Settings = sv
+    _G[SV_NAME] = sv
+end
+
+-- Forever can inject SavedVariables after our Lua files run. Do not assign
+-- `ForeverQuestPinsDB_Settings = {}` at file load: that table is not written
+-- to WTF on /reload. Merge session changes once the real table exists.
+function ns.EnsureSettingsDB(create)
+    local live = ReadSaved()
+    if live then
+        if sessionScratch then
+            for key, value in pairs(sessionScratch) do
+                live[key] = value
+            end
+            sessionScratch = nil
+        end
+        CopyDefaults(ns.defaults, live)
+        PublishSaved(live)
+        return live
+    end
+    if not create or not ns.allowCreateSettings then
+        return nil
+    end
+    live = CopyDefaults(ns.defaults, {})
+    if sessionScratch then
+        for key, value in pairs(sessionScratch) do
+            live[key] = value
+        end
+        sessionScratch = nil
+    end
+    PublishSaved(live)
+    return live
+end
+
+function ns.HydrateSettings()
+    return ns.EnsureSettingsDB(false)
+end
+
 function ns.InitSettings()
-    CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
-    return ForeverQuestPinsDB_Settings
+    return ns.EnsureSettingsDB(true)
 end
 
 function ns.GetSettings()
-    return ForeverQuestPinsDB_Settings
+    return ReadSaved() or sessionScratch
 end
 
 function ns.GetOption(key)
-    local settings = ForeverQuestPinsDB_Settings
+    local settings = ns.EnsureSettingsDB(false) or sessionScratch
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -47,8 +94,14 @@ end
 
 function ns.SetOption(key, value)
     value = value and true or false
-    local sv = ns.InitSettings()
-    sv[key] = value
+    local live = ns.EnsureSettingsDB(false)
+    if live then
+        live[key] = value
+        PublishSaved(live)
+    else
+        sessionScratch = sessionScratch or CopyDefaults(ns.defaults, {})
+        sessionScratch[key] = value
+    end
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
     end
@@ -194,8 +247,14 @@ end
 
 function ns.PrintSettingsDebug()
     ns.InitSettings()
-    local sv = ForeverQuestPinsDB_Settings
+    local sv = ReadSaved()
+    local scratch = sessionScratch ~= nil
     Print("SavedVariables ForeverQuestPinsDB_Settings:")
+    print(("  bound=%s scratch=%s sameAsGlobal=%s"):format(
+        sv ~= nil,
+        scratch,
+        tostring(sv ~= nil and sv == _G[SV_NAME])
+    ))
     for _, key in ipairs({
         "enabled",
         "showTrivial",
@@ -589,8 +648,11 @@ function ns.TryRegisterSettings()
     if not Settings then
         return false
     end
-    local db = ns.InitSettings()
-    if db and RegisterNativeSettings() then
+    local db = ns.EnsureSettingsDB(false) or ns.EnsureSettingsDB(true)
+    if not db then
+        return false
+    end
+    if RegisterNativeSettings() then
         ns.settingsRegistered = true
         return true
     end
