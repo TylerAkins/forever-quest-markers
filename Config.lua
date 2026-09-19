@@ -10,6 +10,10 @@ ns.defaults = {
     debug = false,
 }
 
+local SV_NAME = "ForeverQuestPinsDB_Settings"
+local settingsReady = false
+local optionChecks = {}
+
 local function CopyDefaults(src, dest)
     dest = dest or {}
     for key, value in pairs(src) do
@@ -22,12 +26,43 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
+local function SavedTable()
+    local sv = _G[SV_NAME]
+    if type(sv) == "table" then
+        return sv
+    end
+    return nil
+end
+
+-- Fill missing keys only. Do not create a table here: assigning defaults
+-- before Forever loads SavedVariables would skip the saved file and make
+-- auto-accept / auto-turn-in look like they reset (those default to false).
+function ns.HydrateSettings()
+    local sv = SavedTable()
+    if not sv then
+        return nil
+    end
+    CopyDefaults(ns.defaults, sv)
+    settingsReady = true
+    return sv
+end
+
+function ns.InitSettings()
+    local sv = ns.HydrateSettings()
+    if not sv then
+        sv = CopyDefaults(ns.defaults, {})
+        _G[SV_NAME] = sv
+    end
+    settingsReady = true
+    return sv
+end
+
 function ns.GetSettings()
-    return ForeverQuestPinsDB_Settings
+    return SavedTable()
 end
 
 function ns.GetOption(key)
-    local settings = ForeverQuestPinsDB_Settings
+    local settings = SavedTable()
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -35,18 +70,11 @@ function ns.GetOption(key)
 end
 
 function ns.SetOption(key, value)
-    if not ForeverQuestPinsDB_Settings then
-        ForeverQuestPinsDB_Settings = CopyDefaults(ns.defaults)
-    end
-    ForeverQuestPinsDB_Settings[key] = value
+    local sv = ns.InitSettings()
+    sv[key] = value
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
-end
-
-function ns.InitSettings()
-    ForeverQuestPinsDB_Settings = CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
-    return ForeverQuestPinsDB_Settings
 end
 
 local function Print(message)
@@ -378,15 +406,25 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
         box.Text = text
     end
     text:SetText(label)
+    box.optionKey = optionKey
+    local applying = false
     box:SetScript("OnClick", function(self)
+        if applying or not settingsReady then
+            return
+        end
         local value = self:GetChecked() and true or false
         ns.SetOption(optionKey, value)
         if optionKey == "enabled" and not value and ns.MapPins then
             ns.MapPins:Clear()
         end
     end)
-    box:SetScript("OnShow", function(self)
+    box.ApplySaved = function(self)
+        applying = true
         self:SetChecked(not not ns.GetOption(optionKey))
+        applying = false
+    end
+    box:SetScript("OnShow", function(self)
+        self:ApplySaved()
     end)
     if tooltip then
         box:SetScript("OnEnter", function(self)
@@ -399,8 +437,18 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
             GameTooltip:Hide()
         end)
     end
-    box:SetChecked(not not ns.GetOption(optionKey))
+    box:ApplySaved()
+    optionChecks[#optionChecks + 1] = box
     return box
+end
+
+function ns.SyncSettingsCheckboxes()
+    for i = 1, #optionChecks do
+        local box = optionChecks[i]
+        if box and box.ApplySaved then
+            box:ApplySaved()
+        end
+    end
 end
 
 function ns.TryRegisterSettings()
@@ -414,70 +462,70 @@ function ns.TryRegisterSettings()
     local panel = CreateFrame("Frame")
     panel.name = "Forever Quest Pins"
     panel:SetScript("OnShow", function(self)
-        if self.built then
-            return
+        if not self.built then
+            self.built = true
+            local title = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+            title:SetPoint("TOPLEFT", 16, -16)
+            title:SetText("Forever Quest Pins")
+            local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+            help:SetWidth(500)
+            help:SetJustifyH("LEFT")
+            help:SetText("Yellow ! markers on the world map for quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+
+            local pins = CreateOptionCheckbox(
+                self,
+                "enabled",
+                "Show quest-start pins",
+                "Yellow start markers on the world map for unaccepted quests."
+            )
+            pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
+
+            local trivial = CreateOptionCheckbox(
+                self,
+                "showTrivial",
+                "Show trivial / low-level pins",
+                "Only hides trivial pins when GetQuestGreenRange exists."
+            )
+            trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
+
+            local seasonal = CreateOptionCheckbox(
+                self,
+                "showSeasonal",
+                "Show seasonal / holiday pins",
+                "Lunar Festival elders, Darkmoon Faire, and other event quests."
+            )
+            seasonal:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
+
+            local accept = CreateOptionCheckbox(
+                self,
+                "autoAccept",
+                "Auto-accept quests",
+                "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
+            )
+            accept:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
+
+            local turnin = CreateOptionCheckbox(
+                self,
+                "autoTurnIn",
+                "Auto-turn in quests",
+                "Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."
+            )
+            turnin:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
+
+            local debugBox = CreateOptionCheckbox(
+                self,
+                "debug",
+                "Debug tooltips",
+                "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
+            )
+            debugBox:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
+
+            local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+            slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
+            slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
         end
-        self.built = true
-        local title = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        title:SetPoint("TOPLEFT", 16, -16)
-        title:SetText("Forever Quest Pins")
-        local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-        help:SetWidth(500)
-        help:SetJustifyH("LEFT")
-        help:SetText("Yellow ! markers on the world map for quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
-
-        local pins = CreateOptionCheckbox(
-            self,
-            "enabled",
-            "Show quest-start pins",
-            "Yellow start markers on the world map for unaccepted quests."
-        )
-        pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
-
-        local trivial = CreateOptionCheckbox(
-            self,
-            "showTrivial",
-            "Show trivial / low-level pins",
-            "Only hides trivial pins when GetQuestGreenRange exists."
-        )
-        trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
-
-        local seasonal = CreateOptionCheckbox(
-            self,
-            "showSeasonal",
-            "Show seasonal / holiday pins",
-            "Lunar Festival elders, Darkmoon Faire, and other event quests."
-        )
-        seasonal:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
-
-        local accept = CreateOptionCheckbox(
-            self,
-            "autoAccept",
-            "Auto-accept quests",
-            "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
-        )
-        accept:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
-
-        local turnin = CreateOptionCheckbox(
-            self,
-            "autoTurnIn",
-            "Auto-turn in quests",
-            "Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."
-        )
-        turnin:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
-
-        local debugBox = CreateOptionCheckbox(
-            self,
-            "debug",
-            "Debug tooltips",
-            "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
-        )
-        debugBox:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
-
-        local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-        slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
-        slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
+        ns.SyncSettingsCheckboxes()
     end)
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, "Forever Quest Pins")
