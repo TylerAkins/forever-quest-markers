@@ -30,6 +30,7 @@ class CompileAddonTests(unittest.TestCase):
             self.assertIn(output / "ForeverQuestPins.toc", built)
             self.assertTrue((output / "Database" / "ForeverQuests.lua").is_file())
             self.assertTrue((output / "Media" / "QuestAvailable.tga").is_file())
+            self.assertFalse((output / "VERSION").exists())
             self.assertFalse((output / "Database" / "build_report.json").exists())
             self.assertNotIn(
                 "@project-version@",
