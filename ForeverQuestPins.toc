@@ -10,6 +10,8 @@
 ## X-Source: https://github.com/TylerAkins/forever-quest-markers
 ## X-Issues: https://github.com/TylerAkins/forever-quest-markers/issues
 ## SavedVariables: ForeverQuestPinsDB_Settings
+## SavedVariablesPerCharacter: ForeverQuestPinsCharacterSettings
+## LoadSavedVariablesFirst: 1
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
 ## DefaultState: enabled
 

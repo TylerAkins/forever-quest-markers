@@ -24,6 +24,8 @@ class AddonLuaTests(unittest.TestCase):
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("## Interface: 16001", toc)
         self.assertIn("## SavedVariables: ForeverQuestPinsDB_Settings", toc)
+        self.assertIn("## SavedVariablesPerCharacter: ForeverQuestPinsCharacterSettings", toc)
+        self.assertIn("## LoadSavedVariablesFirst: 1", toc)
         self.assertIn("## X-License: GPL-3.0-or-later", toc)
         self.assertIn("## X-Website: https://github.com/TylerAkins/forever-quest-markers", toc)
         self.assertIn("## X-Source: https://github.com/TylerAkins/forever-quest-markers", toc)
@@ -49,6 +51,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("/fqp why", readme)
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.1.16", changelog)
         self.assertIn("## 0.1.15", changelog)
         self.assertIn("## 0.1.14", changelog)
         self.assertIn("## 0.1.13", changelog)
@@ -71,6 +74,7 @@ class AddonLuaTests(unittest.TestCase):
     def test_single_savedvariables_name(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("ForeverQuestPinsDB_Settings", toc)
+        self.assertIn("ForeverQuestPinsCharacterSettings", toc)
         forever = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
         self.assertNotIn("ForeverQuestPinsDB_Settings", forever)
 
@@ -165,6 +169,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("sessionScratch", config)
         self.assertIn("allowCreateSettings", config)
         self.assertIn("_G[SV_NAME]", config)
+        self.assertIn("ForeverQuestPinsCharacterSettings", config)
         self.assertNotIn("ForeverQuestPinsDB_Settings = ForeverQuestPinsDB_Settings or {}", config)
         self.assertNotIn("RegisterProxySetting", config)
         self.assertNotIn("RegisterAddOnSetting", config)

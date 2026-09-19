@@ -10,7 +10,7 @@ ns.defaults = {
     debug = false,
 }
 
-local SV_NAME = "ForeverQuestPinsDB_Settings"
+local SV_NAME = "ForeverQuestPinsCharacterSettings"
 local sessionScratch = nil
 local optionChecks = {}
 
@@ -31,19 +31,19 @@ local function ReadSaved()
     if type(fromGlobal) == "table" then
         return fromGlobal
     end
-    if type(ForeverQuestPinsDB_Settings) == "table" then
-        return ForeverQuestPinsDB_Settings
+    if type(ForeverQuestPinsCharacterSettings) == "table" then
+        return ForeverQuestPinsCharacterSettings
     end
     return nil
 end
 
 local function PublishSaved(sv)
-    ForeverQuestPinsDB_Settings = sv
+    ForeverQuestPinsCharacterSettings = sv
     _G[SV_NAME] = sv
 end
 
 -- Forever can inject SavedVariables after our Lua files run. Do not assign
--- `ForeverQuestPinsDB_Settings = {}` at file load: that table is not written
+-- `ForeverQuestPinsCharacterSettings = {}` at file load: that table is not written
 -- to WTF on /reload. Merge session changes once the real table exists.
 function ns.EnsureSettingsDB(create)
     local live = ReadSaved()
@@ -249,7 +249,7 @@ function ns.PrintSettingsDebug()
     ns.InitSettings()
     local sv = ReadSaved()
     local scratch = sessionScratch ~= nil
-    Print("SavedVariables ForeverQuestPinsDB_Settings:")
+    Print("SavedVariables ForeverQuestPinsCharacterSettings:")
     print(("  bound=%s scratch=%s sameAsGlobal=%s"):format(
         sv ~= nil,
         scratch,
