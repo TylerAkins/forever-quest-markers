@@ -4,7 +4,6 @@ local ADDON_NAME, ns = ...
 -- (Senior Sergeants, signet hand-ins, "Needs Your Help" banner quests). Pins stack
 -- heavily in Orgrimmar / Ironforge; players can hide them without losing other starts.
 local WAR_EFFORT_NPCS = {
-    [13418] = true,
     [15383] = true,
     [15431] = true,
     [15432] = true,

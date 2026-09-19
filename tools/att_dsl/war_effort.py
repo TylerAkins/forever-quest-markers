@@ -4,7 +4,6 @@ from __future__ import annotations
 
 WAR_EFFORT_NPC_IDS = frozenset(
     {
-        13418,
         15383,
         15431,
         15432,
