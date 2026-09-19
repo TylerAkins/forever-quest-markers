@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.19 — 2026-09-19
+
+- Optional **AQ war effort** pins (Orgrimmar / Ironforge commodity turn-ins). On by default; turn off under AddOns or with `/fqp wareffort` if the stacked markers are too noisy.
+
 ## 0.1.18 — 2026-09-19
 
 - Options persist again after `/reload` for new installs

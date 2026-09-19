@@ -489,6 +489,10 @@ function ns.IsQuestAvailable(questID, data)
         end
     end
 
+    if ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data) and not ns.GetOption("showWarEffort") then
+        return false, "war-effort"
+    end
+
     local altQuests = data.altQuests
     if altQuests then
         for i = 1, #altQuests do

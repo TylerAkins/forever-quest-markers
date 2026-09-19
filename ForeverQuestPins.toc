@@ -17,6 +17,7 @@
 Database\Metadata.lua
 Database\ForeverQuests.lua
 Config.lua
+WarEffort.lua
 Eligibility.lua
 MapPins.lua
 AutoQuests.lua
