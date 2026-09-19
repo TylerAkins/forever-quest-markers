@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8
+
+- Use Blizzard’s retail `QuestNormal` bang again (same atlas as 0.1.1), at a fixed 24px size
+- Drop the solid yellow square; keep `Media/QuestAvailable.tga` only if `SetAtlas` errors
+- Do not bind gossip `AvailableQuestIcon` on the map (empty bind can hide a working atlas)
+
 ## 0.1.7
 
 - Draw a solid yellow fill on every map pin so a hoverable pin cannot be invisible

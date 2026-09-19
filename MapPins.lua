@@ -3,13 +3,11 @@ local ADDON_NAME, ns = ...
 ns.MapPins = ns.MapPins or {}
 local MapPins = ns.MapPins
 
--- Forever's QuestNormal atlas and gossip AvailableQuestIcon can SetTexture /
--- SetAtlas successfully and still draw no pixels (hoverable empty pin). Never
--- overlay those client files: a successful empty bind covers anything under it.
--- Paint a solid fill that always draws, then the bundled TGA that rendered in 0.1.0.
-local ICON_FALLBACK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
-local ICON_WHITE = "Interface\\Buttons\\WHITE8X8"
-local FILL_R, FILL_G, FILL_B, FILL_A = 1, 0.82, 0, 1
+-- Retail available-quest bang (same atlas as 0.1.1). Keep native size off so
+-- the pin stays PIN_SIZE. Gossip AvailableQuestIcon is not used: it can bind
+-- with no pixels and hide a working atlas. Bundled TGA only if SetAtlas errors.
+local ICON_ATLAS = "QuestNormal"
+local ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
@@ -193,104 +191,79 @@ function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
     return minX + ((maxX - minX) * nx), minY + ((maxY - minY) * ny)
 end
 
-local function FinishLayer(tex, subLevel, vertexR, vertexG, vertexB, vertexA)
-    if tex.SetDrawLayer then
-        tex:SetDrawLayer("OVERLAY", subLevel or 7)
-    end
-    if tex.SetBlendMode then
-        pcall(tex.SetBlendMode, tex, "BLEND")
-    end
-    if tex.SetVertexColor then
-        tex:SetVertexColor(vertexR or 1, vertexG or 1, vertexB or 1, vertexA or 1)
-    end
-    if tex.SetAlpha then
-        tex:SetAlpha(1)
-    end
-    if tex.SetAllPoints then
-        tex:SetAllPoints()
-    end
-    tex:Show()
-end
-
--- Solid color always draws. File SetTexture can pcall-succeed with no pixels.
-local function PaintFill(tex)
-    if not tex then
-        return false
-    end
-    if tex.SetColorTexture then
-        local ok = pcall(function()
-            tex:SetColorTexture(FILL_R, FILL_G, FILL_B, FILL_A)
-            FinishLayer(tex, 6, 1, 1, 1, 1)
-        end)
-        if ok then
-            return true
-        end
-    end
-    if tex.SetTexture then
-        -- Pre-SetColorTexture clients: numeric SetTexture is a solid color.
-        local ok = pcall(function()
-            tex:SetTexture(FILL_R, FILL_G, FILL_B, FILL_A)
-            FinishLayer(tex, 6, 1, 1, 1, 1)
-        end)
-        if ok then
-            return true
-        end
-        ok = pcall(function()
-            tex:SetTexture(ICON_WHITE)
-            FinishLayer(tex, 6, FILL_R, FILL_G, FILL_B, FILL_A)
-        end)
-        if ok then
-            return true
-        end
-    end
-    return false
-end
-
-local function TrySetFile(tex, path)
-    if not tex.SetTexture or not path then
+local function TrySetAtlas(tex, name)
+    if not tex or not tex.SetAtlas or not name then
         return false
     end
     local ok = pcall(function()
-        if tex.SetTexCoord then
-            tex:SetTexCoord(0, 1, 0, 1)
+        tex:SetAtlas(name, false)
+        if tex.SetDrawLayer then
+            tex:SetDrawLayer("OVERLAY", 7)
         end
-        tex:SetTexture(path)
-        FinishLayer(tex, 7, 1, 1, 1, 1)
+        if tex.SetBlendMode then
+            pcall(tex.SetBlendMode, tex, "BLEND")
+        end
+        if tex.SetVertexColor then
+            tex:SetVertexColor(1, 1, 1, 1)
+        end
+        if tex.SetAlpha then
+            tex:SetAlpha(1)
+        end
+        if tex.SetAllPoints then
+            tex:SetAllPoints()
+        end
+        tex:Show()
     end)
     return ok and true or false
 end
 
-local function EnsurePinTextures(pin)
-    if not pin.Fill then
-        pin.Fill = pin:CreateTexture(nil, "ARTWORK")
-        pin.Fill:SetAllPoints()
+local function TrySetFile(tex, path)
+    if not tex or not tex.SetTexture or not path then
+        return false
     end
-    if not pin.Texture then
-        pin.Texture = pin:CreateTexture(nil, "OVERLAY")
-        pin.Texture:SetAllPoints()
-    end
-    return pin.Fill, pin.Texture
+    local ok = pcall(function()
+        if tex.SetDrawLayer then
+            tex:SetDrawLayer("OVERLAY", 7)
+        end
+        if tex.SetBlendMode then
+            pcall(tex.SetBlendMode, tex, "BLEND")
+        end
+        if tex.SetTexCoord then
+            tex:SetTexCoord(0, 1, 0, 1)
+        end
+        tex:SetTexture(path)
+        if tex.SetVertexColor then
+            tex:SetVertexColor(1, 1, 1, 1)
+        end
+        if tex.SetAlpha then
+            tex:SetAlpha(1)
+        end
+        if tex.SetAllPoints then
+            tex:SetAllPoints()
+        end
+        tex:Show()
+    end)
+    return ok and true or false
 end
 
 local function SetPinTexture(pin)
-    local fill, tex = EnsurePinTextures(pin)
-    if tex and tex.Hide then
-        tex:Hide()
-    end
-    -- Fill stays visible even if the TGA overlay is missing. Do not bind gossip
-    -- or QuestNormal on the overlay: those pcall-succeed empty and hide the fill.
-    if PaintFill(fill) then
-        lastStatus.icon = "fill"
-    else
+    local tex = pin.Texture
+    if not tex then
         lastStatus.icon = "none"
-    end
-    if TrySetFile(tex, ICON_FALLBACK) or TrySetFile(tex, ICON_FALLBACK .. ".tga") then
-        lastStatus.icon = "fill+QuestAvailable.tga"
         return
     end
-    if tex and tex.Hide then
-        tex:Hide()
+    if pin.Fill and pin.Fill.Hide then
+        pin.Fill:Hide()
     end
+    if TrySetAtlas(tex, ICON_ATLAS) then
+        lastStatus.icon = "atlas:" .. ICON_ATLAS
+        return
+    end
+    if TrySetFile(tex, ICON_FILE) or TrySetFile(tex, ICON_FILE .. ".tga") then
+        lastStatus.icon = "QuestAvailable.tga"
+        return
+    end
+    lastStatus.icon = "none"
 end
 
 local function ReleasePin(pin)
@@ -526,8 +499,6 @@ local function AcquirePin(parent)
         if pin.EnableMouse then
             pin:EnableMouse(true)
         end
-        pin.Fill = pin:CreateTexture(nil, "ARTWORK")
-        pin.Fill:SetAllPoints()
         pin.Texture = pin:CreateTexture(nil, "OVERLAY")
         pin.Texture:SetAllPoints()
         pin:SetScript("OnEnter", ShowTooltip)
