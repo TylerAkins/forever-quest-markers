@@ -24,9 +24,42 @@ class AddonLuaTests(unittest.TestCase):
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("## Interface: 16001", toc)
         self.assertIn("## SavedVariables: ForeverQuestPinsDB_Settings", toc)
+        self.assertIn("## X-License: GPL-3.0-or-later", toc)
+        self.assertIn("## X-Website: https://github.com/TylerAkins/forever-quest-markers", toc)
+        self.assertIn("## X-Source: https://github.com/TylerAkins/forever-quest-markers", toc)
+        self.assertIn("## X-Issues: https://github.com/TylerAkins/forever-quest-markers/issues", toc)
         self.assertNotIn("ForeverQuestPinsDB\n", toc)
         for name in LUA_FILES:
             self.assertIn(name.replace("/", "\\"), toc)
+
+    def test_player_docs_are_complete(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for heading in (
+            "## Requirements",
+            "## Features",
+            "## Install",
+            "## Settings",
+            "## Commands",
+            "## Beta limitations",
+            "## Support",
+            "## License",
+        ):
+            self.assertIn(heading, readme)
+        self.assertIn("ForeverQuestPins", readme)
+        self.assertIn("/fqp why", readme)
+        self.assertIn("docs/DEVELOPMENT.md", readme)
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.1.8", changelog)
+        attribution = (ROOT / "ATTRIBUTION.md").read_text(encoding="utf-8")
+        self.assertIn("All The Things", attribution)
+        self.assertIn("GPLv3", attribution)
+        development = (ROOT / "docs" / "DEVELOPMENT.md").read_text(encoding="utf-8")
+        self.assertIn("## CurseForge", development)
+        self.assertIn("## Releases", development)
+        pkgmeta = (ROOT / ".pkgmeta").read_text(encoding="utf-8")
+        self.assertNotIn("README.md", pkgmeta)
+        self.assertNotIn("ATTRIBUTION.md", pkgmeta)
+        self.assertIn("manual-changelog: CHANGELOG.md", pkgmeta)
 
     def test_single_savedvariables_name(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
