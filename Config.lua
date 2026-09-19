@@ -10,11 +10,8 @@ ns.defaults = {
     debug = false,
 }
 
-local SV_NAME = "ForeverQuestPinsDB_Settings"
-local settingsReady = false
 local optionChecks = {}
-local activeSettings = nil
-local dirtyOptions = {}
+local settingObjects = {}
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -28,86 +25,22 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
--- Forever may inject SavedVariables into the addon environment, not _G.
--- Always prefer that table and mutate it in place so /reload writes it.
-local function LookupSaved()
-    if getfenv then
-        local env = getfenv(1)
-        if type(env) == "table" then
-            local sv = rawget(env, SV_NAME)
-            if type(sv) == "table" then
-                return sv
-            end
-            sv = env[SV_NAME]
-            if type(sv) == "table" then
-                return sv
-            end
-        end
-    end
-    if type(ForeverQuestPinsDB_Settings) == "table" then
-        return ForeverQuestPinsDB_Settings
-    end
-    local sv = _G[SV_NAME]
-    if type(sv) == "table" then
-        return sv
-    end
-    return nil
-end
-
-local function BindSavedTable(sv)
-    ForeverQuestPinsDB_Settings = sv
-    _G[SV_NAME] = sv
-end
-
-local function AttachSettings(createIfMissing)
-    local found = LookupSaved()
-    if found then
-        if activeSettings and activeSettings ~= found then
-            for key in pairs(dirtyOptions) do
-                found[key] = activeSettings[key]
-            end
-        end
-        activeSettings = found
-        CopyDefaults(ns.defaults, activeSettings)
-        BindSavedTable(activeSettings)
-        settingsReady = true
-        return activeSettings
-    end
-    if not activeSettings then
-        if not createIfMissing then
-            return nil
-        end
-        activeSettings = CopyDefaults(ns.defaults, {})
-    else
-        CopyDefaults(ns.defaults, activeSettings)
-    end
-    if createIfMissing then
-        BindSavedTable(activeSettings)
-        settingsReady = true
-    end
-    return activeSettings
-end
-
--- Fill missing keys only. Do not create a table here: assigning defaults
--- before Forever loads SavedVariables would skip the saved file and make
--- auto-accept / auto-turn-in look like they reset (those default to false).
-function ns.HydrateSettings()
-    return AttachSettings(false)
-end
-
+-- TOC SavedVariables: ForeverQuestPinsDB_Settings is loaded before ADDON_LOADED.
+-- Fill missing keys only; do not replace the table.
 function ns.InitSettings()
-    return AttachSettings(true)
+    if type(ForeverQuestPinsDB_Settings) ~= "table" then
+        ForeverQuestPinsDB_Settings = {}
+    end
+    CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
+    return ForeverQuestPinsDB_Settings
 end
 
 function ns.GetSettings()
-    return activeSettings or LookupSaved()
+    return ForeverQuestPinsDB_Settings
 end
 
 function ns.GetOption(key)
-    if dirtyOptions[key] and activeSettings and activeSettings[key] ~= nil then
-        return activeSettings[key]
-    end
-    local settings = LookupSaved() or activeSettings
+    local settings = ForeverQuestPinsDB_Settings
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -115,12 +48,13 @@ function ns.GetOption(key)
 end
 
 function ns.SetOption(key, value)
-    dirtyOptions[key] = true
-    if not activeSettings then
-        activeSettings = CopyDefaults(ns.defaults, {})
+    value = value and true or false
+    local sv = ns.InitSettings()
+    sv[key] = value
+    local setting = settingObjects[key]
+    if setting and setting.GetValue and setting.SetValue and setting:GetValue() ~= value then
+        setting:SetValue(value)
     end
-    activeSettings[key] = value
-    AttachSettings(false)
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
@@ -232,6 +166,10 @@ function ns.PrintStats()
         maps = maps + 1
     end
     Print(("ATT %s | %d quests | %d maps"):format(tostring(meta.attCommit or "?"), count, maps))
+    Print(("  auto-accept %s | auto-turn-in %s"):format(
+        ns.GetOption("autoAccept") and "on" or "off",
+        ns.GetOption("autoTurnIn") and "on" or "off"
+    ))
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
         print(("  viewed map %s | painted %s | mode %s | parent %s"):format(
@@ -461,8 +399,12 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
         if applying then
             return
         end
-        local value = self:GetChecked() and true or false
+        -- Do not trust GetChecked here: some templates have not flipped yet.
+        local value = not ns.GetOption(optionKey)
         ns.SetOption(optionKey, value)
+        applying = true
+        self:SetChecked(value)
+        applying = false
         if optionKey == "enabled" and not value and ns.MapPins then
             ns.MapPins:Clear()
         end
@@ -503,12 +445,121 @@ function ns.SyncSettingsCheckboxes()
     end
 end
 
-function ns.TryRegisterSettings()
-    if not Settings or not Settings.RegisterCanvasLayoutCategory then
+local OPTION_SPECS = {
+    {
+        key = "enabled",
+        name = "Show quest-start pins",
+        tooltip = "Yellow start markers on the world map for unaccepted quests.",
+    },
+    {
+        key = "showTrivial",
+        name = "Show trivial / low-level pins",
+        tooltip = "Only hides trivial pins when GetQuestGreenRange exists.",
+    },
+    {
+        key = "showSeasonal",
+        name = "Show seasonal / holiday pins",
+        tooltip = "Lunar Festival elders, Darkmoon Faire, and other event quests.",
+    },
+    {
+        key = "autoAccept",
+        name = "Auto-accept quests",
+        tooltip = "Accept quests automatically when you talk to an NPC. Hold Shift to skip.",
+    },
+    {
+        key = "autoTurnIn",
+        name = "Auto-turn in quests",
+        tooltip = "Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip.",
+    },
+    {
+        key = "debug",
+        name = "Debug tooltips",
+        tooltip = "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover.",
+    },
+}
+
+local function BoolVarType()
+    if Settings.VarType and Settings.VarType.Boolean then
+        return Settings.VarType.Boolean
+    end
+    return type(true)
+end
+
+local function RegisterNativeSettings(db)
+    if not Settings.RegisterVerticalLayoutCategory or not Settings.RegisterAddOnSetting then
         return false
     end
+    local category = Settings.RegisterVerticalLayoutCategory("Forever Quest Pins")
+    if not category then
+        return false
+    end
+    local registered = 0
+    for i = 1, #OPTION_SPECS do
+        local spec = OPTION_SPECS[i]
+        local variable = ADDON_NAME .. "_" .. spec.key
+        local ok, setting = pcall(
+            Settings.RegisterAddOnSetting,
+            category,
+            variable,
+            spec.key,
+            db,
+            BoolVarType(),
+            spec.name,
+            ns.defaults[spec.key]
+        )
+        if not ok then
+            ok, setting = pcall(
+                Settings.RegisterAddOnSetting,
+                category,
+                spec.name,
+                variable,
+                BoolVarType(),
+                ns.defaults[spec.key]
+            )
+        end
+        if ok and setting then
+            settingObjects[spec.key] = setting
+            registered = registered + 1
+            if setting.SetValueChangedCallback then
+                setting:SetValueChangedCallback(function(_, value)
+                    local bit = value and true or false
+                    db[spec.key] = bit
+                    if spec.key == "enabled" and not bit and ns.MapPins then
+                        ns.MapPins:Clear()
+                    end
+                    if ns.RequestRefresh then
+                        ns.RequestRefresh("settings")
+                    end
+                end)
+            end
+            if not pcall(Settings.CreateCheckbox, category, setting, spec.tooltip) then
+                pcall(Settings.CreateCheckBox, category, setting, spec.tooltip)
+            end
+        end
+    end
+    if registered == 0 then
+        return false
+    end
+    if Settings.RegisterAddOnCategory then
+        Settings.RegisterAddOnCategory(category)
+    end
+    return true
+end
+
+function ns.TryRegisterSettings()
     if ns.settingsRegistered then
         return true
+    end
+    if not Settings then
+        return false
+    end
+    local db = ns.InitSettings()
+    if db and RegisterNativeSettings(db) then
+        ns.settingsRegistered = true
+        return true
+    end
+    if not Settings.RegisterCanvasLayoutCategory then
+        return false
     end
 
     local panel = CreateFrame("Frame")
