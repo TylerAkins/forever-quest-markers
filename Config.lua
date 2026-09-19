@@ -11,13 +11,8 @@ ns.defaults = {
     debug = false,
 }
 
--- Account-wide SavedVariables name declared in the TOC. Working Forever addons
--- (Quest Master via AceDB:New, HideAnything via InitDB) bind this exact global
--- on ADDON_LOADED and never replace the table.
-local SV_NAME = "ForeverQuestPinsDB_Settings"
-local CHAR_SV_NAME = "ForeverQuestPinsCharacterSettings"
 local optionChecks = {}
-local dirty = {}
+local MIRROR_CVAR = "ForeverQuestPinsSettings"
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -31,153 +26,112 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
-local function AssignGlobal(name, tbl)
-    if type(_G) == "table" then
-        _G[name] = tbl
-    end
+local function MirrorReady()
+    return C_CVar
+        and type(C_CVar.GetCVar) == "function"
+        and type(C_CVar.SetCVar) == "function"
+        and type(C_CVar.RegisterCVar) == "function"
 end
 
-local function LiveGlobal(name, fallback)
-    if type(_G) == "table" and type(_G[name]) == "table" then
-        return _G[name]
+local function ReadMirror()
+    if not MirrorReady() then
+        return nil
     end
-    if type(fallback) == "table" then
-        return fallback
+    local ok, text = pcall(C_CVar.GetCVar, MIRROR_CVAR)
+    if not ok or text == nil then
+        pcall(C_CVar.RegisterCVar, MIRROR_CVAR, "")
+        ok, text = pcall(C_CVar.GetCVar, MIRROR_CVAR)
     end
-    return nil
+    if not ok then
+        return nil
+    end
+    return text
 end
 
--- Same pattern as HideAnything: if not HideAnythingDB then HideAnythingDB = {} end
--- Never replace an existing table; Forever serializes the original reference.
-local function BindSavedTable(name, allowCreate)
-    local live = LiveGlobal(name, nil)
-    if type(live) == "table" then
-        AssignGlobal(name, live)
-        return live
+local function LoadMirror(db)
+    local text = ReadMirror()
+    ns.settingsMirror = text
+    if type(text) ~= "string" or text == "" then
+        return
     end
-    if allowCreate then
-        live = {}
-        AssignGlobal(name, live)
-        return live
-    end
-    return nil
-end
-
-local function ApplyDirty(dest)
-    if type(dest) ~= "table" then
-        return dest
-    end
-    for key, value in pairs(dirty) do
-        dest[key] = value
-    end
-    return dest
-end
-
-local function SyncPersistedOptions(account, character)
-    if type(account) ~= "table" or type(character) ~= "table" then
-        return account
-    end
-    -- Forever often persists the per-character table more reliably than account-wide.
-    for key in pairs(ns.defaults) do
-        if character[key] ~= nil then
-            account[key] = character[key]
-        elseif account[key] ~= nil then
-            character[key] = account[key]
+    for key, raw in text:gmatch("([%w_]+)=([01])") do
+        if type(ns.defaults[key]) == "boolean" then
+            db[key] = raw == "1"
         end
     end
+end
+
+local function SaveMirror()
+    if not ns.db or not MirrorReady() then
+        return
+    end
+    local keys = {}
+    for key, value in pairs(ns.defaults) do
+        if type(value) == "boolean" then
+            keys[#keys + 1] = key
+        end
+    end
+    table.sort(keys)
+    local parts = {}
+    for i = 1, #keys do
+        local key = keys[i]
+        parts[#parts + 1] = key .. "=" .. (ns.db[key] and "1" or "0")
+    end
+    local text = table.concat(parts, ";")
+    if pcall(C_CVar.SetCVar, MIRROR_CVAR, text) then
+        ns.settingsMirror = text
+    end
+end
+
+function ns.InitSettings()
+    if ns.db then
+        return ns.db
+    end
+
+    -- SavedVariables are available when ADDON_LOADED fires. Keep the
+    -- account-wide table authoritative and migrate missing values once from
+    -- the per-character table used by older beta releases.
+    if type(ForeverQuestPinsDB_Settings) ~= "table" then
+        ForeverQuestPinsDB_Settings = {}
+    end
+    local account = ForeverQuestPinsDB_Settings
+    local character = ForeverQuestPinsCharacterSettings
+    if type(character) == "table" then
+        for key in pairs(ns.defaults) do
+            if account[key] == nil and character[key] ~= nil then
+                account[key] = character[key]
+            end
+        end
+    end
+
+    -- Forever 1.60.1 can skip loading addon SavedVariables while still
+    -- restoring CVars. The mirror keeps these small boolean options usable
+    -- until the client bug is fixed; the normal SavedVariables table remains
+    -- the source used by WoW on clients where it loads correctly.
+    LoadMirror(account)
     CopyDefaults(ns.defaults, account)
-    for key in pairs(ns.defaults) do
-        character[key] = account[key]
-    end
-    return account
-end
-
-function ns.InitSettings(allowCreate)
-    allowCreate = allowCreate == true
-    local account = BindSavedTable(SV_NAME, allowCreate)
-    local character = BindSavedTable(CHAR_SV_NAME, allowCreate)
-    if not account and not character then
-        return ns.db
-    end
-    if not account then
-        account = {}
-        AssignGlobal(SV_NAME, account)
-    end
-    if not character then
-        character = {}
-        AssignGlobal(CHAR_SV_NAME, character)
-    end
-    ForeverQuestPinsDB_Settings = account
-    ForeverQuestPinsCharacterSettings = character
-
-    if ns.db and ns.db ~= account then
-        ApplyDirty(account)
-    end
-
-    SyncPersistedOptions(account, character)
-    ApplyDirty(account)
-    ApplyDirty(character)
-
     ns.db = account
-    ns.settingsBound = true
+    SaveMirror()
     return account
-end
-
-function ns.ResolveSettings()
-    if not ns.settingsBound then
-        return ns.db
-    end
-    local account = LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings)
-    local character = LiveGlobal(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
-    if type(account) == "table" and account ~= ns.db then
-        ApplyDirty(account)
-        if type(character) == "table" then
-            SyncPersistedOptions(account, character)
-        end
-        ForeverQuestPinsDB_Settings = account
-        AssignGlobal(SV_NAME, account)
-        ns.db = account
-    end
-    return ns.db
-end
-
-function ns.FlushSettings()
-    local db = ns.InitSettings(true)
-    ApplyDirty(db)
-    ApplyDirty(ForeverQuestPinsDB_Settings)
-    ApplyDirty(ForeverQuestPinsCharacterSettings)
-    return db
 end
 
 function ns.WipeSettings()
-    ns.InitSettings(true)
+    local db = ns.InitSettings()
     for key, value in pairs(ns.defaults) do
-        dirty[key] = value
-        if type(ns.db) == "table" then
-            ns.db[key] = value
-        end
-        if type(ForeverQuestPinsDB_Settings) == "table" then
-            ForeverQuestPinsDB_Settings[key] = value
-        end
-        if type(ForeverQuestPinsCharacterSettings) == "table" then
-            ForeverQuestPinsCharacterSettings[key] = value
-        end
+        db[key] = value
     end
+    SaveMirror()
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
     end
 end
 
 function ns.GetSettings()
-    return ns.ResolveSettings() or ns.db
+    return ns.db
 end
 
 function ns.GetOption(key)
-    local character = ForeverQuestPinsCharacterSettings
-    if type(character) == "table" and character[key] ~= nil then
-        return character[key]
-    end
-    local settings = ns.ResolveSettings() or ns.db
+    local settings = ns.db
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -186,20 +140,9 @@ end
 
 function ns.SetOption(key, value)
     value = value and true or false
-    dirty[key] = value
-    local live = ns.ResolveSettings()
-    if not live then
-        -- Do not assign the TOC SavedVariables global before ADDON_LOADED.
-        live = {}
-        ns.db = live
-    end
-    live[key] = value
-    if type(ForeverQuestPinsDB_Settings) == "table" then
-        ForeverQuestPinsDB_Settings[key] = value
-    end
-    if type(ForeverQuestPinsCharacterSettings) == "table" then
-        ForeverQuestPinsCharacterSettings[key] = value
-    end
+    local db = ns.db or ns.InitSettings()
+    db[key] = value
+    SaveMirror()
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
     end
@@ -361,17 +304,18 @@ function ns.PrintStats()
 end
 
 function ns.PrintSettingsDebug()
-    ns.InitSettings(true)
+    ns.InitSettings()
     local account = ForeverQuestPinsDB_Settings
     local character = ForeverQuestPinsCharacterSettings
     Print("SavedVariables ForeverQuestPinsDB_Settings:")
-    print(("  db=%s account=%s character=%s sameAsGlobal=%s"):format(
+    print(("  db=%s account=%s legacyCharacter=%s sameAsGlobal=%s mirror=%s"):format(
         tostring(ns.db ~= nil),
         tostring(type(account) == "table"),
         tostring(type(character) == "table"),
-        tostring(ns.db ~= nil and ns.db == LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings))
+        tostring(ns.db ~= nil and ns.db == ForeverQuestPinsDB_Settings),
+        tostring(ns.settingsMirror ~= nil and ns.settingsMirror ~= "")
     ))
-    print("  New installs persist normally. /fqp wipe is only for leftover 0.1.10-0.1.16 files.")
+    print("  Character settings are migration-only; current options use the account table plus a CVar mirror.")
     for _, key in ipairs({
         "enabled",
         "showTrivial",
