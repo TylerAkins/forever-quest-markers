@@ -5,7 +5,7 @@ Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/
 ## 0.1.18 — 2026-09-19
 
 - Do not copy a default-filled placeholder over a SavedVariables table Forever injects later (that reset every option after `/reload`)
-- `/fqp wipe` resets in-memory options and prints the leftover `ForeverQuestPins.lua` paths to delete while the client is closed
+- `/fqp wipe` is recovery for people who already ran 0.1.10–0.1.16 (empty leftover SavedVariables); new installs do not use it
 
 ## 0.1.17 — 2026-09-19
 

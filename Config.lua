@@ -201,7 +201,7 @@ function ns.SlashCommand(msg)
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
         print("  /fqp settings Print saved option values (debug)")
-        print("  /fqp wipe     Reset options and print leftover SavedVariables paths")
+        print("  /fqp wipe     Reset options (only needed after an older broken beta)")
         print("  /fqp apis     Print which Forever map/quest APIs are present")
         print("  /fqp why <id> Show why a quest is pinned or hidden")
         print("  /fqp available List quests that should pin on this map")
@@ -259,11 +259,12 @@ function ns.SlashCommand(msg)
     if msg == "wipe" then
         ns.WipeSettings()
         Print("In-memory options reset to defaults.")
-        Print("Fully close the game, then delete leftover files from older builds:")
+        Print("Only needed if you used a 0.1.10–0.1.16 beta that left empty SavedVariables.")
+        Print("Close the game completely, then delete:")
         print("  WTF\\Account\\<account>\\SavedVariables\\ForeverQuestPins.lua")
         print("  WTF\\Account\\<account>\\<realm>\\<char>\\SavedVariables\\ForeverQuestPins.lua")
-        print("  (delete the .bak next to each too)")
-        Print("Start the client again. /reload is not enough after a wipe.")
+        print("  (and the .bak next to each)")
+        Print("Then start the client. New installs do not need this.")
         return
     end
     if msg == "apis" then
@@ -333,7 +334,7 @@ function ns.PrintSettingsDebug()
         tostring(type(character) == "table"),
         tostring(ns.db ~= nil and ns.db == LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings))
     ))
-    print("  If options reset after /reload, /fqp wipe and delete the ForeverQuestPins.lua files while the game is closed.")
+    print("  New installs persist normally. /fqp wipe is only for leftover 0.1.10-0.1.16 files.")
     for _, key in ipairs({
         "enabled",
         "showTrivial",
