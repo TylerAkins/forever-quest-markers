@@ -10,6 +10,9 @@ from .constants import DEFAULT_FOREVER_PATCH, parse_version_token
 from .evaluator import FactionRaces, LuaTable, Unresolved
 
 
+from .war_effort import is_war_effort_record
+
+
 INHERIT_KEYS = (
     "races",
     "classes",
@@ -57,6 +60,7 @@ class QuestRecord:
     repeatable: bool = False
     is_breadcrumb: bool = False
     is_world_quest: bool = False
+    is_war_effort: bool = False
     event: int | None = None
     source_file: str = ""
 
@@ -231,6 +235,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
         event=_as_int(table.get("e") if table.get("e") is not None else ctx.event),
         source_file=ctx.source_file,
     )
+    record.is_war_effort = is_war_effort_record(record)
 
     existing = result.quests.get(quest_id)
     if existing is None:
@@ -265,6 +270,8 @@ def _merge_records(dst: QuestRecord, src: QuestRecord) -> None:
         dst.is_yearly = src.is_yearly
     if dst.event is None:
         dst.event = src.event
+    if not dst.is_war_effort:
+        dst.is_war_effort = src.is_war_effort
 
 
 def _unique(values: list[int] | list[str]) -> list:
