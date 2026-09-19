@@ -1,11 +1,14 @@
 ## Interface: 16001
 ## Title: Forever Quest Pins
-## Notes: Shows available unaccepted quests on the World of Warcraft Forever map.
+## Notes: Beta: yellow ! start markers on the Forever map for unaccepted quests.
 ## Author: Tyler Akins
 ## Version: @project-version@
 ## X-License: GPL-3.0-or-later
 ## X-Category: Quests
 ## Category: Quests
+## X-Website: https://github.com/TylerAkins/forever-quest-markers
+## X-Source: https://github.com/TylerAkins/forever-quest-markers
+## X-Issues: https://github.com/TylerAkins/forever-quest-markers/issues
 ## SavedVariables: ForeverQuestPinsDB_Settings
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
 ## DefaultState: enabled

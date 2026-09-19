@@ -13,8 +13,8 @@ body:
     id: fqp-version
     attributes:
       label: Forever Quest Pins version
-      description: From the addon `.toc` (`## Version:`) or the release zip name (e.g. 0.1.0).
-      placeholder: "0.1.0"
+      description: From `/fqp stats`, the addon `.toc` (`## Version:`), CurseForge, or the zip name.
+      placeholder: "0.1.8"
     validations:
       required: true
 
@@ -84,6 +84,7 @@ body:
         - label: World map pins
         - label: Pin tooltips
         - label: Quest eligibility / hiding
+        - label: Auto-accept / auto-turn-in
         - label: Options / slash commands
         - label: Generated ATT database
         - label: Other / not sure

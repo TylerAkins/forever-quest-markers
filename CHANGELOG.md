@@ -1,65 +1,61 @@
 # Changelog
 
-## 0.1.8
+Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
-- Use Blizzard’s retail `QuestNormal` bang again (same atlas as 0.1.1), at a fixed 24px size
-- Drop the solid yellow square; keep `Media/QuestAvailable.tga` only if `SetAtlas` errors
-- Do not bind gossip `AvailableQuestIcon` on the map (empty bind can hide a working atlas)
+## 0.1.8 — 2026-09-19
+
+- Use Blizzard’s retail `QuestNormal` bang at a fixed 24px size
+- Drop the solid yellow square behind pins
+- Keep `Media/QuestAvailable.tga` only if `SetAtlas` errors
+- Do not bind gossip `AvailableQuestIcon` on the map
 
 ## 0.1.7
 
-- Draw a solid yellow fill on every map pin so a hoverable pin cannot be invisible
-- Overlay only the bundled `QuestAvailable.tga` (the texture that actually rendered in 0.1.0)
-- Stop binding Forever's empty `AvailableQuestIcon` / `QuestNormal` on top of that fill — `SetTexture`/`SetAtlas` succeed with no pixels and hide the marker
+- Draw a solid yellow fill so a hoverable pin could not be an empty hitbox
+- Overlay the bundled TGA instead of Forever’s empty gossip / atlas binds
 
 ## 0.1.6
 
-- Draw the gossip yellow ! (`AvailableQuestIcon`) instead of Forever's empty `QuestNormal` atlas so pins are visible, not just hoverable
-- Treat ATT breadcrumb sources as skippable (Gornek's Cutting Teeth is no longer blocked by Kaltunk's "Your Place in the World")
-- Remember quests an NPC just offered, including Forever-only starts missing from ATT (Wayward Weapons)
+- Prefer gossip `AvailableQuestIcon` when `QuestNormal` drew nothing
+- Treat ATT breadcrumb sources as skippable (Gornek’s Cutting Teeth vs Kaltunk)
+- Remember quests an NPC just offered, including Forever-only starts missing from ATT
 
 ## 0.1.5
 
-- Show Morin Cloudstalker's The Venture Co. and Supervisor Fizsprocket after the Ravaged Caravan crate: object-started source quests that are not in the log count as done
-- Always paint ATT coordinates (plus Morin's crate-end patrol pin); never replace that bang with a live NPC / stale last-seen coord (that hid The Venture Co.)
-- `/fqp why <id>` prints why a quest is pinned or hidden; `/fqp available` lists starts that should pin on the open map
-- Merges to `main` publish a moving `latest` pre-release zip; pushing a `v*` tag still creates a numbered release
+- Show Morin Cloudstalker’s The Venture Co. and Supervisor Fizsprocket after the Ravaged Caravan crate
+- Keep ATT coordinates (plus Morin’s crate-end patrol pin); do not replace them with a live or stale NPC point
+- `/fqp why <id>` and `/fqp available`
+- Merges to `main` publish a moving `latest` pre-release zip
 
 ## 0.1.4
 
-- Keep windowed and maximized map pins on the map art (A Sacred Burial at Red Rocks)
-- Stack overlapping starts onto one bang so Morin Cloudstalker’s two follow-ups show as one pin with both names
+- Windowed and maximized pins stay on the map art
+- Stack overlapping starts onto one bang
 - Project live NPC positions from continent coords onto the zone map
-- Treat `GetQuestsCompleted` as a fallback so object-started prereqs (the Ravaged Caravan crate) can unlock follow-ups
+- Treat `GetQuestsCompleted` as a completion fallback
 
 ## 0.1.3
 
-- Keep quest bangs a fixed screen size (do not inherit map zoom or the native QuestNormal atlas size)
-- Draw pins above map tiles so they cannot disappear under the zone art
-- Stop dropping a pin when the first layout pass has no canvas size yet
+- Fixed on-screen bang size (do not inherit map zoom or native atlas size)
+- Draw pins above map tiles
+- Keep a pin when the first layout pass has no canvas size yet
 
 ## 0.1.2
 
-- Options for auto-accept and auto-turn in when talking to NPCs
-- Settings panel checkboxes; `/fqp accept` and `/fqp turnin` toggles
-- Hold Shift to skip automation for one NPC interaction
-- Auto-turn in does not pick when a quest has multiple rewards
-- Debug checkbox in options; tooltips show quest and NPC names, with IDs only when debug is on
-- Prefetch quest titles so names are ready before the first hover
-- Place pins on the map canvas (`WorldMapFrame:GetCanvas` / `ScrollContainer.Child`) so they stay on coordinates when the map is resized or reopened
-- Snap wandering quest-giver pins (for example Morin Cloudstalker / Ravaged Caravan) to the NPC while they are visible
-- Keep pins glued to the map art: same parent as Blizzard's player/quest pins, `SetPinPosition` when available, and re-apply coordinates every frame so resize/reopen cannot drift
+- Auto-accept and auto-turn-in options (`/fqp accept`, `/fqp turnin`; hold Shift to skip)
+- Debug tooltips; names instead of IDs unless debug is on
+- Prefetch quest titles
+- Parent pins to the map canvas so they do not drift on resize
+- Snap wandering quest-giver pins while the NPC is visible
 
 ## 0.1.1
 
-- Use Blizzard’s retail available-quest icon (`QuestNormal`) on map pins
-- Fall back to `Interface\GossipFrame\AvailableQuestIcon`, then the bundled TGA
-- Fill unmigrated zones from ATT `zzOLD`, keeping classic (pre-Cata) quests
-- Hide Lunar Festival / other seasonal pins unless `/fqp seasonal` is on or the event is active
-- Project zone pins onto continent maps even when child-map APIs are missing
+- Blizzard `QuestNormal` atlas on map pins, with gossip and TGA fallbacks
+- Unmigrated ATT `zzOLD` zones as a fallback for classic (pre-Cata) quests
+- Seasonal pins off unless `/fqp seasonal` is on or the event is active
+- Project zone pins onto continent maps
 
 ## 0.1.0
 
-- Initial Forever Quest Pins release
-- Native world-map start markers for unaccepted quests
+- Initial release: native world-map start markers for unaccepted quests
 - ATT Forever database converter and automated update workflow
