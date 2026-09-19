@@ -321,7 +321,15 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("branches:", text)
         self.assertIn("main", text)
         self.assertIn("versioned:", text)
+        self.assertIn("auto-versioned:", text)
         self.assertIn("preview:", text)
+        self.assertIn("VERSION ${VERSION} does not match tag", text)
+        self.assertIn("python3 tools/att_release.py validate", text)
+        self.assertIn("needs: preview", text)
+        self.assertIn("python3 tools/att_release.py validate-tag", text)
+        self.assertIn('git push origin "refs/tags/${RELEASE_TAG}"', text)
+        self.assertIn('gh workflow run release.yml --ref "$RELEASE_TAG"', text)
+        self.assertIn('gh release view "$RELEASE_TAG"', text)
         self.assertIn("{package-name}-preview{classic}", text)
         self.assertIn("uses: actions/upload-artifact@v7", text)
         self.assertIn("path: .release/ForeverQuestPins-preview*.zip", text)
@@ -330,6 +338,22 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("git tag -f latest", text)
         self.assertNotIn("gh release create latest", text)
         self.assertIn("uses: BigWigsMods/packager@v2", text)
+
+    def test_att_update_workflow_prepares_release_only_for_quest_changes(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "update-att-db.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("git diff --quiet -- Database/ForeverQuests.lua", text)
+        self.assertIn("python3 tools/att_release.py prepare", text)
+        self.assertIn("steps.changes.outputs.quest_data == 'true'", text)
+        self.assertIn("VERSION", text)
+        self.assertIn("CHANGELOG.md", text)
+        self.assertIn("automatically publishes", text)
+
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("Validate database release intent", ci)
+        self.assertIn("github.event.pull_request.base.sha", ci)
+        self.assertIn("python3 tools/att_release.py validate", ci)
 
 
 if __name__ == "__main__":

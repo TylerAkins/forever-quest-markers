@@ -7,6 +7,7 @@ ignore:
   - .cursor
   - .gitignore
   - .pkgmeta
+  - VERSION
   - docs
   - tests
   - tools
