@@ -42,7 +42,7 @@ Generated Lua files also record the exact ATT commit SHA used for that conversio
 
 Tracker-style UI, Questie integration, and HereBeDragons usage from other addons were **not** copied. Forever Quest Pins is a small native-map overlay with its own ATT converter.
 
-Map pins use `Media/QuestAvailable.tga` (original bang art). Blizzard client art (`QuestNormal`, `Interface\GossipFrame\AvailableQuestIcon`) is not used on the map because those textures can bind without pixels on Forever.
+Map pins use Blizzard’s `QuestNormal` atlas, then `Media/QuestAvailable.tga` if `SetAtlas` errors.
 
 ## License
 
