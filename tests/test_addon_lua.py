@@ -62,30 +62,28 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("OptionalDeps", toc)
         self.assertNotIn("RequiredDeps", toc)
 
-    def test_pins_use_bundled_bang(self) -> None:
+    def test_pins_use_retail_questnormal(self) -> None:
         text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn('ICON_ATLAS = "QuestNormal"', text)
+        self.assertIn("tex:SetAtlas(name, false)", text)
         self.assertIn("Media\\\\QuestAvailable", text)
-        self.assertIn("ICON_FILE", text)
         self.assertIn("pin:SetIgnoreParentScale(false)", text)
         self.assertIn("PIN_SIZE = 24", text)
         set_fn = text.find("local function SetPinTexture(pin)")
         next_fn = text.find("local function ReleasePin(pin)", set_fn)
         set_body = text[set_fn:next_fn]
-        self.assertIn("TrySetFile(tex, ICON_FILE)", set_body)
+        atlas_try = set_body.find("TrySetAtlas(tex, ICON_ATLAS)")
+        tga_try = set_body.find("TrySetFile(tex, ICON_FILE)")
+        self.assertNotEqual(atlas_try, -1)
+        self.assertNotEqual(tga_try, -1)
+        self.assertLess(atlas_try, tga_try)
         self.assertNotIn("PaintFill", text)
         self.assertNotIn("SetColorTexture", text)
-        self.assertNotIn("TrySetFile(tex, ICON_GOSSIP)", set_body)
-        self.assertNotIn("TrySetAtlas", text)
+        self.assertNotIn("ICON_GOSSIP", text)
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
-        tga = ROOT / "Media" / "QuestAvailable.tga"
-        self.assertTrue(tga.is_file())
-        header = tga.read_bytes()[:18]
-        self.assertEqual(header[12] | (header[13] << 8), 64)
-        self.assertEqual(header[14] | (header[15] << 8), 64)
-        self.assertEqual(header[16], 32)
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
