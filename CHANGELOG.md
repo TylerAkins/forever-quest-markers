@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8
+
+- Draw only the classic yellow bang (`Media/QuestAvailable.tga`); drop the solid yellow square that sat behind it
+
 ## 0.1.7
 
 - Draw a solid yellow fill on every map pin so a hoverable pin cannot be invisible

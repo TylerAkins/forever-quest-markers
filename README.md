@@ -33,7 +33,7 @@ Generated files:
 - `Database/Metadata.lua` — ATT commit SHA and quest counts
 - `Database/build_report.json` — machine-readable conversion summary (not shipped in the player zip)
 
-Pins draw a solid yellow marker plus the bundled `Media/QuestAvailable.tga`. Forever’s `QuestNormal` atlas and gossip `AvailableQuestIcon` can bind without drawing any pixels, so they are not used on the map. The addon does not depend on Questie, ATT, TomTom, or HereBeDragons.
+Pins use the bundled `Media/QuestAvailable.tga` bang. Forever’s `QuestNormal` atlas and gossip `AvailableQuestIcon` can bind without drawing any pixels, so they are not used on the map. The addon does not depend on Questie, ATT, TomTom, or HereBeDragons.
 
 ## Commands
 

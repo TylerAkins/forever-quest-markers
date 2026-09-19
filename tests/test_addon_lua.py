@@ -62,26 +62,30 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("OptionalDeps", toc)
         self.assertNotIn("RequiredDeps", toc)
 
-    def test_pins_draw_a_solid_fill(self) -> None:
+    def test_pins_use_bundled_bang(self) -> None:
         text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
-        self.assertIn("function PaintFill(tex)", text)
-        self.assertIn("tex:SetColorTexture(FILL_R, FILL_G, FILL_B, FILL_A)", text)
-        self.assertIn("Interface\\\\Buttons\\\\WHITE8X8", text)
         self.assertIn("Media\\\\QuestAvailable", text)
+        self.assertIn("ICON_FILE", text)
         self.assertIn("pin:SetIgnoreParentScale(false)", text)
         self.assertIn("PIN_SIZE = 24", text)
         set_fn = text.find("local function SetPinTexture(pin)")
         next_fn = text.find("local function ReleasePin(pin)", set_fn)
         set_body = text[set_fn:next_fn]
-        self.assertIn("PaintFill(fill)", set_body)
-        self.assertIn("TrySetFile(tex, ICON_FALLBACK)", set_body)
-        # Gossip/atlas pcall-succeed with no pixels and cover the fill.
+        self.assertIn("TrySetFile(tex, ICON_FILE)", set_body)
+        self.assertNotIn("PaintFill", text)
+        self.assertNotIn("SetColorTexture", text)
         self.assertNotIn("TrySetFile(tex, ICON_GOSSIP)", set_body)
-        self.assertNotIn("TrySetAtlas(tex, ICON_ATLAS)", set_body)
+        self.assertNotIn("TrySetAtlas", text)
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
+        tga = ROOT / "Media" / "QuestAvailable.tga"
+        self.assertTrue(tga.is_file())
+        header = tga.read_bytes()[:18]
+        self.assertEqual(header[12] | (header[13] << 8), 64)
+        self.assertEqual(header[14] | (header[15] << 8), 64)
+        self.assertEqual(header[16], 32)
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
