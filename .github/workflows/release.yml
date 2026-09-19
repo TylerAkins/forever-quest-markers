@@ -55,11 +55,12 @@ jobs:
       - name: Package addon zip
         uses: BigWigsMods/packager@v2
         with:
-          args: -d -n "{package-name}-latest{classic}"
+          args: -d -n "{package-name}-preview{classic}"
 
       - name: Upload test build
         uses: actions/upload-artifact@v7
         with:
           name: ForeverQuestPins-${{ github.sha }}
-          path: .release/ForeverQuestPins-latest*.zip
+          path: .release/ForeverQuestPins-preview*.zip
           if-no-files-found: error
+          include-hidden-files: true
