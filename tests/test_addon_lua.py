@@ -315,16 +315,18 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("[788] = { mapID=1411, x=42, y=68.4, qg=3143, sourceQuests={ 4641 }", db)
         self.assertIn("[4641] = { mapID=1411, x=43.2, y=68.4, qg=10176", db)
 
-    def test_release_workflow_has_versioned_and_latest(self) -> None:
+    def test_release_workflow_has_versioned_and_preview_artifact(self) -> None:
         text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn('- "v*"', text)
         self.assertIn("branches:", text)
         self.assertIn("main", text)
         self.assertIn("versioned:", text)
-        self.assertIn("latest:", text)
+        self.assertIn("preview:", text)
         self.assertIn("{package-name}-latest{classic}", text)
-        self.assertIn('git tag -f latest', text)
-        self.assertIn("gh release create latest", text)
+        self.assertIn("uses: actions/upload-artifact@v7", text)
+        self.assertIn("path: .release/ForeverQuestPins-latest*.zip", text)
+        self.assertNotIn("git tag -f latest", text)
+        self.assertNotIn("gh release create latest", text)
         self.assertIn("uses: BigWigsMods/packager@v2", text)
 
 
