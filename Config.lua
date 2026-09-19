@@ -10,8 +10,9 @@ ns.defaults = {
     debug = false,
 }
 
+ForeverQuestPinsDB_Settings = ForeverQuestPinsDB_Settings or {}
+
 local optionChecks = {}
-local settingObjects = {}
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -28,9 +29,6 @@ end
 -- TOC SavedVariables: ForeverQuestPinsDB_Settings is loaded before ADDON_LOADED.
 -- Fill missing keys only; do not replace the table.
 function ns.InitSettings()
-    if type(ForeverQuestPinsDB_Settings) ~= "table" then
-        ForeverQuestPinsDB_Settings = {}
-    end
     CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
     return ForeverQuestPinsDB_Settings
 end
@@ -51,9 +49,8 @@ function ns.SetOption(key, value)
     value = value and true or false
     local sv = ns.InitSettings()
     sv[key] = value
-    local setting = settingObjects[key]
-    if setting and setting.GetValue and setting.SetValue and setting:GetValue() ~= value then
-        setting:SetValue(value)
+    if key == "enabled" and not value and ns.MapPins then
+        ns.MapPins:Clear()
     end
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
@@ -84,6 +81,7 @@ function ns.SlashCommand(msg)
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
+        print("  /fqp settings Print saved option values (debug)")
         print("  /fqp apis     Print which Forever map/quest APIs are present")
         print("  /fqp why <id> Show why a quest is pinned or hidden")
         print("  /fqp available List quests that should pin on this map")
@@ -134,6 +132,10 @@ function ns.SlashCommand(msg)
         ns.PrintStats()
         return
     end
+    if msg == "settings" then
+        ns.PrintSettingsDebug()
+        return
+    end
     if msg == "apis" then
         ns.PrintAPIProbe()
         return
@@ -170,6 +172,9 @@ function ns.PrintStats()
         ns.GetOption("autoAccept") and "on" or "off",
         ns.GetOption("autoTurnIn") and "on" or "off"
     ))
+    if ns.settingsMode then
+        print("  options UI: " .. tostring(ns.settingsMode))
+    end
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
         print(("  viewed map %s | painted %s | mode %s | parent %s"):format(
@@ -184,6 +189,31 @@ function ns.PrintStats()
         if status.icon then
             print("  pin icon: " .. tostring(status.icon))
         end
+    end
+end
+
+function ns.PrintSettingsDebug()
+    ns.InitSettings()
+    local sv = ForeverQuestPinsDB_Settings
+    Print("SavedVariables ForeverQuestPinsDB_Settings:")
+    for _, key in ipairs({
+        "enabled",
+        "showTrivial",
+        "showSeasonal",
+        "autoAccept",
+        "autoTurnIn",
+        "debug",
+    }) do
+        local raw = sv and sv[key]
+        local effective = ns.GetOption(key)
+        print(("  %s raw=%s effective=%s"):format(
+            key,
+            raw == nil and "nil" or tostring(raw),
+            tostring(effective)
+        ))
+    end
+    if ns.settingsMode then
+        print("  options UI: " .. tostring(ns.settingsMode))
     end
 end
 
@@ -479,14 +509,14 @@ local OPTION_SPECS = {
 }
 
 local function BoolVarType()
-    if Settings.VarType and Settings.VarType.Boolean then
+    if Settings and Settings.VarType and Settings.VarType.Boolean then
         return Settings.VarType.Boolean
     end
-    return type(true)
+    return "boolean"
 end
 
-local function RegisterNativeSettings(db)
-    if not Settings.RegisterVerticalLayoutCategory or not Settings.RegisterAddOnSetting then
+local function RegisterNativeSettings()
+    if not Settings.RegisterVerticalLayoutCategory then
         return false
     end
     local category = Settings.RegisterVerticalLayoutCategory("Forever Quest Pins")
@@ -494,44 +524,49 @@ local function RegisterNativeSettings(db)
         return false
     end
     local registered = 0
+    local mode = nil
     for i = 1, #OPTION_SPECS do
         local spec = OPTION_SPECS[i]
         local variable = ADDON_NAME .. "_" .. spec.key
-        local ok, setting = pcall(
-            Settings.RegisterAddOnSetting,
-            category,
-            variable,
-            spec.key,
-            db,
-            BoolVarType(),
-            spec.name,
-            ns.defaults[spec.key]
-        )
-        if not ok then
-            ok, setting = pcall(
+        local setting
+        if Settings.RegisterProxySetting then
+            local ok, result = pcall(
+                Settings.RegisterProxySetting,
+                category,
+                variable,
+                type(ns.defaults[spec.key]),
+                spec.name,
+                ns.defaults[spec.key],
+                function()
+                    return ns.GetOption(spec.key)
+                end,
+                function(value)
+                    ns.SetOption(spec.key, value)
+                end
+            )
+            if ok and result then
+                setting = result
+                mode = mode or "proxy"
+            end
+        end
+        if not setting and Settings.RegisterAddOnSetting then
+            local ok, result = pcall(
                 Settings.RegisterAddOnSetting,
                 category,
-                spec.name,
                 variable,
+                spec.key,
+                ForeverQuestPinsDB_Settings,
                 BoolVarType(),
+                spec.name,
                 ns.defaults[spec.key]
             )
-        end
-        if ok and setting then
-            settingObjects[spec.key] = setting
-            registered = registered + 1
-            if setting.SetValueChangedCallback then
-                setting:SetValueChangedCallback(function(_, value)
-                    local bit = value and true or false
-                    db[spec.key] = bit
-                    if spec.key == "enabled" and not bit and ns.MapPins then
-                        ns.MapPins:Clear()
-                    end
-                    if ns.RequestRefresh then
-                        ns.RequestRefresh("settings")
-                    end
-                end)
+            if ok and result then
+                setting = result
+                mode = mode or "savedvars"
             end
+        end
+        if setting then
+            registered = registered + 1
             if not pcall(Settings.CreateCheckbox, category, setting, spec.tooltip) then
                 pcall(Settings.CreateCheckBox, category, setting, spec.tooltip)
             end
@@ -543,6 +578,7 @@ local function RegisterNativeSettings(db)
     if Settings.RegisterAddOnCategory then
         Settings.RegisterAddOnCategory(category)
     end
+    ns.settingsMode = mode or "native"
     return true
 end
 
@@ -554,7 +590,7 @@ function ns.TryRegisterSettings()
         return false
     end
     local db = ns.InitSettings()
-    if db and RegisterNativeSettings(db) then
+    if db and RegisterNativeSettings() then
         ns.settingsRegistered = true
         return true
     end
@@ -635,6 +671,7 @@ function ns.TryRegisterSettings()
     if category then
         Settings.RegisterAddOnCategory(category)
         ns.settingsRegistered = true
+        ns.settingsMode = "canvas"
         return true
     end
     return false
