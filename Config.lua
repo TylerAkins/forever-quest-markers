@@ -13,6 +13,8 @@ ns.defaults = {
 local SV_NAME = "ForeverQuestPinsDB_Settings"
 local settingsReady = false
 local optionChecks = {}
+local activeSettings = nil
+local dirtyOptions = {}
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -26,7 +28,25 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
-local function SavedTable()
+-- Forever may inject SavedVariables into the addon environment, not _G.
+-- Always prefer that table and mutate it in place so /reload writes it.
+local function LookupSaved()
+    if getfenv then
+        local env = getfenv(1)
+        if type(env) == "table" then
+            local sv = rawget(env, SV_NAME)
+            if type(sv) == "table" then
+                return sv
+            end
+            sv = env[SV_NAME]
+            if type(sv) == "table" then
+                return sv
+            end
+        end
+    end
+    if type(ForeverQuestPinsDB_Settings) == "table" then
+        return ForeverQuestPinsDB_Settings
+    end
     local sv = _G[SV_NAME]
     if type(sv) == "table" then
         return sv
@@ -34,35 +54,60 @@ local function SavedTable()
     return nil
 end
 
+local function BindSavedTable(sv)
+    ForeverQuestPinsDB_Settings = sv
+    _G[SV_NAME] = sv
+end
+
+local function AttachSettings(createIfMissing)
+    local found = LookupSaved()
+    if found then
+        if activeSettings and activeSettings ~= found then
+            for key in pairs(dirtyOptions) do
+                found[key] = activeSettings[key]
+            end
+        end
+        activeSettings = found
+        CopyDefaults(ns.defaults, activeSettings)
+        BindSavedTable(activeSettings)
+        settingsReady = true
+        return activeSettings
+    end
+    if not activeSettings then
+        if not createIfMissing then
+            return nil
+        end
+        activeSettings = CopyDefaults(ns.defaults, {})
+    else
+        CopyDefaults(ns.defaults, activeSettings)
+    end
+    if createIfMissing then
+        BindSavedTable(activeSettings)
+        settingsReady = true
+    end
+    return activeSettings
+end
+
 -- Fill missing keys only. Do not create a table here: assigning defaults
 -- before Forever loads SavedVariables would skip the saved file and make
 -- auto-accept / auto-turn-in look like they reset (those default to false).
 function ns.HydrateSettings()
-    local sv = SavedTable()
-    if not sv then
-        return nil
-    end
-    CopyDefaults(ns.defaults, sv)
-    settingsReady = true
-    return sv
+    return AttachSettings(false)
 end
 
 function ns.InitSettings()
-    local sv = ns.HydrateSettings()
-    if not sv then
-        sv = CopyDefaults(ns.defaults, {})
-        _G[SV_NAME] = sv
-    end
-    settingsReady = true
-    return sv
+    return AttachSettings(true)
 end
 
 function ns.GetSettings()
-    return SavedTable()
+    return activeSettings or LookupSaved()
 end
 
 function ns.GetOption(key)
-    local settings = SavedTable()
+    if dirtyOptions[key] and activeSettings and activeSettings[key] ~= nil then
+        return activeSettings[key]
+    end
+    local settings = LookupSaved() or activeSettings
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -70,8 +115,12 @@ function ns.GetOption(key)
 end
 
 function ns.SetOption(key, value)
-    local sv = ns.InitSettings()
-    sv[key] = value
+    dirtyOptions[key] = true
+    if not activeSettings then
+        activeSettings = CopyDefaults(ns.defaults, {})
+    end
+    activeSettings[key] = value
+    AttachSettings(false)
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
@@ -409,7 +458,7 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
     box.optionKey = optionKey
     local applying = false
     box:SetScript("OnClick", function(self)
-        if applying or not settingsReady then
+        if applying then
             return
         end
         local value = self:GetChecked() and true or false
@@ -419,9 +468,12 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
         end
     end)
     box.ApplySaved = function(self)
+        local script = self:GetScript("OnClick")
+        self:SetScript("OnClick", nil)
         applying = true
         self:SetChecked(not not ns.GetOption(optionKey))
         applying = false
+        self:SetScript("OnClick", script)
     end
     box:SetScript("OnShow", function(self)
         self:ApplySaved()
