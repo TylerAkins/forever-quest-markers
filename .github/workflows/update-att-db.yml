@@ -9,6 +9,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: update-att-database
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-24.04
@@ -83,6 +87,29 @@ jobs:
           else
             echo "quest_data=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Close stale database pull request
+        if: steps.changes.outputs.quest_data == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head att-db-update \
+            --state open \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')"
+          if [[ -z "$PR_NUMBER" ]]; then
+            echo "No stale ATT database pull request is open."
+            exit 0
+          fi
+          gh pr close "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --delete-branch \
+            --comment "Closing automatically because the regenerated shipped quest database now matches main."
 
       - name: Prepare patch release
         if: steps.changes.outputs.quest_data == 'true'
