@@ -5,6 +5,7 @@ ns.defaults = {
     enabled = true,
     showTrivial = true,
     showSeasonal = false,
+    showWarEffort = true,
     autoAccept = false,
     autoTurnIn = false,
     debug = false,
@@ -195,6 +196,7 @@ function ns.SlashCommand(msg)
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
+        print("  /fqp wareffort Toggle AQ war effort pins in capitals (on by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
@@ -231,6 +233,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "seasonal" then
         ToggleFlag("showSeasonal", "Show seasonal/holiday pins")
+        return
+    end
+    if msg == "wareffort" or msg == "war" then
+        ToggleFlag("showWarEffort", "Show AQ war effort pins")
         return
     end
     if msg == "accept" then
@@ -339,6 +345,7 @@ function ns.PrintSettingsDebug()
         "enabled",
         "showTrivial",
         "showSeasonal",
+        "showWarEffort",
         "autoAccept",
         "autoTurnIn",
         "debug",
@@ -660,13 +667,21 @@ function ns.TryRegisterSettings()
             )
             seasonal:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
 
+            local warEffort = CreateOptionCheckbox(
+                self,
+                "showWarEffort",
+                "Show AQ war effort pins",
+                "Commodity turn-ins at Orgrimmar / Ironforge (Senior Sergeants, signets, \"Needs Your Help\")."
+            )
+            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
+
             local accept = CreateOptionCheckbox(
                 self,
                 "autoAccept",
                 "Auto-accept quests",
                 "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
             )
-            accept:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
+            accept:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
 
             local turnin = CreateOptionCheckbox(
                 self,

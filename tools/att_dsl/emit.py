@@ -142,6 +142,8 @@ def _quest_body(record: QuestRecord) -> str:
         parts.append("isYearly=true")
     if record.is_monthly:
         parts.append("isMonthly=true")
+    if record.is_war_effort:
+        parts.append("isWarEffort=true")
     if record.event is not None:
         parts.append(f"event={int(record.event)}")
     return ", ".join(parts)

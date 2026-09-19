@@ -20,6 +20,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 - Overlapping starts on the same spot stack into one pin
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
+- AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
 
 Quest coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings)’s Forever database. ATT is **not** bundled and is **not** required at runtime.
 
@@ -43,6 +44,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | Show quest-start pins | On |
 | Show trivial / low-level pins | On (only hides them if the client has `GetQuestGreenRange`) |
 | Show seasonal / holiday pins | Off |
+| Show AQ war effort pins | On (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Debug tooltips | Off |
@@ -55,6 +57,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
+| `/fqp wareffort` | Toggle AQ war effort pins in capitals |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
 | `/fqp debug` | Toggle debug tooltips |
