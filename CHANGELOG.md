@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.14 — 2026-09-19
+
+- Stop creating `ForeverQuestPinsDB_Settings` at file load (Forever can bind the real SavedVariables table later); buffer changes until that table exists, merge on login, and only create a new table on `PLAYER_ENTERING_WORLD` if still missing
+
 ## 0.1.13 — 2026-09-19
 
 - Fix Options checkboxes that used Blizzard’s legacy Settings API fallback (values lived outside `ForeverQuestPinsDB_Settings` and vanished on `/reload`); use proxy settings that call `SetOption`, drop the broken fallback, and retry registration on `PLAYER_LOGIN`
