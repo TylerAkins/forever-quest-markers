@@ -15,8 +15,10 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Database/ForeverQuests.lua` | Generated start records (do not edit by hand) |
 | `Database/Metadata.lua` | Pinned ATT commit SHA |
 | `Database/build_report.json` | Converter stats (not shipped in the player zip) |
+| `VERSION` | Current stable release used by automated version checks |
 | `Media/QuestAvailable.tga` | Fallback bang if `QuestNormal` fails |
 | `tools/build_quest_db.py` | ATT Forever → `Database/` |
+| `tools/att_release.py` | Prepares and validates automated ATT patch releases |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
 | `.pkgmeta` | [BigWigs packager](https://github.com/BigWigsMods/packager) rules |
 
@@ -37,10 +39,12 @@ Live Forever zone files are preferred. `zzOLD` is a fallback for quest IDs still
 Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 
 - Daily at 06:00 UTC, and on manual **Run workflow**
-- Regenerates `Database/`, runs tests, opens a PR when the converted data changed
+- Opens a versioned PR only when the shipped quest records changed; ATT SHA-only updates are ignored
+- Bumps the patch version and adds an ATT database entry to `CHANGELOG.md`
+- Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
 
-It never pushes generated data straight to `main`.
+It never pushes generated data straight to `main` or merges its own PR.
 
 ## Tests
 
@@ -49,6 +53,7 @@ python3 tests/test_build_quest_db.py
 python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
 python3 tests/test_compile_addon.py
+python3 tests/test_att_release.py
 ```
 
 CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
@@ -69,12 +74,14 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 | Channel | Trigger | Result |
 |---------|---------|--------|
-| Stable | Push an annotated `v*` tag (`v0.1.22`) | Numbered GitHub Release and CurseForge package |
+| Stable | Push an annotated `v*` tag, or merge a prepared ATT database PR | Numbered GitHub Release and CurseForge package |
 | Preview | Merge to `main` or manually run the Release workflow | Commit-specific GitHub Actions artifact |
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
-`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `tests/`, `tools/`, `.github/`, or `build_report.json`.
+`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
+
+All stable releases must update `VERSION` to match the tag. For automated ATT updates, the generated PR does this and merging it creates the tag. For other releases, update `VERSION` and `CHANGELOG.md` in the release PR before creating the tag.
 
 ## CurseForge
 

@@ -34,6 +34,7 @@ jobs:
           test -f ATTRIBUTION.md
           test -f README.md
           test -f CHANGELOG.md
+          test -f VERSION
           test -f docs/DEVELOPMENT.md
           grep -qE '^## X-Website:' ForeverQuestPins.toc
           grep -qE '^## X-Issues:' ForeverQuestPins.toc
@@ -44,6 +45,24 @@ jobs:
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 tests/test_compile_addon.py
+          python3 tests/test_att_release.py
+
+      - name: Validate database release intent
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet "$BASE_SHA" HEAD -- Database/ForeverQuests.lua; then
+            exit 0
+          fi
+          PREVIOUS_VERSION="$(git show "${BASE_SHA}:VERSION" | tr -d '[:space:]')"
+          CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
+          python3 tools/att_release.py validate \
+            --previous-version "$PREVIOUS_VERSION" \
+            --current-version "$CURRENT_VERSION" \
+            --quest-data-changed
+          grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
       - name: Read pinned ATT SHA
         id: att
