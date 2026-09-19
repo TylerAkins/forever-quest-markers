@@ -15,7 +15,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 ## Features
 
 - Yellow `!` pins on `WorldMapFrame` for acceptable, unaccepted quest starts
-- Tooltips with quest and NPC names (IDs only if debug is on)
+- Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)

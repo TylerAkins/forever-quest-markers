@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.9 — 2026-09-19
+
+- Pin tooltips show suggested quest level like the Forever tracker (`[9] Minshina's Skull`), via `C_QuestLog.GetQuestDifficultyLevel`
+
 ## 0.1.8 — 2026-09-19
 
 - Use Blizzard’s retail `QuestNormal` bang at a fixed 24px size
