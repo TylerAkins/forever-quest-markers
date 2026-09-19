@@ -36,7 +36,7 @@ Extract so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, t
 
 ## Settings
 
-Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. Choices are saved across `/reload` and logout.
+Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. Choices are saved across `/reload` and logout. New installs do not need to touch SavedVariables files.
 
 | Option | Default |
 |--------|---------|
@@ -62,6 +62,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
 | `/fqp why <id>` | Why a quest is pinned or hidden |
 | `/fqp available` | Starts that should pin on the open map |
+| `/fqp wipe` | Reset options (recovery; see Support) |
 | `/fqp apis` | Which Forever map/quest APIs this client exposes |
 
 ## Beta limitations
@@ -82,6 +83,7 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
 - Quest **database** mistakes belong on [All The Things](https://github.com/ATTWoWAddon/AllTheThings), not here
+- If you ran a **0.1.10–0.1.16** beta and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
 ## License
 
