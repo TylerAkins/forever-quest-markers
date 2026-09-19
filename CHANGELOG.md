@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.15 — 2026-09-19
+
+- Remove native Settings registrations: initializing a proxy setting can invoke its default-value setter and overwrite a saved `autoAccept=true` / `autoTurnIn=true` with `false`; the Options canvas now exclusively reads and writes the addon SavedVariables table
+
 ## 0.1.14 — 2026-09-19
 
 - Stop creating `ForeverQuestPinsDB_Settings` at file load (Forever can bind the real SavedVariables table later); buffer changes until that table exists, merge on login, and only create a new table on `PLAYER_ENTERING_WORLD` if still missing
