@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.10 — 2026-09-19
+
+- Keep auto-accept and auto-turn-in checked after `/reload` (do not assign defaults before SavedVariables load; re-sync the Options checkboxes)
+
 ## 0.1.9 — 2026-09-19
 
 - Pin tooltips show suggested quest level like the Forever tracker (`[9] Minshina's Skull`), via `C_QuestLog.GetQuestDifficultyLevel`
