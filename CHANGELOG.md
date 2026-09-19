@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.12 — 2026-09-19
+
+- Bind auto-accept / auto-turn-in through Forever’s Settings API (`RegisterAddOnSetting`) on the SavedVariables table, do not replace that table, toggle Options from the saved value (not `GetChecked`), and flush keys on logout
+- `/fqp stats` prints whether auto-accept and auto-turn-in are on
+
 ## 0.1.11 — 2026-09-19
 
 - Persist auto-accept / auto-turn-in in the addon SavedVariables table Forever actually writes (not a separate `_G` copy), merge clicks if that table arrives late, and do not treat Options `SetChecked` as a click
