@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
 
+## 0.1.18 — 2026-09-19
+
+- Do not copy a default-filled placeholder over a SavedVariables table Forever injects later (that reset every option after `/reload`)
+- `/fqp wipe` resets in-memory options and prints the leftover `ForeverQuestPins.lua` paths to delete while the client is closed
+
 ## 0.1.17 — 2026-09-19
 
 - Bind options the way working Forever addons do (Quest Master / AceDB, HideAnything): one SavedVariables table, created on `ADDON_LOADED` if missing, mutated in place, never replaced; write the same keys onto the per-character table; flush on logout. Drop `LoadSavedVariablesFirst` and the late-bind scratch buffer that left Forever serializing an empty table.
