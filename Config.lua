@@ -16,6 +16,7 @@ ns.defaults = {
 local SV_NAME = "ForeverQuestPinsDB_Settings"
 local CHAR_SV_NAME = "ForeverQuestPinsCharacterSettings"
 local optionChecks = {}
+local dirty = {}
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -29,60 +30,56 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
-local function ExistingTable(...)
-    local n = select("#", ...)
-    for i = 1, n do
-        local candidate = select(i, ...)
-        if type(candidate) == "table" then
-            return candidate
-        end
+local function AssignGlobal(name, tbl)
+    if type(_G) == "table" then
+        _G[name] = tbl
+    end
+end
+
+local function LiveGlobal(name, fallback)
+    if type(_G) == "table" and type(_G[name]) == "table" then
+        return _G[name]
+    end
+    if type(fallback) == "table" then
+        return fallback
     end
     return nil
 end
 
-local function CopyKeys(src, dest)
-    if type(src) ~= "table" or type(dest) ~= "table" or src == dest then
+-- Same pattern as HideAnything: if not HideAnythingDB then HideAnythingDB = {} end
+-- Never replace an existing table; Forever serializes the original reference.
+local function EnsureBareGlobal(name, current)
+    local live = LiveGlobal(name, current)
+    if type(live) ~= "table" then
+        live = {}
+    end
+    AssignGlobal(name, live)
+    return live
+end
+
+local function ApplyDirty(dest)
+    if type(dest) ~= "table" then
         return dest
     end
-    for key, value in pairs(src) do
+    for key, value in pairs(dirty) do
         dest[key] = value
     end
     return dest
 end
 
-local function GlobalTable(name)
-    if type(_G) == "table" and type(_G[name]) == "table" then
-        return _G[name]
-    end
-    return nil
-end
-
--- Mutate the client-owned table. Replacing the global with a new {} is the
--- AceDB #690 disconnect: Forever still serializes the original empty table.
-local function BindNamedTable(name, fallback)
-    local live = ExistingTable(GlobalTable(name), fallback)
-    if not live then
-        live = {}
-    end
-    if type(_G) == "table" then
-        _G[name] = live
-    end
-    return live
-end
-
 function ns.InitSettings()
-    local account = BindNamedTable(SV_NAME, ForeverQuestPinsDB_Settings)
+    -- Prefer a table Forever just injected; do not copy default-filled
+    -- placeholders over it (that looked like "options never persist").
+    local account = EnsureBareGlobal(SV_NAME, ForeverQuestPinsDB_Settings)
     ForeverQuestPinsDB_Settings = account
 
-    local character = BindNamedTable(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
+    local character = EnsureBareGlobal(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
     ForeverQuestPinsCharacterSettings = character
 
-    local pending = ns.db
-    if pending and pending ~= account then
-        CopyKeys(pending, account)
+    if ns.db and ns.db ~= account then
+        ApplyDirty(account)
     end
 
-    -- Older builds stored options only on the per-character table.
     if not ns.settingsBound then
         for key in pairs(ns.defaults) do
             if account[key] == nil and character[key] ~= nil then
@@ -92,29 +89,61 @@ function ns.InitSettings()
     end
 
     CopyDefaults(ns.defaults, account)
-    CopyKeys(account, character)
+    for key in pairs(ns.defaults) do
+        character[key] = account[key]
+    end
     ns.db = account
     ns.settingsBound = true
     return account
 end
 
-function ns.FlushSettings()
-    local db = ns.InitSettings()
-    CopyKeys(db, ForeverQuestPinsDB_Settings)
-    CopyKeys(db, ForeverQuestPinsCharacterSettings)
-    if type(_G) == "table" then
-        CopyKeys(db, BindNamedTable(SV_NAME, ForeverQuestPinsDB_Settings))
-        CopyKeys(db, BindNamedTable(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings))
+function ns.ResolveSettings()
+    if not ns.settingsBound then
+        return ns.db
     end
-    return db
-end
-
-function ns.GetSettings()
+    local account = LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings)
+    if type(account) == "table" and account ~= ns.db then
+        ApplyDirty(account)
+        ForeverQuestPinsDB_Settings = account
+        AssignGlobal(SV_NAME, account)
+        ns.db = account
+    end
     return ns.db
 end
 
+function ns.FlushSettings()
+    local db = ns.InitSettings()
+    ApplyDirty(db)
+    ApplyDirty(ForeverQuestPinsDB_Settings)
+    ApplyDirty(ForeverQuestPinsCharacterSettings)
+    return db
+end
+
+function ns.WipeSettings()
+    ns.InitSettings()
+    for key, value in pairs(ns.defaults) do
+        dirty[key] = value
+        if type(ns.db) == "table" then
+            ns.db[key] = value
+        end
+        if type(ForeverQuestPinsDB_Settings) == "table" then
+            ForeverQuestPinsDB_Settings[key] = value
+        end
+        if type(ForeverQuestPinsCharacterSettings) == "table" then
+            ForeverQuestPinsCharacterSettings[key] = value
+        end
+    end
+    if ns.SyncSettingsCheckboxes then
+        ns.SyncSettingsCheckboxes()
+    end
+end
+
+function ns.GetSettings()
+    return ns.ResolveSettings() or ns.db
+end
+
 function ns.GetOption(key)
-    local settings = ns.db
+    local settings = ns.ResolveSettings() or ns.db
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -123,7 +152,8 @@ end
 
 function ns.SetOption(key, value)
     value = value and true or false
-    local live = ns.db
+    dirty[key] = value
+    local live = ns.ResolveSettings()
     if not live then
         -- Do not assign the TOC SavedVariables global before ADDON_LOADED.
         live = {}
@@ -171,6 +201,7 @@ function ns.SlashCommand(msg)
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
         print("  /fqp settings Print saved option values (debug)")
+        print("  /fqp wipe     Reset options and print leftover SavedVariables paths")
         print("  /fqp apis     Print which Forever map/quest APIs are present")
         print("  /fqp why <id> Show why a quest is pinned or hidden")
         print("  /fqp available List quests that should pin on this map")
@@ -223,6 +254,16 @@ function ns.SlashCommand(msg)
     end
     if msg == "settings" then
         ns.PrintSettingsDebug()
+        return
+    end
+    if msg == "wipe" then
+        ns.WipeSettings()
+        Print("In-memory options reset to defaults.")
+        Print("Fully close the game, then delete leftover files from older builds:")
+        print("  WTF\\Account\\<account>\\SavedVariables\\ForeverQuestPins.lua")
+        print("  WTF\\Account\\<account>\\<realm>\\<char>\\SavedVariables\\ForeverQuestPins.lua")
+        print("  (delete the .bak next to each too)")
+        Print("Start the client again. /reload is not enough after a wipe.")
         return
     end
     if msg == "apis" then
@@ -290,8 +331,9 @@ function ns.PrintSettingsDebug()
         tostring(ns.db ~= nil),
         tostring(type(account) == "table"),
         tostring(type(character) == "table"),
-        tostring(ns.db ~= nil and ns.db == GlobalTable(SV_NAME))
+        tostring(ns.db ~= nil and ns.db == LiveGlobal(SV_NAME, ForeverQuestPinsDB_Settings))
     ))
+    print("  If options reset after /reload, /fqp wipe and delete the ForeverQuestPins.lua files while the game is closed.")
     for _, key in ipairs({
         "enabled",
         "showTrivial",

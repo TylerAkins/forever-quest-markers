@@ -38,6 +38,8 @@ Extract so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, t
 
 Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. Choices are saved across `/reload` and logout.
 
+If a toggle snaps back after `/reload`, leftover files from older builds are usually why. Fully close the game, delete `WTF\Account\<account>\SavedVariables\ForeverQuestPins.lua` and `WTF\Account\<account>\<realm>\<char>\SavedVariables\ForeverQuestPins.lua` (and the `.bak` next to each), then start the client again. `/fqp wipe` prints those paths. `/reload` is not enough after a wipe.
+
 | Option | Default |
 |--------|---------|
 | Show quest-start pins | On |
@@ -62,6 +64,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
 | `/fqp why <id>` | Why a quest is pinned or hidden |
 | `/fqp available` | Starts that should pin on the open map |
+| `/fqp wipe` | Reset options and print leftover SavedVariables paths |
 | `/fqp apis` | Which Forever map/quest APIs this client exposes |
 
 ## Beta limitations
