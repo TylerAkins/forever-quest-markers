@@ -62,22 +62,24 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("OptionalDeps", toc)
         self.assertNotIn("RequiredDeps", toc)
 
-    def test_pins_draw_a_solid_fill(self) -> None:
+    def test_pins_use_retail_questnormal(self) -> None:
         text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
-        self.assertIn("function PaintFill(tex)", text)
-        self.assertIn("tex:SetColorTexture(FILL_R, FILL_G, FILL_B, FILL_A)", text)
-        self.assertIn("Interface\\\\Buttons\\\\WHITE8X8", text)
+        self.assertIn('ICON_ATLAS = "QuestNormal"', text)
+        self.assertIn("tex:SetAtlas(name, false)", text)
         self.assertIn("Media\\\\QuestAvailable", text)
         self.assertIn("pin:SetIgnoreParentScale(false)", text)
         self.assertIn("PIN_SIZE = 24", text)
         set_fn = text.find("local function SetPinTexture(pin)")
         next_fn = text.find("local function ReleasePin(pin)", set_fn)
         set_body = text[set_fn:next_fn]
-        self.assertIn("PaintFill(fill)", set_body)
-        self.assertIn("TrySetFile(tex, ICON_FALLBACK)", set_body)
-        # Gossip/atlas pcall-succeed with no pixels and cover the fill.
-        self.assertNotIn("TrySetFile(tex, ICON_GOSSIP)", set_body)
-        self.assertNotIn("TrySetAtlas(tex, ICON_ATLAS)", set_body)
+        atlas_try = set_body.find("TrySetAtlas(tex, ICON_ATLAS)")
+        tga_try = set_body.find("TrySetFile(tex, ICON_FILE)")
+        self.assertNotEqual(atlas_try, -1)
+        self.assertNotEqual(tga_try, -1)
+        self.assertLess(atlas_try, tga_try)
+        self.assertNotIn("PaintFill", text)
+        self.assertNotIn("SetColorTexture", text)
+        self.assertNotIn("ICON_GOSSIP", text)
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
