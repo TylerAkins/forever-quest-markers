@@ -7,8 +7,7 @@ ignore:
   - .cursor
   - .gitignore
   - .pkgmeta
-  - ATTRIBUTION.md
-  - README.md
+  - docs
   - tests
   - tools
   - Database/build_report.json

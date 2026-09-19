@@ -2,4 +2,7 @@ blank_issues_enabled: true
 contact_links:
   - name: All The Things (quest database source)
     url: https://github.com/ATTWoWAddon/AllTheThings
-    about: Forever Quest Pins is not ATT. For ATT Forever database mistakes, use their repo.
+    about: Forever Quest Pins is not ATT. Report ATT Forever coordinate or quest-data mistakes there.
+  - name: Releases (installable zips)
+    url: https://github.com/TylerAkins/forever-quest-markers/releases
+    about: Packager zips only. Do not install GitHub’s “Source code” archives.
