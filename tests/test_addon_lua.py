@@ -49,6 +49,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("/fqp why", readme)
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.1.13", changelog)
         self.assertIn("## 0.1.12", changelog)
         self.assertIn("## 0.1.11", changelog)
         self.assertIn("## 0.1.10", changelog)
@@ -165,13 +166,23 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("function ns.HydrateSettings()", config)
         self.assertNotIn("function ns.FlushSettings()", config)
         self.assertNotIn("getfenv", config)
+        self.assertIn("ForeverQuestPinsDB_Settings = ForeverQuestPinsDB_Settings or {}", config)
+        self.assertIn("RegisterProxySetting", config)
+        self.assertIn("ForeverQuestPinsDB_Settings,", config)
+        self.assertNotIn("spec.name,\n                variable,", config)
+        self.assertIn('msg == "settings"', config)
+        self.assertIn("function ns.PrintSettingsDebug()", config)
+        self.assertIn("ns.settingsMode", config)
         core = (ROOT / "Core.lua").read_text(encoding="utf-8")
         loaded_at = core.find('if event == "ADDON_LOADED" then')
         loaded_end = core.find('if event == "QUEST_DATA_LOAD" then', loaded_at)
         loaded = core[loaded_at:loaded_end]
         self.assertIn("ns.InitSettings()", loaded)
         self.assertIn("ns.TryRegisterSettings()", loaded)
-        self.assertNotIn("PLAYER_LOGOUT", core)
+        login_at = core.find('if event == "PLAYER_LOGIN" then')
+        login_end = core.find("ns.RequestRefresh(event)", login_at)
+        login = core[login_at:login_end]
+        self.assertIn("ns.TryRegisterSettings()", login)
 
     def test_debug_option_in_settings_panel(self) -> None:
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")

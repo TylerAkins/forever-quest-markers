@@ -68,6 +68,8 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
+        ns.InitSettings()
+        ns.TryRegisterSettings()
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
