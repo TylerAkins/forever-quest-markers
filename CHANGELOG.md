@@ -4,8 +4,8 @@ Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/
 
 ## 0.1.12 — 2026-09-19
 
-- Bind auto-accept / auto-turn-in through Forever’s Settings API (`RegisterAddOnSetting`) on the SavedVariables table, do not replace that table, toggle Options from the saved value (not `GetChecked`), and flush keys on logout
-- `/fqp stats` prints whether auto-accept and auto-turn-in are on
+- Persist options the usual way: fill `ForeverQuestPinsDB_Settings` on `ADDON_LOADED`, write keys on that table, bind Forever Settings checkboxes to it, and toggle from the saved flag instead of `GetChecked`
+- `/fqp stats` prints auto-accept and auto-turn-in
 
 ## 0.1.11 — 2026-09-19
 

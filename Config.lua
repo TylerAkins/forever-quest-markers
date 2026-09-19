@@ -10,12 +10,8 @@ ns.defaults = {
     debug = false,
 }
 
-local SV_NAME = "ForeverQuestPinsDB_Settings"
-local settingsReady = false
 local optionChecks = {}
-local activeSettings = nil
 local settingObjects = {}
-local createdGlobal = false
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -29,93 +25,22 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
--- Forever may inject SavedVariables into the addon environment, not _G.
--- Never replace a table that already exists: that skips the file Forever dumps.
-local function LookupSaved()
-    if getfenv then
-        local env = getfenv(1)
-        if type(env) == "table" then
-            local sv = rawget(env, SV_NAME)
-            if type(sv) == "table" then
-                return sv
-            end
-            sv = env[SV_NAME]
-            if type(sv) == "table" then
-                return sv
-            end
-        end
-    end
-    if type(ForeverQuestPinsDB_Settings) == "table" then
-        return ForeverQuestPinsDB_Settings
-    end
-    local sv = _G[SV_NAME]
-    if type(sv) == "table" then
-        return sv
-    end
-    return nil
-end
-
-function ns.FlushSettings()
-    local db = activeSettings or LookupSaved()
-    if type(db) ~= "table" then
-        return
-    end
-    local targets = {
-        LookupSaved(),
-        ForeverQuestPinsDB_Settings,
-        _G[SV_NAME],
-    }
-    for i = 1, #targets do
-        local tbl = targets[i]
-        if type(tbl) == "table" and tbl ~= db then
-            for key, value in pairs(db) do
-                tbl[key] = value
-            end
-        end
-    end
-end
-
-function ns.HydrateSettings()
-    local sv = LookupSaved()
-    if not sv then
-        return nil
-    end
-    CopyDefaults(ns.defaults, sv)
-    activeSettings = sv
-    settingsReady = true
-    return sv
-end
-
+-- TOC SavedVariables: ForeverQuestPinsDB_Settings is loaded before ADDON_LOADED.
+-- Fill missing keys only; do not replace the table.
 function ns.InitSettings()
-    local sv = ns.HydrateSettings()
-    if sv then
-        return sv
+    if type(ForeverQuestPinsDB_Settings) ~= "table" then
+        ForeverQuestPinsDB_Settings = {}
     end
-    if not createdGlobal then
-        createdGlobal = true
-        if type(ForeverQuestPinsDB_Settings) ~= "table" then
-            ForeverQuestPinsDB_Settings = CopyDefaults(ns.defaults, {})
-        else
-            CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
-        end
-        if type(_G[SV_NAME]) ~= "table" then
-            _G[SV_NAME] = ForeverQuestPinsDB_Settings
-        end
-    end
-    activeSettings = LookupSaved()
-    if activeSettings then
-        CopyDefaults(ns.defaults, activeSettings)
-        settingsReady = true
-    end
-    return activeSettings
+    CopyDefaults(ns.defaults, ForeverQuestPinsDB_Settings)
+    return ForeverQuestPinsDB_Settings
 end
 
 function ns.GetSettings()
-    return activeSettings or LookupSaved()
+    return ForeverQuestPinsDB_Settings
 end
 
 function ns.GetOption(key)
-    local settings = LookupSaved() or activeSettings
+    local settings = ForeverQuestPinsDB_Settings
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -125,18 +50,7 @@ end
 function ns.SetOption(key, value)
     value = value and true or false
     local sv = ns.InitSettings()
-    if not sv then
-        sv = CopyDefaults(ns.defaults, {})
-        activeSettings = sv
-    end
     sv[key] = value
-    if type(ForeverQuestPinsDB_Settings) == "table" then
-        ForeverQuestPinsDB_Settings[key] = value
-    end
-    local globalTbl = _G[SV_NAME]
-    if type(globalTbl) == "table" then
-        globalTbl[key] = value
-    end
     local setting = settingObjects[key]
     if setting and setting.GetValue and setting.SetValue and setting:GetValue() ~= value then
         setting:SetValue(value)
@@ -639,15 +553,10 @@ function ns.TryRegisterSettings()
     if not Settings then
         return false
     end
-    local db = ns.HydrateSettings()
+    local db = ns.InitSettings()
     if db and RegisterNativeSettings(db) then
         ns.settingsRegistered = true
-        ns.settingsNative = true
         return true
-    end
-    -- Wait until SavedVariables exist so native Settings can bind that table.
-    if not db then
-        return false
     end
     if not Settings.RegisterCanvasLayoutCategory then
         return false
