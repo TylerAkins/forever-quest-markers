@@ -71,12 +71,30 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
-        ns.InitSettings()
+        ns.HydrateSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0, function()
+                ns.HydrateSettings()
+                if ns.SyncSettingsCheckboxes then
+                    ns.SyncSettingsCheckboxes()
+                end
+            end)
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
+        end
+        ns.RequestRefresh(event)
+        return
+    end
+    if event == "PLAYER_ENTERING_WORLD" then
+        -- Create the SavedVariables table only after login, if Forever still
+        -- has not injected one. Mutate in place when it already exists.
+        ns.InitSettings()
+        if ns.SyncSettingsCheckboxes then
+            ns.SyncSettingsCheckboxes()
         end
         ns.RequestRefresh(event)
         return
