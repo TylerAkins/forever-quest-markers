@@ -4,8 +4,10 @@ Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/
 
 ## 0.1.18 — 2026-09-19
 
-- Do not copy a default-filled placeholder over a SavedVariables table Forever injects later (that reset every option after `/reload`)
-- `/fqp wipe` is recovery for people who already ran 0.1.10–0.1.16 (empty leftover SavedVariables); new installs do not use it
+- Options persist again after `/reload` for new installs
+- If you already ran **0.1.10–0.1.16** and a toggle still snaps back: fully close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under account and character `SavedVariables`. New users skip this.
+- `/fqp wipe` only prints those paths; it does not delete files while the client is running
+- Do not copy a default-filled placeholder over a SavedVariables table Forever injects later
 
 ## 0.1.17 — 2026-09-19
 

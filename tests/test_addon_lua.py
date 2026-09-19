@@ -55,6 +55,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertIn("## 0.1.18", changelog)
+        self.assertIn("0.1.10–0.1.16", changelog)
         self.assertIn("## 0.1.17", changelog)
         self.assertIn("## 0.1.16", changelog)
         self.assertIn("## 0.1.15", changelog)
