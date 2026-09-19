@@ -12,7 +12,6 @@ local WATCHED_EVENTS = {
     "ADDON_LOADED",
     "PLAYER_LOGIN",
     "PLAYER_ENTERING_WORLD",
-    "PLAYER_LOGOUT",
     "QUEST_LOG_UPDATE",
     "QUEST_ACCEPTED",
     "QUEST_REMOVED",
@@ -53,10 +52,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON_NAME then
             return
         end
-        -- Hydrate only: do not create a defaults table here. Forever can
-        -- load SavedVariables after ADDON_LOADED; assigning first would
-        -- skip the saved file and uncheck auto-accept / auto-turn-in.
-        ns.HydrateSettings()
+        ns.InitSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
         if ns.MapPins then
@@ -72,39 +68,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
-        ns.HydrateSettings()
-        ns.TryRegisterSettings()
-        if ns.SyncSettingsCheckboxes then
-            ns.SyncSettingsCheckboxes()
-        end
-        if C_Timer and C_Timer.After then
-            C_Timer.After(0, function()
-                ns.HydrateSettings()
-                ns.TryRegisterSettings()
-                if ns.SyncSettingsCheckboxes then
-                    ns.SyncSettingsCheckboxes()
-                end
-            end)
-        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
         ns.RequestRefresh(event)
-        return
-    end
-    if event == "PLAYER_ENTERING_WORLD" then
-        ns.InitSettings()
-        ns.TryRegisterSettings()
-        if ns.SyncSettingsCheckboxes then
-            ns.SyncSettingsCheckboxes()
-        end
-        ns.RequestRefresh(event)
-        return
-    end
-    if event == "PLAYER_LOGOUT" then
-        if ns.FlushSettings then
-            ns.FlushSettings()
-        end
         return
     end
     ns.RequestRefresh(event)
