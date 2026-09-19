@@ -12,6 +12,7 @@ local WATCHED_EVENTS = {
     "ADDON_LOADED",
     "PLAYER_LOGIN",
     "PLAYER_ENTERING_WORLD",
+    "PLAYER_LOGOUT",
     "QUEST_LOG_UPDATE",
     "QUEST_ACCEPTED",
     "QUEST_REMOVED",
@@ -72,12 +73,14 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_LOGIN" then
         ns.HydrateSettings()
+        ns.TryRegisterSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
         if C_Timer and C_Timer.After then
             C_Timer.After(0, function()
                 ns.HydrateSettings()
+                ns.TryRegisterSettings()
                 if ns.SyncSettingsCheckboxes then
                     ns.SyncSettingsCheckboxes()
                 end
@@ -90,13 +93,18 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_ENTERING_WORLD" then
-        -- Create the SavedVariables table only after login, if Forever still
-        -- has not injected one. Mutate in place when it already exists.
         ns.InitSettings()
+        ns.TryRegisterSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
         ns.RequestRefresh(event)
+        return
+    end
+    if event == "PLAYER_LOGOUT" then
+        if ns.FlushSettings then
+            ns.FlushSettings()
+        end
         return
     end
     ns.RequestRefresh(event)
