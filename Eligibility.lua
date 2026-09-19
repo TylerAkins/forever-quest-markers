@@ -170,13 +170,39 @@ function ns.GetQuestTitle(questID)
     return nil
 end
 
+-- Suggested quest level (tracker [9]), not ATT minLevel. Forever exposes this
+-- for unaccepted IDs via C_QuestLog.GetQuestDifficultyLevel.
+function ns.GetQuestDifficultyLevel(questID)
+    if not questID then
+        return nil
+    end
+    local level = Call(C_QuestLog, "GetQuestDifficultyLevel", questID)
+    if type(level) == "number" and level > 0 then
+        return level
+    end
+    return nil
+end
+
+function ns.GetQuestDifficultyRGB(level)
+    if type(level) ~= "number" then
+        return 1, 0.82, 0
+    end
+    if GetQuestDifficultyColor then
+        local color = GetQuestDifficultyColor(level)
+        if type(color) == "table" and color.r then
+            return color.r, color.g, color.b
+        end
+    end
+    return 1, 0.82, 0
+end
+
 function ns.OnQuestDataLoad(questID)
     if not questID then
         return
     end
     requestedTitles[questID] = nil
-    local title = ReadQuestTitle(questID)
-    if title and ns.MapPins and ns.MapPins.OnTitleLoaded then
+    ReadQuestTitle(questID)
+    if ns.MapPins and ns.MapPins.OnTitleLoaded then
         ns.MapPins:OnTitleLoaded(questID)
     end
 end
@@ -243,6 +269,7 @@ end
 
 function ns.PrefetchQuestInfo(questID, data)
     ns.GetQuestTitle(questID)
+    ns.GetQuestDifficultyLevel(questID)
     ns.RequestQuestTitle(questID)
     local qg = data and (data.qg or (data.qgs and data.qgs[1]))
     if qg then
