@@ -48,6 +48,7 @@ jobs:
           python3 tests/test_build_quest_db.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
+          python3 tests/test_compile_addon.py
 
       - name: Package addon zip
         uses: BigWigsMods/packager@v2
