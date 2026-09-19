@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to Forever Quest Pins. The GitHub [`latest`](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release tracks `main`. Numbered releases are `v*` tags.
+Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
 ## 0.1.21 — 2026-09-19
 

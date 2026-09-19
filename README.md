@@ -26,14 +26,11 @@ Quest coordinates and restrictions come from [All The Things](https://github.com
 
 ## Install
 
-**CurseForge:** install *Forever Quest Pins* and set the game flavor to Forever when the client offers it.
+**CurseForge:** install [Forever Quest Pins](https://www.curseforge.com/wow/addons/forever-quest-pins) and select the Forever game flavor when the client offers it.
 
-**Zip:** download an addon zip from [GitHub Releases](https://github.com/TylerAkins/forever-quest-markers/releases) — not the “Source code” archive.
+**GitHub:** download a `ForeverQuestPins-v*-forever.zip` file from [GitHub Releases](https://github.com/TylerAkins/forever-quest-markers/releases), not GitHub's automatically generated “Source code” archives.
 
-- Named builds: `ForeverQuestPins-v0.1.8-forever.zip` (and later `v*` tags)
-- Current `main`: [Latest](https://github.com/TylerAkins/forever-quest-markers/releases/tag/latest) pre-release (`ForeverQuestPins-latest-forever.zip`)
-
-Extract so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, then restart the game or `/reload`. Enable the addon at character select if needed.
+Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, then restart the game or `/reload`. Enable the addon at character select if needed.
 
 ## Settings
 
@@ -63,6 +60,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
+| `/fqp settings` | Print saved and effective option values for debugging |
 | `/fqp why <id>` | Why a quest is pinned or hidden |
 | `/fqp available` | Starts that should pin on the open map |
 | `/fqp wipe` | Reset options (recovery; see Support) |

@@ -67,23 +67,35 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 ## Releases
 
-| Channel | How | Zip |
-|---------|-----|-----|
-| Numbered | Push an annotated `v*` tag (`v0.1.8`) | `ForeverQuestPins-v0.1.8-forever.zip` |
-| Rolling beta | Merge to `main` | `ForeverQuestPins-latest-forever.zip` on the moving `latest` pre-release tag |
+| Channel | Trigger | Result |
+|---------|---------|--------|
+| Stable | Push an annotated `v*` tag (`v0.1.22`) | Numbered GitHub Release and CurseForge package |
+| Preview | Merge to `main` or manually run the Release workflow | Commit-specific GitHub Actions artifact |
 
-Do not point players at GitHub’s “Source code” archives. The packager zip is the installable addon.
+Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
 `.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `tests/`, `tools/`, `.github/`, or `build_report.json`.
 
 ## CurseForge
 
-1. Create the project as a **WoW Forever** / custom addon if that flavor exists; otherwise note Interface **16001** in the listing.
-2. Mark the first upload **Beta**.
-3. Paste [README.md](../README.md) as the description (Markdown).
-4. Upload the packager zip from GitHub Releases (`ForeverQuestPins-*-forever.zip`), not a source archive.
-5. Add a screenshot of yellow `!` pins on the Forever world map; that is the listing thumbnail players look for.
-6. After CurseForge assigns a project id, add `## X-Curse-Project-ID: <id>` to `ForeverQuestPins.toc`.
+CurseForge uses its [native automatic packager](https://support.curseforge.com/support/solutions/articles/9000197281-automatic-packaging). GitHub Actions does not upload to CurseForge.
+
+Project configuration:
+
+1. Set **Source Code** to the public GitHub repository.
+2. Set **Automatic Packaging** to package new tagged commits, not all commits.
+3. Generate a dedicated CurseForge API token for the repository webhook.
+4. In GitHub repository settings, add a webhook for push events with this payload URL:
+
+   ```text
+   https://www.curseforge.com/api/projects/{projectID}/package?token={token}
+   ```
+
+5. Keep the webhook defaults and verify its initial delivery succeeds.
+
+The payload URL contains the API token. Never commit it, add it as an Actions secret, paste it into an issue, or include it in logs. Revoke and replace the token if the URL is exposed.
+
+The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
 License on CurseForge: **GPLv3**. Credit All The Things (MIT) for converted data.
 
