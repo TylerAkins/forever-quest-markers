@@ -10,8 +10,11 @@ ns.defaults = {
     debug = false,
 }
 
-local SV_NAME = "ForeverQuestPinsCharacterSettings"
-local sessionScratch = nil
+-- Account-wide SavedVariables name declared in the TOC. Working Forever addons
+-- (Quest Master via AceDB:New, HideAnything via InitDB) bind this exact global
+-- on ADDON_LOADED and never replace the table.
+local SV_NAME = "ForeverQuestPinsDB_Settings"
+local CHAR_SV_NAME = "ForeverQuestPinsCharacterSettings"
 local optionChecks = {}
 
 local function CopyDefaults(src, dest)
@@ -26,66 +29,92 @@ local function CopyDefaults(src, dest)
     return dest
 end
 
-local function ReadSaved()
-    local fromGlobal = _G[SV_NAME]
-    if type(fromGlobal) == "table" then
-        return fromGlobal
-    end
-    if type(ForeverQuestPinsCharacterSettings) == "table" then
-        return ForeverQuestPinsCharacterSettings
+local function ExistingTable(...)
+    local n = select("#", ...)
+    for i = 1, n do
+        local candidate = select(i, ...)
+        if type(candidate) == "table" then
+            return candidate
+        end
     end
     return nil
 end
 
-local function PublishSaved(sv)
-    ForeverQuestPinsCharacterSettings = sv
-    _G[SV_NAME] = sv
+local function CopyKeys(src, dest)
+    if type(src) ~= "table" or type(dest) ~= "table" or src == dest then
+        return dest
+    end
+    for key, value in pairs(src) do
+        dest[key] = value
+    end
+    return dest
 end
 
--- Forever can inject SavedVariables after our Lua files run. Do not assign
--- `ForeverQuestPinsCharacterSettings = {}` at file load: that table is not written
--- to WTF on /reload. Merge session changes once the real table exists.
-function ns.EnsureSettingsDB(create)
-    local live = ReadSaved()
-    if live then
-        if sessionScratch then
-            for key, value in pairs(sessionScratch) do
-                live[key] = value
-            end
-            sessionScratch = nil
-        end
-        CopyDefaults(ns.defaults, live)
-        PublishSaved(live)
-        return live
+local function GlobalTable(name)
+    if type(_G) == "table" and type(_G[name]) == "table" then
+        return _G[name]
     end
-    if not create or not ns.allowCreateSettings then
-        return nil
+    return nil
+end
+
+-- Mutate the client-owned table. Replacing the global with a new {} is the
+-- AceDB #690 disconnect: Forever still serializes the original empty table.
+local function BindNamedTable(name, fallback)
+    local live = ExistingTable(GlobalTable(name), fallback)
+    if not live then
+        live = {}
     end
-    live = CopyDefaults(ns.defaults, {})
-    if sessionScratch then
-        for key, value in pairs(sessionScratch) do
-            live[key] = value
-        end
-        sessionScratch = nil
+    if type(_G) == "table" then
+        _G[name] = live
     end
-    PublishSaved(live)
     return live
 end
 
-function ns.HydrateSettings()
-    return ns.EnsureSettingsDB(false)
+function ns.InitSettings()
+    local account = BindNamedTable(SV_NAME, ForeverQuestPinsDB_Settings)
+    ForeverQuestPinsDB_Settings = account
+
+    local character = BindNamedTable(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings)
+    ForeverQuestPinsCharacterSettings = character
+
+    local pending = ns.db
+    if pending and pending ~= account then
+        CopyKeys(pending, account)
+    end
+
+    -- Older builds stored options only on the per-character table.
+    if not ns.settingsBound then
+        for key in pairs(ns.defaults) do
+            if account[key] == nil and character[key] ~= nil then
+                account[key] = character[key]
+            end
+        end
+    end
+
+    CopyDefaults(ns.defaults, account)
+    CopyKeys(account, character)
+    ns.db = account
+    ns.settingsBound = true
+    return account
 end
 
-function ns.InitSettings()
-    return ns.EnsureSettingsDB(true)
+function ns.FlushSettings()
+    local db = ns.InitSettings()
+    CopyKeys(db, ForeverQuestPinsDB_Settings)
+    CopyKeys(db, ForeverQuestPinsCharacterSettings)
+    if type(_G) == "table" then
+        CopyKeys(db, BindNamedTable(SV_NAME, ForeverQuestPinsDB_Settings))
+        CopyKeys(db, BindNamedTable(CHAR_SV_NAME, ForeverQuestPinsCharacterSettings))
+    end
+    return db
 end
 
 function ns.GetSettings()
-    return ReadSaved() or sessionScratch
+    return ns.db
 end
 
 function ns.GetOption(key)
-    local settings = ns.EnsureSettingsDB(false) or sessionScratch
+    local settings = ns.db
     if settings and settings[key] ~= nil then
         return settings[key]
     end
@@ -94,13 +123,20 @@ end
 
 function ns.SetOption(key, value)
     value = value and true or false
-    local live = ns.EnsureSettingsDB(false)
-    if live then
-        live[key] = value
-        PublishSaved(live)
-    else
-        sessionScratch = sessionScratch or CopyDefaults(ns.defaults, {})
-        sessionScratch[key] = value
+    local live = ns.db
+    if not live then
+        -- Do not assign the TOC SavedVariables global before ADDON_LOADED.
+        live = {}
+        ns.db = live
+    end
+    live[key] = value
+    if ns.settingsBound then
+        if type(ForeverQuestPinsDB_Settings) == "table" then
+            ForeverQuestPinsDB_Settings[key] = value
+        end
+        if type(ForeverQuestPinsCharacterSettings) == "table" then
+            ForeverQuestPinsCharacterSettings[key] = value
+        end
     end
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
@@ -247,13 +283,14 @@ end
 
 function ns.PrintSettingsDebug()
     ns.InitSettings()
-    local sv = ReadSaved()
-    local scratch = sessionScratch ~= nil
-    Print("SavedVariables ForeverQuestPinsCharacterSettings:")
-    print(("  bound=%s scratch=%s sameAsGlobal=%s"):format(
-        sv ~= nil,
-        scratch,
-        tostring(sv ~= nil and sv == _G[SV_NAME])
+    local account = ForeverQuestPinsDB_Settings
+    local character = ForeverQuestPinsCharacterSettings
+    Print("SavedVariables ForeverQuestPinsDB_Settings:")
+    print(("  db=%s account=%s character=%s sameAsGlobal=%s"):format(
+        tostring(ns.db ~= nil),
+        tostring(type(account) == "table"),
+        tostring(type(character) == "table"),
+        tostring(ns.db ~= nil and ns.db == GlobalTable(SV_NAME))
     ))
     for _, key in ipairs({
         "enabled",
@@ -263,7 +300,7 @@ function ns.PrintSettingsDebug()
         "autoTurnIn",
         "debug",
     }) do
-        local raw = sv and sv[key]
+        local raw = account and account[key]
         local effective = ns.GetOption(key)
         print(("  %s raw=%s effective=%s"):format(
             key,

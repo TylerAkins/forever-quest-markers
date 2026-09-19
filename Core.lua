@@ -12,6 +12,7 @@ local WATCHED_EVENTS = {
     "ADDON_LOADED",
     "PLAYER_LOGIN",
     "PLAYER_ENTERING_WORLD",
+    "PLAYER_LOGOUT",
     "QUEST_LOG_UPDATE",
     "QUEST_ACCEPTED",
     "QUEST_REMOVED",
@@ -52,11 +53,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON_NAME then
             return
         end
-        ns.HydrateSettings()
+        ns.InitSettings()
         ns.RegisterSlash()
-        if ns.EnsureSettingsDB(false) then
-            ns.TryRegisterSettings()
-        end
+        ns.TryRegisterSettings()
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -70,12 +69,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
-        ns.HydrateSettings()
-        if ns.EnsureSettingsDB(false) then
-            ns.TryRegisterSettings()
-            if ns.SyncSettingsCheckboxes then
-                ns.SyncSettingsCheckboxes()
-            end
+        ns.InitSettings()
+        ns.TryRegisterSettings()
+        if ns.SyncSettingsCheckboxes then
+            ns.SyncSettingsCheckboxes()
         end
         if ns.MapPins then
             ns.MapPins:HookMap()
@@ -84,13 +81,18 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_ENTERING_WORLD" then
-        ns.allowCreateSettings = true
         ns.InitSettings()
         ns.TryRegisterSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
         ns.RequestRefresh(event)
+        return
+    end
+    if event == "PLAYER_LOGOUT" then
+        if ns.FlushSettings then
+            ns.FlushSettings()
+        end
         return
     end
     ns.RequestRefresh(event)
