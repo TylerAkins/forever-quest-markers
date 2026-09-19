@@ -36,7 +36,7 @@ Extract so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, t
 
 ## Settings
 
-Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below.
+Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. Choices are saved across `/reload` and logout.
 
 | Option | Default |
 |--------|---------|
