@@ -307,6 +307,22 @@ local function QuestGiverID(data)
     return nil
 end
 
+local function QuestLineText(questID)
+    local title = ns.GetQuestTitle(questID)
+    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+    if title and level then
+        return ("[%d] %s"):format(level, title), level
+    end
+    return title, level
+end
+
+local function QuestLineColor(level)
+    if ns.GetQuestDifficultyRGB then
+        return ns.GetQuestDifficultyRGB(level)
+    end
+    return 1, 0.82, 0
+end
+
 local function ShowTooltip(pin)
     if not pin.questID and not (pin.quests and pin.quests[1]) then
         return
@@ -321,18 +337,20 @@ local function ShowTooltip(pin)
     end
     GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
     local debugOn = ns.GetOption("debug")
-    local primaryTitle = ns.GetQuestTitle(quests[1].id)
-    if primaryTitle then
-        GameTooltip:SetText(primaryTitle, 1, 0.82, 0)
+    local primaryText, primaryLevel = QuestLineText(quests[1].id)
+    local pr, pg, pb = QuestLineColor(primaryLevel)
+    if primaryText then
+        GameTooltip:SetText(primaryText, pr, pg, pb)
     elseif debugOn then
         GameTooltip:SetText("Quest " .. tostring(quests[1].id), 1, 0.82, 0)
     else
         GameTooltip:SetText("Quest", 1, 0.82, 0)
     end
     for i = 2, #quests do
-        local extraTitle = ns.GetQuestTitle(quests[i].id)
-        if extraTitle then
-            GameTooltip:AddLine(extraTitle, 1, 0.82, 0)
+        local extraText, extraLevel = QuestLineText(quests[i].id)
+        if extraText then
+            local r, g, b = QuestLineColor(extraLevel)
+            GameTooltip:AddLine(extraText, r, g, b)
         elseif debugOn then
             GameTooltip:AddLine("Quest " .. tostring(quests[i].id), 1, 0.82, 0)
         end
