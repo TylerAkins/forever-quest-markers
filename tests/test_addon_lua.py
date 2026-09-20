@@ -77,7 +77,9 @@ class AddonLuaTests(unittest.TestCase):
         pkgmeta = (ROOT / ".pkgmeta").read_text(encoding="utf-8")
         self.assertNotIn("README.md", pkgmeta)
         self.assertNotIn("ATTRIBUTION.md", pkgmeta)
-        self.assertNotIn("manual-changelog:", pkgmeta)
+        self.assertIn("manual-changelog:", pkgmeta)
+        self.assertIn("filename: RELEASE_NOTES.md", pkgmeta)
+        self.assertIn("markup-type: markdown", pkgmeta)
 
     def test_single_savedvariables_name(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
@@ -350,6 +352,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("steps.changes.outputs.quest_data == 'true'", text)
         self.assertIn("VERSION", text)
         self.assertIn("CHANGELOG.md", text)
+        self.assertIn("RELEASE_NOTES.md", text)
         self.assertIn("automatically publishes", text)
 
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -377,6 +380,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("ForeverQuestPins.toc", text)
         self.assertIn("VERSION", text)
         self.assertIn("CHANGELOG.md", text)
+        self.assertIn("RELEASE_NOTES.md", text)
 
 
 if __name__ == "__main__":

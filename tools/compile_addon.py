@@ -23,6 +23,7 @@ ROOT_FILES = (
     "LICENSE",
     "MapPins.lua",
     "README.md",
+    "RELEASE_NOTES.md",
     "WarEffort.lua",
 )
 DIRECTORIES = ("Database", "Media")

@@ -34,9 +34,12 @@ jobs:
           test -f ATTRIBUTION.md
           test -f README.md
           test -f CHANGELOG.md
+          test -f RELEASE_NOTES.md
           test -f VERSION
           test -f docs/DEVELOPMENT.md
           test -f tools/update_forever_interface.py
+          python3 tools/att_release.py validate-notes \
+            --version "$(tr -d '[:space:]' < VERSION)"
           grep -qE '^## X-Website:' ForeverQuestPins.toc
           grep -qE '^## X-Issues:' ForeverQuestPins.toc
 
