@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 
 @dataclass(frozen=True, order=True)
@@ -76,9 +77,10 @@ def prepare_att_release(
     release_date: str,
     dry_run: bool = False,
 ) -> Version:
-    """Prepare VERSION and CHANGELOG.md for one idempotent patch release."""
+    """Prepare version and changelog files for one idempotent patch release."""
     version_path = root / "VERSION"
     changelog_path = root / "CHANGELOG.md"
+    release_notes_path = root / "RELEASE_NOTES.md"
     report_path = root / "Database" / "build_report.json"
 
     base = Version.parse(base_version)
@@ -101,7 +103,26 @@ def prepare_att_release(
     if not dry_run:
         version_path.write_text(f"{target}\n", encoding="utf-8")
         changelog_path.write_text(changelog, encoding="utf-8")
+        release_notes_path.write_text(release_notes(entry, target), encoding="utf-8")
     return target
+
+
+def release_notes(entry: str, version: Version) -> str:
+    """Return validated notes containing only the current release entry."""
+    notes = entry.rstrip() + "\n"
+    validate_release_notes(notes, version)
+    return notes
+
+
+def validate_release_notes(notes: str, version: Version) -> None:
+    """Require current-version, single-release notes without email addresses."""
+    headings = re.findall(r"^## (\d+\.\d+\.\d+)(?:\s+[-—].*)?$", notes, re.MULTILINE)
+    if headings != [str(version)]:
+        raise ValueError(
+            f"RELEASE_NOTES.md must contain exactly one release heading for {version}"
+        )
+    if EMAIL_RE.search(notes):
+        raise ValueError("RELEASE_NOTES.md must not contain email addresses")
 
 
 def _changelog_entry(version: Version, release_date: str, report: dict[str, object]) -> str:
@@ -163,6 +184,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     validate.add_argument("--previous-version", required=True)
     validate.add_argument("--current-version", required=True)
     validate.add_argument("--release-content-changed", action="store_true")
+    validate.add_argument("--root", type=Path, default=ROOT)
+
+    validate_notes = subparsers.add_parser(
+        "validate-notes", help="validate the current release notes"
+    )
+    validate_notes.add_argument("--version", required=True)
+    validate_notes.add_argument("--root", type=Path, default=ROOT)
 
     validate_tag = subparsers.add_parser(
         "validate-tag",
@@ -192,7 +220,18 @@ def main(argv: list[str] | None = None) -> int:
             release_content_changed=args.release_content_changed,
         )
         if tag:
+            validate_release_notes(
+                (args.root / "RELEASE_NOTES.md").read_text(encoding="utf-8"),
+                Version.parse(args.current_version),
+            )
             print(tag)
+        return 0
+
+    if args.command == "validate-notes":
+        validate_release_notes(
+            (args.root / "RELEASE_NOTES.md").read_text(encoding="utf-8"),
+            Version.parse(args.version),
+        )
         return 0
 
     print(plan_tag(args.existing_sha, args.target_sha))

@@ -54,6 +54,10 @@ class ForeverInterfaceUpdateTests(unittest.TestCase):
             changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             self.assertIn("## 0.1.22 - 2026-09-23", changelog)
             self.assertIn("1.60.2.70123 (Interface 16002)", changelog)
+            notes = (root / "RELEASE_NOTES.md").read_text(encoding="utf-8")
+            self.assertIn("## 0.1.22 - 2026-09-23", notes)
+            self.assertIn("1.60.2.70123 (Interface 16002)", notes)
+            self.assertEqual(1, notes.count("## "))
 
             second = update_forever_interface.prepare_update(build, root=root)
             self.assertFalse(second.changed)
@@ -107,13 +111,22 @@ class ForeverInterfaceUpdateTests(unittest.TestCase):
             "## 0.1.21 - 2026-09-19\n\n- Existing release.\n",
             encoding="utf-8",
         )
+        (root / "RELEASE_NOTES.md").write_text(
+            "## 0.1.21 - 2026-09-19\n\n- Existing release.\n",
+            encoding="utf-8",
+        )
         return root
 
     @staticmethod
     def _release_files(root: Path) -> dict[str, str]:
         return {
             name: (root / name).read_text(encoding="utf-8")
-            for name in ("ForeverQuestPins.toc", "VERSION", "CHANGELOG.md")
+            for name in (
+                "ForeverQuestPins.toc",
+                "VERSION",
+                "CHANGELOG.md",
+                "RELEASE_NOTES.md",
+            )
         }
 
 

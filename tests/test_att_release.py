@@ -36,6 +36,10 @@ class AttReleaseTests(unittest.TestCase):
             self.assertIn("## 0.1.22 - 2026-09-20", changelog)
             self.assertIn("`abc123`", changelog)
             self.assertLess(changelog.index("## 0.1.22"), changelog.index("## 0.1.21"))
+            notes = (root / "RELEASE_NOTES.md").read_text(encoding="utf-8")
+            self.assertIn("## 0.1.22 - 2026-09-20", notes)
+            self.assertIn("`abc123`", notes)
+            self.assertEqual(1, notes.count("## "))
 
     def test_prepare_is_idempotent_for_the_same_base_version(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -50,6 +54,8 @@ class AttReleaseTests(unittest.TestCase):
             changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             self.assertEqual(1, changelog.count("## 0.1.22"))
             self.assertEqual("0.1.22\n", (root / "VERSION").read_text(encoding="utf-8"))
+            notes = (root / "RELEASE_NOTES.md").read_text(encoding="utf-8")
+            self.assertEqual(1, notes.count("## 0.1.22"))
 
     def test_dry_run_does_not_write_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -67,6 +73,23 @@ class AttReleaseTests(unittest.TestCase):
             self.assertEqual("0.1.22", str(version))
             self.assertEqual(before_version, (root / "VERSION").read_text(encoding="utf-8"))
             self.assertEqual(before_changelog, (root / "CHANGELOG.md").read_text(encoding="utf-8"))
+            self.assertFalse((root / "RELEASE_NOTES.md").exists())
+
+    def test_release_notes_reject_stale_versions_and_email_addresses(self) -> None:
+        version = ATT_RELEASE.Version.parse("0.1.22")
+        with self.assertRaisesRegex(ValueError, "exactly one release heading"):
+            ATT_RELEASE.validate_release_notes("## 0.1.21 - old\n", version)
+        with self.assertRaisesRegex(ValueError, "email addresses"):
+            ATT_RELEASE.validate_release_notes(
+                "## 0.1.22 - current\n\n- Contact developer@example.com.\n",
+                version,
+            )
+
+    def test_repository_release_notes_match_current_version(self) -> None:
+        version = ATT_RELEASE.Version.parse((ROOT / "VERSION").read_text(encoding="utf-8"))
+        ATT_RELEASE.validate_release_notes(
+            (ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8"), version
+        )
 
     def test_invalid_or_stale_versions_fail(self) -> None:
         with self.assertRaisesRegex(ValueError, "Invalid stable version"):

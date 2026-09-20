@@ -11,9 +11,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 if __package__:
-    from tools.att_release import Version, replace_or_insert_changelog_entry
+    from tools.att_release import (
+        Version,
+        release_notes,
+        replace_or_insert_changelog_entry,
+    )
 else:
-    from att_release import Version, replace_or_insert_changelog_entry
+    from att_release import Version, release_notes, replace_or_insert_changelog_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSIONS_URL = "https://us.version.battle.net/v2/products/wow_classic_beta/versions"
@@ -107,6 +111,7 @@ def prepare_update(
     toc_path = root / TOC_NAME
     version_path = root / "VERSION"
     changelog_path = root / "CHANGELOG.md"
+    release_notes_path = root / "RELEASE_NOTES.md"
 
     toc = toc_path.read_text(encoding="utf-8")
     interfaces = current_interfaces(toc)
@@ -137,6 +142,9 @@ def prepare_update(
         toc_path.write_text(updated_toc, encoding="utf-8")
         version_path.write_text(f"{next_version}\n", encoding="utf-8")
         changelog_path.write_text(updated_changelog, encoding="utf-8")
+        release_notes_path.write_text(
+            release_notes(entry, next_version), encoding="utf-8"
+        )
 
     return UpdateResult(True, game_build, str(next_version))
 
