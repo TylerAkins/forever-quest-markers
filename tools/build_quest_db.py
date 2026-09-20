@@ -75,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         if quest_id not in result.quests:
             result.quests[quest_id] = record
             zzold_fallback += 1
+        elif record.is_instance_quest:
+            result.quests[quest_id].is_instance_quest = True
     result.quests_seen += zzold_result.quests_seen
     result.quests_with_coords = len(result.quests)
     result.files_parsed += zzold_result.files_parsed

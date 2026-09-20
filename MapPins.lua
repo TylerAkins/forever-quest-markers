@@ -289,13 +289,13 @@ local function IsAttunementOnly(pin)
     if quests and #quests > 0 then
         for i = 1, #quests do
             local data = quests[i].data
-            if not data or not data.isAttunement then
+            if not data or not (data.isAttunement or data.isInstanceQuest) then
                 return false
             end
         end
         return true
     end
-    return pin.data and pin.data.isAttunement or false
+    return pin.data and (pin.data.isAttunement or pin.data.isInstanceQuest) or false
 end
 
 local function EnsurePinTextures(pin)
