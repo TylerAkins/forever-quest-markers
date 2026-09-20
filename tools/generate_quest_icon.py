@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate classic yellow and blue quest-start bang fallback textures."""
+"""Generate classic quest-start bang fallback textures."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def _shape_sdf(px: float, py: float) -> float:
     return min(stem, dot)
 
 
-def _sample_pixel(px: float, py: float, repeatable: bool) -> tuple[int, int, int, int]:
+def _sample_pixel(px: float, py: float, variant: str) -> tuple[int, int, int, int]:
     """Return BGRA for one sample in 0-1 space."""
     dist = _shape_sdf(px, py)
     outline = 0.055
@@ -42,12 +42,16 @@ def _sample_pixel(px: float, py: float, repeatable: bool) -> tuple[int, int, int
     if dist > 0:
         alpha = int(max(0.0, min(1.0, 1.0 - dist / outline)) * 255)
         return (8, 16, 24, alpha)
-    # Fill: gold or repeatable blue with a light upper-left highlight.
+    # Fill: gold, repeatable blue, or attunement orange with a highlight.
     highlight = max(0.0, min(1.0, (0.55 - px) * 0.7 + (0.45 - py) * 0.5))
-    if repeatable:
+    if variant == "repeatable":
         r = int(35 + 45 * highlight)
         g = int(145 + 55 * highlight)
         b = int(235 + 20 * highlight)
+    elif variant == "attunement":
+        r = int(245 + 10 * highlight)
+        g = int(65 + 60 * highlight)
+        b = int(18 + 30 * highlight)
     else:
         r = 255
         g = int(196 + 44 * highlight)
@@ -60,7 +64,7 @@ def _sample_pixel(px: float, py: float, repeatable: bool) -> tuple[int, int, int
     return (b, g, r, 255)
 
 
-def _draw_bang(repeatable: bool) -> list[list[tuple[int, int, int, int]]]:
+def _draw_bang(variant: str) -> list[list[tuple[int, int, int, int]]]:
     pixels = [[(0, 0, 0, 0) for _ in range(SIZE)] for _ in range(SIZE)]
     for y in range(SIZE):
         for x in range(SIZE):
@@ -69,7 +73,7 @@ def _draw_bang(repeatable: bool) -> list[list[tuple[int, int, int, int]]]:
                 for sx in range(SAMPLES):
                     px = (x + (sx + 0.5) / SAMPLES) / SIZE
                     py = (y + (sy + 0.5) / SAMPLES) / SIZE
-                    b, g, r, a = _sample_pixel(px, py, repeatable)
+                    b, g, r, a = _sample_pixel(px, py, variant)
                     acc_b += b
                     acc_g += g
                     acc_r += r
@@ -84,8 +88,10 @@ def _draw_bang(repeatable: bool) -> list[list[tuple[int, int, int, int]]]:
     return pixels
 
 
-def write_tga(path: Path, *, repeatable: bool = False) -> None:
-    pixels = _draw_bang(repeatable)
+def write_tga(path: Path, *, variant: str = "normal") -> None:
+    if variant not in {"normal", "repeatable", "attunement"}:
+        raise ValueError(f"unknown quest icon variant: {variant}")
+    pixels = _draw_bang(variant)
     header = bytearray(18)
     header[2] = 2  # uncompressed true-color
     header[12] = SIZE & 0xFF
@@ -107,11 +113,12 @@ def write_tga(path: Path, *, repeatable: bool = False) -> None:
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     paths = (
-        (root / "Media" / "QuestAvailable.tga", False),
-        (root / "Media" / "QuestRepeatable.tga", True),
+        (root / "Media" / "QuestAvailable.tga", "normal"),
+        (root / "Media" / "QuestRepeatable.tga", "repeatable"),
+        (root / "Media" / "QuestAttunement.tga", "attunement"),
     )
-    for path, repeatable in paths:
-        write_tga(path, repeatable=repeatable)
+    for path, variant in paths:
+        write_tga(path, variant=variant)
         print(f"Wrote {path}")
 
 

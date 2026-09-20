@@ -49,21 +49,85 @@ local function ReadMirror()
     return text
 end
 
-local function LoadMirror(db)
+local function DecodeMirror()
     local text = ReadMirror()
     ns.settingsMirror = text
     if type(text) ~= "string" or text == "" then
-        return
+        return nil
     end
+    local mirror = {}
+    mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     for key, raw in text:gmatch("([%w_]+)=([01])") do
         if type(ns.defaults[key]) == "boolean" then
-            db[key] = raw == "1"
+            mirror[key] = raw == "1"
         end
     end
+    return mirror
 end
 
-local function SaveMirror()
-    if not ns.db or not MirrorReady() then
+local function HasOptions(db)
+    if type(db) ~= "table" then
+        return false
+    end
+    for key in pairs(ns.defaults) do
+        if db[key] ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
+local function Revision(db)
+    local revision = type(db) == "table" and tonumber(db._revision) or nil
+    if not revision or revision < 0 then
+        return 0
+    end
+    return math.floor(revision)
+end
+
+local function CopySettings(src, dest, revision)
+    if type(src) ~= "table" or type(dest) ~= "table" then
+        return
+    end
+    for key in pairs(ns.defaults) do
+        if src[key] ~= nil then
+            dest[key] = src[key] and true or false
+        else
+            dest[key] = ns.defaults[key]
+        end
+    end
+    dest._revision = revision or Revision(src)
+end
+
+local function ChooseSettings(account, character, legacyAccount, legacyCharacter, mirror)
+    local candidates = { account, character, legacyAccount, legacyCharacter, mirror }
+    local newest
+    local newestRevision = 0
+    for i = 1, #candidates do
+        local candidate = candidates[i]
+        local revision = Revision(candidate)
+        if HasOptions(candidate) and revision > newestRevision then
+            newest = candidate
+            newestRevision = revision
+        end
+    end
+    if newest then
+        return newest, newestRevision
+    end
+    -- One-time migration for stores written before revisions existed. The
+    -- canonical account table wins when populated, followed by its character
+    -- copy, the legacy stores, and finally the best-effort CVar mirror.
+    for i = 1, #candidates do
+        if HasOptions(candidates[i]) then
+            return candidates[i], 1
+        end
+    end
+    return account, 1
+end
+
+local function SaveMirror(db)
+    db = db or ns.db
+    if not db or not MirrorReady() then
         return
     end
     local keys = {}
@@ -73,10 +137,10 @@ local function SaveMirror()
         end
     end
     table.sort(keys)
-    local parts = {}
+    local parts = { "revision=" .. tostring(Revision(db)) }
     for i = 1, #keys do
         local key = keys[i]
-        parts[#parts + 1] = key .. "=" .. (ns.db[key] and "1" or "0")
+        parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
     end
     local text = table.concat(parts, ";")
     if pcall(C_CVar.SetCVar, MIRROR_CVAR, text) then
@@ -89,31 +153,59 @@ function ns.InitSettings()
         return ns.db
     end
 
-    -- SavedVariables are available when ADDON_LOADED fires. Keep the
-    -- account-wide table authoritative and migrate missing values once from
-    -- the per-character table used by older beta releases.
+    -- Keep the older beta stores declared so existing installs migrate without
+    -- loss. Renaming stores does not fix Forever's SavedVariables loader bug.
+    if type(ForeverQuestPinsDB) ~= "table" then
+        ForeverQuestPinsDB = {}
+    end
+    if type(ForeverQuestPinsCharDB) ~= "table" then
+        ForeverQuestPinsCharDB = {}
+    end
     if type(ForeverQuestPinsDB_Settings) ~= "table" then
         ForeverQuestPinsDB_Settings = {}
     end
-    local account = ForeverQuestPinsDB_Settings
-    local character = ForeverQuestPinsCharacterSettings
-    if type(character) == "table" then
-        for key in pairs(ns.defaults) do
-            if account[key] == nil and character[key] ~= nil then
-                account[key] = character[key]
-            end
-        end
+    if type(ForeverQuestPinsCharacterSettings) ~= "table" then
+        ForeverQuestPinsCharacterSettings = {}
     end
+    local account = ForeverQuestPinsDB
+    local character = ForeverQuestPinsCharDB
+    local legacyAccount = ForeverQuestPinsDB_Settings
+    local legacyCharacter = ForeverQuestPinsCharacterSettings
+    local source, revision = ChooseSettings(
+        account,
+        character,
+        legacyAccount,
+        legacyCharacter,
+        DecodeMirror()
+    )
 
-    -- Forever 1.60.1 can skip loading addon SavedVariables while still
-    -- restoring CVars. The mirror keeps these small boolean options usable
-    -- until the client bug is fixed; the normal SavedVariables table remains
-    -- the source used by WoW on clients where it loads correctly.
-    LoadMirror(account)
+    CopySettings(source, account, revision)
     CopyDefaults(ns.defaults, account)
+    account._revision = revision
+    CopySettings(account, character, revision)
+    CopySettings(account, legacyAccount, revision)
+    CopySettings(account, legacyCharacter, revision)
     ns.db = account
-    SaveMirror()
+    ns.settingsSource = source == account and "account"
+        or (source == character and "character"
+        or (source == legacyAccount and "legacy-account"
+        or (source == legacyCharacter and "legacy-character" or "cvar")))
+    SaveMirror(account)
     return account
+end
+
+local function SyncSettings()
+    local db = ns.db or ns.InitSettings()
+    CopySettings(db, ForeverQuestPinsDB, Revision(db))
+    CopySettings(db, ForeverQuestPinsCharDB, Revision(db))
+    CopySettings(db, ForeverQuestPinsDB_Settings, Revision(db))
+    CopySettings(db, ForeverQuestPinsCharacterSettings, Revision(db))
+    SaveMirror(db)
+    return db
+end
+
+function ns.FlushSettings()
+    return SyncSettings()
 end
 
 function ns.WipeSettings()
@@ -121,7 +213,8 @@ function ns.WipeSettings()
     for key, value in pairs(ns.defaults) do
         db[key] = value
     end
-    SaveMirror()
+    db._revision = Revision(db) + 1
+    SyncSettings()
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
     end
@@ -143,7 +236,8 @@ function ns.SetOption(key, value)
     value = value and true or false
     local db = ns.db or ns.InitSettings()
     db[key] = value
-    SaveMirror()
+    db._revision = Revision(db) + 1
+    SyncSettings()
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
     end
@@ -284,7 +378,12 @@ function ns.PrintStats()
     for _ in pairs(byMap) do
         maps = maps + 1
     end
-    Print(("ATT %s | %d quests | %d maps"):format(tostring(meta.attCommit or "?"), count, maps))
+    Print(("ATT %s | %d quests | %d attunements | %d maps"):format(
+        tostring(meta.attCommit or "?"),
+        count,
+        tonumber(meta.attunementCount) or 0,
+        maps
+    ))
     Print(("  auto-accept %s | auto-turn-in %s"):format(
         ns.GetOption("autoAccept") and "on" or "off",
         ns.GetOption("autoTurnIn") and "on" or "off"
@@ -311,17 +410,22 @@ end
 
 function ns.PrintSettingsDebug()
     ns.InitSettings()
-    local account = ForeverQuestPinsDB_Settings
-    local character = ForeverQuestPinsCharacterSettings
-    Print("SavedVariables ForeverQuestPinsDB_Settings:")
-    print(("  db=%s account=%s legacyCharacter=%s sameAsGlobal=%s mirror=%s"):format(
+    local account = ForeverQuestPinsDB
+    local character = ForeverQuestPinsCharDB
+    Print("SavedVariables ForeverQuestPinsDB:")
+    print(("  db=%s account=%s character=%s sameAsGlobal=%s mirror=%s source=%s"):format(
         tostring(ns.db ~= nil),
         tostring(type(account) == "table"),
         tostring(type(character) == "table"),
-        tostring(ns.db ~= nil and ns.db == ForeverQuestPinsDB_Settings),
-        tostring(ns.settingsMirror ~= nil and ns.settingsMirror ~= "")
+        tostring(ns.db ~= nil and ns.db == ForeverQuestPinsDB),
+        tostring(ns.settingsMirror ~= nil and ns.settingsMirror ~= ""),
+        tostring(ns.settingsSource or "?")
     ))
-    print("  Character settings are migration-only; current options use the account table plus a CVar mirror.")
+    print(("  revisions: account=%s character=%s"):format(
+        tostring(Revision(account)),
+        tostring(Revision(character))
+    ))
+    print("  Account, character, and CVar settings are synchronized; the newest revision wins.")
     for _, key in ipairs({
         "enabled",
         "showTrivial",
@@ -625,7 +729,7 @@ function ns.TryRegisterSettings()
             help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
             help:SetWidth(500)
             help:SetJustifyH("LEFT")
-            help:SetText("Yellow ! markers for normal quests and blue ! markers for repeatable quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, and red-orange ! markers for attunement chains you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
 
             local pins = CreateOptionCheckbox(
                 self,

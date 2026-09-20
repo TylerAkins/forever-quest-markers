@@ -1,0 +1,10 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <Frame name="ForeverQuestPinsMapPinTemplate" hidden="true" enableMouse="true" mixin="ForeverQuestPinsMapPinMixin" virtual="true">
+        <Size x="24" y="24"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <Texture parentKey="Texture" setAllPoints="true"/>
+            </Layer>
+        </Layers>
+    </Frame>
+</Ui>
