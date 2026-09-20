@@ -14,7 +14,7 @@ sys.path.insert(0, str(TOOLS))
 from att_dsl.constants import BuildContext, DEFAULT_FOREVER_PATCH
 from att_dsl.emit import emit_lua_database
 from att_dsl.evaluator import evaluate_chunk, new_environment
-from att_dsl.extract import ExtractResult, extract_from_roots
+from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
 from att_dsl.preprocessor import preprocess
 
@@ -135,6 +135,31 @@ class EmitTests(unittest.TestCase):
         self.assertIn("[92460]", first)
         self.assertIn("ns.ByMap", first)
         self.assertIn("[2521]", first)
+
+
+class AttunementTests(unittest.TestCase):
+    def test_instance_access_quests_mark_full_chains_and_alternatives(self) -> None:
+        result = _extract_fixture("attunement.lua")
+        marked = mark_attunement_chains(result.quests, result.attunement_quest_ids)
+
+        self.assertEqual(result.attunement_quest_ids, {100, 200, 201})
+        self.assertEqual(marked, {80, 81, 90, 100, 101, 200, 201})
+        self.assertTrue(all(result.quests[quest_id].is_attunement for quest_id in marked))
+
+    def test_faction_quest_data_wrappers_are_extracted(self) -> None:
+        result = _extract_fixture("attunement.lua")
+
+        self.assertIn(200, result.quests)
+        self.assertIn(201, result.quests)
+        self.assertEqual(result.quests[200].coords[0].map_id, 1429)
+        self.assertEqual(result.quests[201].coords[0].map_id, 1454)
+
+    def test_attunement_flag_is_emitted(self) -> None:
+        result = _extract_fixture("attunement.lua")
+        mark_attunement_chains(result.quests, result.attunement_quest_ids)
+
+        output = emit_lua_database(result.quests, "abc123")
+        self.assertRegex(output, r"\[100\] = \{[^\n]*isAttunement=true")
 
 
 class CheckoutTests(unittest.TestCase):

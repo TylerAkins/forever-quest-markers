@@ -2,6 +2,18 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.25 - 2026-09-20
+
+- Register map pins with Blizzard's map pin pool so the map owns their layering, scaling, and redraw lifecycle.
+
+- Remove the always-visible fallback icon layer and avoid resetting unchanged pin anchors every frame.
+- Add an optional local account SavedVariables loading repair for affected Forever clients, with a TOC backup and dry-run mode.
+
+- Synchronize revisioned account and character settings with legacy/CVar mirrors and a logout flush. Affected Forever clients still require the optional local settings-loader repair.
+- Show complete ATT-derived dungeon and raid attunement chains with red-orange `!` pins; mixed stacks remain yellow.
+- Extract faction-specific ATT quest wrappers and regenerate the database at `5b09b3adf6816fcf95acef09251169e5ae97e80e`.
+- Ship 3665 quests with 3925 coordinate pins across 49 maps, including 27 attunement quests.
+
 ## 0.1.24 - 2026-09-20
 
 - Show ATT-marked repeatable quest starts with blue `!` pins; mixed normal/repeatable stacks remain yellow.

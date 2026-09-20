@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests and blue **!** markers for repeatable quests on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for ATT-derived attunement chains on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It only adds start locations for **unaccepted** quests.
 
@@ -14,7 +14,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 ## Features
 
-- Yellow `!` pins for normal quest starts and blue `!` pins for ATT-marked repeatable quest starts
+- Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for complete dungeon/raid attunement chains
 - Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
@@ -34,7 +34,7 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 
 ## Settings
 
-Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon stores choices in one account-wide SavedVariables table. On Forever 1.60.1, it also mirrors these eight boolean options to a custom CVar because that client can restore CVars while skipping addon SavedVariables.
+Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -72,7 +72,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 
 Forever’s quest data is still moving. Missing or extra pins are often an upstream ATT gap, not a pin bug.
 
-- **Saved settings:** Forever Beta 1.60.1.69913 can write SavedVariables without loading them on the next client start. The addon uses a small CVar mirror as a temporary fallback for its boolean options; addons with larger or structured settings may still reset.
+- **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
 - **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
 - **Item-started** quests with no map coordinate are omitted
@@ -80,9 +80,11 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use ATT’s static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation gates from ATT are stored but not used to hide pins yet
-- Normal and repeatable pins share Blizzard’s `QuestNormal` shape; repeatable pins desaturate and tint it blue, with bundled yellow and blue fallbacks
+- Normal, repeatable, and attunement pins share Blizzard’s `QuestNormal` shape; special pins tint it blue or red-orange, with bundled fallbacks for all three colors
 
 ## Support
+
+For settings that reset despite being saved to disk, close WoW completely and run `tools/repair_local_settings.py` from the GitHub source checkout with `--addon` pointing to your installed `ForeverQuestPins` folder and `--saved` pointing to that account's `SavedVariables/ForeverQuestPins.lua`. It previews by default; add `--apply` to create a TOC backup and link the live account settings into the addon loader. It never edits the saved settings. Reapply after addon updates replace the TOC. This is account-specific: do not share the patched addon across accounts. To undo, restore `ForeverQuestPins.toc.before-settings-repair` and remove only the `LocalSavedVariables` link, leaving its target directory intact. The repair tool is available in the source repository, not the CurseForge addon package.
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
