@@ -18,7 +18,8 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `VERSION` | Current stable release used by automated version checks |
 | `Media/QuestAvailable.tga` | Fallback bang if `QuestNormal` fails |
 | `tools/build_quest_db.py` | ATT Forever → `Database/` |
-| `tools/att_release.py` | Prepares and validates automated ATT patch releases |
+| `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
+| `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
 | `.pkgmeta` | [BigWigs packager](https://github.com/BigWigsMods/packager) rules |
 
@@ -47,6 +48,19 @@ Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 
 It never pushes generated data straight to `main` or merges its own PR.
 
+## Forever interface updates
+
+Workflow **Update Forever interface** (`.github/workflows/update-forever-interface.yml`):
+
+- Runs Wednesday at 12:00 UTC, after the US Tuesday and EU Wednesday maintenance windows
+- Reads Blizzard's explicit `wow_classic_beta` product feed and converts versions such as `1.60.1.69913` to Interface `16001`
+- Ignores build-only changes when the calculated Interface is unchanged
+- Opens or refreshes the reviewed `forever-interface-update` PR with the TOC, next patch version, and changelog entry
+- Closes that fixed PR if the current Interface is already supported on `main`
+- Publishes the prepared GitHub and CurseForge release only after a human merges the PR
+
+Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzard moves Forever off `wow_classic_beta` after launch, change the single `VERSIONS_URL` constant in `tools/update_forever_interface.py` rather than falling back to another WoW flavor.
+
 ## Tests
 
 ```bash
@@ -55,6 +69,7 @@ python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
 python3 tests/test_compile_addon.py
 python3 tests/test_att_release.py
+python3 tests/test_update_forever_interface.py
 ```
 
 CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
@@ -75,14 +90,14 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 | Channel | Trigger | Result |
 |---------|---------|--------|
-| Stable | Push an annotated `v*` tag, or merge a prepared ATT database PR | Numbered GitHub Release and CurseForge package |
+| Stable | Push an annotated `v*` tag, or merge a prepared ATT database/interface PR | Numbered GitHub Release and CurseForge package |
 | Preview | Merge to `main` or manually run the Release workflow | Commit-specific GitHub Actions artifact |
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
 `.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
 
-All stable releases must update `VERSION` to match the tag. For automated ATT updates, the generated PR does this and merging it creates the tag. For other releases, update `VERSION` and `CHANGELOG.md` in the release PR before creating the tag.
+All stable releases must update `VERSION` to match the tag. Automated ATT and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION` and `CHANGELOG.md` in the release PR before creating the tag.
 
 ## CurseForge
 

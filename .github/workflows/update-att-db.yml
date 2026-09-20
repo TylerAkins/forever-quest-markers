@@ -63,6 +63,7 @@ jobs:
           python3 tests/test_addon_lua.py
           python3 tests/test_compile_addon.py
           python3 tests/test_att_release.py
+          python3 tests/test_update_forever_interface.py
 
       - name: Read new stats
         id: after

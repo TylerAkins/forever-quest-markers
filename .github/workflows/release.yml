@@ -50,15 +50,15 @@ jobs:
         if: steps.release.outputs.exists != 'true'
         uses: BigWigsMods/packager@v2
 
-  # A reviewed ATT database PR carries its patch version in VERSION. On merge,
-  # create that tag and explicitly dispatch the tag build because GITHUB_TOKEN
-  # tag pushes do not start another Actions workflow.
+  # Reviewed database and interface PRs carry their patch version in VERSION.
+  # On merge, create that tag and explicitly dispatch the tag build because
+  # GITHUB_TOKEN tag pushes do not start another Actions workflow.
   auto-versioned:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: preview
     runs-on: ubuntu-24.04
     concurrency:
-      group: att-auto-release
+      group: automated-release
       cancel-in-progress: false
     permissions:
       actions: write
@@ -74,7 +74,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Plan database release
+      - name: Plan automated release
         id: release
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -84,12 +84,22 @@ jobs:
             echo "tag=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- Database/ForeverQuests.lua; then
+          QUEST_DATA_CHANGED=false
+          if ! git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- Database/ForeverQuests.lua; then
+            QUEST_DATA_CHANGED=true
+          fi
+          PREVIOUS_INTERFACE="$(git show "${BEFORE_SHA}:ForeverQuestPins.toc" | sed -n 's/^## Interface: //p')"
+          CURRENT_INTERFACE="$(sed -n 's/^## Interface: //p' ForeverQuestPins.toc)"
+          INTERFACE_CHANGED=false
+          if [[ "$PREVIOUS_INTERFACE" != "$CURRENT_INTERFACE" ]]; then
+            INTERFACE_CHANGED=true
+          fi
+          if [[ "$QUEST_DATA_CHANGED" == false && "$INTERFACE_CHANGED" == false ]]; then
             echo "tag=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if ! git cat-file -e "${BEFORE_SHA}:VERSION" 2>/dev/null; then
-            echo "Quest data changed but the previous commit has no VERSION file" >&2
+            echo "Release content changed but the previous commit has no VERSION file" >&2
             exit 1
           fi
           PREVIOUS_VERSION="$(git show "${BEFORE_SHA}:VERSION" | tr -d '[:space:]')"
@@ -97,7 +107,7 @@ jobs:
           TAG="$(python3 tools/att_release.py validate \
             --previous-version "$PREVIOUS_VERSION" \
             --current-version "$CURRENT_VERSION" \
-            --quest-data-changed)"
+            --release-content-changed)"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create tag and dispatch release
@@ -154,6 +164,7 @@ jobs:
           python3 tests/test_addon_lua.py
           python3 tests/test_compile_addon.py
           python3 tests/test_att_release.py
+          python3 tests/test_update_forever_interface.py
 
       - name: Package addon zip
         uses: BigWigsMods/packager@v2
