@@ -325,6 +325,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("preview:", text)
         self.assertIn("VERSION ${VERSION} does not match tag", text)
         self.assertIn("python3 tools/att_release.py validate", text)
+        self.assertIn("--release-content-changed", text)
+        self.assertIn("ForeverQuestPins.toc", text)
         self.assertIn("needs: preview", text)
         self.assertIn("python3 tools/att_release.py validate-tag", text)
         self.assertIn('git push origin "refs/tags/${RELEASE_TAG}"', text)
@@ -351,9 +353,30 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("automatically publishes", text)
 
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-        self.assertIn("Validate database release intent", ci)
+        self.assertIn("Validate automated release intent", ci)
         self.assertIn("github.event.pull_request.base.sha", ci)
         self.assertIn("python3 tools/att_release.py validate", ci)
+        self.assertIn("--release-content-changed", ci)
+
+    def test_forever_interface_workflow_is_reviewed_and_weekly(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "update-forever-interface.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('cron: "0 12 * * 3"', text)
+        self.assertIn("from tools.update_forever_interface import VERSIONS_URL", text)
+        updater = (ROOT / "tools" / "update_forever_interface.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("wow_classic_beta/versions", updater)
+        self.assertIn("github.ref == 'refs/heads/main'", text)
+        self.assertIn("python3 tools/update_forever_interface.py", text)
+        self.assertIn("branch: forever-interface-update", text)
+        self.assertIn("steps.update.outputs.changed == 'true'", text)
+        self.assertIn("steps.update.outputs.changed == 'false'", text)
+        self.assertIn("--delete-branch", text)
+        self.assertIn("ForeverQuestPins.toc", text)
+        self.assertIn("VERSION", text)
+        self.assertIn("CHANGELOG.md", text)
 
 
 if __name__ == "__main__":
