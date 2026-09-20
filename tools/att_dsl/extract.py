@@ -62,6 +62,7 @@ class QuestRecord:
     is_world_quest: bool = False
     is_war_effort: bool = False
     is_attunement: bool = False
+    is_instance_quest: bool = False
     event: int | None = None
     source_file: str = ""
 
@@ -83,6 +84,7 @@ class ExtractResult:
 
 @dataclass
 class _Context:
+    is_instance_quest: bool = False
     map_id: int | None = None
     races: Any = None
     classes: Any = None
@@ -173,6 +175,7 @@ def _child_context(table: LuaTable, ctx: _Context) -> _Context:
     is_yearly = bool(table.get("isYearly")) if table.get("isYearly") is not None else ctx.is_yearly
     event = table.get("e") if table.get("e") is not None else ctx.event
     return _Context(
+        is_instance_quest=ctx.is_instance_quest or _as_int(table.get("instanceID")) is not None,
         map_id=map_id,
         races=races,
         classes=classes,
@@ -236,6 +239,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
         is_yearly=bool(table.get("isYearly") if table.get("isYearly") is not None else ctx.is_yearly),
         is_monthly=bool(table.get("isMonthly")),
         repeatable=bool(table.get("repeatable")),
+        is_instance_quest=ctx.is_instance_quest,
         is_breadcrumb=bool(table.get("isBreadcrumb")),
         is_world_quest=bool(table.get("isWorldQuest")),
         event=_as_int(table.get("e") if table.get("e") is not None else ctx.event),
@@ -252,6 +256,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
 
 
 def _merge_records(dst: QuestRecord, src: QuestRecord) -> None:
+    dst.is_instance_quest = dst.is_instance_quest or src.is_instance_quest
     seen_coords = {(c.map_id, c.x, c.y) for c in dst.coords}
     for coord in src.coords:
         key = (coord.map_id, coord.x, coord.y)

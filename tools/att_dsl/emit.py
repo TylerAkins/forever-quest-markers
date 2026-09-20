@@ -147,6 +147,8 @@ def _quest_body(record: QuestRecord) -> str:
         parts.append("isWarEffort=true")
     if record.is_attunement:
         parts.append("isAttunement=true")
+    if record.is_instance_quest:
+        parts.append("isInstanceQuest=true")
     if record.event is not None:
         parts.append(f"event={int(record.event)}")
     return ", ".join(parts)

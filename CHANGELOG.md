@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## Unreleased
+
+- Extend red-orange map pins to ATT dungeon and raid quests, including the Ragefire Chasm quests, alongside attunement chains.
+- Add an optional auto-accept recommended-level ceiling, disabled by default, with a -5 to +5 slider defaulting to +1 relative to the player's level.
+
 ## 0.1.25 - 2026-09-20
 
 - Register map pins with Blizzard's map pin pool so the map owns their layering, scaling, and redraw lifecycle.

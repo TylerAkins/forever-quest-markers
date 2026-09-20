@@ -8,6 +8,8 @@ ns.defaults = {
     showSeasonal = false,
     showWarEffort = true,
     autoAccept = false,
+    autoAcceptRangeEnabled = false,
+    autoAcceptLevelOffset = 1,
     autoTurnIn = false,
     debug = false,
 }
@@ -56,6 +58,10 @@ local function DecodeMirror()
         return nil
     end
     local mirror = {}
+    local offset = tonumber(text:match("autoAcceptLevelOffset=([%-]?%d+)"))
+    if offset and offset >= -5 and offset <= 5 then
+        mirror.autoAcceptLevelOffset = offset
+    end
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     for key, raw in text:gmatch("([%w_]+)=([01])") do
         if type(ns.defaults[key]) == "boolean" then
@@ -91,7 +97,12 @@ local function CopySettings(src, dest, revision)
     end
     for key in pairs(ns.defaults) do
         if src[key] ~= nil then
-            dest[key] = src[key] and true or false
+            if type(ns.defaults[key]) == "number" then
+                local value = tonumber(src[key])
+                dest[key] = value and value == value and math.max(-5, math.min(5, math.floor(value))) or ns.defaults[key]
+            else
+                dest[key] = src[key] and true or false
+            end
         else
             dest[key] = ns.defaults[key]
         end
@@ -138,6 +149,7 @@ local function SaveMirror(db)
     end
     table.sort(keys)
     local parts = { "revision=" .. tostring(Revision(db)) }
+    parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -233,7 +245,15 @@ function ns.GetOption(key)
 end
 
 function ns.SetOption(key, value)
-    value = value and true or false
+    if type(ns.defaults[key]) == "number" then
+        value = tonumber(value)
+        if not value or value ~= value then
+            return
+        end
+        value = math.max(-5, math.min(5, math.floor(value + 0.5)))
+    else
+        value = value and true or false
+    end
     local db = ns.db or ns.InitSettings()
     db[key] = value
     db._revision = Revision(db) + 1
@@ -241,6 +261,7 @@ function ns.SetOption(key, value)
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
     end
+    if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
@@ -433,6 +454,8 @@ function ns.PrintSettingsDebug()
         "showSeasonal",
         "showWarEffort",
         "autoAccept",
+        "autoAcceptRangeEnabled",
+        "autoAcceptLevelOffset",
         "autoTurnIn",
         "debug",
     }) do
@@ -729,7 +752,7 @@ function ns.TryRegisterSettings()
             help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
             help:SetWidth(500)
             help:SetJustifyH("LEFT")
-            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, and red-orange ! markers for attunement chains you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, and red-orange ! markers for dungeon/raid quests and attunement chains. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
 
             local pins = CreateOptionCheckbox(
                 self,
@@ -779,13 +802,39 @@ function ns.TryRegisterSettings()
             )
             accept:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
 
+            local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
+                "Limit auto-accept quest level", "Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance.")
+            range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
+            local slider = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+            slider:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 8, -24)
+            slider:SetSize(260, 16)
+            slider:SetMinMaxValues(-5, 5)
+            slider:SetValueStep(1)
+            local label = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            label:SetPoint("BOTTOM", slider, "TOP", 0, 4)
+            slider.ApplySaved = function(control)
+                control.syncing = true
+                local offset = ns.GetOption("autoAcceptLevelOffset")
+                control:SetValue(offset)
+                label:SetText(("Auto Accept quest Range: %+d levels"):format(offset))
+                control:EnableMouse(ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled"))
+                control:SetAlpha(ns.GetOption("autoAcceptRangeEnabled") and 1 or 0.5)
+                control.syncing = false
+            end
+            slider:SetScript("OnValueChanged", function(control, value)
+                if control.syncing then return end
+                ns.SetOption("autoAcceptLevelOffset", value)
+                control:ApplySaved()
+            end)
+            optionChecks[#optionChecks + 1] = slider
+
             local turnin = CreateOptionCheckbox(
                 self,
                 "autoTurnIn",
                 "Auto-turn in quests",
                 "Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."
             )
-            turnin:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
+            turnin:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -8, -16)
 
             local debugBox = CreateOptionCheckbox(
                 self,
