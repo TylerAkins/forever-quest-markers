@@ -26,7 +26,9 @@ jobs:
           test -f ForeverQuestPins.toc
           grep -qE '^## Interface: 16001' ForeverQuestPins.toc
           grep -qE '^## Version:' ForeverQuestPins.toc
-          grep -qE '^## SavedVariables: ForeverQuestPinsDB_Settings' ForeverQuestPins.toc
+          grep -qxF '## SavedVariables: ForeverQuestPinsDB, ForeverQuestPinsDB_Settings' ForeverQuestPins.toc
+          grep -qxF '## SavedVariablesPerCharacter: ForeverQuestPinsCharDB, ForeverQuestPinsCharacterSettings' ForeverQuestPins.toc
+          test -f MapPins.xml
           test -f Media/QuestAvailable.tga
           test -f Database/ForeverQuests.lua
           test -f Database/Metadata.lua
@@ -51,6 +53,7 @@ jobs:
           python3 tests/test_compile_addon.py
           python3 tests/test_att_release.py
           python3 tests/test_update_forever_interface.py
+          python3 -m unittest discover -s tests -p test_repair_local_settings.py
 
       - name: Validate automated release intent
         if: github.event_name == 'pull_request'
