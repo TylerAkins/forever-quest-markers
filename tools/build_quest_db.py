@@ -149,6 +149,7 @@ def _ensure_att_checkout(clone_dir: Path, url: str) -> None:
             str(clone_dir),
             "sparse-checkout",
             "set",
+            "--no-cone",
             ".contrib/.db/forever",
             ".contrib/Parser/lib/Constants",
             ".contrib/Standard.lua",

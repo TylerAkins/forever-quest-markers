@@ -67,6 +67,10 @@ class GeneratedDatabaseTests(unittest.TestCase):
             text,
             r"\[8673\] = \{[^}]*isYearly=true",
         )
+        self.assertRegex(
+            text,
+            r"\[813\] = \{[^}]*repeatable=true",
+        )
 
 
 if __name__ == "__main__":
