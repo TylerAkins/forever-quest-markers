@@ -137,6 +137,12 @@ class EmitTests(unittest.TestCase):
         self.assertIn("[2521]", first)
 
 
+class CheckoutTests(unittest.TestCase):
+    def test_sparse_checkout_supports_file_paths(self) -> None:
+        script = (TOOLS / "build_quest_db.py").read_text(encoding="utf-8")
+        self.assertIn('"sparse-checkout",\n            "set",\n            "--no-cone",', script)
+
+
 class MulgoreTimelineTests(unittest.TestCase):
     def test_pre_cata_quests_kept_and_holiday_flagged(self) -> None:
         result = _extract_fixture("mulgore.lua")

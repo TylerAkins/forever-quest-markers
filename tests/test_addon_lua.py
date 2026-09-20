@@ -116,21 +116,31 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("OptionalDeps", toc)
         self.assertNotIn("RequiredDeps", toc)
 
-    def test_pins_use_retail_questnormal(self) -> None:
+    def test_pins_use_normal_and_repeatable_icons(self) -> None:
         text = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
-        self.assertIn('ICON_ATLAS = "QuestNormal"', text)
+        self.assertIn('NORMAL_ICON_ATLAS = "QuestNormal"', text)
+        self.assertIn('REPEATABLE_ICON_ATLAS = "QuestDaily"', text)
         self.assertIn("tex:SetAtlas(name, false)", text)
+        self.assertIn("tex:SetDesaturated(true)", text)
+        self.assertIn("pcall(tex.SetDesaturated, tex, false)", text)
+        self.assertIn("tex:SetVertexColor(0.12, 0.72, 1, 1)", text)
         self.assertIn("Media\\\\QuestAvailable", text)
+        self.assertIn("Media\\\\QuestRepeatable", text)
         self.assertIn("pin:SetIgnoreParentScale(false)", text)
         self.assertIn("PIN_SIZE = 24", text)
         set_fn = text.find("local function SetPinTexture(pin)")
         next_fn = text.find("local function ReleasePin(pin)", set_fn)
         set_body = text[set_fn:next_fn]
-        atlas_try = set_body.find("TrySetAtlas(tex, ICON_ATLAS)")
-        tga_try = set_body.find("TrySetFile(tex, ICON_FILE)")
-        self.assertNotEqual(atlas_try, -1)
-        self.assertNotEqual(tga_try, -1)
-        self.assertLess(atlas_try, tga_try)
+        normal_atlas = set_body.find("TrySetAtlas(tex, NORMAL_ICON_ATLAS)")
+        tinted_atlas = set_body.find("TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS)")
+        normal_file = set_body.find("TrySetFile(tex, NORMAL_ICON_FILE)")
+        repeatable_file = set_body.find("TrySetFile(tex, REPEATABLE_ICON_FILE)")
+        repeatable_atlas = set_body.find("TrySetAtlas(tex, REPEATABLE_ICON_ATLAS)")
+        for position in (normal_atlas, tinted_atlas, normal_file, repeatable_file, repeatable_atlas):
+            self.assertNotEqual(position, -1)
+        self.assertLess(normal_atlas, normal_file)
+        self.assertLess(tinted_atlas, repeatable_file)
+        self.assertLess(repeatable_file, repeatable_atlas)
         self.assertNotIn("PaintFill", text)
         self.assertNotIn("SetColorTexture", text)
         self.assertNotIn("ICON_GOSSIP", text)
@@ -138,6 +148,23 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn('CreateFrame("Frame"):CreateTexture()', config)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
+
+    def test_repeatable_pins_are_blue_and_opt_out(self) -> None:
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn('return false, "repeatable"', eligibility)
+        self.assertLess(
+            eligibility.find('not ns.GetOption("showRepeatable")'),
+            eligibility.find('return true, "npc-offered"'),
+        )
+        self.assertIn("showRepeatable = true", config)
+        self.assertIn('msg == "repeatable"', config)
+        self.assertIn('"showRepeatable"', config)
+        self.assertIn("Show repeatable quest pins", config)
+        self.assertIn("local function IsRepeatableOnly(pin)", pins)
+        self.assertIn("if not data or not data.repeatable then", pins)
+        self.assertIn("SetPinTexture(existing)", pins)
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")

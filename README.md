@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers on Blizzard’s native world map for quests you can accept but have not already taken.
+Yellow **!** start markers for normal quests and blue **!** markers for repeatable quests on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It only adds start locations for **unaccepted** quests.
 
@@ -14,7 +14,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 ## Features
 
-- Yellow `!` pins on `WorldMapFrame` for acceptable, unaccepted quest starts
+- Yellow `!` pins for normal quest starts and blue `!` pins for ATT-marked repeatable quest starts
 - Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
@@ -34,12 +34,13 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 
 ## Settings
 
-Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon stores choices in one account-wide SavedVariables table. On Forever 1.60.1, it also mirrors these seven boolean options to a custom CVar because that client can restore CVars while skipping addon SavedVariables.
+Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon stores choices in one account-wide SavedVariables table. On Forever 1.60.1, it also mirrors these eight boolean options to a custom CVar because that client can restore CVars while skipping addon SavedVariables.
 
 | Option | Default |
 |--------|---------|
 | Show quest-start pins | On |
 | Show trivial / low-level pins | On (only hides them if the client has `GetQuestGreenRange`) |
+| Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | On (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
 | Auto-accept quests | Off |
@@ -53,6 +54,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | `/fqp` | Help |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |
+| `/fqp repeatable` | Toggle repeatable quest pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
 | `/fqp accept` | Toggle auto-accept |
@@ -78,7 +80,7 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use ATT’s static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation gates from ATT are stored but not used to hide pins yet
-- Pin art is Blizzard’s `QuestNormal` atlas, with `Media/QuestAvailable.tga` if that call errors
+- Normal and repeatable pins share Blizzard’s `QuestNormal` shape; repeatable pins desaturate and tint it blue, with bundled yellow and blue fallbacks
 
 ## Support
 
