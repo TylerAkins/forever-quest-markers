@@ -36,6 +36,7 @@ jobs:
           test -f CHANGELOG.md
           test -f VERSION
           test -f docs/DEVELOPMENT.md
+          test -f tools/update_forever_interface.py
           grep -qE '^## X-Website:' ForeverQuestPins.toc
           grep -qE '^## X-Issues:' ForeverQuestPins.toc
 
@@ -46,14 +47,21 @@ jobs:
           python3 tests/test_addon_lua.py
           python3 tests/test_compile_addon.py
           python3 tests/test_att_release.py
+          python3 tests/test_update_forever_interface.py
 
-      - name: Validate database release intent
+      - name: Validate automated release intent
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          if git diff --quiet "$BASE_SHA" HEAD -- Database/ForeverQuests.lua; then
+          QUEST_DATA_CHANGED=false
+          if ! git diff --quiet "$BASE_SHA" HEAD -- Database/ForeverQuests.lua; then
+            QUEST_DATA_CHANGED=true
+          fi
+          PREVIOUS_INTERFACE="$(git show "${BASE_SHA}:ForeverQuestPins.toc" | sed -n 's/^## Interface: //p')"
+          CURRENT_INTERFACE="$(sed -n 's/^## Interface: //p' ForeverQuestPins.toc)"
+          if [[ "$QUEST_DATA_CHANGED" == false && "$PREVIOUS_INTERFACE" == "$CURRENT_INTERFACE" ]]; then
             exit 0
           fi
           PREVIOUS_VERSION="$(git show "${BASE_SHA}:VERSION" | tr -d '[:space:]')"
@@ -61,7 +69,7 @@ jobs:
           python3 tools/att_release.py validate \
             --previous-version "$PREVIOUS_VERSION" \
             --current-version "$CURRENT_VERSION" \
-            --quest-data-changed
+            --release-content-changed
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
       - name: Read pinned ATT SHA

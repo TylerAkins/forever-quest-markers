@@ -81,33 +81,33 @@ class AttReleaseTests(unittest.TestCase):
                     release_date="2026-09-20",
                 )
 
-    def test_merge_release_requires_exact_patch_and_quest_change(self) -> None:
+    def test_automated_release_requires_exact_patch_and_content_change(self) -> None:
         self.assertIsNone(
-            ATT_RELEASE.plan_merged_release(
+            ATT_RELEASE.plan_automated_release(
                 "0.1.21",
                 "0.1.21",
-                quest_data_changed=False,
+                release_content_changed=False,
             )
         )
         self.assertEqual(
             "v0.1.22",
-            ATT_RELEASE.plan_merged_release(
+            ATT_RELEASE.plan_automated_release(
                 "0.1.21",
                 "0.1.22",
-                quest_data_changed=True,
+                release_content_changed=True,
             ),
         )
         with self.assertRaisesRegex(ValueError, "must advance"):
-            ATT_RELEASE.plan_merged_release(
+            ATT_RELEASE.plan_automated_release(
                 "0.1.21",
                 "0.1.23",
-                quest_data_changed=True,
+                release_content_changed=True,
             )
         with self.assertRaisesRegex(ValueError, "must advance"):
-            ATT_RELEASE.plan_merged_release(
+            ATT_RELEASE.plan_automated_release(
                 "0.1.21",
                 "0.1.21",
-                quest_data_changed=True,
+                release_content_changed=True,
             )
 
     def test_tag_plan_creates_reuses_and_rejects_collisions(self) -> None:
