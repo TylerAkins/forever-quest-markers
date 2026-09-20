@@ -479,6 +479,9 @@ function ns.IsQuestAvailable(questID, data)
     if ns.IsOnQuest(questID) then
         return false, "in-log"
     end
+    if data.repeatable and not ns.GetOption("showRepeatable") then
+        return false, "repeatable"
+    end
     if ns.IsOffered and ns.IsOffered(questID) then
         return true, "npc-offered"
     end

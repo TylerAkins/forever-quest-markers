@@ -4,6 +4,7 @@ ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
     showTrivial = true,
+    showRepeatable = true,
     showSeasonal = false,
     showWarEffort = true,
     autoAccept = false,
@@ -169,6 +170,7 @@ function ns.SlashCommand(msg)
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins")
+        print("  /fqp repeatable Toggle repeatable quest pins (on by default)")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (on by default)")
         print("  /fqp accept   Toggle auto-accept quests")
@@ -203,6 +205,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "trivial" then
         ToggleFlag("showTrivial", "Show trivial quests")
+        return
+    end
+    if msg == "repeatable" then
+        ToggleFlag("showRepeatable", "Show repeatable quests")
         return
     end
     if msg == "seasonal" then
@@ -319,6 +325,7 @@ function ns.PrintSettingsDebug()
     for _, key in ipairs({
         "enabled",
         "showTrivial",
+        "showRepeatable",
         "showSeasonal",
         "showWarEffort",
         "autoAccept",
@@ -501,6 +508,8 @@ function ns.PrintAPIProbe()
     print("  C_Texture.GetAtlasInfo: " .. has(C_Texture and C_Texture.GetAtlasInfo))
     local atlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestNormal")
     print("  QuestNormal atlas: " .. has(atlas))
+    local repeatableAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestDaily")
+    print("  QuestDaily atlas: " .. has(repeatableAtlas))
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
         print("  pin icon: " .. tostring(status.icon or "not painted yet"))
@@ -616,13 +625,13 @@ function ns.TryRegisterSettings()
             help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
             help:SetWidth(500)
             help:SetJustifyH("LEFT")
-            help:SetText("Yellow ! markers on the world map for quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+            help:SetText("Yellow ! markers for normal quests and blue ! markers for repeatable quests you can accept but have not already taken. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
 
             local pins = CreateOptionCheckbox(
                 self,
                 "enabled",
                 "Show quest-start pins",
-                "Yellow start markers on the world map for unaccepted quests."
+                "Start markers on the world map for unaccepted quests."
             )
             pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
 
@@ -634,13 +643,21 @@ function ns.TryRegisterSettings()
             )
             trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
 
+            local repeatable = CreateOptionCheckbox(
+                self,
+                "showRepeatable",
+                "Show repeatable quest pins",
+                "Blue start markers for quests ATT explicitly marks repeatable."
+            )
+            repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
+
             local seasonal = CreateOptionCheckbox(
                 self,
                 "showSeasonal",
                 "Show seasonal / holiday pins",
                 "Lunar Festival elders, Darkmoon Faire, and other event quests."
             )
-            seasonal:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
+            seasonal:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, -4)
 
             local warEffort = CreateOptionCheckbox(
                 self,
@@ -676,7 +693,7 @@ function ns.TryRegisterSettings()
 
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
             slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
-            slash:SetText("Slash commands: /fqp  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
+            slash:SetText("Slash commands: /fqp  /fqp repeatable  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
         end
         ns.SyncSettingsCheckboxes()
     end)
