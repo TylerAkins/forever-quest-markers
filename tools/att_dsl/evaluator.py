@@ -196,7 +196,23 @@ def _eval_stat(stat: Node, env: Environment) -> None:
         # Loops are not executed. ATT data files do not need them for quests.
         return
     if isinstance(stat, ForIn):
-        # Rare at data top-level; skip to remain side-effect free.
+        values = [_eval_exp(value, env) for value in stat.iters]
+        iterable = values[0] if values else None
+        if not isinstance(iterable, LuaTable):
+            return
+        previous = {name: env.get(name) for name in stat.names}
+        existed = {name: name in env for name in stat.names}
+        for key, value in iterable.items():
+            loop_values = (key, value)
+            for index, name in enumerate(stat.names):
+                env[name] = loop_values[index] if index < len(loop_values) else None
+            for child in stat.body:
+                _eval_stat(child, env)
+        for name in stat.names:
+            if existed[name]:
+                env[name] = previous[name]
+            else:
+                env.pop(name, None)
         return
     raise EvalError(f"unsupported statement {type(stat).__name__}", stat)
 
@@ -505,6 +521,17 @@ def _optional_table(args: list[Any], index: int = 1) -> Any:
 
 
 def _install_constructors(env: Environment) -> None:
+    def table_insert(table: Any, *args: Any) -> None:
+        if not isinstance(table, LuaTable) or not args:
+            return
+        if len(args) == 1:
+            table.append(args[0])
+            return
+        position = args[0]
+        value = args[1]
+        if isinstance(position, (int, float)) and int(position) == position:
+            table.array.insert(max(0, int(position) - 1), value)
+
     def q(quest_id: Any, t: Any = None) -> LuaTable:
         return _struct("questID", quest_id, t)
 
@@ -705,4 +732,5 @@ def _install_constructors(env: Environment) -> None:
         "bubbleDownAndReplace": _bubble_down,
     }
     env.update(constructors)
+    env["table"] = _dict_to_lua({"insert": table_insert})
     env["ExportDB"] = LuaTable()

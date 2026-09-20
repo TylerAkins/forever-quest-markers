@@ -11,6 +11,7 @@ local NORMAL_ICON_ATLAS = "QuestNormal"
 local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local REPEATABLE_ICON_ATLAS = "QuestDaily"
 local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
+local ATTUNEMENT_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
@@ -223,7 +224,7 @@ local function TrySetAtlas(tex, name)
     return ok and true or false
 end
 
-local function TrySetTintedAtlas(tex, name)
+local function TrySetTintedAtlas(tex, name, red, green, blue)
     if not tex or not tex.SetDesaturated or not tex.SetVertexColor then
         return false
     end
@@ -232,7 +233,7 @@ local function TrySetTintedAtlas(tex, name)
     end
     local ok = pcall(function()
         tex:SetDesaturated(true)
-        tex:SetVertexColor(0.12, 0.72, 1, 1)
+        tex:SetVertexColor(red, green, blue, 1)
     end)
     return ok and true or false
 end
@@ -283,43 +284,115 @@ local function IsRepeatableOnly(pin)
     return pin.data and pin.data.repeatable or false
 end
 
+local function IsAttunementOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.isAttunement then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.isAttunement or false
+end
+
+local function EnsurePinTextures(pin)
+    if not pin.Fill then
+        pin.Fill = pin:CreateTexture(nil, "ARTWORK")
+        pin.Fill:SetAllPoints()
+    end
+    if not pin.Texture then
+        pin.Texture = pin:CreateTexture(nil, "OVERLAY")
+        pin.Texture:SetAllPoints()
+    end
+    return pin.Fill, pin.Texture
+end
+
 local function SetPinTexture(pin)
-    local tex = pin.Texture
+    local fill, tex = EnsurePinTextures(pin)
     if not tex then
         lastStatus.icon = "none"
+        pin.icon = "none"
         return
     end
-    if pin.Fill and pin.Fill.Hide then
-        pin.Fill:Hide()
+    if fill and fill.Hide then
+        fill:Hide()
     end
+    if tex.Hide then
+        tex:Hide()
+    end
+    local attunement = IsAttunementOnly(pin)
     local repeatable = IsRepeatableOnly(pin)
-    if repeatable then
-        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS) then
-            lastStatus.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":blue"
+    local fallbackFile = NORMAL_ICON_FILE
+    local fallbackName = "QuestAvailable.tga"
+    if attunement then
+        fallbackFile = ATTUNEMENT_ICON_FILE
+        fallbackName = "QuestAttunement.tga"
+    elseif repeatable then
+        fallbackFile = REPEATABLE_ICON_FILE
+        fallbackName = "QuestRepeatable.tga"
+    end
+
+    local hasFallback = false
+    if attunement then
+        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 1.00, 0.32, 0.08) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange" .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
             return
         end
-        if TrySetFile(tex, REPEATABLE_ICON_FILE) or TrySetFile(tex, REPEATABLE_ICON_FILE .. ".tga") then
-            lastStatus.icon = "QuestRepeatable.tga"
+        if TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif repeatable then
+        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 0.12, 0.72, 1.00) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":blue" .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
+            lastStatus.icon = pin.icon
             return
         end
         if TrySetAtlas(tex, REPEATABLE_ICON_ATLAS) then
-            lastStatus.icon = "atlas:" .. REPEATABLE_ICON_ATLAS
+            pin.icon = "atlas:" .. REPEATABLE_ICON_ATLAS
+            lastStatus.icon = pin.icon
             return
         end
     else
         if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
-            lastStatus.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
             return
         end
-        if TrySetFile(tex, NORMAL_ICON_FILE) or TrySetFile(tex, NORMAL_ICON_FILE .. ".tga") then
-            lastStatus.icon = "QuestAvailable.tga"
+        if TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
+            lastStatus.icon = pin.icon
             return
         end
     end
+    pin.icon = "none"
     lastStatus.icon = "none"
 end
 
 local function ReleasePin(pin)
+    if pin.managed then
+        local map = pin:GetMap()
+        if map then
+            map:RemovePin(pin)
+        end
+        pin.quests, pin.questID, pin.data = nil, nil, nil
+        return
+    end
     pin:Hide()
     pin:ClearAllPoints()
     pin.questID = nil
@@ -332,6 +405,7 @@ local function ReleasePin(pin)
     pin.live = nil
     pin.titleReady = nil
     pin.quests = nil
+    pin.icon = nil
     pool[#pool + 1] = pin
 end
 
@@ -426,6 +500,7 @@ local function ShowTooltip(pin)
         end
         GameTooltip:AddLine("reason: " .. tostring(pin.reason or "?"), 0.6, 0.8, 1)
         GameTooltip:AddLine("parent: " .. tostring(lastStatus.parent or "?"), 0.6, 0.8, 1)
+        GameTooltip:AddLine("icon: " .. tostring(pin.icon or "?"), 0.6, 0.8, 1)
         if pin.live then
             GameTooltip:AddLine("position: live NPC", 0.6, 0.8, 1)
         end
@@ -527,6 +602,10 @@ local function RaisePin(pin, parent)
 end
 
 local function ApplyPinPoint(pin, parent)
+    if pin.managed then
+        pin:SetPosition(pin.nx, pin.ny)
+        return true
+    end
     parent = parent or pin:GetParent() or GetCanvas()
     local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny)
     if not ox then
@@ -538,6 +617,11 @@ local function ApplyPinPoint(pin, parent)
     -- Match MapCanvas ApplyPinPosition: pin scale counters canvas zoom so the
     -- bang stays PIN_SIZE on screen in both windowed and maximized layouts.
     local canvasScale = GetCanvasScale(parent)
+    if pin.placedParent == parent and pin.placedX == ox and pin.placedY == oy
+        and pin.placedScale == canvasScale then
+        return true
+    end
+    pin.placedParent, pin.placedX, pin.placedY, pin.placedScale = parent, ox, oy, canvasScale
     if pin.SetIgnoreParentScale then
         pin:SetIgnoreParentScale(false)
     end
@@ -563,6 +647,15 @@ function MapPins:RepositionAll()
 end
 
 local function AcquirePin(parent)
+    if MapCanvasPinMixin and WorldMapFrame and WorldMapFrame.AcquirePin then
+        -- Populate the mixin lazily in case Blizzard_MapCanvas loaded after us.
+        for key, value in pairs(MapCanvasPinMixin) do
+            if ForeverQuestPinsMapPinMixin[key] == nil then
+                ForeverQuestPinsMapPinMixin[key] = value
+            end
+        end
+        return WorldMapFrame:AcquirePin("ForeverQuestPinsMapPinTemplate")
+    end
     local pin = table.remove(pool)
     if not pin then
         pin = CreateFrame("Button", nil, parent)
@@ -570,8 +663,7 @@ local function AcquirePin(parent)
         if pin.EnableMouse then
             pin:EnableMouse(true)
         end
-        pin.Texture = pin:CreateTexture(nil, "OVERLAY")
-        pin.Texture:SetAllPoints()
+        EnsurePinTextures(pin)
         pin:SetScript("OnEnter", ShowTooltip)
         pin:SetScript("OnLeave", function(self)
             if hoveredPin == self then
@@ -581,6 +673,7 @@ local function AcquirePin(parent)
         end)
     end
     pin:SetParent(parent)
+    pin.placedParent = nil
     if pin.SetIgnoreParentScale then
         pin:SetIgnoreParentScale(false)
     end
@@ -588,6 +681,32 @@ local function AcquirePin(parent)
     pin:SetSize(PIN_SIZE, PIN_SIZE)
     RaisePin(pin, parent)
     return pin
+end
+
+ForeverQuestPinsMapPinMixin = {}
+
+function ForeverQuestPinsMapPinMixin:OnLoad()
+    self.managed = true
+    self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI")
+    self:SetScalingLimits(1, 1, 1)
+    self:SetSize(PIN_SIZE, PIN_SIZE)
+    self.Texture:ClearAllPoints()
+    self.Texture:SetAllPoints(self)
+end
+
+function ForeverQuestPinsMapPinMixin:OnAcquired()
+    self:SetAlpha(1)
+end
+
+function ForeverQuestPinsMapPinMixin:OnMouseEnter()
+    ShowTooltip(self)
+end
+
+function ForeverQuestPinsMapPinMixin:OnMouseLeave()
+    if hoveredPin == self then
+        hoveredPin = nil
+    end
+    GameTooltip:Hide()
 end
 
 local function SameSpot(ax, ay, bx, by)

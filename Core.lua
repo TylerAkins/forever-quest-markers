@@ -12,6 +12,7 @@ local WATCHED_EVENTS = {
     "ADDON_LOADED",
     "PLAYER_LOGIN",
     "PLAYER_ENTERING_WORLD",
+    "PLAYER_LOGOUT",
     "QUEST_LOG_UPDATE",
     "QUEST_ACCEPTED",
     "QUEST_REMOVED",
@@ -84,6 +85,12 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
             ns.SyncSettingsCheckboxes()
         end
         ns.RequestRefresh(event)
+        return
+    end
+    if event == "PLAYER_LOGOUT" then
+        if ns.FlushSettings then
+            ns.FlushSettings()
+        end
         return
     end
     ns.RequestRefresh(event)

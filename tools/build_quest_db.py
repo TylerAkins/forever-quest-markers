@@ -16,7 +16,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 from att_dsl.constants import BuildContext, load_forever_constants
 from att_dsl.emit import write_outputs
 from att_dsl.evaluator import Environment, evaluate_chunk, new_environment
-from att_dsl.extract import ExtractResult, extract_from_roots
+from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
 from att_dsl.preprocessor import PreprocessError, preprocess
 
@@ -80,7 +80,10 @@ def main(argv: list[str] | None = None) -> int:
     result.files_parsed += zzold_result.files_parsed
     for reason, count in zzold_result.excluded.items():
         result.excluded[reason] = result.excluded.get(reason, 0) + count
+    result.attunement_quest_ids.update(zzold_result.attunement_quest_ids)
     errors.extend(zzold_errors)
+
+    mark_attunement_chains(result.quests, result.attunement_quest_ids)
 
     stats = _stats(result, sha, files, errors)
     stats["zzold_files_parsed"] = zzold_result.files_parsed
@@ -215,6 +218,7 @@ def _stats(
         "quests_emitted": len(result.quests),
         "quests_with_coords": result.quests_with_coords,
         "coord_pins": coord_pins,
+        "attunement_quests": sum(record.is_attunement for record in result.quests.values()),
         "excluded": dict(sorted(result.excluded.items())),
         "map_ids": maps,
         "map_count": len(maps),
@@ -227,6 +231,7 @@ def _log_summary(stats: dict[str, object]) -> None:
     print(f"Quests seen: {stats['quests_seen']}")
     print(f"Quests with coordinates: {stats['quests_with_coords']}")
     print(f"Coordinate pins: {stats['coord_pins']}")
+    print(f"Attunement quests: {stats['attunement_quests']}")
     print(f"Maps indexed: {stats['map_count']}")
     if stats.get("zzold_fallback_quests"):
         print(f"zzOLD fallback quests: {stats['zzold_fallback_quests']}")

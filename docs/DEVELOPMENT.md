@@ -19,6 +19,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
+| `Media/QuestAttunement.tga` | Red-orange fallback for ATT-derived attunement chains |
 | `tools/build_quest_db.py` | ATT Forever → `Database/` |
 | `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
 | `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
@@ -128,7 +129,7 @@ License on CurseForge: **GPLv3**. Credit All The Things (MIT) for converted data
 
 ## Pin textures
 
-Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repeatable pins use the same atlas with desaturation and a blue vertex tint so their silhouette matches exactly. Bundled yellow and blue TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
+Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repeatable and attunement pins use the same atlas with desaturation and blue or red-orange vertex tints so their silhouettes match exactly. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
 ## Support split
 

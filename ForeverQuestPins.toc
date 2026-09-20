@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Forever Quest Pins
-## Notes: Beta: yellow and blue ! start markers on the Forever map for unaccepted quests.
+## Notes: Beta: yellow, blue, and red-orange ! start markers on the Forever map for unaccepted quests.
 ## Author: Tyler Akins
 ## Version: @project-version@
 ## X-License: GPL-3.0-or-later
@@ -9,8 +9,8 @@
 ## X-Website: https://github.com/TylerAkins/forever-quest-markers
 ## X-Source: https://github.com/TylerAkins/forever-quest-markers
 ## X-Issues: https://github.com/TylerAkins/forever-quest-markers/issues
-## SavedVariables: ForeverQuestPinsDB_Settings
-## SavedVariablesPerCharacter: ForeverQuestPinsCharacterSettings
+## SavedVariables: ForeverQuestPinsDB, ForeverQuestPinsDB_Settings
+## SavedVariablesPerCharacter: ForeverQuestPinsCharDB, ForeverQuestPinsCharacterSettings
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
 ## DefaultState: enabled
 
@@ -20,5 +20,6 @@ Config.lua
 WarEffort.lua
 Eligibility.lua
 MapPins.lua
+MapPins.xml
 AutoQuests.lua
 Core.lua
