@@ -16,6 +16,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Database/Metadata.lua` | Pinned ATT commit SHA |
 | `Database/build_report.json` | Converter stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
+| `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Fallback bang if `QuestNormal` fails |
 | `tools/build_quest_db.py` | ATT Forever → `Database/` |
 | `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
@@ -42,7 +43,7 @@ Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 - Daily at 06:00 UTC, and on manual **Run workflow**
 - Opens a versioned PR only when the shipped quest records changed; ATT SHA-only updates are ignored
 - Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
-- Bumps the patch version and adds an ATT database entry to `CHANGELOG.md`
+- Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
 
@@ -55,7 +56,7 @@ Workflow **Update Forever interface** (`.github/workflows/update-forever-interfa
 - Runs Wednesday at 12:00 UTC, after the US Tuesday and EU Wednesday maintenance windows
 - Reads Blizzard's explicit `wow_classic_beta` product feed and converts versions such as `1.60.1.69913` to Interface `16001`
 - Ignores build-only changes when the calculated Interface is unchanged
-- Opens or refreshes the reviewed `forever-interface-update` PR with the TOC, next patch version, and changelog entry
+- Opens or refreshes the reviewed `forever-interface-update` PR with the TOC, next patch version, changelog entry, and current release notes
 - Closes that fixed PR if the current Interface is already supported on `main`
 - Publishes the prepared GitHub and CurseForge release only after a human merges the PR
 
@@ -95,11 +96,11 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
-`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
+`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
 
-The packager generates release notes from commits since the previous tag. Do not set `manual-changelog` to the repository's full `CHANGELOG.md`, or GitHub and CurseForge will publish the entire release history with every file.
+The packager uploads `RELEASE_NOTES.md` as the release changelog instead of generating notes from Git commits. This prevents commit metadata from appearing on CurseForge and avoids publishing the full release history. Automated ATT and Forever Interface PRs replace this file with only their prepared release entry. CI requires that entry to match `VERSION` and rejects email addresses.
 
-All stable releases must update `VERSION` to match the tag. Automated ATT and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION` and `CHANGELOG.md` in the release PR before creating the tag.
+All stable releases must update `VERSION` to match the tag. Automated ATT and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION`, `CHANGELOG.md`, and `RELEASE_NOTES.md` in the release PR before creating the tag.
 
 ## CurseForge
 
