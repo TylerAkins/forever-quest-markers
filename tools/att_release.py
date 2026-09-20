@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare and validate patch releases for automated ATT database updates."""
+"""Prepare ATT updates and validate automated patch releases."""
 
 from __future__ import annotations
 
@@ -34,14 +34,14 @@ class Version:
         return f"{self.major}.{self.minor}.{self.patch}"
 
 
-def plan_merged_release(
+def plan_automated_release(
     previous_version: str,
     current_version: str,
     *,
-    quest_data_changed: bool,
+    release_content_changed: bool,
 ) -> str | None:
-    """Return the release tag for a valid database merge, or no release."""
-    if not quest_data_changed:
+    """Return the release tag for a valid automated merge, or no release."""
+    if not release_content_changed:
         return None
 
     previous = Version.parse(previous_version)
@@ -49,7 +49,8 @@ def plan_merged_release(
     expected = previous.next_patch()
     if current != expected:
         raise ValueError(
-            f"Quest data changed, but VERSION must advance from {previous} to {expected}; "
+            f"Release content changed, but VERSION must advance from {previous} "
+            f"to {expected}; "
             f"found {current}"
         )
     return f"v{current}"
@@ -91,7 +92,7 @@ def prepare_att_release(
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
     entry = _changelog_entry(target, release_date, report)
-    changelog = _replace_or_insert_entry(
+    changelog = replace_or_insert_changelog_entry(
         changelog_path.read_text(encoding="utf-8"),
         target,
         entry,
@@ -115,7 +116,10 @@ def _changelog_entry(version: Version, release_date: str, report: dict[str, obje
     )
 
 
-def _replace_or_insert_entry(changelog: str, version: Version, entry: str) -> str:
+def replace_or_insert_changelog_entry(
+    changelog: str, version: Version, entry: str
+) -> str:
+    """Insert a release entry, or refresh the matching prepared entry."""
     version_heading = re.compile(
         rf"^## {re.escape(str(version))}(?:\s+[-—].*)?\n.*?(?=^## |\Z)",
         re.MULTILINE | re.DOTALL,
@@ -153,10 +157,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     prepare.add_argument("--date", default=datetime.now(UTC).date().isoformat())
     prepare.add_argument("--dry-run", action="store_true")
 
-    validate = subparsers.add_parser("validate", help="validate a merged ATT release")
+    validate = subparsers.add_parser(
+        "validate", help="validate a merged automated patch release"
+    )
     validate.add_argument("--previous-version", required=True)
     validate.add_argument("--current-version", required=True)
-    validate.add_argument("--quest-data-changed", action="store_true")
+    validate.add_argument("--release-content-changed", action="store_true")
 
     validate_tag = subparsers.add_parser(
         "validate-tag",
@@ -180,10 +186,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "validate":
-        tag = plan_merged_release(
+        tag = plan_automated_release(
             args.previous_version,
             args.current_version,
-            quest_data_changed=args.quest_data_changed,
+            release_content_changed=args.release_content_changed,
         )
         if tag:
             print(tag)
