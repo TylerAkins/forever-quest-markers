@@ -77,7 +77,7 @@ class AddonLuaTests(unittest.TestCase):
         pkgmeta = (ROOT / ".pkgmeta").read_text(encoding="utf-8")
         self.assertNotIn("README.md", pkgmeta)
         self.assertNotIn("ATTRIBUTION.md", pkgmeta)
-        self.assertIn("manual-changelog: CHANGELOG.md", pkgmeta)
+        self.assertNotIn("manual-changelog:", pkgmeta)
 
     def test_single_savedvariables_name(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
