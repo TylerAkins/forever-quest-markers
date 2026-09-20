@@ -15,5 +15,3 @@ ignore:
   - "**/.DS_Store"
   - "**/Thumbs.db"
   - "**/__pycache__"
-
-manual-changelog: CHANGELOG.md

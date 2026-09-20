@@ -97,6 +97,8 @@ Only stable tags are distributed to players. Preview builds are for testing and 
 
 `.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, and `CHANGELOG.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
 
+The packager generates release notes from commits since the previous tag. Do not set `manual-changelog` to the repository's full `CHANGELOG.md`, or GitHub and CurseForge will publish the entire release history with every file.
+
 All stable releases must update `VERSION` to match the tag. Automated ATT and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION` and `CHANGELOG.md` in the release PR before creating the tag.
 
 ## CurseForge
