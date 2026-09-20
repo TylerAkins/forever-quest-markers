@@ -40,6 +40,7 @@ jobs:
             echo "VERSION ${VERSION} does not match tag ${GITHUB_REF_NAME}" >&2
             exit 1
           fi
+          python3 tools/att_release.py validate-notes --version "$VERSION"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else

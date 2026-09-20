@@ -148,3 +148,4 @@ jobs:
             Database/build_report.json
             VERSION
             CHANGELOG.md
+            RELEASE_NOTES.md
