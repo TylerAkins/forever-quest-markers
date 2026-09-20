@@ -3,11 +3,14 @@ local ADDON_NAME, ns = ...
 ns.MapPins = ns.MapPins or {}
 local MapPins = ns.MapPins
 
--- Retail available-quest bang (same atlas as 0.1.1). Keep native size off so
--- the pin stays PIN_SIZE. Gossip AvailableQuestIcon is not used: it can bind
--- with no pixels and hide a working atlas. Bundled TGA only if SetAtlas errors.
-local ICON_ATLAS = "QuestNormal"
-local ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
+-- Keep native atlas size off so pins stay PIN_SIZE. Repeatable pins reuse the
+-- QuestNormal silhouette with desaturation + a blue tint because Forever's
+-- QuestDaily atlas can resolve to yellow. Gossip AvailableQuestIcon is not
+-- used: it can bind with no pixels.
+local NORMAL_ICON_ATLAS = "QuestNormal"
+local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
+local REPEATABLE_ICON_ATLAS = "QuestDaily"
+local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
@@ -203,6 +206,9 @@ local function TrySetAtlas(tex, name)
         if tex.SetBlendMode then
             pcall(tex.SetBlendMode, tex, "BLEND")
         end
+        if tex.SetDesaturated then
+            pcall(tex.SetDesaturated, tex, false)
+        end
         if tex.SetVertexColor then
             tex:SetVertexColor(1, 1, 1, 1)
         end
@@ -213,6 +219,20 @@ local function TrySetAtlas(tex, name)
             tex:SetAllPoints()
         end
         tex:Show()
+    end)
+    return ok and true or false
+end
+
+local function TrySetTintedAtlas(tex, name)
+    if not tex or not tex.SetDesaturated or not tex.SetVertexColor then
+        return false
+    end
+    if not TrySetAtlas(tex, name) then
+        return false
+    end
+    local ok = pcall(function()
+        tex:SetDesaturated(true)
+        tex:SetVertexColor(0.12, 0.72, 1, 1)
     end)
     return ok and true or false
 end
@@ -232,6 +252,9 @@ local function TrySetFile(tex, path)
             tex:SetTexCoord(0, 1, 0, 1)
         end
         tex:SetTexture(path)
+        if tex.SetDesaturated then
+            pcall(tex.SetDesaturated, tex, false)
+        end
         if tex.SetVertexColor then
             tex:SetVertexColor(1, 1, 1, 1)
         end
@@ -246,6 +269,20 @@ local function TrySetFile(tex, path)
     return ok and true or false
 end
 
+local function IsRepeatableOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.repeatable then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.repeatable or false
+end
+
 local function SetPinTexture(pin)
     local tex = pin.Texture
     if not tex then
@@ -255,13 +292,29 @@ local function SetPinTexture(pin)
     if pin.Fill and pin.Fill.Hide then
         pin.Fill:Hide()
     end
-    if TrySetAtlas(tex, ICON_ATLAS) then
-        lastStatus.icon = "atlas:" .. ICON_ATLAS
-        return
-    end
-    if TrySetFile(tex, ICON_FILE) or TrySetFile(tex, ICON_FILE .. ".tga") then
-        lastStatus.icon = "QuestAvailable.tga"
-        return
+    local repeatable = IsRepeatableOnly(pin)
+    if repeatable then
+        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS) then
+            lastStatus.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":blue"
+            return
+        end
+        if TrySetFile(tex, REPEATABLE_ICON_FILE) or TrySetFile(tex, REPEATABLE_ICON_FILE .. ".tga") then
+            lastStatus.icon = "QuestRepeatable.tga"
+            return
+        end
+        if TrySetAtlas(tex, REPEATABLE_ICON_ATLAS) then
+            lastStatus.icon = "atlas:" .. REPEATABLE_ICON_ATLAS
+            return
+        end
+    else
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            lastStatus.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            return
+        end
+        if TrySetFile(tex, NORMAL_ICON_FILE) or TrySetFile(tex, NORMAL_ICON_FILE .. ".tga") then
+            lastStatus.icon = "QuestAvailable.tga"
+            return
+        end
     end
     lastStatus.icon = "none"
 end
@@ -534,7 +587,6 @@ local function AcquirePin(parent)
     pin:SetScale(1)
     pin:SetSize(PIN_SIZE, PIN_SIZE)
     RaisePin(pin, parent)
-    SetPinTexture(pin)
     return pin
 end
 
@@ -553,6 +605,7 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
         if SameSpot(existing.nx, existing.ny, nx, ny) then
             existing.quests = existing.quests or { { id = existing.questID, data = existing.data, reason = existing.reason } }
             existing.quests[#existing.quests + 1] = { id = questID, data = data, reason = reason }
+            SetPinTexture(existing)
             ns.PrefetchQuestInfo(questID, data)
             return true
         end
@@ -568,6 +621,7 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.live = live and true or nil
     pin.quests = { { id = questID, data = data, reason = reason } }
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
+    SetPinTexture(pin)
     ApplyPinPoint(pin, parent)
     pin:Show()
     active[#active + 1] = pin
