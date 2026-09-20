@@ -61,6 +61,7 @@ class QuestRecord:
     is_breadcrumb: bool = False
     is_world_quest: bool = False
     is_war_effort: bool = False
+    is_attunement: bool = False
     event: int | None = None
     source_file: str = ""
 
@@ -73,6 +74,7 @@ class ExtractResult:
     quests_seen: int = 0
     quests_with_coords: int = 0
     warnings: list[str] = field(default_factory=list)
+    attunement_quest_ids: set[int] = field(default_factory=set)
     patch: tuple[int, int, int, int] = DEFAULT_FOREVER_PATCH
 
     def bump_excluded(self, reason: str) -> None:
@@ -121,6 +123,8 @@ def _walk(node: Any, ctx: _Context, result: ExtractResult) -> None:
 
 def _walk_table(table: LuaTable, ctx: _Context, result: ExtractResult) -> None:
     child_ctx = _child_context(table, ctx)
+    if _as_int(table.get("instanceID")) is not None:
+        result.attunement_quest_ids.update(_parse_source_quests(table))
     quest_id = _as_int(table.get("questID"))
     if quest_id is not None and table.get("objectiveID") is None:
         _record_quest(table, child_ctx, result)
@@ -128,6 +132,8 @@ def _walk_table(table: LuaTable, ctx: _Context, result: ExtractResult) -> None:
     g = table.get("g")
     _walk(groups, child_ctx, result)
     _walk(g, child_ctx, result)
+    _walk(table.get("allianceQuestData"), child_ctx, result)
+    _walk(table.get("hordeQuestData"), child_ctx, result)
     if table.array:
         # Do not treat numeric quest fields / coord triples as child objects.
         if _looks_like_object_array(table):
@@ -272,6 +278,26 @@ def _merge_records(dst: QuestRecord, src: QuestRecord) -> None:
         dst.event = src.event
     if not dst.is_war_effort:
         dst.is_war_effort = src.is_war_effort
+    if not dst.is_attunement:
+        dst.is_attunement = src.is_attunement
+
+
+def mark_attunement_chains(quests: dict[int, QuestRecord], access_quests: Iterable[int]) -> set[int]:
+    """Mark instance access quests, their alternatives, and prerequisites."""
+    marked: set[int] = set()
+    pending = list(access_quests)
+    while pending:
+        quest_id = pending.pop()
+        if quest_id in marked:
+            continue
+        marked.add(quest_id)
+        record = quests.get(quest_id)
+        if record is None:
+            continue
+        record.is_attunement = True
+        pending.extend(record.source_quests)
+        pending.extend(record.alt_quests)
+    return {quest_id for quest_id in marked if quest_id in quests}
 
 
 def _unique(values: list[int] | list[str]) -> list:

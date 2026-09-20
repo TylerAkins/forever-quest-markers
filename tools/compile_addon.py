@@ -22,6 +22,7 @@ ROOT_FILES = (
     "ForeverQuestPins.toc",
     "LICENSE",
     "MapPins.lua",
+    "MapPins.xml",
     "README.md",
     "RELEASE_NOTES.md",
     "WarEffort.lua",

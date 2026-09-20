@@ -42,6 +42,9 @@ class GeneratedDatabaseTests(unittest.TestCase):
         self.assertEqual(len(quest_ids), int(report["quests_emitted"]))
         self.assertIn(report["att_sha"], meta)
         self.assertEqual(report["parse_errors"], [])
+        attunement_count = len(re.findall(r"isAttunement=true", quests_text))
+        self.assertEqual(attunement_count, int(report["attunement_quests"]))
+        self.assertIn(f"attunementCount = {attunement_count}", meta)
 
     def test_bymap_ids_exist_and_have_coordinates(self) -> None:
         text = _read("ForeverQuests.lua")
@@ -71,6 +74,11 @@ class GeneratedDatabaseTests(unittest.TestCase):
             text,
             r"\[813\] = \{[^}]*repeatable=true",
         )
+
+    def test_known_attunement_chains_are_flagged(self) -> None:
+        text = _read("ForeverQuests.lua")
+        for quest_id in (5505, 5511, 6502, 6602, 7761, 7848, 9121, 9122, 9123):
+            self.assertRegex(text, rf"\[{quest_id}\] = \{{[^\n]*isAttunement=true")
 
 
 if __name__ == "__main__":

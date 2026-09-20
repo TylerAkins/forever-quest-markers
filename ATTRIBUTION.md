@@ -40,7 +40,7 @@ SOFTWARE.
 
 Forever Quest Pins is original GPLv3 code: a native-map overlay and its own ATT converter. Tracker UI, Questie integration, and HereBeDragons usage from other addons were not copied.
 
-Map pins use Blizzard’s `QuestNormal` atlas. `Media/QuestAvailable.tga` is original fallback art used only if `SetAtlas` errors.
+Map pins use Blizzard’s `QuestNormal` atlas. The generated yellow, blue, and red-orange textures under `Media/` are original fallback art used only when the preferred atlas rendering fails.
 
 ## License
 

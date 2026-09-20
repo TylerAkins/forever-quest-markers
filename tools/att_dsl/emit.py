@@ -66,6 +66,7 @@ def emit_metadata(
         f'\tattRef = "{_escape(att_ref)}",',
         f"\tquestCount = {int(stats.get('quests_emitted', 0))},",
         f"\tcoordCount = {int(stats.get('coord_pins', 0))},",
+        f"\tattunementCount = {int(stats.get('attunement_quests', 0))},",
         f"\tfilesParsed = {int(stats.get('files_parsed', 0))},",
         f"\tgeneratedBy = \"{generated_by}\",",
         "}",
@@ -144,6 +145,8 @@ def _quest_body(record: QuestRecord) -> str:
         parts.append("isMonthly=true")
     if record.is_war_effort:
         parts.append("isWarEffort=true")
+    if record.is_attunement:
+        parts.append("isAttunement=true")
     if record.event is not None:
         parts.append(f"event={int(record.event)}")
     return ", ".join(parts)
