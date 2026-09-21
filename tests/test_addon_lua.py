@@ -12,6 +12,7 @@ LUA_FILES = [
     "Config.lua",
     "WarEffort.lua",
     "Eligibility.lua",
+    "NPCTooltips.lua",
     "MapPins.lua",
     "AutoQuests.lua",
     "Core.lua",

@@ -2,6 +2,13 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.28 - 2026-09-21
+
+- Show available ATT-listed quests in NPC mouseover tooltips with their recommended quest levels, independently of map-pin visibility.
+- Add an enabled-by-default NPC tooltip setting and refresh rows when quest state, title, or level data changes.
+- Preserve Forever's native objective blocks and omit incomplete or completed finisher rows because the tested client does not expose a reliable quest-to-finisher relationship on hover.
+- Refresh ATT source provenance to `3365ae17615c11bd7c091ddcf5b99ac7b9cee7b4`; the shipped quest records remain unchanged from 0.1.27.
+
 ## 0.1.27 - 2026-09-21
 
 - Update the ATT Forever quest database to `5cf53e4932c7359506c8ec03701aa332c934756b`.

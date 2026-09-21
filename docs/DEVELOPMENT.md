@@ -9,6 +9,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
 | `Config.lua` | Saved variables, slash commands, settings panel |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
+| `NPCTooltips.lua` | Available quest rows on NPC tooltips and the one-shot hover-data probe |
 | `MapPins.lua` | World-map start pins |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
@@ -70,12 +71,20 @@ Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzar
 python3 tests/test_build_quest_db.py
 python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
+python3 -m pip install -r tests/requirements.txt
+python3 tests/test_tooltips_runtime.py
 python3 tests/test_compile_addon.py
 python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py
 ```
 
 CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
+
+### Forever hover-data probe
+
+Run the intentionally undocumented `/fqp hoverprobe`, then move the cursor onto an NPC. The next unit tooltip prints its NPC ID, the result of `C_QuestLog.UnitIsRelatedToActiveQuest`, and every exposed structured tooltip line and nested argument. The probe is one-shot and read-only. It does not add active or turn-in rows.
+
+Forever Beta testing found native quest-title/objective lines on objective-related units, but ordinary unit lines and no quest identifier on both incomplete and completed finisher NPCs. `UnitIsRelatedToActiveQuest` also returned false for the incomplete finisher. Keep finisher rows disabled unless a later client build exposes a quest ID. Native objective blocks should not be duplicated.
 
 ## Local builds
 

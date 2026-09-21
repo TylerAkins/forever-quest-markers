@@ -4,7 +4,7 @@
 
 Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for ATT dungeon/raid quests and attunement chains on Blizzard’s native world map.
 
-Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It only adds start locations for **unaccepted** quests.
+Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests and shows those available quests when you hover their ATT-listed starter NPCs.
 
 ## Requirements
 
@@ -16,6 +16,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 - Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for dungeon/raid quests and complete attunement chains
 - Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
+- NPC mouseover rows formatted as yellow `! [level] quest name` for available ATT-listed quest starts
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
@@ -41,6 +42,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 | Option | Default |
 |--------|---------|
 | Show quest-start pins | On |
+| Show NPC quest tooltips | On |
 | Show trivial / low-level pins | On (only hides them if the client has `GetQuestGreenRange`) |
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
@@ -76,6 +78,7 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
+- **NPC hover rows cover available quest starts only.** The tested Forever client does not expose incomplete or completed finisher relationships through structured unit-hover data. Native objective quest blocks remain unchanged.
 - **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
 - **Item-started** quests with no map coordinate are omitted
 - **Holiday** starts stay hidden unless seasonal pins are on or the client reports the event as active
