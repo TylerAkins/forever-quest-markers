@@ -171,7 +171,7 @@ class AddonLuaTests(unittest.TestCase):
     def test_attunement_pins_are_orange_only_for_uniform_stacks(self) -> None:
         pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
         self.assertIn("local function IsAttunementOnly(pin)", pins)
-        self.assertIn("if not data or not data.isAttunement then", pins)
+        self.assertIn("if not data or not (data.isAttunement or data.isInstanceQuest) then", pins)
         self.assertLess(pins.find("if attunement then"), pins.find("elseif repeatable then"))
         self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange"', pins)
 
