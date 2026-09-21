@@ -3,6 +3,7 @@ local ADDON_NAME, ns = ...
 ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
+    showNPCTooltips = true,
     showTrivial = true,
     showRepeatable = true,
     showSeasonal = false,
@@ -373,6 +374,15 @@ function ns.SlashCommand(msg)
         return
     end
 
+    if msg == "hoverprobe" then
+        if ns.NPCTooltips then
+            ns.NPCTooltips:ArmProbe()
+        else
+            Print("NPC tooltip module is unavailable.")
+        end
+        return
+    end
+
     if msg == "available" then
         ns.PrintAvailableOnMap()
         return
@@ -449,6 +459,7 @@ function ns.PrintSettingsDebug()
     print("  Account, character, and CVar settings are synchronized; the newest revision wins.")
     for _, key in ipairs({
         "enabled",
+        "showNPCTooltips",
         "showTrivial",
         "showRepeatable",
         "showSeasonal",
@@ -618,6 +629,8 @@ function ns.PrintAPIProbe()
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
     print("  C_QuestLog.GetQuestDifficultyLevel: " .. has(C_QuestLog and C_QuestLog.GetQuestDifficultyLevel))
     print("  C_QuestLog.RequestLoadQuestByID: " .. has(C_QuestLog and C_QuestLog.RequestLoadQuestByID))
+    print("  C_QuestLog.UnitIsRelatedToActiveQuest: " .. has(C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest))
+    print("  C_TooltipInfo.GetUnit: " .. has(C_TooltipInfo and C_TooltipInfo.GetUnit))
     print("  C_TooltipInfo.GetHyperlink: " .. has(C_TooltipInfo and C_TooltipInfo.GetHyperlink))
     print("  C_Map.GetMapRectOnMap: " .. has(C_Map and C_Map.GetMapRectOnMap))
     print("  C_Map.GetMapChildrenInfo: " .. has(C_Map and C_Map.GetMapChildrenInfo))
@@ -794,13 +807,17 @@ function ns.TryRegisterSettings()
             )
             warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
 
+            local npcTooltips = CreateOptionCheckbox(self, "showNPCTooltips",
+                "Show NPC quest tooltips", "Show recommended quest levels for available ATT quest starts when hovering NPCs. Independent of map-pin visibility.")
+            npcTooltips:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
+
             local accept = CreateOptionCheckbox(
                 self,
                 "autoAccept",
                 "Auto-accept quests",
                 "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
             )
-            accept:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
+            accept:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 0, -4)
 
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 "Limit auto-accept quest level", "Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance.")

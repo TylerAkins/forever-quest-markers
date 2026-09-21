@@ -50,6 +50,8 @@ jobs:
           python3 tests/test_build_quest_db.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
+          python3 -m pip install -r tests/requirements.txt
+          python3 tests/test_tooltips_runtime.py
           python3 tests/test_compile_addon.py
           python3 tests/test_att_release.py
           python3 tests/test_update_forever_interface.py

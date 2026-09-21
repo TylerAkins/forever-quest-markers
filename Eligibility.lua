@@ -122,6 +122,7 @@ end
 local titleCache = {}
 local npcNameCache = {}
 local requestedTitles = {}
+local requestedLevels = {}
 local npcTip
 
 local function RememberTitle(questID, title)
@@ -180,6 +181,10 @@ function ns.GetQuestDifficultyLevel(questID)
     if type(level) == "number" and level > 0 then
         return level
     end
+    if not requestedLevels[questID] then
+        requestedLevels[questID] = true
+        Call(C_QuestLog, "RequestLoadQuestByID", questID)
+    end
     return nil
 end
 
@@ -201,10 +206,12 @@ function ns.OnQuestDataLoad(questID)
         return
     end
     requestedTitles[questID] = nil
+    requestedLevels[questID] = nil
     ReadQuestTitle(questID)
     if ns.MapPins and ns.MapPins.OnTitleLoaded then
         ns.MapPins:OnTitleLoaded(questID)
     end
+    if ns.NPCTooltips then ns.NPCTooltips:Refresh() end
 end
 
 local function CacheNPCName(npcID, name)
@@ -421,6 +428,7 @@ function ns.NoteOfferedQuest(questID)
         ns.ByMap[offer.mapID] = list
     end
     list[#list + 1] = questID
+    if ns.NPCTooltips then ns.NPCTooltips:InvalidateIndex() end
 end
 
 function ns.CaptureOfferContext()
