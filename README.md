@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for ATT-derived attunement chains on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for ATT dungeon/raid quests and attunement chains on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It only adds start locations for **unaccepted** quests.
 
@@ -14,7 +14,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 ## Features
 
-- Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for complete dungeon/raid attunement chains
+- Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for dungeon/raid quests and complete attunement chains
 - Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
@@ -33,6 +33,8 @@ Quest coordinates and restrictions come from [All The Things](https://github.com
 Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `Interface\AddOns\`, then restart the game or `/reload`. Enable the addon at character select if needed.
 
 ## Settings
+
+The optional **Limit auto-accept quest level** checkbox defaults off. Its **Auto Accept quest Range** slider runs from -5 to +5 and defaults to +1. This is a maximum recommended quest level relative to your current level: at level 15, +1 allows level 16 and below. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
 
 Escape → Options → AddOns → **Forever Quest Pins**, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 

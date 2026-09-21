@@ -138,6 +138,15 @@ class EmitTests(unittest.TestCase):
 
 
 class AttunementTests(unittest.TestCase):
+    def test_instance_membership_is_inherited_but_not_leaked(self) -> None:
+        env = new_environment(_ctx())
+        evaluate_chunk(parse_lua('root(1, { inst(226, { q(5723, { coord = {70, 31, 1456} }) }), q(999, { coord = {50, 50, 1456} }) })'), env)
+        result = ExtractResult()
+        extract_from_roots(env.get("_roots", []), "instance.lua", result)
+        self.assertTrue(result.quests[5723].is_instance_quest)
+        self.assertFalse(result.quests[999].is_instance_quest)
+        self.assertIn("isInstanceQuest=true", emit_lua_database(result.quests, "abc123"))
+
     def test_instance_access_quests_mark_full_chains_and_alternatives(self) -> None:
         result = _extract_fixture("attunement.lua")
         marked = mark_attunement_chains(result.quests, result.attunement_quest_ids)

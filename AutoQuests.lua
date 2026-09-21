@@ -21,6 +21,17 @@ local function ShouldSkip()
     return IsShiftKeyDown and IsShiftKeyDown()
 end
 
+function AutoQuests:AllowsLevel(questID, offeredLevel)
+    if not ns.GetOption("autoAcceptRangeEnabled") then return true end
+    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+    if type(level) ~= "number" or level <= 0 then level = offeredLevel end
+    local playerLevel = UnitLevel and UnitLevel("player")
+    if type(level) ~= "number" or level <= 0 or type(playerLevel) ~= "number" or playerLevel <= 0 then
+        return false
+    end
+    return level <= playerLevel + ns.GetOption("autoAcceptLevelOffset")
+end
+
 local function GossipSelectAvailable(info, index)
     local questID = info and (info.questID or info.questId)
     if C_GossipInfo and C_GossipInfo.SelectAvailableQuest then
@@ -142,7 +153,7 @@ local function TryAcceptGossip()
     if list then
         for i = 1, #list do
             local info = list[i]
-            if not IsIgnoredInfo(info) then
+            if not IsIgnoredInfo(info) and AutoQuests:AllowsLevel(info.questID or info.questId, info.questLevel) then
                 Debug("gossip accept " .. tostring(info.questID or info.title or i))
                 return GossipSelectAvailable(info, i)
             end
@@ -150,7 +161,7 @@ local function TryAcceptGossip()
         return false
     end
     local count = GetNumGossipAvailableQuests and GetNumGossipAvailableQuests() or 0
-    if count > 0 and SelectGossipAvailableQuest then
+    if count > 0 and SelectGossipAvailableQuest and not ns.GetOption("autoAcceptRangeEnabled") then
         Debug("gossip accept #1")
         return PCall(SelectGossipAvailableQuest, 1)
     end
@@ -179,9 +190,13 @@ local function TryAcceptGreeting()
         return false
     end
     local count = GetNumAvailableQuests and GetNumAvailableQuests() or 0
-    if count > 0 and SelectAvailableQuest then
-        Debug("greeting accept #1")
-        return PCall(SelectAvailableQuest, 1)
+    if SelectAvailableQuest then
+        for i = 1, count do
+            local level = GetAvailableLevel and GetAvailableLevel(i)
+            if AutoQuests:AllowsLevel(nil, level) then
+                return PCall(SelectAvailableQuest, i)
+            end
+        end
     end
     return false
 end
@@ -193,6 +208,7 @@ local function TryAcceptDetail()
     if QuestGetAutoAccept and QuestGetAutoAccept() then
         return false
     end
+    if not AutoQuests:AllowsLevel(GetQuestID and GetQuestID()) then return false end
     if AcceptQuest then
         Debug("AcceptQuest")
         return PCall(AcceptQuest)
@@ -241,6 +257,8 @@ local function TryConfirmAccept()
     if not ns.GetOption("autoAccept") then
         return false
     end
+    -- Shared-quest confirmation does not provide a reliable quest level.
+    if ns.GetOption("autoAcceptRangeEnabled") then return false end
     if ConfirmAcceptQuest then
         Debug("ConfirmAcceptQuest")
         return PCall(ConfirmAcceptQuest)
