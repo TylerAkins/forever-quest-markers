@@ -1,4 +1,4 @@
-## 0.1.26 - 2026-09-20
+## 0.1.27 - 2026-09-21
 
-- Extend red-orange map pins to ATT dungeon and raid quests, including the Ragefire Chasm quests, alongside attunement chains.
-- Add an optional auto-accept recommended-level ceiling. It is disabled by default and provides a -5 to +5 slider defaulting to +1 relative to the player's level.
+- Update the ATT Forever quest database to `5cf53e4932c7359506c8ec03701aa332c934756b`.
+- Ship 3698 quests with 3958 coordinate pins across 49 maps.
