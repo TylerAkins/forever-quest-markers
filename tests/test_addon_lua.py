@@ -197,12 +197,12 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("showSeasonal = false", config)
         self.assertIn('msg == "seasonal"', config)
 
-    def test_war_effort_pins_are_opt_out(self) -> None:
+    def test_war_effort_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         war = (ROOT / "WarEffort.lua").read_text(encoding="utf-8")
         self.assertIn('return false, "war-effort"', eligibility)
-        self.assertIn("showWarEffort = true", config)
+        self.assertIn("showWarEffort = false", config)
         self.assertIn('msg == "wareffort"', config)
         self.assertIn("function ns.IsWarEffortQuest(questID, data)", war)
         self.assertIn("[15459]", war)
