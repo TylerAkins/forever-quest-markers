@@ -43,10 +43,10 @@ Escape → Options → AddOns → **Forever Quest Pins**, or use the slash comma
 |--------|---------|
 | Show quest-start pins | On |
 | Show NPC quest tooltips | On |
-| Show trivial / low-level pins | On (only hides them if the client has `GetQuestGreenRange`) |
+| Show trivial / low-level pins | Off (only hides them if the client has `GetQuestGreenRange`) |
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
-| Show AQ war effort pins | On (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
+| Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Debug tooltips | Off |
