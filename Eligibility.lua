@@ -9,10 +9,33 @@ end
 
 local completedLookup
 local completedLookupReady = false
+local completedListLoaded = false
 
 function ns.InvalidateCompletionCache()
     completedLookup = nil
     completedLookupReady = false
+    completedListLoaded = false
+end
+
+local function AddCompletedQuest(lookup, questID)
+    questID = tonumber(questID)
+    if type(questID) == "number" and questID > 0 then
+        lookup[questID] = true
+    end
+end
+
+-- [questID] = true and [questID] = 1 record that quest ID.
+-- [questID] = questID records that quest ID.
+-- [index] = questID records the value.
+local function IngestCompleted(lookup, completed)
+    for key, value in pairs(completed) do
+        local keyID = tonumber(key)
+        if keyID and (value == true or value == 1 or (type(value) == "number" and value == keyID)) then
+            AddCompletedQuest(lookup, keyID)
+        elseif type(value) == "number" and value > 0 then
+            AddCompletedQuest(lookup, value)
+        end
+    end
 end
 
 local function CompletedLookup()
@@ -21,36 +44,23 @@ local function CompletedLookup()
     end
     completedLookupReady = true
     local lookup = {}
+    local loaded = false
     if GetQuestsCompleted then
         local ok, completed = pcall(GetQuestsCompleted)
         if ok and type(completed) == "table" then
-            for key, value in pairs(completed) do
-                if type(value) == "number" then
-                    lookup[value] = true
-                elseif value then
-                    local id = tonumber(key)
-                    if id then
-                        lookup[id] = true
-                    end
-                end
-            end
+            IngestCompleted(lookup, completed)
+            loaded = true
         end
     end
     local ids = Call(C_QuestLog, "GetAllCompletedQuestIDs")
     if type(ids) == "table" then
-        for key, value in pairs(ids) do
-            if type(value) == "number" then
-                lookup[value] = true
-            elseif value and type(key) == "number" then
-                lookup[key] = true
-            elseif value then
-                local id = tonumber(key)
-                if id then
-                    lookup[id] = true
-                end
-            end
-        end
+        IngestCompleted(lookup, ids)
+        loaded = true
     end
+    -- A loaded list is authoritative, including an empty one. Object-started
+    -- quests such as the Ravaged Caravan crate are in these lists even when
+    -- C_QuestLog.IsQuestFlaggedCompleted misses them.
+    completedListLoaded = loaded
     completedLookup = lookup
     return lookup
 end
@@ -59,20 +69,15 @@ function ns.IsQuestFlaggedCompleted(questID)
     if not questID then
         return false
     end
+    local lookup = CompletedLookup()
+    if completedListLoaded then
+        return lookup[questID] and true or false
+    end
+    -- Neither completed-ID list loaded. Character completion only.
     if Call(C_QuestLog, "IsQuestFlaggedCompleted", questID) then
         return true
     end
-    if Call(C_QuestLog, "IsQuestFlaggedCompletedOnAccount", questID) then
-        return true
-    end
     if IsQuestFlaggedCompleted and IsQuestFlaggedCompleted(questID) then
-        return true
-    end
-    -- Some Forever builds leave object-started quests (the Ravaged Caravan
-    -- crate) out of C_QuestLog but still return them from GetQuestsCompleted
-    -- or GetAllCompletedQuestIDs.
-    local lookup = CompletedLookup()
-    if lookup and lookup[questID] then
         return true
     end
     return false
@@ -80,7 +85,6 @@ end
 
 function ns.HasQuestCompletionAPI()
     return (C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted)
-        or (C_QuestLog and C_QuestLog.IsQuestFlaggedCompletedOnAccount)
         or (C_QuestLog and C_QuestLog.GetAllCompletedQuestIDs)
         or IsQuestFlaggedCompleted
         or GetQuestsCompleted

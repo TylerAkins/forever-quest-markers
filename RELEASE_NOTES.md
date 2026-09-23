@@ -1,4 +1,3 @@
-## 0.1.31 - 2026-09-23
+## 0.1.32 - 2026-09-23
 
-- Preserve ATT `requireSkill` restrictions in the generated quest database.
-- Hide profession-specific quest pins and NPC tooltip rows unless the character knows the required profession or specialization.
+- Treat this character's completed-quest list as the only completion source when it loads, so a follow-up such as The Stagnant Oasis stays hidden until The Forgotten Pools is turned in on this character.
