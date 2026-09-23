@@ -18,6 +18,7 @@ local WATCHED_EVENTS = {
     "QUEST_REMOVED",
     "QUEST_TURNED_IN",
     "PLAYER_LEVEL_UP",
+    "SKILL_LINES_CHANGED",
     "ZONE_CHANGED_NEW_AREA",
 }
 
@@ -41,6 +42,9 @@ function ns.RefreshNow(reason)
     accum = 0
     if ns.InvalidateCompletionCache then
         ns.InvalidateCompletionCache()
+    end
+    if ns.InvalidateProfessionCache then
+        ns.InvalidateProfessionCache()
     end
     if ns.MapPins then
         ns.MapPins:Refresh(reason or "manual")

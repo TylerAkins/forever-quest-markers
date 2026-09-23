@@ -127,6 +127,10 @@ def _quest_body(record: QuestRecord) -> str:
         parts.append("races=" + _lua_int_list(record.races))
     if record.classes:
         parts.append("classes=" + _lua_int_list(record.classes))
+    if isinstance(record.required_skill, int):
+        parts.append(f"requireSkill={record.required_skill}")
+    elif record.required_skill:
+        parts.append(f'requireSkill="{_escape(record.required_skill)}"')
     if record.min_level is not None:
         parts.append(f"minLevel={record.min_level}")
     if record.max_level is not None:
