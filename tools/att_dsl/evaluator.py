@@ -521,6 +521,12 @@ def _optional_table(args: list[Any], index: int = 1) -> Any:
 
 
 def _install_constructors(env: Environment) -> None:
+    def get_recipe_helper_for_profession(_profession_id: Any) -> Callable[..., None]:
+        def register_recipe(*_args: Any) -> None:
+            return None
+
+        return register_recipe
+
     def table_insert(table: Any, *args: Any) -> None:
         if not isinstance(table, LuaTable) or not args:
             return
@@ -706,6 +712,7 @@ def _install_constructors(env: Environment) -> None:
         "maproot": maproot,
         "battleground": battleground,
         "createHeader": createHeader,
+        "GetRecipeHelperForProfession": get_recipe_helper_for_profession,
         "visit_exploration": visit_exploration,
         "explorationHeader": explorationHeader,
         "filter": filter_,

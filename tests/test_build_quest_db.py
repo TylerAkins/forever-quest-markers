@@ -64,6 +64,16 @@ class ParserFailureTests(unittest.TestCase):
             parse_lua("q(1, { qg = 2, ", filename="broken.lua")
 
 
+class RecipeHelperTests(unittest.TestCase):
+    def test_profession_recipe_helper_calls_do_not_emit_roots(self) -> None:
+        env = new_environment(_ctx())
+        source = "local i = GetRecipeHelperForProfession(ALCHEMY); i(0, 2259);"
+
+        evaluate_chunk(parse_lua(source, filename="alchemy.lua"), env)
+
+        self.assertEqual([], env["_roots"])
+
+
 class ZephrasTests(unittest.TestCase):
     def test_inherits_zone_races_and_map(self) -> None:
         result = _extract_fixture("zephras.lua")
