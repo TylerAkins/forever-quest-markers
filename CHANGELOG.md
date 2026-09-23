@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.32 - 2026-09-23
+
+- Treat this character's completed-quest list as the only completion source when it loads, so a follow-up such as The Stagnant Oasis stays hidden until The Forgotten Pools is turned in on this character.
+
 ## 0.1.31 - 2026-09-23
 
 - Preserve ATT `requireSkill` restrictions in the generated quest database.
