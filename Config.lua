@@ -4,10 +4,10 @@ ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
     showNPCTooltips = true,
-    showTrivial = true,
+    showTrivial = false,
     showRepeatable = true,
     showSeasonal = false,
-    showWarEffort = true,
+    showWarEffort = false,
     autoAccept = false,
     autoAcceptRangeEnabled = false,
     autoAcceptLevelOffset = 1,
@@ -285,10 +285,10 @@ function ns.SlashCommand(msg)
         Print("Commands:")
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
-        print("  /fqp trivial  Toggle low-level/trivial pins")
+        print("  /fqp trivial  Toggle low-level/trivial pins (off by default)")
         print("  /fqp repeatable Toggle repeatable quest pins (on by default)")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
-        print("  /fqp wareffort Toggle AQ war effort pins in capitals (on by default)")
+        print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
