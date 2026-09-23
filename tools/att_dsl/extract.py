@@ -50,6 +50,7 @@ class QuestRecord:
     races: list[int] = field(default_factory=list)
     unresolved_races: list[str] = field(default_factory=list)
     classes: list[int] = field(default_factory=list)
+    required_skill: int | str | None = None
     faction: str | None = None
     min_level: int | None = None
     max_level: int | None = None
@@ -216,6 +217,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
 
     races, unresolved_races, faction = _parse_races(table.get("races") if table.get("races") is not None else ctx.races)
     classes = _parse_int_list(table.get("classes") if table.get("classes") is not None else ctx.classes)
+    required_skill = _parse_required_skill(table.get("requireSkill"))
     min_level, max_level = _parse_level(table.get("lvl") if table.get("lvl") is not None else ctx.lvl)
     source_quests = _parse_source_quests(table)
     alt_quests = _parse_int_list(table.get("altQuests") or table.get("altQuestID"))
@@ -231,6 +233,7 @@ def _record_quest(table: LuaTable, ctx: _Context, result: ExtractResult) -> None
         races=races,
         unresolved_races=unresolved_races,
         classes=classes,
+        required_skill=required_skill,
         faction=faction,
         min_level=min_level,
         max_level=max_level,
@@ -269,6 +272,8 @@ def _merge_records(dst: QuestRecord, src: QuestRecord) -> None:
     dst.races = _unique(dst.races + src.races)
     dst.unresolved_races = _unique(dst.unresolved_races + src.unresolved_races)
     dst.classes = _unique(dst.classes + src.classes)
+    if dst.required_skill is None:
+        dst.required_skill = src.required_skill
     if dst.faction is None:
         dst.faction = src.faction
     if dst.min_level is None:
@@ -428,6 +433,17 @@ def _parse_int_list(raw: Any) -> list[int]:
         if number is not None:
             out.append(number)
     return out
+
+
+def _parse_required_skill(raw: Any) -> int | str | None:
+    number = _as_int(raw)
+    if number is not None:
+        return number
+    if isinstance(raw, Unresolved):
+        return raw.name
+    if isinstance(raw, str) and raw:
+        return raw
+    return None
 
 
 def _parse_level(raw: Any) -> tuple[int | None, int | None]:

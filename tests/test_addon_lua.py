@@ -107,6 +107,11 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("Object-started prereqs", text)
         self.assertIn("The Venture Co.", text)
         self.assertIn("Supervisor Fizsprocket", text)
+        self.assertIn("function ns.HasRequiredSkill(requiredSkill)", text)
+        self.assertIn('return false, "profession"', text)
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertIn('"SKILL_LINES_CHANGED"', core)
+        self.assertIn("ns.InvalidateProfessionCache()", core)
 
     def test_no_herebedragons_or_att_runtime_dep(self) -> None:
         combined = "\n".join((ROOT / rel).read_text(encoding="utf-8") for rel in LUA_FILES)

@@ -74,6 +74,31 @@ class RecipeHelperTests(unittest.TestCase):
         self.assertEqual([], env["_roots"])
 
 
+class RequiredSkillTests(unittest.TestCase):
+    def test_required_skill_is_preserved_and_emitted(self) -> None:
+        env = new_environment(_ctx())
+        source = 'q(90003, { qg=100, coord={10, 20, MAP.ELWYNN_FOREST}, requireSkill=TAILORING })'
+        evaluate_chunk(parse_lua(source, filename="profession.lua"), env)
+        result = ExtractResult()
+        extract_from_roots(env.get("_roots", []), "profession.lua", result)
+
+        self.assertEqual(result.quests[90003].required_skill, 197)
+        self.assertRegex(
+            emit_lua_database(result.quests, "abc123"),
+            r"\[90003\] = \{[^\n]*requireSkill=197",
+        )
+
+    def test_unknown_required_skill_is_retained_symbolically(self) -> None:
+        env = new_environment(_ctx())
+        source = 'q(90004, { qg=100, coord={10, 20, MAP.ELWYNN_FOREST}, requireSkill=NEW_PROFESSION })'
+        evaluate_chunk(parse_lua(source, filename="profession.lua"), env)
+        result = ExtractResult()
+        extract_from_roots(env.get("_roots", []), "profession.lua", result)
+
+        self.assertEqual(result.quests[90004].required_skill, "NEW_PROFESSION")
+        self.assertIn('requireSkill="NEW_PROFESSION"', emit_lua_database(result.quests, "abc123"))
+
+
 class ZephrasTests(unittest.TestCase):
     def test_inherits_zone_races_and_map(self) -> None:
         result = _extract_fixture("zephras.lua")

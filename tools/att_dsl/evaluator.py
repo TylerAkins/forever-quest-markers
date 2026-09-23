@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from .constants import CLASS_IDS, RACE_IDS, BuildContext
+from .constants import CLASS_IDS, PROFESSION_IDS, RACE_IDS, BuildContext
 from .parser import (
     Assign,
     BinOp,
@@ -145,6 +145,7 @@ def new_environment(ctx: BuildContext) -> Environment:
     env["IGNORED_VALUE"] = 0
     env.update(RACE_IDS)
     env.update(CLASS_IDS)
+    env.update(PROFESSION_IDS)
     env.update(ctx.maps)
     env.update(ctx.timelines)
     env.update(ctx.extra_globals)
