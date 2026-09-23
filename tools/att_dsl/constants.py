@@ -50,6 +50,46 @@ CLASS_IDS: dict[str, int] = {
     "EVOKER": 13,
 }
 
+# ATT profession constants are WoW skill-line IDs. Keep these names aligned
+# with `.contrib/.db/shared/constants/professionIDs.lua` so requireSkill fields
+# evaluate to the same numeric values used by the game API.
+PROFESSION_IDS: dict[str, int] = {
+    "ABOMINABLE_STITCHING": 2787,
+    "ARCANA_MANIPULATION": 2821,
+    "ASCENSION_CRAFTING": 2791,
+    "ALCHEMY": 171,
+    "ARCHAEOLOGY": 794,
+    "BLACKSMITHING": 164,
+    "COOKING": 185,
+    "DYE_CRAFTING": 2984,
+    "ENCHANTING": 333,
+    "ENGINEERING": 202,
+    "GOBLIN_ENGINEERING": 20222,
+    "GNOMISH_ENGINEERING": 20219,
+    "FIRST_AID": 129,
+    "FISHING": 356,
+    "HERBALISM": 182,
+    "INSCRIPTION": 773,
+    "JEWELCRAFTING": 755,
+    "JUNKYARD_TINKERING": 2720,
+    "LEATHERWORKING": 165,
+    "LOCKPICKING": 633,
+    "MINING": 186,
+    "MOONCLOTH_TAILORING": 26798,
+    "PICKPOCKETING": 921,
+    "POISONS": 40,
+    "PROTOFORM_SYNTHESIS": 2819,
+    "RUNEFORGING": 960,
+    "SHADOWEAVE_TAILORING": 26801,
+    "SKINNING": 393,
+    "SOUL_CYPHERING": 2777,
+    "SPELLFIRE_TAILORING": 26797,
+    "STYGIA_CRAFTING": 2811,
+    "SUPPLY_SHIPMENTS": 2886,
+    "TAILORING": 197,
+    "TUSKARR_FISHING_GEAR": 2847,
+}
+
 # First patch of each expansion name used by ATT `-- #if AFTER/BEFORE` tags.
 EXPANSION_VERSIONS: dict[str, tuple[int, int, int, int]] = {
     "CLASSIC": (1, 0, 0, 0),

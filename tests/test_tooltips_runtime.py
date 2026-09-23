@@ -99,6 +99,34 @@ class TooltipRuntimeTests(unittest.TestCase):
             assert(ns.GetQuestDifficultyLevel(1)==12)
         """)
 
+    def test_required_profession_filters_only_when_skill_data_is_known(self) -> None:
+        self.lua.execute("""
+            ns.options={showRepeatable=true,showSeasonal=true,showWarEffort=true,showTrivial=true}
+            UnitRace=function() return 'Orc','Orc',2 end
+            UnitClass=function() return 'Druid','DRUID',11 end
+            UnitFactionGroup=function() return 'Horde' end
+            UnitLevel=function() return 13 end
+            IsPlayerSpell=function(spellID) return spellID == 9788 end
+            GetProfessions=function() return 1,nil,nil,2 end
+            GetProfessionInfo=function(index)
+                local skillLine = index == 1 and 197 or 356
+                return 'Profession',nil,1,75,nil,nil,skillLine
+            end
+        """)
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            assert(ns.IsQuestAvailable(1,{requireSkill=197}) == true)
+            assert(ns.IsQuestAvailable(5,{requireSkill=9788}) == true)
+            local available, reason = ns.IsQuestAvailable(2,{requireSkill=164})
+            assert(available == false and reason == 'profession')
+            assert(ns.IsQuestAvailable(3,{requireSkill='NEW_PROFESSION'}) == true)
+
+            GetProfessions=nil
+            GetProfessionInfo=nil
+            ns.InvalidateProfessionCache()
+            assert(ns.IsQuestAvailable(4,{requireSkill=164}) == true)
+        """)
+
     def test_failed_data_event_does_not_trigger_retry_loop(self) -> None:
         self.lua.execute("""
             CreateFrame=function()

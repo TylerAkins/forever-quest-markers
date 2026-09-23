@@ -298,6 +298,53 @@ function ns.GetPlayerFaction()
     return UnitFactionGroup("player")
 end
 
+local knownProfessionSkills
+local professionSkillsKnown = false
+
+function ns.InvalidateProfessionCache()
+    knownProfessionSkills = nil
+    professionSkillsKnown = false
+end
+
+local function KnownProfessionSkills()
+    if professionSkillsKnown then
+        return knownProfessionSkills, true
+    end
+    if not GetProfessions or not GetProfessionInfo then
+        return nil, false
+    end
+    local professionIndices = { GetProfessions() }
+    local skills = {}
+    for _, index in pairs(professionIndices) do
+        if index then
+            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+            if type(skillLine) == "number" then
+                skills[skillLine] = true
+            end
+        end
+    end
+    knownProfessionSkills = skills
+    professionSkillsKnown = true
+    return knownProfessionSkills, true
+end
+
+function ns.HasRequiredSkill(requiredSkill)
+    if type(requiredSkill) ~= "number" then
+        return true
+    end
+    if IsPlayerSpell and IsPlayerSpell(requiredSkill) then
+        return true
+    end
+    if IsSpellKnown and IsSpellKnown(requiredSkill) then
+        return true
+    end
+    local skills, known = KnownProfessionSkills()
+    if not known then
+        return true
+    end
+    return skills[requiredSkill] and true or false
+end
+
 function ns.IsEventActive(eventID)
     if not eventID then
         return false
@@ -559,6 +606,10 @@ function ns.IsQuestAvailable(questID, data)
                 return false, "class"
             end
         end
+    end
+
+    if data.requireSkill and not ns.HasRequiredSkill(data.requireSkill) then
+        return false, "profession"
     end
 
     local minLevel = data.minLevel
