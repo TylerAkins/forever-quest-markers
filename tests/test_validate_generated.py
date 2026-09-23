@@ -80,6 +80,22 @@ class GeneratedDatabaseTests(unittest.TestCase):
         for quest_id in (5505, 5511, 6502, 6602, 7761, 7848, 9121, 9122, 9123):
             self.assertRegex(text, rf"\[{quest_id}\] = \{{[^\n]*isAttunement=true")
 
+    def test_camping_quests_keep_att_profession_restrictions(self) -> None:
+        text = _read("ForeverQuests.lua")
+        expected = {
+            96102: 197,
+            97899: 171,
+            97900: 164,
+            97901: 333,
+            97902: 202,
+            97907: 186,
+        }
+        for quest_id, skill_id in expected.items():
+            self.assertRegex(
+                text,
+                rf"\[{quest_id}\] = \{{[^\n]*requireSkill={skill_id}",
+            )
+
 
 if __name__ == "__main__":
     if not (DB / "ForeverQuests.lua").is_file():
