@@ -1,48 +1,76 @@
 ---
 name: wowhead-quest-database
-description: Refresh the Wowhead Forever quest database, check for upstream changes, and update lastCheckedForChanges. Use when the user says "go look for changes", update Wowhead data, or work on the ATT replacement database.
+description: Scan Wowhead Forever URLs the user pastes, merge into data/wowhead, and update lastCheckedForChanges. Use when the user pastes Wowhead links, says "go look for changes", or asks to refresh the ATT replacement database.
 ---
 
-# Wowhead quest database maintenance
+# Wowhead quest database (paste-URL scan)
+
+**Primary workflow:** the user pastes one or more Wowhead Forever URLs (see `docs/wowhead-quest-database.md`). You **fetch each page like a browser**, then **ingest** the HTML. Do not rely on bulk `sync-sources` unless the user explicitly asks to refresh everything.
 
 ## References
 
-- Source URL list (human): `docs/wowhead-quest-database.md`
-- Source URL list (code): `tools/wowhead_db/sources.py`
-- Data directory: `data/wowhead/`
-- Cutover plan (addon not in scope here): `docs/WOWHEAD_DATABASE_CUTOVER.md`
+- URL index: `docs/wowhead-quest-database.md`
+- Data: `data/wowhead/` (`manifest.json`, `quest_index.json`, `object_index.json`, `sources/`, `details/`)
+- Cutover (addon later): `docs/WOWHEAD_DATABASE_CUTOVER.md`
 
-## When the user says "go look for changes"
+## Scan one pasted URL
 
-1. Read `data/wowhead/manifest.json` and note `lastCheckedForChanges`.
-2. Run index refresh (respect rate limits):
-
-   ```bash
-   python3 tools/build_wowhead_db.py sync-sources --rebuild-zone-map
-   ```
-
-3. Compare new `data/wowhead/sources/*.json` to git:
-   - New quest IDs in any snapshot
-   - Changed `envChange` blocks on existing rows
-   - Quest count deltas per slug in `manifest.json` → `sources`
-4. Update `data/wowhead/manifest.json` (`lastCheckedForChanges` is set by the tool).
-5. If detail fields are needed for new/changed quests, run (in batches):
+1. Note `data/wowhead/manifest.json` → `lastCheckedForChanges` (before/after).
+2. Fetch with a normal browser user agent (follow redirects):
 
    ```bash
-   python3 tools/build_wowhead_db.py sync-quests --limit 100
+   curl -fsSL -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' \
+     'PASTED_URL' -o /tmp/wowhead-page.html
    ```
 
-6. Summarize: counts, notable new Forever quests, PvP/dungeon/raid categorization changes.
+   Wait **at least 1.5s** before the next Wowhead request.
 
-## Rate limiting
+3. Ingest (parses inline quest Listview **or** JSON `data.page.listPage.listviews` for object lists):
 
-- Default `--delay 1.25` seconds between uncached HTTP requests.
-- HTML cache: `.cache/wowhead-html/` (safe to delete; re-fetch is slow).
-- Never parallel-scrape Wowhead from this repo.
+   ```bash
+   python3 tools/build_wowhead_db.py ingest \
+     --url 'PASTED_URL' \
+     --html-file /tmp/wowhead-page.html
+   ```
+
+   Or let the tool fetch (same rate limit via `--delay`):
+
+   ```bash
+   python3 tools/build_wowhead_db.py ingest --url 'PASTED_URL'
+   ```
+
+4. Print the JSON report from ingest. Commit updated `data/wowhead/` when the user wants the DB saved.
+
+### Page types
+
+| URL pattern | Result |
+|-------------|--------|
+| `.../quests/...` zone/dungeon/class/etc. | Updates `sources/*.json` + `quest_index.json` |
+| `.../objects/quests` | Updates `object_index.json` (quest-start objects; **not** inline quest Listview) |
+| `.../quest=123/...` | Writes `details/123.json`, updates index row |
+
+## Scan many URLs (user paste block)
+
+Put URLs in a temp file (one per line), then:
+
+```bash
+python3 tools/build_wowhead_db.py ingest --url-file /tmp/wowhead-urls.txt --pause 1.5
+```
+
+Prefer **batches** (e.g. one region at a time) to avoid rate limits.
+
+## “Go look for changes”
+
+1. Read `lastCheckedForChanges` in `manifest.json`.
+2. Re-scan URLs the user cares about (or the full list in `docs/wowhead-quest-database.md` in batches).
+3. Diff git: new/changed quest IDs, `envChange` in list rows, object index changes.
+4. For new/changed quests, scan detail URLs: `https://www.wowhead.com/forever/quest=<id>` via `ingest --url ...` (slow; batch).
+
+Optional full refresh (rare): `python3 tools/build_wowhead_db.py sync-sources`
 
 ## Pin categories
 
-See `data/wowhead/pin_categories.json`. PvP uses purple tint; raid category is mostly placeholder except Onyxia.
+`data/wowhead/pin_categories.json` — PvP uses **purple** tint `(0.78, 0.22, 0.95)`.
 
 ## Tests
 

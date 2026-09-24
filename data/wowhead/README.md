@@ -14,19 +14,23 @@ Structured quest data scraped from [Wowhead Forever](https://www.wowhead.com/for
 | `attunement_quest_ids.json` | Attunement chain seeds (from current ATT export until Wowhead tagging exists) |
 | `pin_categories.json` | Pin color / category reference (includes PvP purple) |
 
-## Refresh
+## Refresh (paste-URL scan)
+
+**Default:** paste Wowhead URLs to an agent; it fetches each page and runs:
 
 ```bash
-# Index pages only (~2 minutes at default rate limit)
-python3 tools/build_wowhead_db.py sync-sources --rebuild-zone-map
-
-# Quest detail pages (resumable; run in batches)
-python3 tools/build_wowhead_db.py sync-quests --limit 200
-python3 tools/build_wowhead_db.py sync-quests   # continues until complete
+python3 tools/build_wowhead_db.py ingest --url 'https://www.wowhead.com/forever/quests/...'
 ```
 
-HTML is cached under `.cache/wowhead-html/` (not committed).
+See `docs/skills/wowhead-quest-database/SKILL.md`.
+
+**Bulk (optional):** `sync-sources` / `sync-quests` for full re-scrapes. HTML cache: `.cache/wowhead-html/`.
+
+| File | Contents |
+|------|----------|
+| `object_index.json` | Quest-start **objects** from `objects/quests` (JSON listview) |
+| `quest_index.json` | Quest list rows from zone/dungeon/etc. pages |
 
 ## “Go look for changes”
 
-Tell an agent: **read `docs/skills/wowhead-quest-database/SKILL.md` and run the refresh workflow.** That skill updates `manifest.json` → `lastCheckedForChanges` and compares new list snapshots to the committed `sources/` files.
+Tell an agent: **read `docs/skills/wowhead-quest-database/SKILL.md`** — re-scan URLs from `docs/wowhead-quest-database.md` in batches and update `manifest.json` → `lastCheckedForChanges`.

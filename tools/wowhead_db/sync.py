@@ -8,9 +8,9 @@ from typing import Any
 
 from .classify import classify_pin_category
 from .http import WowheadClient
-from .parse_list import parse_quest_list
+from .ingest import ingest_html
 from .parse_quest import extract_start_pins, parse_quest_detail
-from .sources import SOURCE_PAGES, SourcePage
+from .sources import SOURCE_PAGES
 from .store import load_manifest, save_manifest, utc_now_iso, write_json
 from .zone_resolver import bootstrap_zone_ui_map_ids
 
@@ -22,50 +22,16 @@ def sync_sources(
     force: bool = False,
 ) -> dict[str, Any]:
     manifest = load_manifest(data_root)
-    sources_dir = data_root / "sources"
-    sources_dir.mkdir(parents=True, exist_ok=True)
-
-    quest_index: dict[str, Any] = {}
-    if (data_root / "quest_index.json").is_file():
-        raw = json.loads((data_root / "quest_index.json").read_text(encoding="utf-8"))
-        if isinstance(raw, dict):
-            quest_index = raw
-
-    manifest["lastCheckedForChanges"] = utc_now_iso()
-    manifest["lastFullSyncStarted"] = manifest["lastCheckedForChanges"]
+    manifest["lastFullSyncStarted"] = utc_now_iso()
+    save_manifest(data_root, manifest)
 
     for page in SOURCE_PAGES:
         html = client.get_html(page.url, force=force)
-        rows = parse_quest_list(html)
-        snapshot = {
-            "url": page.url,
-            "kind": page.kind,
-            "slug": page.slug,
-            "fetchedAt": utc_now_iso(),
-            "questCount": len(rows),
-            "quests": rows,
-        }
-        write_json(sources_dir / f"{page.slug.replace('/', '_')}.json", snapshot)
+        ingest_html(data_root, page.url, html)
 
-        manifest["sources"][page.slug] = {
-            "url": page.url,
-            "kind": page.kind,
-            "lastFetched": snapshot["fetchedAt"],
-            "questCount": len(rows),
-            "etag": None,
-        }
-
-        for row in rows:
-            qid = str(row["id"])
-            existing = quest_index.get(qid)
-            if existing is None:
-                quest_index[qid] = _new_index_entry(row, page)
-            else:
-                _merge_index_entry(existing, row, page)
-
+    manifest = load_manifest(data_root)
     manifest["stats"]["sourcePageCount"] = len(SOURCE_PAGES)
-    manifest["stats"]["questIndexCount"] = len(quest_index)
-    write_json(data_root / "quest_index.json", quest_index)
+    manifest["lastFullSyncCompleted"] = utc_now_iso()
     save_manifest(data_root, manifest)
     return manifest
 
@@ -136,36 +102,6 @@ def rebuild_zone_map(data_root: Path, att_quests_lua: Path) -> dict[str, Any]:
     zone_map = bootstrap_zone_ui_map_ids(index, att_quests_lua)
     write_json(data_root / "zone_ui_map_ids.json", zone_map)
     return zone_map
-
-
-def _new_index_entry(row: dict[str, Any], page: SourcePage) -> dict[str, Any]:
-    return {
-        "id": row["id"],
-        "name": row.get("name"),
-        "wowheadZoneId": row.get("category"),
-        "wowheadZoneId2": row.get("category2"),
-        "list": row,
-        "sourceSlugs": [page.slug],
-        "sourceKinds": [page.kind],
-        "sourceUrls": [page.url],
-        "hasDetail": False,
-    }
-
-
-def _merge_index_entry(existing: dict[str, Any], row: dict[str, Any], page: SourcePage) -> None:
-    slugs = set(existing.get("sourceSlugs") or [])
-    kinds = set(existing.get("sourceKinds") or [])
-    urls = set(existing.get("sourceUrls") or [])
-    slugs.add(page.slug)
-    kinds.add(page.kind)
-    urls.add(page.url)
-    existing["sourceSlugs"] = sorted(slugs)
-    existing["sourceKinds"] = sorted(kinds)
-    existing["sourceUrls"] = sorted(urls)
-    if not existing.get("name"):
-        existing["name"] = row.get("name")
-    if existing.get("wowheadZoneId") in (None, 0):
-        existing["wowheadZoneId"] = row.get("category")
 
 
 def _load_attunement_ids(data_root: Path, seed_path: Path | None) -> set[int]:

@@ -169,8 +169,23 @@ Full values: `data/wowhead/pin_categories.json`.
 - https://www.wowhead.com/forever/quests/battlegrounds/arathi-basin
 - https://www.wowhead.com/forever/quests/battlegrounds/warsong-gulch
 
+## How we scan (paste URL)
+
+1. Fetch the page (`curl -L` with a browser user agent, or agent WebFetch).
+2. Ingest into the repo DB:
+
+   ```bash
+   python3 tools/build_wowhead_db.py ingest --url '<pasted url>' --html-file /tmp/page.html
+   ```
+
+3. Wait ~1.5s between Wowhead requests.
+
+**Objects:** [objects/quests](https://www.wowhead.com/forever/objects/quests) uses Wowhead’s JSON listview (not the quest Listview). Ingest writes `object_index.json`.
+
+Bulk `sync-sources` / `sync-quests` exist but are optional; prefer pasted-URL scans.
+
 ## Tooling
 
-- `tools/build_wowhead_db.py` — CLI entry
-- `tools/wowhead_db/` — parsers, classifier, sync
+- `tools/build_wowhead_db.py` — `ingest` (primary), `sync-*` (bulk)
+- `tools/wowhead_db/` — parsers, classifier, ingest
 - Agent skill: `docs/skills/wowhead-quest-database/SKILL.md`
