@@ -57,7 +57,9 @@ class WowheadClient:
             except urllib.error.HTTPError as exc:
                 last_error = exc
                 if exc.code in (403, 429, 503):
-                    time.sleep(min(60, 5 * (2**attempt)))
+                    wait = min(60, 5 * (2**attempt))
+                    print(f"  HTTP {exc.code}, retry in {wait}s", flush=True)
+                    time.sleep(wait)
                     continue
                 raise
             except OSError as exc:
