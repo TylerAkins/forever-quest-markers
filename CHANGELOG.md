@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.34 - 2026-09-24
+
+- Update the ATT Forever quest database to `29473e9ec0f9081bbc4adf9bd1d77263ab0ed8f1`.
+- Ship 3788 quests with 4048 coordinate pins across 49 maps.
+
 ## 0.1.33 - 2026-09-23
 
 - Turn off **Show trivial / low-level pins** and **Show AQ war effort pins** by default so new installs see a quieter map; enable them under AddOns or with `/fqp trivial` and `/fqp wareffort`.
