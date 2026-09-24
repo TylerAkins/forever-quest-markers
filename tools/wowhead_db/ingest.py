@@ -10,7 +10,7 @@ from .classify import classify_pin_category
 from .http import quest_detail_url
 from .ingest_merge import merge_object_rows, merge_quest_list_rows
 from .parse_page import extract_page_listviews, quest_id_from_url
-from .parse_quest import extract_start_pins, parse_quest_detail
+from .parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
 from .sources import SOURCE_PAGES, SourcePage
 from .store import load_manifest, save_manifest, utc_now_iso, write_json
 
@@ -175,12 +175,15 @@ def _ingest_quest_detail(
         quest_id=quest_id,
     )
     detail["pinCategory"] = pin_category
+    restrictions = eligibility_restrictions(detail.get("infoboxMarkup"), entry.get("list"))
+    detail.update(restrictions)
 
     details_dir = data_root / "details"
     details_dir.mkdir(parents=True, exist_ok=True)
     write_json(details_dir / f"{quest_id}.json", detail)
 
     entry["pinCategory"] = pin_category
+    entry.update(restrictions)
     entry["hasDetail"] = True
     entry["startPinCount"] = len(detail["startPins"])
     if detail["startPins"]:

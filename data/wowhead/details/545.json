@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:46+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -786,6 +788,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Dalaran Patrols",
     "type": 5,
@@ -794,6 +797,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 545,
+  "races": [],
   "startPins": [
     {
       "npcId": 2410,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:17:25+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -492,6 +494,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Ambermill Investigations",
     "type": 5,
@@ -500,6 +503,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 479,
+  "races": [],
   "startPins": [
     {
       "npcId": 2121,

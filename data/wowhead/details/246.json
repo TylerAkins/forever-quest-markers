@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:39+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -574,6 +576,7 @@
       ]
     ]
   },
+  "minLevel": 11,
   "pageInfo": {
     "name": "Assessing the Threat",
     "type": 5,
@@ -582,6 +585,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 246,
+  "races": [],
   "startPins": [
     {
       "npcId": 1070,

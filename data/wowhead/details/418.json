@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:16:08+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -5136,6 +5138,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "Thelsamar Blood Sausages",
     "type": 5,
@@ -5167,6 +5170,7 @@
     2758
   ],
   "questId": 418,
+  "races": [],
   "startPins": [
     {
       "npcId": 1963,

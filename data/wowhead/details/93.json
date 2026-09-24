@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:29+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1744,6 +1746,7 @@
       ]
     ]
   },
+  "minLevel": 17,
   "pageInfo": {
     "name": "Dusky Crab Cakes",
     "type": 5,
@@ -1776,6 +1779,7 @@
     4161
   ],
   "questId": 93,
+  "races": [],
   "startPins": [
     {
       "npcId": 272,

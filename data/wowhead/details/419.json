@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:16:10+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -66,6 +68,7 @@
       ]
     ]
   },
+  "minLevel": 8,
   "pageInfo": {
     "name": "The Lost Pilot",
     "type": 5,
@@ -74,6 +77,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 419,
+  "races": [],
   "startPins": [
     {
       "npcId": 1960,

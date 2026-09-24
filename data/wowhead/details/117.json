@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:59+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -3112,6 +3114,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 117,
+  "races": [],
   "startPins": [
     {
       "npcId": 239,

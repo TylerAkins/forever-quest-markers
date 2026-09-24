@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:14+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -78,6 +80,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "The Weathered Grave",
     "type": 5,
@@ -86,6 +89,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 225,
+  "races": [],
   "startPins": [
     {
       "npcId": 61,

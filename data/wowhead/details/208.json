@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:11:54+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -112,6 +113,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "Big Game Hunter",
     "type": 5,
@@ -120,6 +122,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 208,
+  "races": [],
   "startPins": [
     {
       "npcId": 715,

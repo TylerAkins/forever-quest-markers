@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:31+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -76,6 +78,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "The Third Fleet",
     "type": 5,
@@ -86,6 +89,7 @@
     289
   ],
   "questId": 288,
+  "races": [],
   "startPins": [
     {
       "npcId": 1239,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:56+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -219,6 +221,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Crushridge Warmongers",
     "type": 5,
@@ -227,6 +230,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 504,
+  "races": [],
   "startPins": [
     {
       "npcId": 2263,

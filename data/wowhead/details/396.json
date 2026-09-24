@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:42+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -88,6 +90,7 @@
       ]
     ]
   },
+  "minLevel": 16,
   "pageInfo": {
     "name": "An Audience with the King",
     "type": 5,
@@ -109,6 +112,7 @@
     6403
   ],
   "questId": 396,
+  "races": [],
   "startPins": [
     {
       "npcId": 1646,

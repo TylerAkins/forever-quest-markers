@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:51+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -724,6 +726,7 @@
       ]
     ]
   },
+  "minLevel": 4,
   "pageInfo": {
     "name": "A Putrid Task",
     "type": 5,
@@ -732,6 +735,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 404,
+  "races": [],
   "startPins": [
     {
       "npcId": 1496,

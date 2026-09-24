@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:14:44+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 16,
   "pageInfo": {
     "name": "Look to an Old Friend",
     "type": 5,
@@ -92,6 +95,7 @@
     2746
   ],
   "questId": 350,
+  "races": [],
   "startPins": [
     {
       "npcId": 332,

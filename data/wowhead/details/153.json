@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:44+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -2858,6 +2860,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Red Leather Bandanas",
     "type": 5,
@@ -2866,6 +2869,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 153,
+  "races": [],
   "startPins": [
     {
       "npcId": 878,

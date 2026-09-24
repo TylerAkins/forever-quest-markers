@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:47+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -128,6 +130,7 @@
       ]
     ]
   },
+  "minLevel": 14,
   "pageInfo": {
     "name": "The Defias Brotherhood",
     "type": 5,
@@ -136,6 +139,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 155,
+  "races": [],
   "startPins": [
     {
       "npcId": 467,

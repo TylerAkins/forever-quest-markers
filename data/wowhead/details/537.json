@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:36+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -163,6 +165,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Dark Council",
     "type": 5,
@@ -171,6 +174,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 537,
+  "races": [],
   "startPins": [
     {
       "npcId": 2276,

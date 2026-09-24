@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:07+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -120,6 +122,7 @@
       ]
     ]
   },
+  "minLevel": 19,
   "pageInfo": {
     "name": "Missing In Action",
     "type": 5,
@@ -128,6 +131,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 219,
+  "races": [],
   "startPins": [
     {
       "npcId": 349,

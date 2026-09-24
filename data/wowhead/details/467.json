@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:10+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -178,6 +180,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Stonegear's Search",
     "type": 5,
@@ -186,6 +189,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 467,
+  "races": [],
   "startPins": [
     {
       "npcId": 1340,

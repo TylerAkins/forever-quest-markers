@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:14:35+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -7348,6 +7349,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Chapter IV",
     "type": 5,
@@ -7356,6 +7358,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 342,
+  "races": [],
   "startPins": [
     {
       "npcId": 716,

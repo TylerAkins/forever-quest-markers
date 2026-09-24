@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:26+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 2,
   "pageInfo": {
     "name": "Vital Intelligence",
     "type": 5,
@@ -80,6 +83,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 383,
+  "races": [],
   "startPins": [
     {
       "npcId": 1570,

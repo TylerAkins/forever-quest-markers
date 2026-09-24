@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:14+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -422,6 +424,7 @@
       ]
     ]
   },
+  "minLevel": 19,
   "pageInfo": {
     "name": "Dangerous!",
     "type": 5,
@@ -430,6 +433,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 567,
+  "races": [],
   "startPins": [
     {
       "npcId": 2008,

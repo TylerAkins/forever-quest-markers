@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:20:08+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -116,6 +118,7 @@
       ]
     ]
   },
+  "minLevel": 32,
   "pageInfo": {
     "name": "The Curse of the Tides",
     "type": 5,
@@ -126,6 +129,7 @@
     705
   ],
   "questId": 611,
+  "races": [],
   "startPins": [
     {
       "npcId": 2542,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:34+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -466,6 +468,7 @@
       ]
     ]
   },
+  "minLevel": 25,
   "pageInfo": {
     "name": "Down the Coast",
     "type": 5,
@@ -474,6 +477,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 536,
+  "races": [],
   "startPins": [
     {
       "npcId": 2228,

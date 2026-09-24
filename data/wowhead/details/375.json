@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:16+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1752,6 +1754,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "The Chill of Death",
     "type": 5,
@@ -1760,6 +1763,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 375,
+  "races": [],
   "startPins": [
     {
       "npcId": 1521,

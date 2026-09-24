@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:49+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -64,6 +66,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Digging Through the Dirt",
     "type": 5,
@@ -75,6 +78,7 @@
     253
   ],
   "questId": 254,
+  "races": [],
   "startPins": [
     {
       "npcId": 51708,

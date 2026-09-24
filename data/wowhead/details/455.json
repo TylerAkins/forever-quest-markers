@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:16:55+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -294,6 +296,7 @@
       ]
     ]
   },
+  "minLevel": 19,
   "pageInfo": {
     "name": "The Algaz Gauntlet",
     "type": 5,
@@ -302,6 +305,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 455,
+  "races": [],
   "startPins": [
     {
       "npcId": 1342,

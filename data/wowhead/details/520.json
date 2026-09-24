@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:16+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -92,6 +94,7 @@
       ]
     ]
   },
+  "minLevel": 34,
   "pageInfo": {
     "name": "The Crown of Will",
     "type": 5,
@@ -100,6 +103,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 520,
+  "races": [],
   "startPins": [
     {
       "npcId": 2278,

@@ -16,6 +16,22 @@ _gatherer_quest_re = re.compile(
     re.DOTALL,
 )
 _PAGE_INFO_RE = re.compile(r"var g_pageInfo = (\{.*?\});")
+_RACE_RE = re.compile(r"\[race=(\d+)\]")
+_CLASS_RE = re.compile(r"\[class=(\d+)\]")
+_REQ_LEVEL_RE = re.compile(r"Requires level (\d+)", re.IGNORECASE)
+
+# Wowhead list `reqclass` is a bitmask. Values are Blizzard class IDs.
+_CLASS_BIT_TO_ID = {
+    1: 1,
+    2: 2,
+    4: 3,
+    8: 4,
+    16: 5,
+    64: 7,
+    128: 8,
+    256: 9,
+    1024: 11,
+}
 
 
 def parse_quest_detail(html: str, quest_id: int) -> dict[str, Any]:
@@ -97,6 +113,76 @@ def extract_start_pins(mapper: dict[str, Any] | None) -> list[dict[str, Any]]:
                     }
                 )
     return pins
+
+
+def classes_from_bitmask(mask: int) -> list[int]:
+    if mask <= 0:
+        return []
+    return [class_id for bit, class_id in _CLASS_BIT_TO_ID.items() if mask & bit]
+
+
+def eligibility_restrictions(markup: str | None, list_row: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Fields Eligibility.lua already checks: faction, races, classes, minLevel.
+
+    Empty races or classes means no restriction. faction is omitted when both sides can take it.
+    Race ids are Wowhead [race=N] tags, which match Blizzard race ids (6 = Tauren).
+    Class ids prefer [class=N] on the quest page, then the list bitmask.
+    """
+    text = markup or ""
+    races = _unique_ints(_RACE_RE.findall(text))
+    classes = _unique_ints(_CLASS_RE.findall(text))
+    row = list_row or {}
+    if not classes:
+        try:
+            classes = classes_from_bitmask(int(row.get("reqclass") or 0))
+        except (TypeError, ValueError):
+            classes = []
+
+    faction: str | None = None
+    if "icon-alliance" in text:
+        faction = "Alliance"
+    elif "icon-horde" in text:
+        faction = "Horde"
+    else:
+        side = row.get("side")
+        if side == 1:
+            faction = "Alliance"
+        elif side == 2:
+            faction = "Horde"
+
+    min_level: int | None = None
+    level_match = _REQ_LEVEL_RE.search(text)
+    if level_match:
+        min_level = int(level_match.group(1))
+    else:
+        try:
+            raw_level = int(row.get("reqlevel") or 0)
+        except (TypeError, ValueError):
+            raw_level = 0
+        if raw_level > 0:
+            min_level = raw_level
+
+    result: dict[str, Any] = {
+        "races": races,
+        "classes": classes,
+    }
+    if faction:
+        result["faction"] = faction
+    if min_level is not None:
+        result["minLevel"] = min_level
+    return result
+
+
+def _unique_ints(values: list[str]) -> list[int]:
+    seen: set[int] = set()
+    ordered: list[int] = []
+    for value in values:
+        number = int(value)
+        if number in seen:
+            continue
+        seen.add(number)
+        ordered.append(number)
+    return ordered
 
 
 def _unescape_wh_markup(raw: str) -> str:

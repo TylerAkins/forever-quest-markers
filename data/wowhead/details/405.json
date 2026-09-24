@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:52+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -100,6 +102,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "The Prodigal Lich",
     "type": 5,
@@ -108,6 +111,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 405,
+  "races": [],
   "startPins": [
     {
       "npcId": 1499,

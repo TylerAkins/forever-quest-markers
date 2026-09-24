@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:19+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -7888,6 +7890,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "Wolves Across the Border",
     "type": 5,
@@ -7896,6 +7899,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 33,
+  "races": [],
   "startPins": [
     {
       "npcId": 196,

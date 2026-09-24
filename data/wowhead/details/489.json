@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:37+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -156,6 +158,7 @@
       ]
     ]
   },
+  "minLevel": 4,
   "pageInfo": {
     "name": "Seek Redemption!",
     "type": 5,
@@ -164,6 +167,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 489,
+  "races": [],
   "startPins": [
     {
       "npcId": 2081,

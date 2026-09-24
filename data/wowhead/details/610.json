@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:20:07+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -112,6 +114,7 @@
       ]
     ]
   },
+  "minLevel": 32,
   "pageInfo": {
     "name": "\"Pretty Boy\" Duncan",
     "type": 5,
@@ -120,6 +123,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 610,
+  "races": [],
   "startPins": [
     {
       "npcId": 2542,

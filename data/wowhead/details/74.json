@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:06+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -98,6 +100,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "The Legend of Stalvan",
     "type": 5,
@@ -106,6 +109,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 74,
+  "races": [],
   "startPins": [
     {
       "npcId": 1561,

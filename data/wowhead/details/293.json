@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:37+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -96,6 +98,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "Cleansing the Eye",
     "type": 5,
@@ -104,6 +107,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 293,
+  "races": [],
   "startPins": [
     {
       "npcId": 1217,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:32+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -172,6 +174,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Headhunting",
     "type": 5,
@@ -184,6 +187,7 @@
     596
   ],
   "questId": 582,
+  "races": [],
   "startPins": [
     {
       "npcId": 2497,

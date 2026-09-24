@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:11:52+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -76,6 +78,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Kurzen's Mystery",
     "type": 5,
@@ -87,6 +90,7 @@
     628
   ],
   "questId": 207,
+  "races": [],
   "startPins": [
     {
       "npcId": 739,

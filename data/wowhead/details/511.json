@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:05+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -114,6 +116,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Encrypted Letter",
     "type": 5,
@@ -122,6 +125,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 511,
+  "races": [],
   "startPins": [
     {
       "npcId": 1738,

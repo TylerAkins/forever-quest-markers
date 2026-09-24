@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:11:33+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -535,6 +536,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "Panther Mastery",
     "type": 5,
@@ -543,6 +545,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 192,
+  "races": [],
   "startPins": [
     {
       "npcId": 718,

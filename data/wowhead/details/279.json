@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:19+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -331,6 +333,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Claws from the Deep",
     "type": 5,
@@ -339,6 +342,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 279,
+  "races": [],
   "startPins": [
     {
       "npcId": 1242,

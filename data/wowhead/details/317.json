@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:14:06+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -2752,6 +2754,7 @@
       ]
     ]
   },
+  "minLevel": 2,
   "pageInfo": {
     "name": "Stocking Jetsteam",
     "type": 5,
@@ -2760,6 +2763,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 317,
+  "races": [],
   "startPins": [
     {
       "npcId": 1378,

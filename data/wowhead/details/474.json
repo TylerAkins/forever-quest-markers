@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -126,6 +128,7 @@
       ]
     ]
   },
+  "minLevel": 23,
   "pageInfo": {
     "name": "Defeat Nek'rosh",
     "type": 5,
@@ -134,6 +137,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 474,
+  "races": [],
   "startPins": [
     {
       "npcId": 1609,

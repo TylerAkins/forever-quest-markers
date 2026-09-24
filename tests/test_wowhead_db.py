@@ -16,7 +16,7 @@ from wowhead_db.classify import classify_pin_category
 from wowhead_db.ingest import ingest_html
 from wowhead_db.parse_list import parse_quest_list
 from wowhead_db.parse_page import extract_page_listviews
-from wowhead_db.parse_quest import extract_start_pins, parse_quest_detail
+from wowhead_db.parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
 
 FIXTURES = ROOT / "tests" / "fixtures" / "wowhead"
 
@@ -75,6 +75,28 @@ class IngestTests(unittest.TestCase):
             self.assertGreater(len(index), 100)
         finally:
             shutil.rmtree(tmp)
+
+
+class EligibilityTests(unittest.TestCase):
+    def test_tauren_and_shaman_from_infobox(self) -> None:
+        markup = (
+            "[ul][li]Side: [span class=icon-horde]Horde[/span][/li]"
+            "[li]Races: [race=2], [race=6], [br][race=8][/li]"
+            "[li]Class: [class=7][/li][li]Requires level 20[/li][/ul]"
+        )
+        result = eligibility_restrictions(markup, {"reqclass": 0, "side": 2, "reqlevel": 20})
+        self.assertEqual("Horde", result["faction"])
+        self.assertEqual([2, 6, 8], result["races"])
+        self.assertEqual([7], result["classes"])
+        self.assertEqual(20, result["minLevel"])
+
+    def test_class_bitmask_when_page_has_no_class_tag(self) -> None:
+        result = eligibility_restrictions(
+            "[ul][li]Side: [span class=icon-alliance]Alliance[/span][/li][/ul]",
+            {"reqclass": 1024, "side": 1, "reqlevel": 16},
+        )
+        self.assertEqual([11], result["classes"])
+        self.assertEqual([], result["races"])
 
 
 class ClassifyTests(unittest.TestCase):

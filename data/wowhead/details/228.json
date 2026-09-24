@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -128,6 +130,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "Mor'Ladim",
     "type": 5,
@@ -138,6 +141,7 @@
     231
   ],
   "questId": 228,
+  "races": [],
   "startPins": [
     {
       "npcId": 264,

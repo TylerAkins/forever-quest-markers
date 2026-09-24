@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:34+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -102,6 +104,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "Lifting the Curse",
     "type": 5,
@@ -110,6 +113,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 290,
+  "races": [],
   "startPins": [
     {
       "npcId": 1239,

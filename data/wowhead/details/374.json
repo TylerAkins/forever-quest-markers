@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:15+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1068,6 +1070,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "Proof of Demise",
     "type": 5,
@@ -1078,6 +1081,7 @@
     427
   ],
   "questId": 374,
+  "races": [],
   "startPins": [
     {
       "npcId": 1652,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:11:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -248,6 +250,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Bad Medicine",
     "type": 5,
@@ -256,6 +259,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 204,
+  "races": [],
   "startPins": [
     {
       "npcId": 733,

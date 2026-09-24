@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:22+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -230,6 +232,7 @@
       ]
     ]
   },
+  "minLevel": 2,
   "pageInfo": {
     "name": "Night Web's Hollow",
     "type": 5,
@@ -238,6 +241,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 380,
+  "races": [],
   "startPins": [
     {
       "npcId": 1570,

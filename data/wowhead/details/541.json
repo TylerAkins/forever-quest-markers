@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:41+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -416,6 +418,7 @@
       ]
     ]
   },
+  "minLevel": 19,
   "pageInfo": {
     "name": "Battle of Hillsbrad",
     "type": 5,
@@ -426,6 +429,7 @@
     515
   ],
   "questId": 541,
+  "races": [],
   "startPins": [
     {
       "npcId": 2215,

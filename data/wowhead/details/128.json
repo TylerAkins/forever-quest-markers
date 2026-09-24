@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:13+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -331,6 +333,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Blackrock Bounty",
     "type": 5,
@@ -339,6 +342,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 128,
+  "races": [],
   "startPins": [
     {
       "npcId": 903,

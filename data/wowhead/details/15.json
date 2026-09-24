@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:07:57+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -215,6 +217,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "Investigate Echo Ridge",
     "type": 5,
@@ -223,6 +226,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 15,
+  "races": [],
   "startPins": [
     {
       "npcId": 197,

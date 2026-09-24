@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:16:37+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -92,6 +94,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Raleigh and the Undercity",
     "type": 5,
@@ -100,6 +103,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 441,
+  "races": [],
   "startPins": [
     {
       "npcId": 1499,

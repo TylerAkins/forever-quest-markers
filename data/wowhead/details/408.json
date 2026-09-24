@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:56+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -266,6 +268,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "The Family Crypt",
     "type": 5,
@@ -274,6 +277,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 408,
+  "races": [],
   "startPins": [
     {
       "npcId": 1499,

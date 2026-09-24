@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:12:27+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -356,6 +358,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "The Ashenvale Hunt",
     "type": 5,
@@ -364,6 +367,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 235,
+  "races": [],
   "startPins": [
     {
       "npcId": 10880,

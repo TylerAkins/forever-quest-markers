@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -572,6 +574,7 @@
       ]
     ]
   },
+  "minLevel": 3,
   "pageInfo": {
     "name": "Kobold Candles",
     "type": 5,
@@ -580,6 +583,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 60,
+  "races": [],
   "startPins": [
     {
       "npcId": 253,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:59+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -352,6 +354,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "Soothing Turtle Bisque",
     "type": 5,
@@ -360,6 +363,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 555,
+  "races": [],
   "startPins": [
     {
       "npcId": 2430,

@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:20:20+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -656,6 +657,7 @@
       ]
     ]
   },
+  "minLevel": 35,
   "pageInfo": {
     "name": "Zanzil's Secret",
     "type": 5,
@@ -664,6 +666,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 621,
+  "races": [],
   "startPins": [
     {
       "npcId": 2498,

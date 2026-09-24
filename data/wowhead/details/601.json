@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:19:56+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -148,6 +150,7 @@
       ]
     ]
   },
+  "minLevel": 32,
   "pageInfo": {
     "name": "Water Elementals",
     "type": 5,
@@ -156,6 +159,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 601,
+  "races": [],
   "startPins": [
     {
       "npcId": 2496,

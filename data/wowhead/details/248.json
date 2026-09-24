@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:42+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Looking Further",
     "type": 5,
@@ -78,6 +81,7 @@
     249
   ],
   "questId": 248,
+  "races": [],
   "startPins": [
     {
       "npcId": 31,

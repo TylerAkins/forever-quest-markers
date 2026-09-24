@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:49+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -511,6 +513,7 @@
       ]
     ]
   },
+  "minLevel": 25,
   "pageInfo": {
     "name": "The Dark Iron War",
     "type": 5,
@@ -519,6 +522,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 303,
+  "races": [],
   "startPins": [
     {
       "npcId": 1074,

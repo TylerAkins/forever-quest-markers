@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:50+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -120,6 +122,7 @@
       ]
     ]
   },
+  "minLevel": 26,
   "pageInfo": {
     "name": "A Grim Task",
     "type": 5,
@@ -128,6 +131,7 @@
   "pinCategory": "raid",
   "prerequisiteQuestIds": [],
   "questId": 304,
+  "races": [],
   "startPins": [
     {
       "npcId": 1071,

@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:10:23+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -48,6 +49,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Captain Sander's Hidden Treasure",
     "type": 5,
@@ -56,5 +58,6 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 136,
+  "races": [],
   "startPins": []
 }

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -50,6 +52,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Assassin's Contract",
     "type": 5,
@@ -63,5 +66,6 @@
     512
   ],
   "questId": 522,
+  "races": [],
   "startPins": []
 }

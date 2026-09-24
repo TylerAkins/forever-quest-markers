@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:17:41+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "A New Plague",
     "type": 5,
@@ -84,6 +87,7 @@
     369
   ],
   "questId": 492,
+  "races": [],
   "startPins": [
     {
       "npcId": 1518,

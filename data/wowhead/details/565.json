@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:19:11+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -690,6 +692,7 @@
       ]
     ]
   },
+  "minLevel": 29,
   "pageInfo": {
     "name": "Bartolo's Yeti Fur Cloak",
     "type": 5,
@@ -698,6 +701,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 565,
+  "races": [],
   "startPins": [
     {
       "npcId": 2438,

@@ -1,4 +1,8 @@
 {
+  "classes": [
+    11
+  ],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:08:13+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -84,6 +88,7 @@
       ]
     ]
   },
+  "minLevel": 16,
   "pageInfo": {
     "name": "Trial of the Lake",
     "type": 5,
@@ -92,6 +97,9 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 28,
+  "races": [
+    6
+  ],
   "startPins": [
     {
       "npcId": 11802,

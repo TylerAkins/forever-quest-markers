@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:34+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -88,6 +90,7 @@
       ]
     ]
   },
+  "minLevel": 18,
   "pageInfo": {
     "name": "Messenger to Darkshire",
     "type": 5,
@@ -99,6 +102,7 @@
     143
   ],
   "questId": 145,
+  "races": [],
   "startPins": [
     {
       "npcId": 344,

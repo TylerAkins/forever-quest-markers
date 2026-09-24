@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:11:50+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -104,6 +106,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Mai'Zoth",
     "type": 5,
@@ -114,6 +117,7 @@
     202
   ],
   "questId": 206,
+  "races": [],
   "startPins": [
     {
       "npcId": 739,

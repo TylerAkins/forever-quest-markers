@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:07:52+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -672,6 +674,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "Riverpaw Gnoll Bounty",
     "type": 5,
@@ -680,6 +683,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 11,
+  "races": [],
   "startPins": [
     {
       "npcId": 963,

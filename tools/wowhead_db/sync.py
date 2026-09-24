@@ -9,7 +9,7 @@ from typing import Any
 from .classify import classify_pin_category
 from .http import WowheadClient, quest_detail_url
 from .ingest import ingest_html
-from .parse_quest import extract_start_pins, parse_quest_detail
+from .parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
 from .sources import SOURCE_PAGES
 from .store import load_manifest, save_manifest, utc_now_iso, write_json
 from .zone_resolver import bootstrap_zone_ui_map_ids
@@ -87,9 +87,12 @@ def sync_quest_details(
             quest_id=int(qid),
         )
         detail["pinCategory"] = pin_category
+        restrictions = eligibility_restrictions(detail.get("infoboxMarkup"), entry.get("list"))
+        detail.update(restrictions)
         write_json(detail_path, detail)
 
         entry["pinCategory"] = pin_category
+        entry.update(restrictions)
         entry["hasDetail"] = True
         entry["startPinCount"] = len(detail["startPins"])
         if detail["startPins"]:
@@ -108,6 +111,32 @@ def sync_quest_details(
     write_json(index_path, quest_index)
     save_manifest(data_root, manifest)
     return manifest
+
+
+def backfill_eligibility(data_root: Path) -> int:
+    """Fill faction/races/classes/minLevel on detail files already downloaded."""
+    index_path = data_root / "quest_index.json"
+    quest_index: dict[str, Any] = {}
+    if index_path.is_file():
+        quest_index = json.loads(index_path.read_text(encoding="utf-8"))
+
+    updated = 0
+    details_dir = data_root / "details"
+    for path in details_dir.glob("*.json"):
+        detail = json.loads(path.read_text(encoding="utf-8"))
+        qid = str(detail.get("questId") or path.stem)
+        entry = quest_index.get(qid, {})
+        restrictions = eligibility_restrictions(detail.get("infoboxMarkup"), entry.get("list"))
+        detail.update(restrictions)
+        write_json(path, detail)
+        if entry:
+            entry.update(restrictions)
+            quest_index[qid] = entry
+        updated += 1
+
+    if quest_index:
+        write_json(index_path, quest_index)
+    return updated
 
 
 def rebuild_zone_map(data_root: Path, att_quests_lua: Path) -> dict[str, Any]:
