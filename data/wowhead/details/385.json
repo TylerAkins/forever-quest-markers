@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:28+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -908,6 +910,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Crocolisk Hunting",
     "type": 5,
@@ -939,6 +942,7 @@
     2758
   ],
   "questId": 385,
+  "races": [],
   "startPins": [
     {
       "npcId": 1154,

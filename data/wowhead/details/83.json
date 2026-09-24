@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:17+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -960,6 +962,7 @@
       ]
     ]
   },
+  "minLevel": 4,
   "pageInfo": {
     "name": "Red Linen Goods",
     "type": 5,
@@ -968,6 +971,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 83,
+  "races": [],
   "startPins": [
     {
       "npcId": 278,

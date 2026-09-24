@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:16:33+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -70,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "The Decrepit Ferry",
     "type": 5,
@@ -78,6 +81,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 438,
+  "races": [],
   "startPins": [
     {
       "npcId": 1952,

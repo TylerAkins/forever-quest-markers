@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:06+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1024,6 +1026,7 @@
       ]
     ]
   },
+  "minLevel": 23,
   "pageInfo": {
     "name": "War Banners",
     "type": 5,
@@ -1032,6 +1035,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 464,
+  "races": [],
   "startPins": [
     {
       "npcId": 2104,

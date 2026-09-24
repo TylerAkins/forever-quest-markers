@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:12+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -2228,6 +2230,7 @@
       ]
     ]
   },
+  "minLevel": 16,
   "pageInfo": {
     "name": "Selling Fish",
     "type": 5,
@@ -2259,6 +2262,7 @@
     2758
   ],
   "questId": 127,
+  "races": [],
   "startPins": [
     {
       "npcId": 381,

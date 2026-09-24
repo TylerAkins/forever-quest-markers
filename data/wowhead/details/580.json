@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:19:30+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -678,6 +679,7 @@
       ]
     ]
   },
+  "minLevel": 40,
   "pageInfo": {
     "name": "Whiskey Slim's Lost Grog",
     "type": 5,
@@ -686,6 +688,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 580,
+  "races": [],
   "startPins": [
     {
       "npcId": 2491,

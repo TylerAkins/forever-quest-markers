@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:16+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 25,
   "pageInfo": {
     "name": "Fall of Dun Modr",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "raid",
   "prerequisiteQuestIds": [],
   "questId": 472,
+  "races": [],
   "startPins": [
     {
       "npcId": 2097,

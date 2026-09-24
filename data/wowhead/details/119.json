@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -88,6 +90,7 @@
       ]
     ]
   },
+  "minLevel": 13,
   "pageInfo": {
     "name": "Return to Verner",
     "type": 5,
@@ -96,6 +99,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 119,
+  "races": [],
   "startPins": [
     {
       "npcId": 514,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -70,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "Report to Thomas",
     "type": 5,
@@ -78,6 +81,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 71,
+  "races": [],
   "startPins": [
     {
       "npcId": 56,

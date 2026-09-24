@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:08:09+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -239,6 +241,7 @@
       ]
     ]
   },
+  "minLevel": 23,
   "pageInfo": {
     "name": "Stonetalon Standstill",
     "type": 5,
@@ -247,6 +250,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 25,
+  "races": [],
   "startPins": [
     {
       "npcId": 12737,

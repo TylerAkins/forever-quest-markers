@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:52+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -122,6 +124,7 @@
       ]
     ]
   },
+  "minLevel": 17,
   "pageInfo": {
     "name": "WANTED: Chok'sul",
     "type": 5,
@@ -130,6 +133,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 256,
+  "races": [],
   "startPins": [
     {
       "npcId": 256,

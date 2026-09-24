@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:11:56+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 32,
   "pageInfo": {
     "name": "Krazek's Cookery",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 210,
+  "races": [],
   "startPins": [
     {
       "npcId": 770,

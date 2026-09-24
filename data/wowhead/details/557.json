@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:01+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -76,6 +78,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Bracers of Binding",
     "type": 5,
@@ -84,6 +87,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 557,
+  "races": [],
   "startPins": [
     {
       "npcId": 2437,

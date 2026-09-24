@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 24,
   "pageInfo": {
     "name": "Elixir of Agony",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 509,
+  "races": [],
   "startPins": [
     {
       "npcId": 2216,

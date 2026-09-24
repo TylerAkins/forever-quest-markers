@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:09:44+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -166,6 +168,7 @@
       ]
     ]
   },
+  "minLevel": 50,
   "pageInfo": {
     "name": "Alas, Andorhal",
     "type": 5,
@@ -174,6 +177,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 105,
+  "races": [],
   "startPins": [
     {
       "npcId": 10837,

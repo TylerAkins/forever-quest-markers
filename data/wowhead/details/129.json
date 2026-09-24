@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:14+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -112,6 +114,7 @@
       ]
     ]
   },
+  "minLevel": 12,
   "pageInfo": {
     "name": "A Free Lunch",
     "type": 5,
@@ -120,6 +123,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 129,
+  "races": [],
   "startPins": [
     {
       "npcId": 379,

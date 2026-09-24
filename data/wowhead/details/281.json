@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:22+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -86,6 +88,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Reclaiming Goods",
     "type": 5,
@@ -94,6 +97,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 281,
+  "races": [],
   "startPins": [
     {
       "npcId": 1242,

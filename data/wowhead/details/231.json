@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:22+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -94,6 +96,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "A Daughter's Love",
     "type": 5,
@@ -102,6 +105,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 231,
+  "races": [],
   "startPins": [
     {
       "npcId": 576,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:14:50+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -248,6 +250,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "Deaths in the Family",
     "type": 5,
@@ -256,6 +259,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 354,
+  "races": [],
   "startPins": [
     {
       "npcId": 1500,

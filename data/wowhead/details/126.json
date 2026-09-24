@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:11+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -172,6 +174,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "Howling in the Hills",
     "type": 5,
@@ -180,6 +183,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 126,
+  "races": [],
   "startPins": [
     {
       "npcId": 415,

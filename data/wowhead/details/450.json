@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:16:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -96,6 +98,7 @@
       ]
     ]
   },
+  "minLevel": 9,
   "pageInfo": {
     "name": "A Recipe For Death",
     "type": 5,
@@ -104,6 +107,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 450,
+  "races": [],
   "startPins": [
     {
       "npcId": 2055,

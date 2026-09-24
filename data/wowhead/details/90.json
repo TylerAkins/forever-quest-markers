@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:26+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -3808,6 +3810,7 @@
       ]
     ]
   },
+  "minLevel": 18,
   "pageInfo": {
     "name": "Seasoned Wolf Kabobs",
     "type": 5,
@@ -3839,6 +3842,7 @@
     2758
   ],
   "questId": 90,
+  "races": [],
   "startPins": [
     {
       "npcId": 272,

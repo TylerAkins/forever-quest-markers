@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:20:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -228,6 +229,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Scaring Shaky",
     "type": 5,
@@ -238,6 +240,7 @@
     607
   ],
   "questId": 606,
+  "races": [],
   "startPins": [
     {
       "npcId": 2501,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -564,6 +566,7 @@
       ]
     ]
   },
+  "minLevel": 26,
   "pageInfo": {
     "name": "Humbert's Sword",
     "type": 5,
@@ -575,6 +578,7 @@
     541
   ],
   "questId": 547,
+  "races": [],
   "startPins": [
     {
       "npcId": 2419,

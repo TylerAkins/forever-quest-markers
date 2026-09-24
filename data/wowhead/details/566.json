@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:12+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -70,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 35,
   "pageInfo": {
     "name": "WANTED: Baron Vardus",
     "type": 5,
@@ -78,6 +81,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 566,
+  "races": [],
   "startPins": [
     {
       "npcId": 1763,

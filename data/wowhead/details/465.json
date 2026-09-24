@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:07+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -70,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 23,
   "pageInfo": {
     "name": "Nek'rosh's Gambit",
     "type": 5,
@@ -78,6 +81,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 465,
+  "races": [],
   "startPins": [
     {
       "npcId": 2104,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:51+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1189,6 +1191,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "Mercenaries",
     "type": 5,
@@ -1197,6 +1200,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 255,
+  "races": [],
   "startPins": [
     {
       "npcId": 1139,

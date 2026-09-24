@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:20:22+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -96,6 +98,7 @@
       ]
     ]
   },
+  "minLevel": 38,
   "pageInfo": {
     "name": "Akiris by the Bundle",
     "type": 5,
@@ -104,6 +107,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 623,
+  "races": [],
   "startPins": [
     {
       "npcId": 2494,

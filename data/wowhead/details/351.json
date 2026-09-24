@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:14:46+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -78,6 +79,7 @@
       ]
     ]
   },
+  "minLevel": 43,
   "pageInfo": {
     "name": "Find OOX-17/TN!",
     "type": 5,
@@ -93,5 +95,6 @@
     3721
   ],
   "questId": 351,
+  "races": [],
   "startPins": []
 }

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:23+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -1680,6 +1682,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "Princess Must Die!",
     "type": 5,
@@ -1688,6 +1691,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 88,
+  "races": [],
   "startPins": [
     {
       "npcId": 244,

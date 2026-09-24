@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:43+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -96,6 +98,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "The Mind's Eye",
     "type": 5,
@@ -106,6 +109,7 @@
     581
   ],
   "questId": 591,
+  "races": [],
   "startPins": [
     {
       "npcId": 2519,

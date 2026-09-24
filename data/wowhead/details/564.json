@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:19:10+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -597,6 +599,7 @@
       ]
     ]
   },
+  "minLevel": 30,
   "pageInfo": {
     "name": "Costly Menace",
     "type": 5,
@@ -628,6 +631,7 @@
     2758
   ],
   "questId": 564,
+  "races": [],
   "startPins": [
     {
       "npcId": 2382,

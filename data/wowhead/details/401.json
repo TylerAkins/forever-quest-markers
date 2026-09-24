@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -92,6 +94,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Wait for Sirra to Finish",
     "type": 5,
@@ -100,6 +103,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 401,
+  "races": [],
   "startPins": [
     {
       "npcId": 268,

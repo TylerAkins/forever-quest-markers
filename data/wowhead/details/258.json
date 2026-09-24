@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:55+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -687,6 +689,7 @@
       ]
     ]
   },
+  "minLevel": 11,
   "pageInfo": {
     "name": "A Hunter's Challenge",
     "type": 5,
@@ -697,6 +700,7 @@
     257
   ],
   "questId": 258,
+  "races": [],
   "startPins": [
     {
       "npcId": 1187,

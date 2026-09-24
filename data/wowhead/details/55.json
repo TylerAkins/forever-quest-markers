@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:42+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -99,6 +101,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Morbent Fel",
     "type": 5,
@@ -107,6 +110,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 55,
+  "races": [],
   "startPins": [
     {
       "npcId": 311,

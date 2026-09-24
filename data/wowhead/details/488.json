@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:36+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -3540,6 +3542,7 @@
       ]
     ]
   },
+  "minLevel": 4,
   "pageInfo": {
     "name": "Zenn's Bidding",
     "type": 5,
@@ -3548,6 +3551,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 488,
+  "races": [],
   "startPins": [
     {
       "npcId": 2150,

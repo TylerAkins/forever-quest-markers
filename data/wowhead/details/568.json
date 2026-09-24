@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:15+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -307,6 +309,7 @@
       ]
     ]
   },
+  "minLevel": 33,
   "pageInfo": {
     "name": "The Defense of Grom'gol",
     "type": 5,
@@ -315,6 +318,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 568,
+  "races": [],
   "startPins": [
     {
       "npcId": 2464,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:24+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -70,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "Find the Lost Guards",
     "type": 5,
@@ -78,6 +81,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 37,
+  "races": [],
   "startPins": [
     {
       "npcId": 261,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:07:58+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -6790,6 +6792,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "Give Gerard a Drink",
     "type": 5,
@@ -6798,6 +6801,7 @@
   "pinCategory": "repeatable",
   "prerequisiteQuestIds": [],
   "questId": 16,
+  "races": [],
   "startPins": [
     {
       "npcId": 255,

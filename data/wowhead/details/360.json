@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:14:57+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "Return to the Magistrate",
     "type": 5,
@@ -80,6 +83,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 360,
+  "races": [],
   "startPins": [
     {
       "npcId": 1495,

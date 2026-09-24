@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:07:48+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "A Rogue's Deal",
     "type": 5,
@@ -80,6 +83,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 8,
+  "races": [],
   "startPins": [
     {
       "npcId": 6784,

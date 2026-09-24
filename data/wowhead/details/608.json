@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:20:05+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -141,6 +142,7 @@
       ]
     ]
   },
+  "minLevel": 37,
   "pageInfo": {
     "name": "The Bloodsail Buccaneers",
     "type": 5,
@@ -149,6 +151,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 608,
+  "races": [],
   "startPins": [
     {
       "npcId": 2487,

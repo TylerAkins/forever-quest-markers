@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:10:43+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -980,6 +981,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "The Coast Isn't Clear",
     "type": 5,
@@ -988,6 +990,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 152,
+  "races": [],
   "startPins": [
     {
       "npcId": 392,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:38+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -310,6 +312,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "Ormer's Revenge",
     "type": 5,
@@ -318,6 +321,7 @@
   "pinCategory": "raid",
   "prerequisiteQuestIds": [],
   "questId": 294,
+  "races": [],
   "startPins": [
     {
       "npcId": 1078,

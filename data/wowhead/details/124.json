@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:08+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -674,6 +676,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "A Baying of Gnolls",
     "type": 5,
@@ -682,6 +685,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 124,
+  "races": [],
   "startPins": [
     {
       "npcId": 415,

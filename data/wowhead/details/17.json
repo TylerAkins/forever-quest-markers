@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:07:59+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 38,
   "pageInfo": {
     "name": "Uldaman Reagent Run",
     "type": 5,
@@ -78,6 +81,7 @@
     2202
   ],
   "questId": 17,
+  "races": [],
   "startPins": [
     {
       "npcId": 1470,

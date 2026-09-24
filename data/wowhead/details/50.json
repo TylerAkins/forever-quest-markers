@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:36+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -3988,6 +3990,7 @@
       ]
     ]
   },
+  "minLevel": 40,
   "pageInfo": {
     "name": "Sweet Amber",
     "type": 5,
@@ -3996,6 +3999,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 50,
+  "races": [],
   "startPins": [
     {
       "npcId": 239,

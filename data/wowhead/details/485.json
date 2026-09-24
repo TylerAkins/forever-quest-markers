@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:17:32+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -74,6 +75,7 @@
       ]
     ]
   },
+  "minLevel": 43,
   "pageInfo": {
     "name": "Find OOX-09/HL!",
     "type": 5,
@@ -89,5 +91,6 @@
     3721
   ],
   "questId": 485,
+  "races": [],
   "startPins": []
 }

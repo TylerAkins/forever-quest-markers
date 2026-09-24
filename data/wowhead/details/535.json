@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:33+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -232,6 +234,7 @@
       ]
     ]
   },
+  "minLevel": 29,
   "pageInfo": {
     "name": "Valik",
     "type": 5,
@@ -240,6 +243,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 535,
+  "races": [],
   "startPins": [
     {
       "npcId": 2333,

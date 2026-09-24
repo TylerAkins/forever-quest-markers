@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:44+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -102,6 +104,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "Wanted: Maggot Eye",
     "type": 5,
@@ -110,6 +113,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 398,
+  "races": [],
   "startPins": [
     {
       "npcId": 711,

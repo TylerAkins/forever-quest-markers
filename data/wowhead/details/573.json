@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:19:21+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -207,6 +209,7 @@
       ]
     ]
   },
+  "minLevel": 33,
   "pageInfo": {
     "name": "Mok'thardin's Enchantment",
     "type": 5,
@@ -215,6 +218,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 573,
+  "races": [],
   "startPins": [
     {
       "npcId": 2465,

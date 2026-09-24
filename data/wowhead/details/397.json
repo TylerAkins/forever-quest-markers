@@ -1,4 +1,8 @@
 {
+  "classes": [
+    9
+  ],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:43+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -88,6 +92,7 @@
       ]
     ]
   },
+  "minLevel": 25,
   "pageInfo": {
     "name": "You Have Served Us Well",
     "type": 5,
@@ -96,6 +101,10 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 397,
+  "races": [
+    1,
+    7
+  ],
   "startPins": [
     {
       "npcId": 1435,

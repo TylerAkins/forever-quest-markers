@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:17:57+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -426,6 +428,7 @@
       ]
     ]
   },
+  "minLevel": 26,
   "pageInfo": {
     "name": "Syndicate Assassins",
     "type": 5,
@@ -434,6 +437,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 505,
+  "races": [],
   "startPins": [
     {
       "npcId": 2276,

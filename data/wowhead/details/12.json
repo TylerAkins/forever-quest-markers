@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:07:53+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -842,6 +844,7 @@
       ]
     ]
   },
+  "minLevel": 9,
   "pageInfo": {
     "name": "The People's Militia",
     "type": 5,
@@ -850,6 +853,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 12,
+  "races": [],
   "startPins": [
     {
       "npcId": 234,

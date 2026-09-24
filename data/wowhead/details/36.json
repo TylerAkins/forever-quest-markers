@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:23+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -76,6 +78,7 @@
       ]
     ]
   },
+  "minLevel": 9,
   "pageInfo": {
     "name": "Westfall Stew",
     "type": 5,
@@ -84,6 +87,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 36,
+  "races": [],
   "startPins": [
     {
       "npcId": 238,

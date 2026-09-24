@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:11:39+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -168,6 +169,7 @@
       ]
     ]
   },
+  "minLevel": 28,
   "pageInfo": {
     "name": "Raptor Mastery",
     "type": 5,
@@ -176,6 +178,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 197,
+  "races": [],
   "startPins": [
     {
       "npcId": 715,

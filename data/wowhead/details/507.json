@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:00+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -111,6 +113,7 @@
       ]
     ]
   },
+  "minLevel": 29,
   "pageInfo": {
     "name": "Lord Aliden Perenolde",
     "type": 5,
@@ -119,6 +122,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 507,
+  "races": [],
   "startPins": [
     {
       "npcId": 2229,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:27+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -64,6 +66,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Search More Hovels",
     "type": 5,
@@ -72,6 +75,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 285,
+  "races": [],
   "startPins": [
     {
       "npcId": 142151,

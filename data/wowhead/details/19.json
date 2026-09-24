@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -144,6 +146,7 @@
       ]
     ]
   },
+  "minLevel": 18,
   "pageInfo": {
     "name": "Tharil'zun",
     "type": 5,
@@ -152,6 +155,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 19,
+  "races": [],
   "startPins": [
     {
       "npcId": 382,

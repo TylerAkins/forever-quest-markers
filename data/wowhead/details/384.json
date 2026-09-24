@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:27+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -2548,6 +2550,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "Beer Basted Boar Ribs",
     "type": 5,
@@ -2579,6 +2582,7 @@
     2758
   ],
   "questId": 384,
+  "races": [],
   "startPins": [
     {
       "npcId": 1267,

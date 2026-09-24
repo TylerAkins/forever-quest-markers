@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:16:17+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -112,6 +114,7 @@
       ]
     ]
   },
+  "minLevel": 10,
   "pageInfo": {
     "name": "Ivar the Foul",
     "type": 5,
@@ -120,6 +123,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 425,
+  "races": [],
   "startPins": [
     {
       "npcId": 1950,

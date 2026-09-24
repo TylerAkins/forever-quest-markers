@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:28+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -72,6 +74,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "A Fishy Peril",
     "type": 5,
@@ -80,6 +83,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 40,
+  "races": [],
   "startPins": [
     {
       "npcId": 241,

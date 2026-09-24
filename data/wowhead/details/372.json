@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:12+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -158,6 +160,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "At War With The Scarlet Crusade",
     "type": 5,
@@ -166,6 +169,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 372,
+  "races": [],
   "startPins": [
     {
       "npcId": 1515,

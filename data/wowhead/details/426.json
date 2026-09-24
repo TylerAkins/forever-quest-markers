@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:16:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -756,6 +758,7 @@
       ]
     ]
   },
+  "minLevel": 6,
   "pageInfo": {
     "name": "The Mills Overrun",
     "type": 5,
@@ -764,6 +767,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 426,
+  "races": [],
   "startPins": [
     {
       "npcId": 1496,

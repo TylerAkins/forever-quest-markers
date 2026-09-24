@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:18:51+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -484,6 +486,7 @@
       ]
     ]
   },
+  "minLevel": 17,
   "pageInfo": {
     "name": "WANTED: Syndicate Personnel",
     "type": 5,
@@ -492,6 +495,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 549,
+  "races": [],
   "startPins": [
     {
       "npcId": 1763,

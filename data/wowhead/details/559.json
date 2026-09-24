@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:19:03+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -988,6 +990,7 @@
       ]
     ]
   },
+  "minLevel": 25,
   "pageInfo": {
     "name": "Farren's Proof",
     "type": 5,
@@ -996,6 +999,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 559,
+  "races": [],
   "startPins": [
     {
       "npcId": 2228,

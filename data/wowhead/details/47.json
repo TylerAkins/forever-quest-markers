@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:32+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -580,6 +582,7 @@
       ]
     ]
   },
+  "minLevel": 4,
   "pageInfo": {
     "name": "Gold Dust Exchange",
     "type": 5,
@@ -588,6 +591,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 47,
+  "races": [],
   "startPins": [
     {
       "npcId": 241,

@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:19:47+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -58,6 +59,7 @@
       ]
     ]
   },
+  "minLevel": 45,
   "pageInfo": {
     "name": "Message in a Bottle",
     "type": 5,
@@ -66,5 +68,6 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 594,
+  "races": [],
   "startPins": []
 }

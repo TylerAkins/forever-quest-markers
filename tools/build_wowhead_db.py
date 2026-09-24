@@ -16,7 +16,7 @@ if str(TOOLS) not in sys.path:
 
 from wowhead_db.http import WowheadClient
 from wowhead_db.ingest import ingest_html
-from wowhead_db.sync import rebuild_zone_map, sync_quest_details, sync_sources
+from wowhead_db.sync import backfill_eligibility, rebuild_zone_map, sync_quest_details, sync_sources
 
 DEFAULT_DATA_ROOT = ROOT / "data" / "wowhead"
 DEFAULT_CACHE = ROOT / ".cache" / "wowhead-html"
@@ -58,6 +58,11 @@ def main(argv: list[str] | None = None) -> int:
         rebuild_zone_map(data_root, Path(args.att_quests))
         return 0
 
+    if args.command == "backfill-eligibility":
+        count = backfill_eligibility(data_root)
+        print(f"updated {count} quest details")
+        return 0
+
     raise SystemExit(f"Unknown command: {args.command}")
 
 
@@ -93,7 +98,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("ingest", "sync-sources", "sync-quests", "rebuild-zone-map"),
+        choices=("ingest", "sync-sources", "sync-quests", "rebuild-zone-map", "backfill-eligibility"),
         help="ingest: scan pasted URL(s); sync-*: bulk (optional)",
     )
     parser.add_argument(

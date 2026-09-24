@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:18:30+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "Vyrin's Revenge",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 531,
+  "races": [],
   "startPins": [
     {
       "npcId": 1187,

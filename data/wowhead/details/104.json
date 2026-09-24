@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:09:43+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -264,6 +265,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "The Coastal Menace",
     "type": 5,
@@ -272,6 +274,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 104,
+  "races": [],
   "startPins": [
     {
       "npcId": 392,

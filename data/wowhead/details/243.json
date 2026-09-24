@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:12:36+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -92,6 +94,7 @@
       ]
     ]
   },
+  "minLevel": 38,
   "pageInfo": {
     "name": "Into the Field",
     "type": 5,
@@ -100,6 +103,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 243,
+  "races": [],
   "startPins": [
     {
       "npcId": 5204,

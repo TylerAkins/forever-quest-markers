@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:15:02+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -270,6 +272,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "The Mindless Ones",
     "type": 5,
@@ -278,6 +281,11 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 364,
+  "races": [
+    2,
+    5,
+    8
+  ],
   "startPins": [
     {
       "npcId": 1569,

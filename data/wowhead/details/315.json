@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:14:03+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -206,6 +208,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "The Perfect Stout",
     "type": 5,
@@ -214,6 +217,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 315,
+  "races": [],
   "startPins": [
     {
       "npcId": 1374,

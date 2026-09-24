@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:59+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 7,
   "pageInfo": {
     "name": "Tundra MacGrann's Stolen Stash",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 312,
+  "races": [],
   "startPins": [
     {
       "npcId": 1266,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:13:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -4604,6 +4606,7 @@
       ]
     ]
   },
+  "minLevel": 16,
   "pageInfo": {
     "name": "A Dark Threat Looms",
     "type": 5,
@@ -4612,6 +4615,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 278,
+  "races": [],
   "startPins": [
     {
       "npcId": 1093,

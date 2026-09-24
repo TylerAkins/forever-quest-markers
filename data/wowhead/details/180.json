@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:11:18+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -182,6 +184,7 @@
       ]
     ]
   },
+  "minLevel": 15,
   "pageInfo": {
     "name": "Wanted: Lieutenant Fangore",
     "type": 5,
@@ -190,6 +193,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 180,
+  "races": [],
   "startPins": [
     {
       "npcId": 47,

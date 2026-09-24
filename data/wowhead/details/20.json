@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:08:03+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -3160,6 +3162,7 @@
       ]
     ]
   },
+  "minLevel": 18,
   "pageInfo": {
     "name": "Blackrock Menace",
     "type": 5,
@@ -3168,6 +3171,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 20,
+  "races": [],
   "startPins": [
     {
       "npcId": 382,

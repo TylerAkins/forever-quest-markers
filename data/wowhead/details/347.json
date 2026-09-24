@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:14:41+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -260,6 +262,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Rethban Ore",
     "type": 5,
@@ -268,6 +271,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 347,
+  "races": [],
   "startPins": [
     {
       "npcId": 341,

@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:49+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -64,6 +66,7 @@
       ]
     ]
   },
+  "minLevel": 1,
   "pageInfo": {
     "name": "Guarded Thunderbrew Barrel",
     "type": 5,
@@ -75,6 +78,7 @@
     310
   ],
   "questId": 403,
+  "races": [],
   "startPins": [
     {
       "npcId": 269,

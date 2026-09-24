@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:12:11+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -398,6 +400,7 @@
       ]
     ]
   },
+  "minLevel": 23,
   "pageInfo": {
     "name": "Worgen in the Woods",
     "type": 5,
@@ -406,6 +409,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 222,
+  "races": [],
   "startPins": [
     {
       "npcId": 663,

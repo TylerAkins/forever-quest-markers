@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:20:13+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +70,7 @@
       ]
     ]
   },
+  "minLevel": 32,
   "pageInfo": {
     "name": "The Haunted Isle",
     "type": 5,
@@ -76,6 +79,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 616,
+  "races": [],
   "startPins": [
     {
       "npcId": 773,

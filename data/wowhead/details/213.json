@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:11:59+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -256,6 +257,7 @@
       ]
     ]
   },
+  "minLevel": 31,
   "pageInfo": {
     "name": "Hostile Takeover",
     "type": 5,
@@ -264,6 +266,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 213,
+  "races": [],
   "startPins": [
     {
       "npcId": 737,

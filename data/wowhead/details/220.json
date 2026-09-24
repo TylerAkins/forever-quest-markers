@@ -1,4 +1,8 @@
 {
+  "classes": [
+    7
+  ],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:12:08+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -68,6 +72,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "Call of Water",
     "type": 5,
@@ -76,6 +81,11 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 220,
+  "races": [
+    2,
+    6,
+    8
+  ],
   "startPins": [
     {
       "npcId": 5899,

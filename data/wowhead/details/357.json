@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Horde",
   "fetchedAt": "2026-09-24T23:14:53+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -108,6 +110,7 @@
       ]
     ]
   },
+  "minLevel": 5,
   "pageInfo": {
     "name": "The Lich's Identity",
     "type": 5,
@@ -116,6 +119,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 357,
+  "races": [],
   "startPins": [
     {
       "npcId": 1498,

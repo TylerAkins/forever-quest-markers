@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:15:31+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -135,6 +137,7 @@
       ]
     ]
   },
+  "minLevel": 22,
   "pageInfo": {
     "name": "Quell The Uprising",
     "type": 5,
@@ -143,6 +146,7 @@
   "pinCategory": "instance",
   "prerequisiteQuestIds": [],
   "questId": 387,
+  "races": [],
   "startPins": [
     {
       "npcId": 1719,

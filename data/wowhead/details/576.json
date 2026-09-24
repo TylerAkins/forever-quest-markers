@@ -1,4 +1,5 @@
 {
+  "classes": [],
   "fetchedAt": "2026-09-24T23:19:25+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -984,6 +985,7 @@
       ]
     ]
   },
+  "minLevel": 37,
   "pageInfo": {
     "name": "Keep An Eye Out",
     "type": 5,
@@ -992,6 +994,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 576,
+  "races": [],
   "startPins": [
     {
       "npcId": 2493,

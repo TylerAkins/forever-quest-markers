@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:09:31+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -86,6 +88,7 @@
       ]
     ]
   },
+  "minLevel": 20,
   "pageInfo": {
     "name": "A Watchful Eye",
     "type": 5,
@@ -94,6 +97,7 @@
   "pinCategory": "normal",
   "prerequisiteQuestIds": [],
   "questId": 94,
+  "races": [],
   "startPins": [
     {
       "npcId": 313,

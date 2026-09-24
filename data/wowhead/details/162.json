@@ -1,4 +1,6 @@
 {
+  "classes": [],
+  "faction": "Alliance",
   "fetchedAt": "2026-09-24T23:10:55+00:00",
   "infoboxFlags": {
     "daily": false,
@@ -92,6 +94,7 @@
       ]
     ]
   },
+  "minLevel": 39,
   "pageInfo": {
     "name": "Rise of the Silithid",
     "type": 5,
@@ -104,6 +107,7 @@
     4496
   ],
   "questId": 162,
+  "races": [],
   "startPins": [
     {
       "npcId": 7724,
