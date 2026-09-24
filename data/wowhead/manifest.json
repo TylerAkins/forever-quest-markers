@@ -784,7 +784,8 @@
     }
   },
   "stats": {
-    "questDetailCount": 35,
+    "objectIndexCount": 329,
+    "questDetailCount": 998,
     "questIndexCount": 5058,
     "sourcePageCount": 111
   }

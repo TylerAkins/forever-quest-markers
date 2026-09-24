@@ -5,7 +5,7 @@ description: Scan Wowhead Forever URLs the user pastes, merge into data/wowhead,
 
 # Wowhead quest database (agent scans URLs)
 
-The **user only pastes Wowhead URLs** (or says “go look for changes”). **You** fetch and ingest. Never tell the user to curl, wget, or run fetch steps themselves.
+The canonical Wowhead URL list is already in `docs/wowhead-quest-database.md` and `tools/wowhead_db/sources.py` (the set the user provided). **You** fetch and ingest those URLs. Never ask the user to paste them again, and never tell them to curl or run the scraper.
 
 ## References
 
