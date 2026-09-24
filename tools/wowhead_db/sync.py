@@ -1,0 +1,178 @@
+"""Orchestrate Wowhead list + quest detail synchronization."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from .classify import classify_pin_category
+from .http import WowheadClient
+from .parse_list import parse_quest_list
+from .parse_quest import extract_start_pins, parse_quest_detail
+from .sources import SOURCE_PAGES, SourcePage
+from .store import load_manifest, save_manifest, utc_now_iso, write_json
+from .zone_resolver import bootstrap_zone_ui_map_ids
+
+
+def sync_sources(
+    data_root: Path,
+    client: WowheadClient,
+    *,
+    force: bool = False,
+) -> dict[str, Any]:
+    manifest = load_manifest(data_root)
+    sources_dir = data_root / "sources"
+    sources_dir.mkdir(parents=True, exist_ok=True)
+
+    quest_index: dict[str, Any] = {}
+    if (data_root / "quest_index.json").is_file():
+        raw = json.loads((data_root / "quest_index.json").read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            quest_index = raw
+
+    manifest["lastCheckedForChanges"] = utc_now_iso()
+    manifest["lastFullSyncStarted"] = manifest["lastCheckedForChanges"]
+
+    for page in SOURCE_PAGES:
+        html = client.get_html(page.url, force=force)
+        rows = parse_quest_list(html)
+        snapshot = {
+            "url": page.url,
+            "kind": page.kind,
+            "slug": page.slug,
+            "fetchedAt": utc_now_iso(),
+            "questCount": len(rows),
+            "quests": rows,
+        }
+        write_json(sources_dir / f"{page.slug.replace('/', '_')}.json", snapshot)
+
+        manifest["sources"][page.slug] = {
+            "url": page.url,
+            "kind": page.kind,
+            "lastFetched": snapshot["fetchedAt"],
+            "questCount": len(rows),
+            "etag": None,
+        }
+
+        for row in rows:
+            qid = str(row["id"])
+            existing = quest_index.get(qid)
+            if existing is None:
+                quest_index[qid] = _new_index_entry(row, page)
+            else:
+                _merge_index_entry(existing, row, page)
+
+    manifest["stats"]["sourcePageCount"] = len(SOURCE_PAGES)
+    manifest["stats"]["questIndexCount"] = len(quest_index)
+    write_json(data_root / "quest_index.json", quest_index)
+    save_manifest(data_root, manifest)
+    return manifest
+
+
+def sync_quest_details(
+    data_root: Path,
+    client: WowheadClient,
+    *,
+    limit: int | None = None,
+    force: bool = False,
+    attunement_seed_path: Path | None = None,
+) -> dict[str, Any]:
+    manifest = load_manifest(data_root)
+    index_path = data_root / "quest_index.json"
+    if not index_path.is_file():
+        raise SystemExit("quest_index.json missing; run sync-sources first")
+
+    quest_index: dict[str, Any] = json.loads(index_path.read_text(encoding="utf-8"))
+    details_dir = data_root / "details"
+    details_dir.mkdir(parents=True, exist_ok=True)
+
+    attunement_ids = _load_attunement_ids(data_root, attunement_seed_path)
+
+    processed = 0
+    for qid in sorted(quest_index.keys(), key=int):
+        if limit is not None and processed >= limit:
+            break
+        detail_path = details_dir / f"{qid}.json"
+        if detail_path.is_file() and not force:
+            continue
+
+        url = f"https://www.wowhead.com/forever/quest={qid}"
+        html = client.get_html(url, force=force)
+        detail = parse_quest_detail(html, int(qid))
+        detail["fetchedAt"] = utc_now_iso()
+        detail["startPins"] = extract_start_pins(detail.get("mapper"))
+
+        entry = quest_index[qid]
+        pin_category = classify_pin_category(
+            source_kinds=set(entry.get("sourceKinds") or []),
+            list_row=entry.get("list"),
+            detail_flags=detail.get("infoboxFlags"),
+            attunement_ids=attunement_ids,
+            quest_id=int(qid),
+        )
+        detail["pinCategory"] = pin_category
+        write_json(detail_path, detail)
+
+        entry["pinCategory"] = pin_category
+        entry["hasDetail"] = True
+        entry["startPinCount"] = len(detail["startPins"])
+        if detail["startPins"]:
+            entry["primaryStart"] = detail["startPins"][0]
+        processed += 1
+
+    manifest["stats"]["questDetailCount"] = sum(
+        1 for path in details_dir.glob("*.json")
+    )
+    manifest["stats"]["questIndexCount"] = len(quest_index)
+    manifest["lastFullSyncCompleted"] = utc_now_iso()
+    write_json(index_path, quest_index)
+    save_manifest(data_root, manifest)
+    return manifest
+
+
+def rebuild_zone_map(data_root: Path, att_quests_lua: Path) -> dict[str, Any]:
+    index = json.loads((data_root / "quest_index.json").read_text(encoding="utf-8"))
+    zone_map = bootstrap_zone_ui_map_ids(index, att_quests_lua)
+    write_json(data_root / "zone_ui_map_ids.json", zone_map)
+    return zone_map
+
+
+def _new_index_entry(row: dict[str, Any], page: SourcePage) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "name": row.get("name"),
+        "wowheadZoneId": row.get("category"),
+        "wowheadZoneId2": row.get("category2"),
+        "list": row,
+        "sourceSlugs": [page.slug],
+        "sourceKinds": [page.kind],
+        "sourceUrls": [page.url],
+        "hasDetail": False,
+    }
+
+
+def _merge_index_entry(existing: dict[str, Any], row: dict[str, Any], page: SourcePage) -> None:
+    slugs = set(existing.get("sourceSlugs") or [])
+    kinds = set(existing.get("sourceKinds") or [])
+    urls = set(existing.get("sourceUrls") or [])
+    slugs.add(page.slug)
+    kinds.add(page.kind)
+    urls.add(page.url)
+    existing["sourceSlugs"] = sorted(slugs)
+    existing["sourceKinds"] = sorted(kinds)
+    existing["sourceUrls"] = sorted(urls)
+    if not existing.get("name"):
+        existing["name"] = row.get("name")
+    if existing.get("wowheadZoneId") in (None, 0):
+        existing["wowheadZoneId"] = row.get("category")
+
+
+def _load_attunement_ids(data_root: Path, seed_path: Path | None) -> set[int]:
+    path = seed_path or (data_root / "attunement_quest_ids.json")
+    if path.is_file():
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(raw, list):
+            return {int(x) for x in raw}
+    # Fallback: quests whose names in index suggest attunement (rare); keep empty by default.
+    return set()
