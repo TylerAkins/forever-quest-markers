@@ -1,4 +1,4 @@
-## 0.1.34 - 2026-09-24
+## 0.1.35 - 2026-09-24
 
-- Update the ATT Forever quest database to `29473e9ec0f9081bbc4adf9bd1d77263ab0ed8f1`.
-- Ship 3788 quests with 4048 coordinate pins across 49 maps.
+- Learn missing NPC quest starters from offered quests during the current session, including when map coordinates are unavailable.
+- Keep NPC tooltip quests visible with a placeholder when their titles are unavailable, and retry failed title loads on later lookups.
