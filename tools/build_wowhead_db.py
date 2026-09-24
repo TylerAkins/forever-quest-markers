@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
     client = WowheadClient(
         cache_dir=Path(args.cache_dir),
         min_interval_s=args.delay,
+        batch_size=args.batch_size,
+        batch_pause_s=args.batch_pause,
     )
 
     if args.command == "sync-sources":
@@ -75,7 +77,12 @@ def _cmd_ingest(args: argparse.Namespace, data_root: Path) -> int:
     if not urls:
         raise SystemExit("ingest requires --url and/or --url-file")
 
-    client = WowheadClient(cache_dir=Path(args.cache_dir), min_interval_s=args.delay)
+    client = WowheadClient(
+        cache_dir=Path(args.cache_dir),
+        min_interval_s=args.delay,
+        batch_size=args.batch_size,
+        batch_pause_s=args.batch_pause,
+    )
     reports: list[dict] = []
 
     for index, url in enumerate(urls):
@@ -119,6 +126,18 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         type=float,
         default=1.25,
         help="Minimum seconds between uncached Wowhead HTTP requests",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=0,
+        help="After this many network fetches, wait --batch-pause seconds (0 disables)",
+    )
+    parser.add_argument(
+        "--batch-pause",
+        type=float,
+        default=0.0,
+        help="Extra seconds to wait after each batch of --batch-size fetches",
     )
     parser.add_argument(
         "--pause",
