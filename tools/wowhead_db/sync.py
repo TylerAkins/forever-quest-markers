@@ -58,19 +58,28 @@ def sync_quest_details(
 
     processed = 0
     skipped_errors = 0
-    for qid in sorted(quest_index.keys(), key=int):
-        if limit is not None and processed >= limit:
-            break
-        detail_path = details_dir / f"{qid}.json"
-        if detail_path.is_file() and not force:
-            continue
+    pending = [
+        qid
+        for qid in sorted(quest_index.keys(), key=int)
+        if force or not (details_dir / f"{qid}.json").is_file()
+    ]
+    if limit is not None:
+        pending = pending[:limit]
+    print(
+        f"quest details: {len(quest_index) - len(pending)} already saved, {len(pending)} to fetch",
+        flush=True,
+    )
 
+    for index, qid in enumerate(pending, start=1):
+        detail_path = details_dir / f"{qid}.json"
         entry = quest_index[qid]
         url = quest_detail_url(int(qid), entry.get("name"))
+        print(f"[{index}/{len(pending)}] {url}", flush=True)
         try:
             html = client.get_html(url, force=force)
         except Exception as exc:  # noqa: BLE001 — log and continue batch
             skipped_errors += 1
+            print(f"  failed: {exc}", flush=True)
             with errors_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps({"questId": int(qid), "url": url, "error": str(exc)}) + "\n")
             continue
@@ -98,6 +107,10 @@ def sync_quest_details(
         if detail["startPins"]:
             entry["primaryStart"] = detail["startPins"][0]
         processed += 1
+        print(
+            f"  saved quest {qid} faction={restrictions.get('faction')} races={restrictions.get('races')} starts={len(detail['startPins'])}",
+            flush=True,
+        )
 
         if processed % 25 == 0:
             write_json(index_path, quest_index)
