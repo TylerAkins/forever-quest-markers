@@ -3,9 +3,9 @@ name: wowhead-quest-database
 description: Scan Wowhead Forever URLs the user pastes, merge into data/wowhead, and update lastCheckedForChanges. Use when the user pastes Wowhead links, says "go look for changes", or asks to refresh the ATT replacement database.
 ---
 
-# Wowhead quest database (paste-URL scan)
+# Wowhead quest database (agent scans URLs)
 
-**Primary workflow:** the user pastes one or more Wowhead Forever URLs (see `docs/wowhead-quest-database.md`). You **fetch each page like a browser**, then **ingest** the HTML. Do not rely on bulk `sync-sources` unless the user explicitly asks to refresh everything.
+The **user only pastes Wowhead URLs** (or says “go look for changes”). **You** fetch and ingest. Never tell the user to curl, wget, or run fetch steps themselves.
 
 ## References
 
@@ -13,64 +13,46 @@ description: Scan Wowhead Forever URLs the user pastes, merge into data/wowhead,
 - Data: `data/wowhead/` (`manifest.json`, `quest_index.json`, `object_index.json`, `sources/`, `details/`)
 - Cutover (addon later): `docs/WOWHEAD_DATABASE_CUTOVER.md`
 
-## Scan one pasted URL
+## When the user pastes URL(s)
 
-1. Note `data/wowhead/manifest.json` → `lastCheckedForChanges` (before/after).
-2. Fetch with a normal browser user agent (follow redirects):
+For **each** URL (one shell invocation per URL, or `--url-file` for a batch):
 
-   ```bash
-   curl -fsSL -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' \
-     'PASTED_URL' -o /tmp/wowhead-page.html
-   ```
+```bash
+python3 tools/build_wowhead_db.py ingest --url 'PASTED_URL' --delay 1.5
+```
 
-   Wait **at least 1.5s** before the next Wowhead request.
+The ingest command **fetches** the page (browser-like user agent), parses it, and writes under `data/wowhead/`. Do not use `--html-file` unless you already saved HTML while debugging.
 
-3. Ingest (parses inline quest Listview **or** JSON `data.page.listPage.listviews` for object lists):
+After each URL (or small batch), **commit and push** if this is an ongoing DB build on a branch.
 
-   ```bash
-   python3 tools/build_wowhead_db.py ingest \
-     --url 'PASTED_URL' \
-     --html-file /tmp/wowhead-page.html
-   ```
-
-   Or let the tool fetch (same rate limit via `--delay`):
-
-   ```bash
-   python3 tools/build_wowhead_db.py ingest --url 'PASTED_URL'
-   ```
-
-4. Print the JSON report from ingest. Commit updated `data/wowhead/` when the user wants the DB saved.
+Wait **≥1.5s** between Wowhead requests (`--pause 1.5` with `--url-file`).
 
 ### Page types
 
 | URL pattern | Result |
 |-------------|--------|
-| `.../quests/...` zone/dungeon/class/etc. | Updates `sources/*.json` + `quest_index.json` |
-| `.../objects/quests` | Updates `object_index.json` (quest-start objects; **not** inline quest Listview) |
-| `.../quest=123/...` | Writes `details/123.json`, updates index row |
-
-## Scan many URLs (user paste block)
-
-Put URLs in a temp file (one per line), then:
-
-```bash
-python3 tools/build_wowhead_db.py ingest --url-file /tmp/wowhead-urls.txt --pause 1.5
-```
-
-Prefer **batches** (e.g. one region at a time) to avoid rate limits.
+| `.../quests/...` (zones, dungeons, classes, etc.) | `sources/*.json` + `quest_index.json` |
+| `.../objects/quests` | `object_index.json` (JSON listview, not quest Listview) |
+| `.../quest=123/...` | `details/123.json` |
 
 ## “Go look for changes”
 
-1. Read `lastCheckedForChanges` in `manifest.json`.
-2. Re-scan URLs the user cares about (or the full list in `docs/wowhead-quest-database.md` in batches).
-3. Diff git: new/changed quest IDs, `envChange` in list rows, object index changes.
-4. For new/changed quests, scan detail URLs: `https://www.wowhead.com/forever/quest=<id>` via `ingest --url ...` (slow; batch).
+1. Read `data/wowhead/manifest.json` → `lastCheckedForChanges`.
+2. **You** re-run `ingest --url` for URLs from `docs/wowhead-quest-database.md` (in batches).
+3. Diff `sources/`, `quest_index.json`, `object_index.json` for new IDs or `envChange` deltas.
+4. Summarize and update git; `lastCheckedForChanges` is set by ingest.
 
-Optional full refresh (rare): `python3 tools/build_wowhead_db.py sync-sources`
+## Bulk optional
+
+Only if the user asks to refresh everything:
+
+```bash
+python3 tools/build_wowhead_db.py sync-sources --delay 1.5
+```
 
 ## Pin categories
 
-`data/wowhead/pin_categories.json` — PvP uses **purple** tint `(0.78, 0.22, 0.95)`.
+`data/wowhead/pin_categories.json` — PvP purple `(0.78, 0.22, 0.95)`.
 
 ## Tests
 

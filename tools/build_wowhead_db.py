@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and refresh the Wowhead-sourced Forever quest database."""
+"""Wowhead Forever database: agent runs `ingest --url` when the user pastes links."""
 
 from __future__ import annotations
 

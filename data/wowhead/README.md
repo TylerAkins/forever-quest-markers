@@ -16,10 +16,10 @@ Structured quest data scraped from [Wowhead Forever](https://www.wowhead.com/for
 
 ## Refresh (paste-URL scan)
 
-**Default:** paste Wowhead URLs to an agent; it fetches each page and runs:
+**Default:** paste Wowhead URLs to an agent. **The agent fetches and ingests** (you do not):
 
 ```bash
-python3 tools/build_wowhead_db.py ingest --url 'https://www.wowhead.com/forever/quests/...'
+python3 tools/build_wowhead_db.py ingest --url 'https://www.wowhead.com/forever/quests/...' --delay 1.5
 ```
 
 See `docs/skills/wowhead-quest-database/SKILL.md`.
