@@ -69,7 +69,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "QUEST_DATA_LOAD" or event == "QUEST_DATA_LOAD_RESULT" then
         local questID, success = ...
-        if success == false then return end
+        if success == false then
+            if ns.OnQuestDataLoadFailed then ns.OnQuestDataLoadFailed(questID) end
+            return
+        end
         if ns.OnQuestDataLoad then
             ns.OnQuestDataLoad(questID)
         end

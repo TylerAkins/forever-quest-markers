@@ -79,6 +79,7 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
 - **NPC hover rows cover available quest starts only.** The tested Forever client does not expose incomplete or completed finisher relationships through structured unit-hover data. Native objective quest blocks remain unchanged.
+- Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. The bundled Zephras Isle data currently contains only six quests, so other quests need to be discovered this way. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
 - **Item-started** quests with no map coordinate are omitted
 - **Holiday** starts stay hidden unless seasonal pins are on or the client reports the event as active
