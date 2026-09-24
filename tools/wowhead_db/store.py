@@ -35,6 +35,7 @@ def default_manifest() -> dict[str, Any]:
         "stats": {
             "questIndexCount": 0,
             "questDetailCount": 0,
+            "objectIndexCount": 0,
             "sourcePageCount": 0,
         },
     }
