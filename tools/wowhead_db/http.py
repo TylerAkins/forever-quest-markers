@@ -29,10 +29,15 @@ class WowheadClient:
         self,
         cache_dir: Path,
         min_interval_s: float = DEFAULT_MIN_INTERVAL_S,
+        batch_size: int = 0,
+        batch_pause_s: float = 0.0,
     ) -> None:
         self.cache_dir = cache_dir
         self.min_interval_s = min_interval_s
+        self.batch_size = batch_size
+        self.batch_pause_s = batch_pause_s
         self._last_fetch_at = 0.0
+        self._network_fetches = 0
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _cache_path(self, url: str) -> Path:
@@ -66,6 +71,7 @@ class WowheadClient:
                 continue
 
             path.write_text(html, encoding="utf-8")
+            self._note_network_fetch()
             return html
 
         try:
@@ -78,7 +84,13 @@ class WowheadClient:
         if _looks_like_block_page(html):
             raise RuntimeError(f"Wowhead blocked fetch for {url}")
         path.write_text(html, encoding="utf-8")
+        self._note_network_fetch()
         return html
+
+    def _note_network_fetch(self) -> None:
+        self._network_fetches += 1
+        if self.batch_size > 0 and self.batch_pause_s > 0 and self._network_fetches % self.batch_size == 0:
+            time.sleep(self.batch_pause_s)
 
     def _fetch_urllib(self, url: str) -> str:
         request = urllib.request.Request(url, headers=dict(_DEFAULT_HEADERS))
