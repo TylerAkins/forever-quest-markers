@@ -45,14 +45,11 @@ function Tooltips:GetRows(npcID)
     for questID in pairs(starters[npcID] or {}) do
         local data = ns.Quests[questID]
         if ns.IsQuestAvailable(questID, data) then
-            local title = ns.GetQuestTitle(questID)
-            if title then
-                rows[#rows + 1] = {
-                    id = questID,
-                    title = title,
-                    level = ns.GetQuestDifficultyLevel(questID),
-                }
-            end
+            rows[#rows + 1] = {
+                id = questID,
+                title = ns.GetQuestTitle(questID) or ("Quest %d (title unavailable)"):format(questID),
+                level = ns.GetQuestDifficultyLevel(questID),
+            }
         end
     end
     table.sort(rows, function(a, b)
