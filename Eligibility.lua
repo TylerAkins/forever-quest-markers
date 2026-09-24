@@ -218,6 +218,13 @@ function ns.OnQuestDataLoad(questID)
     if ns.NPCTooltips then ns.NPCTooltips:Refresh() end
 end
 
+function ns.OnQuestDataLoadFailed(questID)
+    if not questID then return end
+    -- Retry on the next lookup, not from the failed event itself.
+    requestedTitles[questID] = nil
+    requestedLevels[questID] = nil
+end
+
 local function CacheNPCName(npcID, name)
     if npcID and type(name) == "string" and name ~= "" and name ~= "Unknown" then
         npcNameCache[npcID] = name
@@ -458,11 +465,20 @@ function ns.NoteOfferedQuest(questID)
         return
     end
     ns.offeredQuestIDs[questID] = true
-    if ns.Quests and ns.Quests[questID] then
+    local offer = ns.lastOffer
+    local data = ns.Quests and ns.Quests[questID]
+    if data then
+        if offer and offer.qg and data.qg ~= offer.qg then
+            for _, npcID in ipairs(data.qgs or {}) do
+                if npcID == offer.qg then return end
+            end
+            data.qgs = data.qgs or {}
+            data.qgs[#data.qgs + 1] = offer.qg
+            if ns.NPCTooltips then ns.NPCTooltips:InvalidateIndex() end
+        end
         return
     end
-    local offer = ns.lastOffer
-    if not offer or not offer.mapID or not offer.x or not offer.y then
+    if not offer or not (offer.qg or (offer.mapID and offer.x and offer.y)) then
         return
     end
     ns.Quests = ns.Quests or {}
@@ -473,12 +489,14 @@ function ns.NoteOfferedQuest(questID)
         y = offer.y,
         qg = offer.qg,
     }
-    local list = ns.ByMap[offer.mapID]
-    if not list then
-        list = {}
-        ns.ByMap[offer.mapID] = list
+    if offer.mapID and offer.x and offer.y then
+        local list = ns.ByMap[offer.mapID]
+        if not list then
+            list = {}
+            ns.ByMap[offer.mapID] = list
+        end
+        list[#list + 1] = questID
     end
-    list[#list + 1] = questID
     if ns.NPCTooltips then ns.NPCTooltips:InvalidateIndex() end
 end
 

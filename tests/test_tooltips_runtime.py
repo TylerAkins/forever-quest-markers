@@ -66,7 +66,7 @@ class TooltipRuntimeTests(unittest.TestCase):
     def test_delayed_data_and_dynamic_starters(self) -> None:
         self.lua.execute("""
             ns.Quests[1]={qg=100}; GameTooltip:SetUnit('mouseover')
-            assert(#GameTooltip.lines == 1)
+            assert(GameTooltip.lines[2].text == '! Quest 1 (title unavailable)')
             ns.titles[1]='Loaded'; ns.levels[1]=12; ns.NPCTooltips:Refresh()
             assert(GameTooltip.lines[2].text == '! [12] Loaded')
             ns.Quests[2]={qg=100}; ns.titles[2]='New'; ns.NPCTooltips:InvalidateIndex()
@@ -84,6 +84,79 @@ class TooltipRuntimeTests(unittest.TestCase):
             local scanner={}
             ns.NPCTooltips:Show(scanner)
             assert(scanner.fqpQuestRows == nil)
+        """)
+
+    def test_offered_quests_repair_starters_without_map_coordinates(self) -> None:
+        self.load('Eligibility.lua')
+        self.lua.execute("""
+            C_QuestLog.GetTitleForQuestID=function(id) return 'Quest '..id end
+            ns.Quests[1]={qg=200, qgs={300}, mapID=1, x=10, y=20}
+            ns.Quests[2]={sourceQuests={999}}
+            assert(#ns.NPCTooltips:GetRows(100)==0)
+            ns.SetLastOfferNPC(100,nil,nil,nil)
+            for id=1,3 do ns.NoteOfferedQuest(id) end
+            local rows=ns.NPCTooltips:GetRows(100)
+            assert(#rows==3)
+            assert(ns.Quests[1].qg==200 and ns.Quests[1].qgs[1]==300)
+            assert(ns.Quests[1].mapID==1 and ns.Quests[1].x==10)
+            assert(ns.Quests[1].qgs[2]==100)
+            ns.NoteOfferedQuest(1)
+            assert(#ns.Quests[1].qgs==2)
+            assert(#ns.NPCTooltips:GetRows(200)==1)
+            assert(#ns.NPCTooltips:GetRows(300)==1)
+            assert(next(ns.ByMap)==nil)
+            ns.SetLastOfferNPC(nil,nil,nil,nil)
+            ns.NoteOfferedQuest(4)
+            assert(ns.Quests[4]==nil)
+            ns.SetLastOfferNPC(nil,1,25,30)
+            ns.NoteOfferedQuest(5)
+            assert(ns.ByMap[1][1]==5 and ns.Quests[5].qg==nil)
+        """)
+
+    def test_new_offered_quest_keeps_map_pin_and_hides_when_accepted(self) -> None:
+        self.load('Eligibility.lua')
+        self.lua.execute("""
+            ns.SetLastOfferNPC(100,2521,42,23)
+            ns.NoteOfferedQuest(92499)
+            ns.NoteOfferedQuest(92499)
+            assert(#ns.ByMap[2521]==1 and ns.ByMap[2521][1]==92499)
+            assert(#ns.NPCTooltips:GetRows(100)==1)
+            C_QuestLog.IsOnQuest=function() return true end
+            assert(#ns.NPCTooltips:GetRows(100)==0)
+            C_QuestLog.IsOnQuest=function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted=function() return true end
+            assert(#ns.NPCTooltips:GetRows(100)==0)
+        """)
+
+    def test_failed_title_load_retries_on_lookup_and_recovers(self) -> None:
+        self.load('Eligibility.lua')
+        self.lua.execute("""
+            CreateFrame=function()
+                frame={}
+                function frame:SetScript(name,fn) self[name]=fn end
+                function frame:RegisterEvent() end
+                return frame
+            end
+            requests=0
+            C_QuestLog.RequestLoadQuestByID=function() requests=requests+1 end
+            C_QuestLog.GetQuestDifficultyLevel=function() return 12 end
+            ns.SetLastOfferNPC(100,nil,nil,nil)
+            ns.NoteOfferedQuest(1)
+            GameTooltip:SetUnit('mouseover')
+            assert(requests==1)
+        """)
+        self.load('Core.lua')
+        self.lua.execute("""
+            frame.OnEvent(frame,'QUEST_DATA_LOAD_RESULT',1,false)
+            assert(requests==1)
+            assert(GameTooltip.lines[2].text=='! [12] Quest 1 (title unavailable)')
+            GameTooltip:SetUnit('mouseover')
+            assert(requests==2)
+            GameTooltip:SetUnit('mouseover')
+            assert(requests==2)
+            C_QuestLog.GetTitleForQuestID=function() return 'Loaded quest' end
+            frame.OnEvent(frame,'QUEST_DATA_LOAD_RESULT',1,true)
+            assert(GameTooltip.lines[2].text=='! [12] Loaded quest')
         """)
 
     def test_level_lookup_requests_data_once_and_never_uses_minimum(self) -> None:
