@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .classify import classify_pin_category
-from .http import WowheadClient
+from .http import WowheadClient, quest_detail_url
 from .ingest import ingest_html
 from .parse_quest import extract_start_pins, parse_quest_detail
 from .sources import SOURCE_PAGES
@@ -47,15 +47,17 @@ def sync_quest_details(
     manifest = load_manifest(data_root)
     index_path = data_root / "quest_index.json"
     if not index_path.is_file():
-        raise SystemExit("quest_index.json missing; run sync-sources first")
+        raise SystemExit("quest_index.json missing; run sync-sources or ingest list URLs first")
 
     quest_index: dict[str, Any] = json.loads(index_path.read_text(encoding="utf-8"))
     details_dir = data_root / "details"
     details_dir.mkdir(parents=True, exist_ok=True)
+    errors_path = data_root / "fetch_errors.jsonl"
 
     attunement_ids = _load_attunement_ids(data_root, attunement_seed_path)
 
     processed = 0
+    skipped_errors = 0
     for qid in sorted(quest_index.keys(), key=int):
         if limit is not None and processed >= limit:
             break
@@ -63,13 +65,20 @@ def sync_quest_details(
         if detail_path.is_file() and not force:
             continue
 
-        url = f"https://www.wowhead.com/forever/quest={qid}"
-        html = client.get_html(url, force=force)
+        entry = quest_index[qid]
+        url = quest_detail_url(int(qid), entry.get("name"))
+        try:
+            html = client.get_html(url, force=force)
+        except Exception as exc:  # noqa: BLE001 — log and continue batch
+            skipped_errors += 1
+            with errors_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps({"questId": int(qid), "url": url, "error": str(exc)}) + "\n")
+            continue
+
         detail = parse_quest_detail(html, int(qid))
         detail["fetchedAt"] = utc_now_iso()
         detail["startPins"] = extract_start_pins(detail.get("mapper"))
 
-        entry = quest_index[qid]
         pin_category = classify_pin_category(
             source_kinds=set(entry.get("sourceKinds") or []),
             list_row=entry.get("list"),
@@ -87,10 +96,14 @@ def sync_quest_details(
             entry["primaryStart"] = detail["startPins"][0]
         processed += 1
 
-    manifest["stats"]["questDetailCount"] = sum(
-        1 for path in details_dir.glob("*.json")
-    )
+        if processed % 25 == 0:
+            write_json(index_path, quest_index)
+            manifest["stats"]["questDetailCount"] = len(list(details_dir.glob("*.json")))
+            save_manifest(data_root, manifest)
+
+    manifest["stats"]["questDetailCount"] = len(list(details_dir.glob("*.json")))
     manifest["stats"]["questIndexCount"] = len(quest_index)
+    manifest["stats"]["questDetailFetchErrors"] = skipped_errors
     manifest["lastFullSyncCompleted"] = utc_now_iso()
     write_json(index_path, quest_index)
     save_manifest(data_root, manifest)
@@ -110,5 +123,4 @@ def _load_attunement_ids(data_root: Path, seed_path: Path | None) -> set[int]:
         raw = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(raw, list):
             return {int(x) for x in raw}
-    # Fallback: quests whose names in index suggest attunement (rare); keep empty by default.
     return set()

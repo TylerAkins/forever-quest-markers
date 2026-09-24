@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .classify import classify_pin_category
+from .http import quest_detail_url
 from .ingest_merge import merge_object_rows, merge_quest_list_rows
 from .parse_page import extract_page_listviews, quest_id_from_url
 from .parse_quest import extract_start_pins, parse_quest_detail
@@ -192,7 +193,7 @@ def _ingest_quest_detail(
     save_manifest(data_root, manifest)
 
     return {
-        "url": f"https://www.wowhead.com/forever/quest={quest_id}",
+        "url": quest_detail_url(quest_id, entry.get("name")),
         "questId": quest_id,
         "pinCategory": pin_category,
         "startPinCount": len(detail["startPins"]),
