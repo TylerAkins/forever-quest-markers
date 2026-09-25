@@ -45,6 +45,47 @@ def extract_inline_listviews(html: str) -> list[dict[str, Any]]:
     return views
 
 
+def extract_map_quest_givers(html: str) -> list[dict[str, Any]]:
+    """NPCs and objects plotted as quest givers on a zone map.
+
+    Quest entries on this map have a name but not a quest id.
+    """
+    marker = "var mapShowObject = new ShowOnMap("
+    start = html.find(marker)
+    if start < 0:
+        return []
+    try:
+        payload, _end = json.JSONDecoder().raw_decode(html[start + len(marker) :])
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    givers: list[dict[str, Any]] = []
+    for side in ("alliancequests", "hordequests"):
+        for row in payload.get(side) or []:
+            if not isinstance(row, dict):
+                continue
+            coords = []
+            for pair in row.get("coords") or []:
+                if isinstance(pair, list) and len(pair) == 2:
+                    coords.append([float(pair[0]), float(pair[1])])
+            givers.append(
+                {
+                    "id": row.get("id"),
+                    "name": row.get("name"),
+                    "type": row.get("type"),
+                    "side": side,
+                    "coords": coords,
+                    "questNames": [
+                        quest.get("name")
+                        for quest in row.get("quests") or []
+                        if isinstance(quest, dict) and quest.get("name")
+                    ],
+                }
+            )
+    return givers
+
+
 def extract_page_listviews(html: str) -> list[dict[str, Any]]:
     views: list[dict[str, Any]] = []
 
