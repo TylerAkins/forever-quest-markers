@@ -16,7 +16,13 @@ from quest_db.classify import classify_pin_category
 from quest_db.ingest import ingest_html
 from quest_db.parse_list import parse_quest_list
 from quest_db.parse_page import extract_page_listviews
-from quest_db.parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
+from quest_db.parse_quest import (
+    eligibility_restrictions,
+    extract_spawn_pins,
+    extract_start_pins,
+    parse_quest_detail,
+    quest_ids_from_markup,
+)
 
 FIXTURES = ROOT / "tests" / "fixtures" / "quest-pages"
 
@@ -40,6 +46,28 @@ class ParseQuestTests(unittest.TestCase):
         self.assertEqual(823, pins[0]["npcId"])
         self.assertAlmostEqual(48.2, pins[0]["x"])
         self.assertAlmostEqual(42.8, pins[0]["y"])
+
+    def test_spawn_pins_keep_every_coordinate(self) -> None:
+        mapper = {
+            "objectives": {
+                "17": {
+                    "zone": "The Barrens",
+                    "levels": [
+                        [
+                            {
+                                "id": 3238,
+                                "name": "Chen's Empty Keg",
+                                "coords": [[55.8, 20.0], [43.0, 32.5], [57.1, 27.4]],
+                                "point": "start",
+                            }
+                        ]
+                    ],
+                }
+            }
+        }
+        pins = extract_spawn_pins(mapper)
+        self.assertEqual([(55.8, 20.0), (43.0, 32.5), (57.1, 27.4)], [(pin["x"], pin["y"]) for pin in pins])
+        self.assertEqual([819], quest_ids_from_markup("[url=/forever/quest=819/chens-empty-keg]"))
 
     def test_repeatable_flag_from_infobox(self) -> None:
         html = (FIXTURES / "quest-16.html").read_text(encoding="utf-8")

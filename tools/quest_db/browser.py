@@ -59,7 +59,7 @@ class BrowserPageClient:
         self._throttle()
         html = self._goto(url)
         if html is None:
-            bare = _bare_quest_url(url)
+            bare = _bare_page_url(url)
             if bare == url:
                 raise RuntimeError(f"too many redirects loading {url}")
             print(f"  redirect loop on slugged URL, retrying {bare}", flush=True)
@@ -94,8 +94,8 @@ class BrowserPageClient:
         self._last_fetch_at = time.monotonic()
 
 
-def _bare_quest_url(url: str) -> str:
-    match = re.match(r"(https://www\.wowhead\.com/forever/quest=\d+)", url)
+def _bare_page_url(url: str) -> str:
+    match = re.match(r"(https://www\.wowhead\.com/forever/(?:quest|object|item)=\d+)", url)
     if match is None:
         return url
     return match.group(1)

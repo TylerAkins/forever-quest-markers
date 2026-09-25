@@ -171,10 +171,22 @@ def slugify_quest_name(name: str | None) -> str:
 
 
 def quest_detail_url(quest_id: int, name: str | None = None) -> str:
+    return _entity_url("quest", quest_id, name)
+
+
+def object_detail_url(object_id: int, name: str | None = None) -> str:
+    return _entity_url("object", object_id, name)
+
+
+def item_detail_url(item_id: int, name: str | None = None) -> str:
+    return _entity_url("item", item_id, name)
+
+
+def _entity_url(kind: str, entity_id: int, name: str | None) -> str:
     slug = slugify_quest_name(name)
     if slug:
-        return f"https://www.wowhead.com/forever/quest={quest_id}/{slug}"
-    return f"https://www.wowhead.com/forever/quest={quest_id}"
+        return f"https://www.wowhead.com/forever/{kind}={entity_id}/{slug}"
+    return f"https://www.wowhead.com/forever/{kind}={entity_id}"
 
 
 def _ssl_context(*, unverified: bool) -> ssl.SSLContext:
