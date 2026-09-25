@@ -1,33 +1,36 @@
-# Source database → addon cutover plan
+# Quest database → addon cutover plan
 
-This document describes how to **later** wire the Source-built database into Forever Quest Pins (and share it with forever-guide-mate). Building `data/forever-quests/` is intentionally separate from shipping a new addon version.
+This document describes how to later wire `data/forever-quests/` into Forever Quest Pins (and share it with forever-guide-mate). That tree is intentionally separate from shipping a new addon version.
 
 ## Current state
 
-| Layer | Source today | Target |
-|-------|----------------|--------|
+| Layer | Today | Target |
+|-------|-------|--------|
 | Shipped pins | `Database/ForeverQuests.lua` from ATT via `tools/build_quest_db.py` | Generated from `data/forever-quests/` |
-| Coordinates | ATT `coord` / `coords` | Source `Mapper` start pins + `zone_ui_map_ids.json` |
-| Repeatable / attunement / instance | ATT flags | Source infobox + source taxonomy + attunement seed |
-| PvP | Not distinguished | `pinCategory: pvp` + purple tint (new art `QuestPvP.tga`) |
+| Quest pages | 5057 of 5058 detail files. Quest 7507 still missing | Bare `quest=<id>` URL saved for 7507 |
+| Coordinates | Start pins only when the quest page marks a start. Turn-ins stay inside `mapper`. Object spawn lists are not downloaded | Start and turn-in pins, plus every spawn from object pages |
+| Repeatable / attunement / instance | Infobox flags, list taxonomy, ATT attunement seed | Same, with attunement derived from the quest graph |
+| PvP | `pinCategory: pvp` in the JSON | Purple tint in the addon (new art `QuestPvP.tga`) |
 
 ## Phase 1 — Data parity (no player release)
 
-1. **Complete detail sync**
+1. **Finish the one missing quest page**
 
    ```bash
-   python3 tools/fetch_quest_pages.py sync-quests
+   python3 tools/fetch_quest_pages.py sync-quests --browser --force --quest 7507
    ```
 
-2. **Add emitter** `tools/quest_db/emit_lua.py` (future PR) that writes:
-   - `Database/ForeverQuests.lua` (or `Database/SourceQuests.lua` during dual-run)
-   - `Database/Metadata.lua` with `source = "source"`, scrape timestamps, quest counts
+2. **Object spawns.** Download each object page for ids in `object_index.json` and attach every coordinate to the quest that object starts. Item quests whose starter is not on that list need the item page as well.
 
-3. **Diff harness** — script comparing ATT output vs Source output per `questID`:
+3. **Add emitter** `tools/quest_db/emit_lua.py` (future PR) that writes:
+   - `Database/ForeverQuests.lua`
+   - `Database/Metadata.lua` with timestamps and quest counts
+
+4. **Diff harness** — script comparing ATT output vs this database per `questID`:
    - `mapID`, `x`, `y`, `qg`, `faction`, flags
    - Report-only CI job; do not fail until parity is acceptable
 
-4. **Attunement** — replace `attunement_quest_ids.json` seed with Source-derived chains when available (prerequisite graph from detail pages + manual overrides).
+5. **Attunement** — replace `attunement_quest_ids.json` seed with chains from the prerequisite graph plus manual overrides.
 
 ## Phase 2 — Addon integration
 
@@ -37,12 +40,12 @@ This document describes how to **later** wire the Source-built database into For
    - Read `pinCategory` or legacy booleans from generated Lua.
 
 2. **Eligibility / tooltips**
-   - Prefer Source-sourced prerequisite IDs (`prerequisiteQuestIds` in detail JSON) for availability.
+   - Prefer `prerequisiteQuestIds` in detail JSON for availability.
    - Keep runtime quest title APIs; use DB for static fields only.
 
 3. **TOC / packager**
    - Ship new Lua only after parity sign-off.
-   - Update `ATTRIBUTION.md` (Source + Blizzard; remove ATT data credit when ATT file is dropped).
+   - Update `ATTRIBUTION.md` when the ATT file is dropped.
 
 ## Phase 3 — CI and releases
 
@@ -65,16 +68,12 @@ Consume via shared git submodule or copied `data/forever-quests/` snapshot; avoi
 
 ## Rollback
 
-Keep `tools/build_quest_db.py` and ATT workflow until Source parity is proven. Toggle with a build flag:
+Keep `tools/build_quest_db.py` and the ATT workflow until pin parity is proven.
 
-```bash
-# Future
-python3 tools/build_quest_db.py --source att|source
-```
+## Checklist before the first release that ships this database
 
-## Checklist before first Source-shipped release
-
-- [ ] Detail coverage ≥ 99% of indexed quest IDs with start pins
+- [ ] Detail coverage for every indexed quest id, including object-start quests that have no `start` point on the quest page
+- [ ] Multi-spawn objects (Chen's Empty Keg and the rest) have one pin per spawn
 - [ ] Diff report: &lt; agreed threshold for coordinate drift vs ATT
 - [ ] PvP quests classified on all three battleground indexes
 - [ ] Manual pass on tooltip regressions (NPC finisher rows unchanged policy)

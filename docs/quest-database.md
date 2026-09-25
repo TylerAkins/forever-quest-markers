@@ -30,6 +30,8 @@ Full values: `data/forever-quests/pin_categories.json`.
 
 ### Objects
 
+World objects that start a quest (a keg, a corpse, a plaque). This is a name list of 329 objects. It is not a list of item drops, and it has no spawn coordinates. Chen's Empty Keg is not on this list.
+
 - https://www.wowhead.com/forever/objects/quests
 
 ### Eastern Kingdoms
