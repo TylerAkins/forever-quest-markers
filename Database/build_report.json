@@ -1,21 +1,13 @@
 {
-  "att_sha": "8c98ec1d81128e317eb04f21bc25290d7d8b2049",
-  "att_source": "https://github.com/ATTWoWAddon/AllTheThings.git",
-  "attunement_quests": 27,
-  "coord_pins": 4081,
-  "excluded": {
-    "no_coords": 501,
-    "timeline": 194
-  },
-  "files_discovered": 146,
-  "files_parsed": 146,
-  "map_count": 49,
+  "attunement_quests": 24,
+  "coord_pins": 4701,
+  "generated_by": "tools/emit_wowhead_db.py",
+  "instance_quests": 300,
+  "map_count": 47,
   "map_ids": [
-    35,
     1411,
     1412,
     1413,
-    1415,
     1416,
     1417,
     1418,
@@ -61,10 +53,13 @@
     1459,
     2521
   ],
-  "parse_errors": [],
-  "quests_emitted": 3818,
-  "quests_seen": 4513,
-  "quests_with_coords": 3818,
-  "zzold_fallback_quests": 2263,
-  "zzold_files_parsed": 88
+  "pvp_quests": 103,
+  "quests_emitted": 3898,
+  "repeatable_quests": 186,
+  "seasonal_quests": 172,
+  "skipped_no_coords": 1159,
+  "source": "wowhead-forever",
+  "unmapped_zone_pins": {
+    "1583": 25
+  }
 }

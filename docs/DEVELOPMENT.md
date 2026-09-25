@@ -14,14 +14,15 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated start records (do not edit by hand) |
-| `Database/Metadata.lua` | Pinned ATT commit SHA |
+| `Database/Metadata.lua` | Generated quest-database provenance |
 | `Database/build_report.json` | Converter stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for ATT-derived attunement chains |
-| `tools/build_quest_db.py` | ATT Forever → `Database/` |
+| `tools/emit_wowhead_db.py` | Wowhead `data/forever-quests/` → shipped `Database/` |
+| `tools/build_quest_db.py` | ATT Forever → `Database/` (kept, not what CI ships) |
 | `tools/fetch_quest_pages.py` | Forever list pages → `data/forever-quests/` |
 | `data/forever-quests/` | Quest index + details (see `docs/quest-database.md`) |
 | `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
@@ -45,7 +46,7 @@ Live Forever zone files are preferred. `zzOLD` is a fallback for quest IDs still
 
 Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 
-- Daily at 06:00 UTC, and on manual **Run workflow**
+- Manual **Run workflow** only. It is not scheduled, because the shipped database is the Wowhead export
 - Opens a versioned PR only when the shipped quest records changed; ATT SHA-only updates are ignored
 - Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
@@ -80,7 +81,7 @@ python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py
 ```
 
-CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
+CI (`validate`) regenerates `Database/` with `tools/emit_wowhead_db.py` and fails on drift, then dry-runs the packager. `tools/build_quest_db.py` still converts All The Things, and `.github/workflows/update-att-db.yml` can be run by hand, but that workflow is not on a schedule.
 
 ### Forever hover-data probe
 

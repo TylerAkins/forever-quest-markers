@@ -1,14 +1,18 @@
 # Attribution
 
+## Wowhead Forever
+
+The shipped files in `Database/` are generated from the Wowhead Forever quest pages stored in `data/forever-quests/`. Wowhead is not bundled and is not required at runtime. Quest names, coordinates, and NPC ids on those pages belong to their sources; this repository stores a converted pin database so the addon can draw them.
+
 ## All The Things
 
-Quest coordinates, quest-giver IDs, source quests, and eligibility fields in `Database/` are **converted** from the [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever database.
+`tools/build_quest_db.py` can still convert the [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever database. That path is not what the addon loads. When it is used, quest coordinates, quest-giver IDs, source quests, and eligibility fields are **converted** from All The Things:
 
 - Upstream: https://github.com/ATTWoWAddon/AllTheThings
 - License: MIT
 - This repository does not bundle the ATT addon and does not require it at runtime
 - This repository does not claim ownership of ATT data
-- Each generated Lua file records the ATT commit SHA used for that conversion
+- Running that converter records the ATT commit SHA in the files it writes
 
 The MIT license requires that ATT’s copyright notice be preserved for derived portions:
 

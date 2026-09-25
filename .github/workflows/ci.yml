@@ -48,6 +48,7 @@ jobs:
       - name: Python tests
         run: |
           python3 tests/test_build_quest_db.py
+          python3 tests/test_emit_wowhead.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 -m pip install -r tests/requirements.txt
@@ -80,37 +81,10 @@ jobs:
             --release-content-changed
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
-      - name: Read pinned ATT SHA
-        id: att
+      - name: Regenerate Wowhead database and fail on drift
         run: |
           set -euo pipefail
-          SHA=$(python3 - <<'PY'
-          import re
-          from pathlib import Path
-          text = Path("Database/Metadata.lua").read_text(encoding="utf-8")
-          match = re.search(r'attCommit = "([0-9a-f]+)"', text)
-          if not match:
-              raise SystemExit("attCommit missing from Database/Metadata.lua")
-          print(match.group(1))
-          PY
-          )
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout ATT at pinned SHA
-        uses: actions/checkout@v6
-        with:
-          repository: ATTWoWAddon/AllTheThings
-          ref: ${{ steps.att.outputs.sha }}
-          path: .cache/AllTheThings
-          sparse-checkout: |
-            .contrib/.db/forever
-            .contrib/Parser/lib/Constants
-          sparse-checkout-cone-mode: false
-
-      - name: Regenerate database and fail on drift
-        run: |
-          set -euo pipefail
-          python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
+          python3 tools/emit_wowhead_db.py --out Database
           git diff --exit-code -- Database/ForeverQuests.lua Database/Metadata.lua Database/build_report.json
 
       - name: Dry-run package

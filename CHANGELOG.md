@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.37 - 2026-09-25
+
+- Ship quest-start pins from the Wowhead Forever scrape instead of All The Things.
+- 3898 quests with 4701 coordinate pins across 47 maps, including Zephras Isle.
+- Purple pins for PvP quests. Holiday quests stay hidden unless seasonal pins are on.
+
 ## 0.1.36 - 2026-09-25
 
 - Update the ATT Forever quest database to `8c98ec1d81128e317eb04f21bc25290d7d8b2049`.

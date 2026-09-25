@@ -409,8 +409,8 @@ function ns.PrintStats()
     for _ in pairs(byMap) do
         maps = maps + 1
     end
-    Print(("ATT %s | %d quests | %d attunements | %d maps"):format(
-        tostring(meta.attCommit or "?"),
+    Print(("%s | %d quests | %d attunements | %d maps"):format(
+        tostring(meta.source or meta.attCommit or "?"),
         count,
         tonumber(meta.attunementCount) or 0,
         maps
@@ -493,7 +493,7 @@ function ns.PrintQuestWhy(questID)
     end
     local data = ns.Quests and ns.Quests[questID]
     if not data then
-        Print("Quest " .. tostring(questID) .. " is not in the ATT start database.")
+        Print("Quest " .. tostring(questID) .. " is not in the quest-start database.")
         return
     end
     local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
@@ -765,7 +765,7 @@ function ns.TryRegisterSettings()
             help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
             help:SetWidth(500)
             help:SetJustifyH("LEFT")
-            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, and red-orange ! markers for dungeon/raid quests and attunement chains. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, purple ! markers for PvP quests, and red-orange ! markers for dungeon/raid quests and attunement chains. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
 
             local pins = CreateOptionCheckbox(
                 self,
@@ -787,7 +787,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showRepeatable",
                 "Show repeatable quest pins",
-                "Blue start markers for quests ATT explicitly marks repeatable."
+                "Blue start markers for repeatable quests."
             )
             repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
 
@@ -808,7 +808,7 @@ function ns.TryRegisterSettings()
             warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
 
             local npcTooltips = CreateOptionCheckbox(self, "showNPCTooltips",
-                "Show NPC quest tooltips", "Show recommended quest levels for available ATT quest starts when hovering NPCs. Independent of map-pin visibility.")
+                "Show NPC quest tooltips", "Show recommended quest levels for available quest starts when hovering NPCs. Independent of map-pin visibility.")
             npcTooltips:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
 
             local accept = CreateOptionCheckbox(

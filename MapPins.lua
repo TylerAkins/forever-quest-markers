@@ -17,7 +17,7 @@ local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
 local LIVE_NEAR = 0.20
 
--- Extra static ends of known patrols. ATT stores one coord (usually the village).
+-- Extra static ends of known patrols. The quest page stores one coord (usually the village).
 -- Morin Cloudstalker (2988) walks Bloodhoof 54.4,60.4 ↔ crate 53.8,48.3.
 local PATROL_EXTRA = {
     [2988] = {
@@ -174,7 +174,7 @@ function ns.GetViewedMapID()
     return nil
 end
 
--- Project ATT 0-100 coordinates onto the currently viewed UiMapID.
+-- Project 0-100 coordinates onto the currently viewed UiMapID.
 -- Needs C_Map.GetMapRectOnMap for continent / parent maps. If that API is
 -- missing, pins only appear when the viewed map equals the quest map.
 function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
@@ -270,6 +270,20 @@ local function TrySetFile(tex, path)
     return ok and true or false
 end
 
+local function IsPvPOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.isPvP then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.isPvP or false
+end
+
 local function IsRepeatableOnly(pin)
     local quests = pin.quests
     if quests and #quests > 0 then
@@ -324,6 +338,7 @@ local function SetPinTexture(pin)
         tex:Hide()
     end
     local attunement = IsAttunementOnly(pin)
+    local pvp = IsPvPOnly(pin)
     local repeatable = IsRepeatableOnly(pin)
     local fallbackFile = NORMAL_ICON_FILE
     local fallbackName = "QuestAvailable.tga"
@@ -344,6 +359,22 @@ local function SetPinTexture(pin)
         end
         if TrySetFile(tex, fallbackFile) then
             pin.icon = fallbackName
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif pvp then
+        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 0.78, 0.22, 0.95) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":purple" .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetFile(tex, NORMAL_ICON_FILE) then
+            pin.icon = "QuestAvailable.tga"
             lastStatus.icon = pin.icon
             return
         end

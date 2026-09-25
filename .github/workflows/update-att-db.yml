@@ -1,9 +1,10 @@
 name: Update ATT database
 
+# Manual only. The shipped Database/ is generated from Wowhead by
+# tools/emit_wowhead_db.py. Running this workflow rewrites that database
+# from All The Things.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * *"
 
 permissions:
   contents: write
