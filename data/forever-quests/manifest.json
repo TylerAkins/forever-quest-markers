@@ -784,6 +784,8 @@
     }
   },
   "stats": {
+    "itemDetailCount": 1,
+    "objectDetailCount": 321,
     "objectIndexCount": 329,
     "questDetailCount": 5057,
     "questDetailFetchErrors": 1,
