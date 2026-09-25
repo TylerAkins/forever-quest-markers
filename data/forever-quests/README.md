@@ -1,6 +1,6 @@
-# Source Forever quest database
+# Forever quest database
 
-Structured quest data scraped from [Source Forever](https://www.wowhead.com/forever) for **Forever Quest Pins** and future **forever-guide-mate** work. This tree is independent of the shipped ATT-derived `Database/ForeverQuests.lua` until a deliberate cutover (see `docs/QUEST_DATABASE_CUTOVER.md`).
+Quest catalog for Forever Quest Pins and future forever-guide-mate work. This tree is independent of the shipped ATT-derived `Database/ForeverQuests.lua` until a deliberate cutover (see `docs/QUEST_DATABASE_CUTOVER.md`).
 
 ## Layout
 
@@ -8,29 +8,23 @@ Structured quest data scraped from [Source Forever](https://www.wowhead.com/fore
 |------|---------|
 | `manifest.json` | Schema version, per-source `lastFetched`, **`lastCheckedForChanges`**, aggregate stats |
 | `quest_index.json` | One row per quest ID (merged from all index pages) |
-| `sources/*.json` | Raw list snapshots per Source URL |
-| `details/<id>.json` | Per-quest mapper, infobox flags, start pins, prerequisites |
-| `zone_ui_map_ids.json` | Source zone id → UiMapID (bootstrapped from ATT pins + index) |
-| `attunement_quest_ids.json` | Attunement chain seeds (from current ATT export until Source tagging exists) |
+| `sources/*.json` | Raw list snapshots per index URL |
+| `details/<id>.json` | Per-quest map data, infobox flags, start pins, prerequisites |
+| `object_index.json` | Names and ids from the objects list. No spawn coordinates |
+| `zone_ui_map_ids.json` | Zone id → UiMapID (bootstrapped from ATT pins + index) |
+| `attunement_quest_ids.json` | Attunement chain seeds from the current ATT export |
 | `pin_categories.json` | Pin color / category reference (includes PvP purple) |
 
-## Refresh (paste-URL scan)
+## What is saved
 
-**Default:** paste Source URLs to an agent. **The agent fetches and ingests** (you do not):
+`manifest.json` stats are the current counts. Quest detail pages are saved except quest 7507, which redirect-loops on the old name. The objects list is names and zone ids only.
 
-```bash
-python3 tools/fetch_quest_pages.py ingest --url 'https://www.wowhead.com/forever/quests/...' --delay 1.5
-```
+World objects you click (kegs, corpses, plaques) are not the same as quest pages. Their list is:
 
-See `docs/skills/quest-database/SKILL.md`.
+https://www.wowhead.com/forever/objects/quests
 
-**Bulk (optional):** `sync-sources` / `sync-quests` for full re-scrapes. HTML cache: `.cache/quest-html/`.
+That page does not include Chen's Empty Keg, and it does not include each spawn coordinate. Those coordinates are on each object's own page, which is not downloaded yet.
 
-| File | Contents |
-|------|----------|
-| `object_index.json` | Quest-start **objects** from `objects/quests` (JSON listview) |
-| `quest_index.json` | Quest list rows from zone/dungeon/etc. pages |
+## Run it again
 
-## “Go look for changes”
-
-Tell an agent: **read `docs/skills/quest-database/SKILL.md`** — re-scan URLs from `docs/quest-database.md` in batches and update `manifest.json` → `lastCheckedForChanges`.
+See `docs/quest-database.md`. HTML cache: `.cache/quest-html/`.
