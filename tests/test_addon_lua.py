@@ -410,6 +410,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("CHANGELOG.md", text)
         self.assertIn("RELEASE_NOTES.md", text)
         self.assertIn("automatically publishes", text)
+        self.assertIn("assignees: TylerAkins", text)
+        self.assertIn("@TylerAkins — automated regeneration", text)
 
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("Validate automated release intent", ci)
@@ -437,6 +439,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("VERSION", text)
         self.assertIn("CHANGELOG.md", text)
         self.assertIn("RELEASE_NOTES.md", text)
+        self.assertIn("assignees: TylerAkins", text)
+        self.assertIn("@TylerAkins — automated WoW Forever compatibility update.", text)
 
 
 if __name__ == "__main__":
