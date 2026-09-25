@@ -487,6 +487,18 @@
     ]
   },
   "minLevel": 17,
+  "objectSpawns": [
+    {
+      "entityId": 1763,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1424,
+      "uiMapName": "Hillsbrad Foothills",
+      "x": 62.6,
+      "y": 20.7,
+      "zoneId": 267
+    }
+  ],
   "pageInfo": {
     "name": "WANTED: Syndicate Personnel",
     "type": 5,
@@ -500,9 +512,9 @@
     {
       "npcId": 1763,
       "npcName": "WANTED",
-      "zoneId": 267,
       "x": 62.6,
       "y": 20.7,
+      "zoneId": 267,
       "zoneName": "Hillsbrad Foothills"
     }
   ]

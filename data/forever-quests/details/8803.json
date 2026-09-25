@@ -158,6 +158,88 @@
     ]
   },
   "minLevel": 10,
+  "objectSpawns": [
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.1,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.5,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.1,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.5,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.4,
+      "y": 68.9,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.4,
+      "y": 69.6,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.5,
+      "y": 68.9,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180793,
+      "entityKind": "object",
+      "entityName": "Festive Gift",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.5,
+      "y": 69.5,
+      "zoneId": 1637
+    }
+  ],
   "pageInfo": {
     "name": "A Festive Gift",
     "type": 5,
@@ -171,17 +253,17 @@
     {
       "npcId": 180793,
       "npcName": "Festive Gift",
-      "zoneId": 1537,
       "x": 33.6,
       "y": 66.1,
+      "zoneId": 1537,
       "zoneName": "Ironforge"
     },
     {
       "npcId": 180793,
       "npcName": "Festive Gift",
-      "zoneId": 1637,
       "x": 52.4,
       "y": 68.9,
+      "zoneId": 1637,
       "zoneName": "Orgrimmar"
     }
   ]

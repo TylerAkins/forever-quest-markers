@@ -7730,6 +7730,48 @@
     ]
   },
   "minLevel": 47,
+  "objectSpawns": [
+    {
+      "entityId": 164955,
+      "entityKind": "object",
+      "entityName": "Northern Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 56.4,
+      "y": 12.4,
+      "zoneId": 490
+    },
+    {
+      "entityId": 164955,
+      "entityKind": "object",
+      "entityName": "Northern Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 56.4,
+      "y": 12.5,
+      "zoneId": 490
+    },
+    {
+      "entityId": 164955,
+      "entityKind": "object",
+      "entityName": "Northern Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 56.5,
+      "y": 12.4,
+      "zoneId": 490
+    },
+    {
+      "entityId": 164955,
+      "entityKind": "object",
+      "entityName": "Northern Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 56.6,
+      "y": 12.5,
+      "zoneId": 490
+    }
+  ],
   "pageInfo": {
     "name": "Crystal Restore",
     "type": 5,
@@ -7745,9 +7787,9 @@
     {
       "npcId": 164955,
       "npcName": "Northern Crystal Pylon",
-      "zoneId": 490,
       "x": 56.5,
       "y": 12.4,
+      "zoneId": 490,
       "zoneName": "Un'Goro Crater"
     }
   ]

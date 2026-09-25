@@ -3410,6 +3410,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2702,
+      "entityKind": "object",
+      "entityName": "Stone of Inner Binding",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 36.1,
+      "y": 57.4,
+      "zoneId": 45
+    },
+    {
+      "entityId": 2702,
+      "entityKind": "object",
+      "entityName": "Stone of Inner Binding",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 36.2,
+      "y": 57.5,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "Breaking the Keystone",
     "type": 5,
@@ -3426,9 +3448,9 @@
     {
       "npcId": 2702,
       "npcName": "Stone of Inner Binding",
-      "zoneId": 45,
       "x": 36.2,
       "y": 57.5,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

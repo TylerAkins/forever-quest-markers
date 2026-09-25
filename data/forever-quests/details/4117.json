@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 164888,
+      "entityKind": "object",
+      "entityName": "Corrupted Whipper Root",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 40.2,
+      "y": 85.2,
+      "zoneId": 361
+    }
+  ],
   "pageInfo": {
     "name": "Corrupted Whipper Root",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 164888,
       "npcName": "Corrupted Whipper Root",
-      "zoneId": 361,
       "x": 40.2,
       "y": 85.2,
+      "zoneId": 361,
       "zoneName": "Felwood"
     }
   ]

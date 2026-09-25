@@ -105,6 +105,18 @@
     ]
   },
   "minLevel": 25,
+  "objectSpawns": [
+    {
+      "entityId": 176115,
+      "entityKind": "object",
+      "entityName": "Wanted Poster - Arnak Grimtotem",
+      "uiMapId": 1441,
+      "uiMapName": "Thousand Needles",
+      "x": 46.0,
+      "y": 50.8,
+      "zoneId": 400
+    }
+  ],
   "pageInfo": {
     "name": "Wanted - Arnak Grimtotem",
     "type": 5,
@@ -124,9 +136,9 @@
     {
       "npcId": 176115,
       "npcName": "Wanted Poster - Arnak Grimtotem",
-      "zoneId": 400,
       "x": 46.0,
       "y": 50.8,
+      "zoneId": 400,
       "zoneName": "Thousand Needles"
     }
   ]

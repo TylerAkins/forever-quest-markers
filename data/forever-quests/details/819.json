@@ -53,6 +53,98 @@
     ]
   },
   "minLevel": 11,
+  "objectSpawns": [
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 37.9,
+      "y": 16.1,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 41.8,
+      "y": 38.7,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 43.8,
+      "y": 12.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 45.0,
+      "y": 62.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 54.7,
+      "y": 37.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 55.7,
+      "y": 27.3,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 55.8,
+      "y": 20.0,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 56.5,
+      "y": 43.6,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 57.1,
+      "y": 9.0,
+      "zoneId": 17
+    }
+  ],
   "pageInfo": {
     "name": "Chen's Empty Keg",
     "type": 5,
@@ -62,5 +154,96 @@
   "prerequisiteQuestIds": [],
   "questId": 819,
   "races": [],
-  "startPins": []
+  "startPins": [
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 37.9,
+      "y": 16.1,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 41.8,
+      "y": 38.7,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 43.8,
+      "y": 12.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 45.0,
+      "y": 62.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 54.7,
+      "y": 37.2,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 55.7,
+      "y": 27.3,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 55.8,
+      "y": 20.0,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 56.5,
+      "y": 43.6,
+      "zoneId": 17
+    },
+    {
+      "entityId": 3238,
+      "entityKind": "object",
+      "entityName": null,
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 57.1,
+      "y": 9.0,
+      "zoneId": 17
+    }
+  ]
 }

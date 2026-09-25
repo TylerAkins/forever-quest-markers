@@ -75,6 +75,28 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 174848,
+      "entityKind": "object",
+      "entityName": "Testing Equipment",
+      "uiMapId": 1458,
+      "uiMapName": "Undercity",
+      "x": 47.7,
+      "y": 73.3,
+      "zoneId": 1497
+    },
+    {
+      "entityId": 174848,
+      "entityKind": "object",
+      "entityName": "Testing Equipment",
+      "uiMapId": 1458,
+      "uiMapName": "Undercity",
+      "x": 47.7,
+      "y": 73.5,
+      "zoneId": 1497
+    }
+  ],
   "pageInfo": {
     "name": "Testing for Corruption - Felwood",
     "type": 5,
@@ -88,9 +110,9 @@
     {
       "npcId": 174848,
       "npcName": "Testing Equipment",
-      "zoneId": 1497,
       "x": 47.7,
       "y": 73.3,
+      "zoneId": 1497,
       "zoneName": "Undercity"
     }
   ]

@@ -119,6 +119,28 @@
     ]
   },
   "minLevel": 14,
+  "objectSpawns": [
+    {
+      "entityId": 415107,
+      "entityKind": "object",
+      "entityName": "Burned-Out Remains",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 37.4,
+      "y": 50.6,
+      "zoneId": 40
+    },
+    {
+      "entityId": 415107,
+      "entityKind": "object",
+      "entityName": "Burned-Out Remains",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 37.5,
+      "y": 50.7,
+      "zoneId": 40
+    }
+  ],
   "pageInfo": {
     "name": "... and that note you found",
     "type": 5,
@@ -132,9 +154,9 @@
     {
       "npcId": 415107,
       "npcName": "Burned-Out Remains",
-      "zoneId": 40,
       "x": 37.5,
       "y": 50.7,
+      "zoneId": 40,
       "zoneName": "Westfall"
     }
   ]

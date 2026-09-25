@@ -1990,6 +1990,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 177787,
+      "entityKind": "object",
+      "entityName": "Rackmore's Log",
+      "uiMapId": 1443,
+      "uiMapName": "Desolace",
+      "x": 36.1,
+      "y": 30.4,
+      "zoneId": 405
+    },
+    {
+      "entityId": 177787,
+      "entityKind": "object",
+      "entityName": "Rackmore's Log",
+      "uiMapId": 1443,
+      "uiMapName": "Desolace",
+      "x": 36.1,
+      "y": 30.5,
+      "zoneId": 405
+    }
+  ],
   "pageInfo": {
     "name": "Claim Rackmore's Treasure!",
     "type": 5,
@@ -2006,9 +2028,9 @@
     {
       "npcId": 177787,
       "npcName": "Rackmore's Log",
-      "zoneId": 405,
       "x": 36.1,
       "y": 30.4,
+      "zoneId": 405,
       "zoneName": "Desolace"
     }
   ]

@@ -134,6 +134,18 @@
     ]
   },
   "minLevel": 52,
+  "objectSpawns": [
+    {
+      "entityId": 175925,
+      "entityKind": "object",
+      "entityName": "Outhouse",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 48.2,
+      "y": 49.6,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Locked Away",
     "type": 5,
@@ -149,9 +161,9 @@
     {
       "npcId": 175925,
       "npcName": "Outhouse",
-      "zoneId": 28,
       "x": 48.2,
       "y": 49.6,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

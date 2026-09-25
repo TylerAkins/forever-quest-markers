@@ -115,6 +115,38 @@
     ]
   },
   "minLevel": 10,
+  "objectSpawns": [
+    {
+      "entityId": 61934,
+      "entityKind": "object",
+      "entityName": "Brazier of the Dormant Flame",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 38.9,
+      "y": 58.2,
+      "zoneId": 14
+    },
+    {
+      "entityId": 61934,
+      "entityKind": "object",
+      "entityName": "Brazier of the Dormant Flame",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 31.9,
+      "y": 64.4,
+      "zoneId": 38
+    },
+    {
+      "entityId": 61934,
+      "entityKind": "object",
+      "entityName": "Brazier of the Dormant Flame",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 31.9,
+      "y": 64.5,
+      "zoneId": 38
+    }
+  ],
   "pageInfo": {
     "name": "Call of Fire",
     "type": 5,
@@ -128,17 +160,17 @@
     {
       "npcId": 61934,
       "npcName": "Brazier of the Dormant Flame",
-      "zoneId": 14,
       "x": 38.9,
       "y": 58.2,
+      "zoneId": 14,
       "zoneName": "Durotar"
     },
     {
       "npcId": 61934,
       "npcName": "Brazier of the Dormant Flame",
-      "zoneId": 38,
       "x": 31.9,
       "y": 64.5,
+      "zoneId": 38,
       "zoneName": "Loch Modan"
     }
   ]

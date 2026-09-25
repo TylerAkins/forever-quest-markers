@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 4,
+  "objectSpawns": [
+    {
+      "entityId": 6751,
+      "entityKind": "object",
+      "entityName": "Strange Fruited Plant",
+      "uiMapId": 1438,
+      "uiMapName": "Teldrassil",
+      "x": 42.6,
+      "y": 76.1,
+      "zoneId": 141
+    }
+  ],
   "pageInfo": {
     "name": "The Glowing Fruit",
     "type": 5,
@@ -86,9 +98,9 @@
     {
       "npcId": 6751,
       "npcName": "Strange Fruited Plant",
-      "zoneId": 141,
       "x": 42.6,
       "y": 76.1,
+      "zoneId": 141,
       "zoneName": "Teldrassil"
     }
   ]

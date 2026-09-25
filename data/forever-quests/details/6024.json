@@ -154,6 +154,18 @@
     ]
   },
   "minLevel": 54,
+  "objectSpawns": [
+    {
+      "entityId": 177667,
+      "entityKind": "object",
+      "entityName": "Torn Scroll",
+      "uiMapId": 1423,
+      "uiMapName": "Eastern Plaguelands",
+      "x": 27.3,
+      "y": 85.3,
+      "zoneId": 139
+    }
+  ],
   "pageInfo": {
     "name": "Hameya's Plea",
     "type": 5,
@@ -167,9 +179,9 @@
     {
       "npcId": 177667,
       "npcName": "Torn Scroll",
-      "zoneId": 139,
       "x": 27.3,
       "y": 85.3,
+      "zoneId": 139,
       "zoneName": "Eastern Plaguelands"
     }
   ]

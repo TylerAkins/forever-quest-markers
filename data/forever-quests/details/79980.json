@@ -70,6 +70,28 @@
     ]
   },
   "minLevel": 14,
+  "objectSpawns": [
+    {
+      "entityId": 424005,
+      "entityKind": "object",
+      "entityName": "Pocket Litter",
+      "uiMapId": 1442,
+      "uiMapName": "Stonetalon Mountains",
+      "x": 40.7,
+      "y": 52.4,
+      "zoneId": 406
+    },
+    {
+      "entityId": 424005,
+      "entityKind": "object",
+      "entityName": "Pocket Litter",
+      "uiMapId": 1442,
+      "uiMapName": "Stonetalon Mountains",
+      "x": 40.8,
+      "y": 52.5,
+      "zoneId": 406
+    }
+  ],
   "pageInfo": {
     "name": "Scramble",
     "type": 5,
@@ -83,9 +105,9 @@
     {
       "npcId": 424005,
       "npcName": "Pocket Litter",
-      "zoneId": 406,
       "x": 40.8,
       "y": 52.5,
+      "zoneId": 406,
       "zoneName": "Stonetalon Mountains"
     }
   ]

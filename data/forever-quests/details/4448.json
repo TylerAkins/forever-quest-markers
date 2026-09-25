@@ -74,6 +74,28 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 174608,
+      "entityKind": "object",
+      "entityName": "Corrupted Night Dragon",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 42.4,
+      "y": 13.9,
+      "zoneId": 361
+    },
+    {
+      "entityId": 174608,
+      "entityKind": "object",
+      "entityName": "Corrupted Night Dragon",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 42.5,
+      "y": 13.9,
+      "zoneId": 361
+    }
+  ],
   "pageInfo": {
     "name": "Corrupted Night Dragon",
     "type": 5,
@@ -87,9 +109,9 @@
     {
       "npcId": 174608,
       "npcName": "Corrupted Night Dragon",
-      "zoneId": 361,
       "x": 42.5,
       "y": 13.9,
+      "zoneId": 361,
       "zoneName": "Felwood"
     }
   ]

@@ -99,6 +99,18 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 410369,
+      "entityKind": "object",
+      "entityName": "Dead Drop",
+      "uiMapId": 1421,
+      "uiMapName": "Silverpine Forest",
+      "x": 47.1,
+      "y": 71.1,
+      "zoneId": 130
+    }
+  ],
   "pageInfo": {
     "name": "The Horn of Xelthos",
     "type": 5,
@@ -112,9 +124,9 @@
     {
       "npcId": 410369,
       "npcName": "Dead Drop",
-      "zoneId": 130,
       "x": 47.1,
       "y": 71.1,
+      "zoneId": 130,
       "zoneName": "Silverpine Forest"
     }
   ]

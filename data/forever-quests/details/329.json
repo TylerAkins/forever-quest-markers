@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 288,
+      "entityKind": "object",
+      "entityName": "Bookie Herod's Strongbox",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 49.6,
+      "y": 7.6,
+      "zoneId": 33
+    }
+  ],
   "pageInfo": {
     "name": "The Spy Revealed!",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 288,
       "npcName": "Bookie Herod's Strongbox",
-      "zoneId": 33,
       "x": 49.6,
       "y": 7.6,
+      "zoneId": 33,
       "zoneName": "Stranglethorn Vale"
     }
   ]

@@ -74,6 +74,28 @@
     ]
   },
   "minLevel": 14,
+  "objectSpawns": [
+    {
+      "entityId": 406918,
+      "entityKind": "object",
+      "entityName": "Messenger Bag",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 22.4,
+      "y": 24.2,
+      "zoneId": 45
+    },
+    {
+      "entityId": 406918,
+      "entityKind": "object",
+      "entityName": "Messenger Bag",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 22.5,
+      "y": 24.2,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "This Must Be The Place",
     "type": 5,
@@ -87,9 +109,9 @@
     {
       "npcId": 406918,
       "npcName": "Messenger Bag",
-      "zoneId": 45,
       "x": 22.5,
       "y": 24.2,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

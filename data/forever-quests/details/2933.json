@@ -261,6 +261,138 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 142702,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.6,
+      "y": 58.7,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142703,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.2,
+      "y": 58.5,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142704,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.2,
+      "y": 58.5,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142705,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.6,
+      "y": 58.8,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142706,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.4,
+      "y": 58.8,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142706,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.5,
+      "y": 58.7,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142707,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.2,
+      "y": 58.5,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142708,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 31.6,
+      "y": 57.8,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142710,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 31.6,
+      "y": 57.7,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142711,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 31.6,
+      "y": 57.8,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142712,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 31.6,
+      "y": 57.8,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142713,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.1,
+      "y": 57.7,
+      "zoneId": 47
+    },
+    {
+      "entityId": 142714,
+      "entityKind": "object",
+      "entityName": "Venom Bottle",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 23.0,
+      "y": 57.8,
+      "zoneId": 47
+    }
+  ],
   "pageInfo": {
     "name": "Venom Bottles",
     "type": 5,
@@ -274,97 +406,97 @@
     {
       "npcId": 142702,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.6,
       "y": 58.7,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142703,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.2,
       "y": 58.5,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142704,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.2,
       "y": 58.5,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142705,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.6,
       "y": 58.8,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142706,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.5,
       "y": 58.7,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142707,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.2,
       "y": 58.5,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142708,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 31.6,
       "y": 57.8,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142710,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 31.6,
       "y": 57.7,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142711,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 31.6,
       "y": 57.8,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142712,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 31.6,
       "y": 57.8,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142713,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.1,
       "y": 57.7,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     },
     {
       "npcId": 142714,
       "npcName": "Venom Bottle",
-      "zoneId": 47,
       "x": 23.0,
       "y": 57.8,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     }
   ]

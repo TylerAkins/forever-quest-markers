@@ -129,6 +129,28 @@
     ]
   },
   "minLevel": 23,
+  "objectSpawns": [
+    {
+      "entityId": 1609,
+      "entityKind": "object",
+      "entityName": "Dragonmaw Catapult",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 47.4,
+      "y": 46.9,
+      "zoneId": 11
+    },
+    {
+      "entityId": 1609,
+      "entityKind": "object",
+      "entityName": "Dragonmaw Catapult",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 47.5,
+      "y": 46.9,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "Defeat Nek'rosh",
     "type": 5,
@@ -142,9 +164,9 @@
     {
       "npcId": 1609,
       "npcName": "Dragonmaw Catapult",
-      "zoneId": 11,
       "x": 47.5,
       "y": 46.9,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

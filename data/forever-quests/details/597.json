@@ -72,6 +72,28 @@
     ]
   },
   "minLevel": 37,
+  "objectSpawns": [
+    {
+      "entityId": 2083,
+      "entityKind": "object",
+      "entityName": "Bloodsail Correspondence",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 27.3,
+      "y": 69.4,
+      "zoneId": 33
+    },
+    {
+      "entityId": 2083,
+      "entityKind": "object",
+      "entityName": "Bloodsail Correspondence",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 27.3,
+      "y": 69.5,
+      "zoneId": 33
+    }
+  ],
   "pageInfo": {
     "name": "The Bloodsail Buccaneers",
     "type": 5,
@@ -87,9 +109,9 @@
     {
       "npcId": 2083,
       "npcName": "Bloodsail Correspondence",
-      "zoneId": 33,
       "x": 27.3,
       "y": 69.5,
+      "zoneId": 33,
       "zoneName": "Stranglethorn Vale"
     }
   ]

@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 21042,
+      "entityKind": "object",
+      "entityName": "Theramore Guard Badge",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 29.8,
+      "y": 48.2,
+      "zoneId": 15
+    }
+  ],
   "pageInfo": {
     "name": "Lieutenant Paval Reethe",
     "type": 5,
@@ -101,9 +113,9 @@
     {
       "npcId": 21042,
       "npcName": "Theramore Guard Badge",
-      "zoneId": 15,
       "x": 29.8,
       "y": 48.2,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     }
   ]

@@ -81,6 +81,18 @@
     ]
   },
   "minLevel": 28,
+  "objectSpawns": [
+    {
+      "entityId": 61,
+      "entityKind": "object",
+      "entityName": "A Weathered Grave",
+      "uiMapId": 1431,
+      "uiMapName": "Duskwood",
+      "x": 17.7,
+      "y": 29.2,
+      "zoneId": 10
+    }
+  ],
   "pageInfo": {
     "name": "The Weathered Grave",
     "type": 5,
@@ -94,9 +106,9 @@
     {
       "npcId": 61,
       "npcName": "A Weathered Grave",
-      "zoneId": 10,
       "x": 17.7,
       "y": 29.2,
+      "zoneId": 10,
       "zoneName": "Duskwood"
     }
   ]

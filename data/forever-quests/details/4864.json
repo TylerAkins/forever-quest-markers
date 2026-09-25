@@ -749,6 +749,28 @@
     ]
   },
   "minLevel": 53,
+  "objectSpawns": [
+    {
+      "entityId": 175586,
+      "entityKind": "object",
+      "entityName": "Jaron's Wagon",
+      "uiMapId": 1452,
+      "uiMapName": "Winterspring",
+      "x": 61.4,
+      "y": 60.6,
+      "zoneId": 618
+    },
+    {
+      "entityId": 175586,
+      "entityKind": "object",
+      "entityName": "Jaron's Wagon",
+      "uiMapId": 1452,
+      "uiMapName": "Winterspring",
+      "x": 61.5,
+      "y": 60.7,
+      "zoneId": 618
+    }
+  ],
   "pageInfo": {
     "name": "Enraged Wildkin",
     "type": 5,
@@ -762,9 +784,9 @@
     {
       "npcId": 175586,
       "npcName": "Jaron's Wagon",
-      "zoneId": 618,
       "x": 61.4,
       "y": 60.6,
+      "zoneId": 618,
       "zoneName": "Winterspring"
     }
   ]

@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 42,
+  "objectSpawns": [
+    {
+      "entityId": 142071,
+      "entityKind": "object",
+      "entityName": "Egg-O-Matic",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 52.4,
+      "y": 27.0,
+      "zoneId": 440
+    }
+  ],
   "pageInfo": {
     "name": "The Super Egg-O-Matic",
     "type": 5,
@@ -81,9 +93,9 @@
     {
       "npcId": 142071,
       "npcName": "Egg-O-Matic",
-      "zoneId": 440,
       "x": 52.4,
       "y": 27.0,
+      "zoneId": 440,
       "zoneName": "Tanaris"
     }
   ]

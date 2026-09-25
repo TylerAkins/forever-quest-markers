@@ -80,6 +80,18 @@
     ]
   },
   "minLevel": 60,
+  "objectSpawns": [
+    {
+      "entityId": 180633,
+      "entityKind": "object",
+      "entityName": "Crystalline Tear",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 28.7,
+      "y": 89.1,
+      "zoneId": 1377
+    }
+  ],
   "pageInfo": {
     "name": "A Pawn on the Eternal Board",
     "type": 5,
@@ -96,9 +108,9 @@
     {
       "npcId": 180633,
       "npcName": "Crystalline Tear",
-      "zoneId": 1377,
       "x": 28.7,
       "y": 89.1,
+      "zoneId": 1377,
       "zoneName": "Silithus"
     }
   ]

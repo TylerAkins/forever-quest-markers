@@ -311,6 +311,288 @@
     ]
   },
   "minLevel": 4,
+  "objectSpawns": [
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1438,
+      "uiMapName": "Teldrassil",
+      "x": 60.8,
+      "y": 68.4,
+      "zoneId": 141
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1438,
+      "uiMapName": "Teldrassil",
+      "x": 60.8,
+      "y": 68.5,
+      "zoneId": 141
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 35.5,
+      "y": 85.0,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 36.2,
+      "y": 47.1,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 36.5,
+      "y": 49.0,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 36.9,
+      "y": 43.9,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 37.8,
+      "y": 44.0,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 38.6,
+      "y": 87.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 38.8,
+      "y": 49.1,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 38.9,
+      "y": 51.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 40.6,
+      "y": 51.9,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 40.7,
+      "y": 47.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 41.2,
+      "y": 50.0,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 41.8,
+      "y": 65.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 42.4,
+      "y": 58.7,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 42.4,
+      "y": 62.2,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 44.5,
+      "y": 20.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 46.1,
+      "y": 37.7,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 48.3,
+      "y": 30.2,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 49.2,
+      "y": 25.9,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 53.9,
+      "y": 31.7,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 54.1,
+      "y": 31.3,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 55.0,
+      "y": 32.6,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 55.2,
+      "y": 23.9,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 55.4,
+      "y": 36.8,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 56.1,
+      "y": 26.9,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 56.8,
+      "y": 27.0,
+      "zoneId": 148
+    },
+    {
+      "entityId": 7510,
+      "entityKind": "object",
+      "entityName": "Sprouted Frond",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 57.1,
+      "y": 26.1,
+      "zoneId": 148
+    }
+  ],
   "pageInfo": {
     "name": "The Sprouted Fronds",
     "type": 5,
@@ -326,17 +608,17 @@
     {
       "npcId": 7510,
       "npcName": "Sprouted Frond",
-      "zoneId": 141,
       "x": 60.8,
       "y": 68.5,
+      "zoneId": 141,
       "zoneName": "Teldrassil"
     },
     {
       "npcId": 7510,
       "npcName": "Sprouted Frond",
-      "zoneId": 148,
       "x": 36.2,
       "y": 47.1,
+      "zoneId": 148,
       "zoneName": "Darkshore"
     }
   ]

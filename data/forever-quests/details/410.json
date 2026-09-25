@@ -67,6 +67,18 @@
     ]
   },
   "minLevel": 5,
+  "objectSpawns": [
+    {
+      "entityId": 1557,
+      "entityKind": "object",
+      "entityName": "Lillith's Dinner Table",
+      "uiMapId": 1420,
+      "uiMapName": "Tirisfal Glades",
+      "x": 66.6,
+      "y": 44.8,
+      "zoneId": 85
+    }
+  ],
   "pageInfo": {
     "name": "The Dormant Shade",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 1557,
       "npcName": "Lillith's Dinner Table",
-      "zoneId": 85,
       "x": 66.6,
       "y": 44.8,
+      "zoneId": 85,
       "zoneName": "Tirisfal Glades"
     }
   ]

@@ -78,6 +78,18 @@
     ]
   },
   "minLevel": 35,
+  "objectSpawns": [
+    {
+      "entityId": 2555,
+      "entityKind": "object",
+      "entityName": "Musty Scroll",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 31.1,
+      "y": 66.1,
+      "zoneId": 15
+    }
+  ],
   "pageInfo": {
     "name": "Cortello's Riddle",
     "type": 5,
@@ -91,9 +103,9 @@
     {
       "npcId": 2555,
       "npcName": "Musty Scroll",
-      "zoneId": 15,
       "x": 31.1,
       "y": 66.1,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     }
   ]

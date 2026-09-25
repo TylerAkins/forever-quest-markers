@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 424082,
+      "entityKind": "object",
+      "entityName": "Firepit",
+      "uiMapId": 1442,
+      "uiMapName": "Stonetalon Mountains",
+      "x": 40.6,
+      "y": 52.4,
+      "zoneId": 406
+    }
+  ],
   "pageInfo": {
     "name": "Rekindle",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 424082,
       "npcName": "Firepit",
-      "zoneId": 406,
       "x": 40.6,
       "y": 52.4,
+      "zoneId": 406,
       "zoneName": "Stonetalon Mountains"
     }
   ]

@@ -128,6 +128,28 @@
     ]
   },
   "minLevel": 54,
+  "objectSpawns": [
+    {
+      "entityId": 180448,
+      "entityKind": "object",
+      "entityName": "Wanted Poster: Deathclasp",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 51.3,
+      "y": 38.2,
+      "zoneId": 1377
+    },
+    {
+      "entityId": 180448,
+      "entityKind": "object",
+      "entityName": "Wanted Poster: Deathclasp",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 51.5,
+      "y": 38.2,
+      "zoneId": 1377
+    }
+  ],
   "pageInfo": {
     "name": "Wanted - Deathclasp, Terror of the Sands",
     "type": 5,
@@ -143,9 +165,9 @@
     {
       "npcId": 180448,
       "npcName": "Wanted Poster: Deathclasp",
-      "zoneId": 1377,
       "x": 51.3,
       "y": 38.2,
+      "zoneId": 1377,
       "zoneName": "Silithus"
     }
   ]

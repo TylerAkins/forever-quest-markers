@@ -82,6 +82,28 @@
     ]
   },
   "minLevel": 35,
+  "objectSpawns": [
+    {
+      "entityId": 2553,
+      "entityKind": "object",
+      "entityName": "A Soggy Scroll",
+      "uiMapId": 1435,
+      "uiMapName": "Swamp of Sorrows",
+      "x": 22.8,
+      "y": 48.1,
+      "zoneId": 8
+    },
+    {
+      "entityId": 2553,
+      "entityKind": "object",
+      "entityName": "A Soggy Scroll",
+      "uiMapId": 1435,
+      "uiMapName": "Swamp of Sorrows",
+      "x": 22.9,
+      "y": 48.5,
+      "zoneId": 8
+    }
+  ],
   "pageInfo": {
     "name": "Cortello's Riddle",
     "type": 5,
@@ -95,9 +117,9 @@
     {
       "npcId": 2553,
       "npcName": "A Soggy Scroll",
-      "zoneId": 8,
       "x": 22.8,
       "y": 48.1,
+      "zoneId": 8,
       "zoneName": "Swamp of Sorrows"
     }
   ]

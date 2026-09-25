@@ -142,6 +142,68 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.1,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.5,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.2,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.5,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 51.9,
+      "y": 69.4,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180747,
+      "entityKind": "object",
+      "entityName": "Gaily Wrapped Present",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.0,
+      "y": 69.7,
+      "zoneId": 1637
+    }
+  ],
   "pageInfo": {
     "name": "A Gaily Wrapped Present",
     "type": 5,
@@ -155,17 +217,17 @@
     {
       "npcId": 180747,
       "npcName": "Gaily Wrapped Present",
-      "zoneId": 1537,
       "x": 33.6,
       "y": 66.2,
+      "zoneId": 1537,
       "zoneName": "Ironforge"
     },
     {
       "npcId": 180747,
       "npcName": "Gaily Wrapped Present",
-      "zoneId": 1637,
       "x": 52.0,
       "y": 69.7,
+      "zoneId": 1637,
       "zoneName": "Orgrimmar"
     }
   ]

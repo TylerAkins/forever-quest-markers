@@ -85,6 +85,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 20985,
+      "entityKind": "object",
+      "entityName": "Loose Dirt",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 55.4,
+      "y": 26.0,
+      "zoneId": 15
+    },
+    {
+      "entityId": 20985,
+      "entityKind": "object",
+      "entityName": "Loose Dirt",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 55.5,
+      "y": 26.0,
+      "zoneId": 15
+    }
+  ],
   "pageInfo": {
     "name": "The Orc Report",
     "type": 5,
@@ -98,9 +120,9 @@
     {
       "npcId": 20985,
       "npcName": "Loose Dirt",
-      "zoneId": 15,
       "x": 55.4,
       "y": 26.0,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     }
   ]

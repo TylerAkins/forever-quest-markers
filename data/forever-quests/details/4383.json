@@ -7426,6 +7426,18 @@
     ]
   },
   "minLevel": 47,
+  "objectSpawns": [
+    {
+      "entityId": 164956,
+      "entityKind": "object",
+      "entityName": "Western Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 23.8,
+      "y": 59.1,
+      "zoneId": 490
+    }
+  ],
   "pageInfo": {
     "name": "Crystal Ward",
     "type": 5,
@@ -7439,9 +7451,9 @@
     {
       "npcId": 164956,
       "npcName": "Western Crystal Pylon",
-      "zoneId": 490,
       "x": 23.8,
       "y": 59.1,
+      "zoneId": 490,
       "zoneName": "Un'Goro Crater"
     }
   ]

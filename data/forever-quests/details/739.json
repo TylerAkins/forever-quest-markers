@@ -367,6 +367,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2875,
+      "entityKind": "object",
+      "entityName": "Battered Dwarven Skeleton",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 50.9,
+      "y": 62.2,
+      "zoneId": 3
+    },
+    {
+      "entityId": 2875,
+      "entityKind": "object",
+      "entityName": "Battered Dwarven Skeleton",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 51.0,
+      "y": 62.5,
+      "zoneId": 3
+    }
+  ],
   "pageInfo": {
     "name": "Murdaloc",
     "type": 5,
@@ -380,9 +402,9 @@
     {
       "npcId": 2875,
       "npcName": "Battered Dwarven Skeleton",
-      "zoneId": 3,
       "x": 50.9,
       "y": 62.2,
+      "zoneId": 3,
       "zoneName": "Badlands"
     }
   ]

@@ -97,6 +97,18 @@
     ]
   },
   "minLevel": 44,
+  "objectSpawns": [
+    {
+      "entityId": 151286,
+      "entityKind": "object",
+      "entityName": "Kaldorei Tome of Summoning",
+      "uiMapId": 1447,
+      "uiMapName": "Azshara",
+      "x": 59.5,
+      "y": 31.3,
+      "zoneId": 16
+    }
+  ],
   "pageInfo": {
     "name": "Betrayed",
     "type": 5,
@@ -110,9 +122,9 @@
     {
       "npcId": 151286,
       "npcName": "Kaldorei Tome of Summoning",
-      "zoneId": 16,
       "x": 59.5,
       "y": 31.3,
+      "zoneId": 16,
       "zoneName": "Azshara"
     }
   ]

@@ -164,6 +164,28 @@
     ]
   },
   "minLevel": 39,
+  "objectSpawns": [
+    {
+      "entityId": 142122,
+      "entityKind": "object",
+      "entityName": "Wanted Poster",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 66.8,
+      "y": 22.3,
+      "zoneId": 440
+    },
+    {
+      "entityId": 150075,
+      "entityKind": "object",
+      "entityName": "Wanted Poster",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 51.9,
+      "y": 27.0,
+      "zoneId": 440
+    }
+  ],
   "pageInfo": {
     "name": "WANTED: Caliph Scorpidsting",
     "type": 5,
@@ -177,17 +199,17 @@
     {
       "npcId": 142122,
       "npcName": "Wanted Poster",
-      "zoneId": 440,
       "x": 66.8,
       "y": 22.3,
+      "zoneId": 440,
       "zoneName": "Tanaris"
     },
     {
       "npcId": 150075,
       "npcName": "Wanted Poster",
-      "zoneId": 440,
       "x": 51.9,
       "y": 27.0,
+      "zoneId": 440,
       "zoneName": "Tanaris"
     }
   ]

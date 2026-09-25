@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 16,
+  "objectSpawns": [
+    {
+      "entityId": 257,
+      "entityKind": "object",
+      "entityName": "Suspicious Barrel",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 56.1,
+      "y": 13.3,
+      "zoneId": 38
+    }
+  ],
   "pageInfo": {
     "name": "A Dark Threat Looms",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 257,
       "npcName": "Suspicious Barrel",
-      "zoneId": 38,
       "x": 56.1,
       "y": 13.3,
+      "zoneId": 38,
       "zoneName": "Loch Modan"
     }
   ]

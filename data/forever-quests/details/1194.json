@@ -72,6 +72,28 @@
     ]
   },
   "minLevel": 29,
+  "objectSpawns": [
+    {
+      "entityId": 20805,
+      "entityKind": "object",
+      "entityName": "Rizzle's Unguarded Plans",
+      "uiMapId": 1441,
+      "uiMapName": "Thousand Needles",
+      "x": 77.2,
+      "y": 77.5,
+      "zoneId": 400
+    },
+    {
+      "entityId": 20805,
+      "entityKind": "object",
+      "entityName": "Rizzle's Unguarded Plans",
+      "uiMapId": 1441,
+      "uiMapName": "Thousand Needles",
+      "x": 77.3,
+      "y": 77.4,
+      "zoneId": 400
+    }
+  ],
   "pageInfo": {
     "name": "Rizzle's Schematics",
     "type": 5,
@@ -85,9 +107,9 @@
     {
       "npcId": 20805,
       "npcName": "Rizzle's Unguarded Plans",
-      "zoneId": 400,
       "x": 77.3,
       "y": 77.4,
+      "zoneId": 400,
       "zoneName": "Thousand Needles"
     }
   ]

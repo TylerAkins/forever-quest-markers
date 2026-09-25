@@ -109,6 +109,18 @@
     ]
   },
   "minLevel": 8,
+  "objectSpawns": [
+    {
+      "entityId": 2059,
+      "entityKind": "object",
+      "entityName": "A Dwarven Corpse",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 79.7,
+      "y": 36.2,
+      "zoneId": 1
+    }
+  ],
   "pageInfo": {
     "name": "A Pilot's Revenge",
     "type": 5,
@@ -124,9 +136,9 @@
     {
       "npcId": 2059,
       "npcName": "A Dwarven Corpse",
-      "zoneId": 1,
       "x": 79.7,
       "y": 36.2,
+      "zoneId": 1,
       "zoneName": "Dun Morogh"
     }
   ]

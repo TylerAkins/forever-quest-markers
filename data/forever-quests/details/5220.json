@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 50,
+  "objectSpawns": [
+    {
+      "entityId": 177289,
+      "entityKind": "object",
+      "entityName": "Scourge Cauldron",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 46.2,
+      "y": 52.0,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Return to Chillwind Camp",
     "type": 5,
@@ -86,9 +98,9 @@
     {
       "npcId": 177289,
       "npcName": "Scourge Cauldron",
-      "zoneId": 28,
       "x": 46.2,
       "y": 52.0,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

@@ -99,6 +99,18 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 5621,
+      "entityKind": "object",
+      "entityName": "Flawed Power Stones",
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 62.4,
+      "y": 20.0,
+      "zoneId": 17
+    }
+  ],
   "pageInfo": {
     "name": "Flawed Power Stone",
     "type": 5,
@@ -114,9 +126,9 @@
     {
       "npcId": 5621,
       "npcName": "Flawed Power Stones",
-      "zoneId": 17,
       "x": 62.4,
       "y": 20.0,
+      "zoneId": 17,
       "zoneName": "The Barrens"
     }
   ]

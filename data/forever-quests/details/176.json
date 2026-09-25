@@ -265,6 +265,38 @@
     ]
   },
   "minLevel": 5,
+  "objectSpawns": [
+    {
+      "entityId": 68,
+      "entityKind": "object",
+      "entityName": "Wanted Poster",
+      "uiMapId": 1429,
+      "uiMapName": "Elwynn Forest",
+      "x": 24.4,
+      "y": 74.7,
+      "zoneId": 12
+    },
+    {
+      "entityId": 68,
+      "entityKind": "object",
+      "entityName": "Wanted Poster",
+      "uiMapId": 1429,
+      "uiMapName": "Elwynn Forest",
+      "x": 24.5,
+      "y": 74.7,
+      "zoneId": 12
+    },
+    {
+      "entityId": 156561,
+      "entityKind": "object",
+      "entityName": "Wanted Poster",
+      "uiMapId": 1429,
+      "uiMapName": "Elwynn Forest",
+      "x": 24.6,
+      "y": 78.2,
+      "zoneId": 12
+    }
+  ],
   "pageInfo": {
     "name": "Wanted: \"Hogger\"",
     "type": 5,
@@ -278,17 +310,17 @@
     {
       "npcId": 68,
       "npcName": "Wanted Poster",
-      "zoneId": 12,
       "x": 24.5,
       "y": 74.7,
+      "zoneId": 12,
       "zoneName": "Elwynn Forest"
     },
     {
       "npcId": 156561,
       "npcName": "Wanted Poster",
-      "zoneId": 12,
       "x": 24.6,
       "y": 78.2,
+      "zoneId": 12,
       "zoneName": "Elwynn Forest"
     }
   ]

@@ -97,6 +97,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2688,
+      "entityKind": "object",
+      "entityName": "Keystone",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 36.1,
+      "y": 57.9,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "Myzrael's Allies",
     "type": 5,
@@ -112,9 +124,9 @@
     {
       "npcId": 2688,
       "npcName": "Keystone",
-      "zoneId": 45,
       "x": 36.1,
       "y": 57.9,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

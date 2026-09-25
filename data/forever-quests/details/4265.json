@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 164954,
+      "entityKind": "object",
+      "entityName": "Zukk'ash Pod",
+      "uiMapId": 1444,
+      "uiMapName": "Feralas",
+      "x": 72.1,
+      "y": 63.8,
+      "zoneId": 357
+    }
+  ],
   "pageInfo": {
     "name": "Freed from the Hive",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 164954,
       "npcName": "Zukk'ash Pod",
-      "zoneId": 357,
       "x": 72.1,
       "y": 63.8,
+      "zoneId": 357,
       "zoneName": "Feralas"
     }
   ]

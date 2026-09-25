@@ -113,6 +113,18 @@
     ]
   },
   "minLevel": 15,
+  "objectSpawns": [
+    {
+      "entityId": 3972,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 62.6,
+      "y": 37.5,
+      "zoneId": 17
+    }
+  ],
   "pageInfo": {
     "name": "WANTED: Bruuz",
     "type": 5,
@@ -126,9 +138,9 @@
     {
       "npcId": 3972,
       "npcName": "WANTED",
-      "zoneId": 17,
       "x": 62.6,
       "y": 37.5,
+      "zoneId": 17,
       "zoneName": "The Barrens"
     }
   ]

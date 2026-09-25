@@ -72,6 +72,28 @@
     ]
   },
   "minLevel": 54,
+  "objectSpawns": [
+    {
+      "entityId": 180503,
+      "entityKind": "object",
+      "entityName": "Sandy Cookbook",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 37.9,
+      "y": 45.5,
+      "zoneId": 1377
+    },
+    {
+      "entityId": 180503,
+      "entityKind": "object",
+      "entityName": "Sandy Cookbook",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 38.0,
+      "y": 45.3,
+      "zoneId": 1377
+    }
+  ],
   "pageInfo": {
     "name": "Sharing the Knowledge",
     "type": 5,
@@ -85,9 +107,9 @@
     {
       "npcId": 180503,
       "npcName": "Sandy Cookbook",
-      "zoneId": 1377,
       "x": 38.0,
       "y": 45.3,
+      "zoneId": 1377,
       "zoneName": "Silithus"
     }
   ]

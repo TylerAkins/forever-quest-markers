@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 39,
+  "objectSpawns": [
+    {
+      "entityId": 142195,
+      "entityKind": "object",
+      "entityName": "Woodpaw Battle Map",
+      "uiMapId": 1444,
+      "uiMapName": "Feralas",
+      "x": 71.6,
+      "y": 55.9,
+      "zoneId": 357
+    }
+  ],
   "pageInfo": {
     "name": "The Battle Plans",
     "type": 5,
@@ -88,9 +100,9 @@
     {
       "npcId": 142195,
       "npcName": "Woodpaw Battle Map",
-      "zoneId": 357,
       "x": 71.6,
       "y": 55.9,
+      "zoneId": 357,
       "zoneName": "Feralas"
     }
   ]

@@ -89,6 +89,28 @@
     ]
   },
   "minLevel": 22,
+  "objectSpawns": [
+    {
+      "entityId": 3643,
+      "entityKind": "object",
+      "entityName": "Old Footlocker",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 41.4,
+      "y": 66.8,
+      "zoneId": 40
+    },
+    {
+      "entityId": 3643,
+      "entityKind": "object",
+      "entityName": "Old Footlocker",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 41.5,
+      "y": 66.8,
+      "zoneId": 40
+    }
+  ],
   "pageInfo": {
     "name": "The Legend of Stalvan",
     "type": 5,
@@ -102,9 +124,9 @@
     {
       "npcId": 3643,
       "npcName": "Old Footlocker",
-      "zoneId": 40,
       "x": 41.5,
       "y": 66.8,
+      "zoneId": 40,
       "zoneName": "Westfall"
     }
   ]

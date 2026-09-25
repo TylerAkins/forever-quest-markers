@@ -113,6 +113,38 @@
     ]
   },
   "minLevel": 26,
+  "objectSpawns": [
+    {
+      "entityId": 1738,
+      "entityKind": "object",
+      "entityName": "Syndicate Documents",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 58.2,
+      "y": 67.9,
+      "zoneId": 36
+    },
+    {
+      "entityId": 1739,
+      "entityKind": "object",
+      "entityName": "Syndicate Documents",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 58.2,
+      "y": 67.9,
+      "zoneId": 36
+    },
+    {
+      "entityId": 1740,
+      "entityKind": "object",
+      "entityName": "Syndicate Documents",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 58.2,
+      "y": 67.9,
+      "zoneId": 36
+    }
+  ],
   "pageInfo": {
     "name": "Foreboding Plans",
     "type": 5,
@@ -126,25 +158,25 @@
     {
       "npcId": 1738,
       "npcName": "Syndicate Documents",
-      "zoneId": 36,
       "x": 58.2,
       "y": 67.9,
+      "zoneId": 36,
       "zoneName": "Alterac Mountains"
     },
     {
       "npcId": 1739,
       "npcName": "Syndicate Documents",
-      "zoneId": 36,
       "x": 58.2,
       "y": 67.9,
+      "zoneId": 36,
       "zoneName": "Alterac Mountains"
     },
     {
       "npcId": 1740,
       "npcName": "Syndicate Documents",
-      "zoneId": 36,
       "x": 58.2,
       "y": 67.9,
+      "zoneId": 36,
       "zoneName": "Alterac Mountains"
     }
   ]

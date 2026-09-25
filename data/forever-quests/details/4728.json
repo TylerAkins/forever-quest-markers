@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 12,
+  "objectSpawns": [
+    {
+      "entityId": 175226,
+      "entityKind": "object",
+      "entityName": "Beached Sea Creature",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 36.1,
+      "y": 70.9,
+      "zoneId": 148
+    }
+  ],
   "pageInfo": {
     "name": "Beached Sea Creature",
     "type": 5,
@@ -86,9 +98,9 @@
     {
       "npcId": 175226,
       "npcName": "Beached Sea Creature",
-      "zoneId": 148,
       "x": 36.1,
       "y": 70.9,
+      "zoneId": 148,
       "zoneName": "Darkshore"
     }
   ]

@@ -85,6 +85,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 21015,
+      "entityKind": "object",
+      "entityName": "Hoofprints",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 29.7,
+      "y": 47.7,
+      "zoneId": 15
+    },
+    {
+      "entityId": 21016,
+      "entityKind": "object",
+      "entityName": "Hoofprints",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 29.7,
+      "y": 47.7,
+      "zoneId": 15
+    }
+  ],
   "pageInfo": {
     "name": "Suspicious Hoofprints",
     "type": 5,
@@ -117,17 +139,17 @@
     {
       "npcId": 21015,
       "npcName": "Hoofprints",
-      "zoneId": 15,
       "x": 29.7,
       "y": 47.7,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     },
     {
       "npcId": 21016,
       "npcName": "Hoofprints",
-      "zoneId": 15,
       "x": 29.7,
       "y": 47.7,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     }
   ]

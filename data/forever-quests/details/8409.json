@@ -85,6 +85,18 @@
     ]
   },
   "minLevel": 25,
+  "objectSpawns": [
+    {
+      "entityId": 180570,
+      "entityKind": "object",
+      "entityName": "Keg",
+      "uiMapId": 1424,
+      "uiMapName": "Hillsbrad Foothills",
+      "x": 51.4,
+      "y": 59.1,
+      "zoneId": 267
+    }
+  ],
   "pageInfo": {
     "name": "Ruined Kegs",
     "type": 5,
@@ -98,9 +110,9 @@
     {
       "npcId": 180570,
       "npcName": "Keg",
-      "zoneId": 267,
       "x": 51.4,
       "y": 59.1,
+      "zoneId": 267,
       "zoneName": "Hillsbrad Foothills"
     }
   ]

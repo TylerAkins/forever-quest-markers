@@ -84,6 +84,18 @@
     ]
   },
   "minLevel": 52,
+  "objectSpawns": [
+    {
+      "entityId": 176091,
+      "entityKind": "object",
+      "entityName": "Deadwood Cauldron",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 60.2,
+      "y": 5.9,
+      "zoneId": 361
+    }
+  ],
   "pageInfo": {
     "name": "Mystery Goo",
     "type": 5,
@@ -97,9 +109,9 @@
     {
       "npcId": 176091,
       "npcName": "Deadwood Cauldron",
-      "zoneId": 361,
       "x": 60.2,
       "y": 5.9,
+      "zoneId": 361,
       "zoneName": "Felwood"
     }
   ]

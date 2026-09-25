@@ -101,6 +101,28 @@
     ]
   },
   "minLevel": 45,
+  "objectSpawns": [
+    {
+      "entityId": 142343,
+      "entityKind": "object",
+      "entityName": "Uldum Pedestal",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 37.7,
+      "y": 81.4,
+      "zoneId": 440
+    },
+    {
+      "entityId": 142343,
+      "entityKind": "object",
+      "entityName": "Uldum Pedestal",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 37.7,
+      "y": 81.5,
+      "zoneId": 440
+    }
+  ],
   "pageInfo": {
     "name": "Return to Thunder Bluff",
     "type": 5,
@@ -114,9 +136,9 @@
     {
       "npcId": 142343,
       "npcName": "Uldum Pedestal",
-      "zoneId": 440,
       "x": 37.7,
       "y": 81.4,
+      "zoneId": 440,
       "zoneName": "Tanaris"
     }
   ]

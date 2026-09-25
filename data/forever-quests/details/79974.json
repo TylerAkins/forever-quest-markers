@@ -82,6 +82,18 @@
     ]
   },
   "minLevel": 14,
+  "objectSpawns": [
+    {
+      "entityId": 424012,
+      "entityKind": "object",
+      "entityName": "Mound of Dirt",
+      "uiMapId": 1442,
+      "uiMapName": "Stonetalon Mountains",
+      "x": 39.6,
+      "y": 49.9,
+      "zoneId": 406
+    }
+  ],
   "pageInfo": {
     "name": "Wet Job",
     "type": 5,
@@ -95,9 +107,9 @@
     {
       "npcId": 424012,
       "npcName": "Mound of Dirt",
-      "zoneId": 406,
       "x": 39.6,
       "y": 49.9,
+      "zoneId": 406,
       "zoneName": "Stonetalon Mountains"
     }
   ]

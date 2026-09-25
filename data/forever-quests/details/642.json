@@ -430,6 +430,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 138492,
+      "entityKind": "object",
+      "entityName": "Shards of Myzrael",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 62.4,
+      "y": 33.8,
+      "zoneId": 45
+    },
+    {
+      "entityId": 138492,
+      "entityKind": "object",
+      "entityName": "Shards of Myzrael",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 62.5,
+      "y": 33.8,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "The Princess Trapped",
     "type": 5,
@@ -443,9 +465,9 @@
     {
       "npcId": 138492,
       "npcName": "Shards of Myzrael",
-      "zoneId": 45,
       "x": 62.5,
       "y": 33.8,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

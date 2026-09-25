@@ -77,6 +77,18 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 259,
+      "entityKind": "object",
+      "entityName": "Half-buried Barrel",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.9,
+      "y": 34.9,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "Return the Statuette",
     "type": 5,
@@ -90,9 +102,9 @@
     {
       "npcId": 259,
       "npcName": "Half-buried Barrel",
-      "zoneId": 11,
       "x": 13.9,
       "y": 34.9,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

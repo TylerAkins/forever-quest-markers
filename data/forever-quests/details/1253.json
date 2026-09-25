@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 20992,
+      "entityKind": "object",
+      "entityName": "Black Shield",
+      "uiMapId": 1445,
+      "uiMapName": "Dustwallow Marsh",
+      "x": 29.6,
+      "y": 48.5,
+      "zoneId": 15
+    }
+  ],
   "pageInfo": {
     "name": "The Black Shield",
     "type": 5,
@@ -105,9 +117,9 @@
     {
       "npcId": 20992,
       "npcName": "Black Shield",
-      "zoneId": 15,
       "x": 29.6,
       "y": 48.5,
+      "zoneId": 15,
       "zoneName": "Dustwallow Marsh"
     }
   ]

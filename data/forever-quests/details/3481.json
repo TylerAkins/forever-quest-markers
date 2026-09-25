@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 149502,
+      "entityKind": "object",
+      "entityName": "Hoard of the Black Dragonflight",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 39.0,
+      "y": 38.9,
+      "zoneId": 51
+    }
+  ],
   "pageInfo": {
     "name": "Trinkets...",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 149502,
       "npcName": "Hoard of the Black Dragonflight",
-      "zoneId": 51,
       "x": 39.0,
       "y": 38.9,
+      "zoneId": 51,
       "zoneName": "Searing Gorge"
     }
   ]

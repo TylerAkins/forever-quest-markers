@@ -68,6 +68,18 @@
     ]
   },
   "minLevel": 57,
+  "objectSpawns": [
+    {
+      "entityId": 175927,
+      "entityKind": "object",
+      "entityName": "Malyfous's Catalogue",
+      "uiMapId": 1452,
+      "uiMapName": "Winterspring",
+      "x": 61.0,
+      "y": 38.8,
+      "zoneId": 618
+    }
+  ],
   "pageInfo": {
     "name": "Breastplate of Bloodthirst",
     "type": 5,
@@ -81,9 +93,9 @@
     {
       "npcId": 175927,
       "npcName": "Malyfous's Catalogue",
-      "zoneId": 618,
       "x": 61.0,
       "y": 38.8,
+      "zoneId": 618,
       "zoneName": "Winterspring"
     }
   ]

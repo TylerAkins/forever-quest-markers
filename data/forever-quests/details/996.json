@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 174600,
+      "entityKind": "object",
+      "entityName": "Corrupted Windblossom",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 57.5,
+      "y": 20.0,
+      "zoneId": 361
+    }
+  ],
   "pageInfo": {
     "name": "Corrupted Windblossom",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 174600,
       "npcName": "Corrupted Windblossom",
-      "zoneId": 361,
       "x": 57.5,
       "y": 20.0,
+      "zoneId": 361,
       "zoneName": "Felwood"
     }
   ]

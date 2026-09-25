@@ -147,6 +147,28 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 31,
+      "entityKind": "object",
+      "entityName": "Old Lion Statue",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 84.3,
+      "y": 46.9,
+      "zoneId": 44
+    },
+    {
+      "entityId": 31,
+      "entityKind": "object",
+      "entityName": "Old Lion Statue",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 84.5,
+      "y": 47.1,
+      "zoneId": 44
+    }
+  ],
   "pageInfo": {
     "name": "Morganth",
     "type": 5,
@@ -160,17 +182,17 @@
     {
       "npcId": 313,
       "npcName": "Theocritus",
-      "zoneId": 12,
       "x": 65.2,
       "y": 69.8,
+      "zoneId": 12,
       "zoneName": "Elwynn Forest"
     },
     {
       "npcId": 31,
       "npcName": "Old Lion Statue",
-      "zoneId": 44,
       "x": 84.3,
       "y": 46.9,
+      "zoneId": 44,
       "zoneName": "Redridge Mountains"
     }
   ]
