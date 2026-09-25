@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 60,
+  "objectSpawns": [
+    {
+      "entityId": 180717,
+      "entityKind": "object",
+      "entityName": "The Scarab Gong",
+      "uiMapId": 1451,
+      "uiMapName": "Silithus",
+      "x": 25.8,
+      "y": 90.9,
+      "zoneId": 1377
+    }
+  ],
   "pageInfo": {
     "name": "Bang a Gong!",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 180717,
       "npcName": "The Scarab Gong",
-      "zoneId": 1377,
       "x": 25.8,
       "y": 90.9,
+      "zoneId": 1377,
       "zoneName": "Silithus"
     }
   ]

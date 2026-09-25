@@ -77,6 +77,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 35251,
+      "entityKind": "object",
+      "entityName": "Karnitol's Chest",
+      "uiMapId": 1443,
+      "uiMapName": "Desolace",
+      "x": 36.1,
+      "y": 30.4,
+      "zoneId": 405
+    },
+    {
+      "entityId": 35251,
+      "entityKind": "object",
+      "entityName": "Karnitol's Chest",
+      "uiMapId": 1443,
+      "uiMapName": "Desolace",
+      "x": 36.1,
+      "y": 30.5,
+      "zoneId": 405
+    }
+  ],
   "pageInfo": {
     "name": "The Karnitol Shipwreck",
     "type": 5,
@@ -90,9 +112,9 @@
     {
       "npcId": 35251,
       "npcName": "Karnitol's Chest",
-      "zoneId": 405,
       "x": 36.1,
       "y": 30.4,
+      "zoneId": 405,
       "zoneName": "Desolace"
     }
   ]

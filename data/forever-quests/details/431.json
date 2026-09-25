@@ -67,6 +67,88 @@
     ]
   },
   "minLevel": 5,
+  "objectSpawns": [
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 21.8,
+      "y": 50.3,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 27.2,
+      "y": 36.5,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 39.1,
+      "y": 48.6,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 39.4,
+      "y": 46.2,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 42.4,
+      "y": 56.9,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 45.3,
+      "y": 52.0,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 47.2,
+      "y": 52.5,
+      "zoneId": 1
+    },
+    {
+      "entityId": 1586,
+      "entityKind": "object",
+      "entityName": "Crate of Candles",
+      "uiMapId": 1420,
+      "uiMapName": "Tirisfal Glades",
+      "x": 68.1,
+      "y": 42.0,
+      "zoneId": 85
+    }
+  ],
   "pageInfo": {
     "name": "Candles of Beckoning",
     "type": 5,
@@ -80,9 +162,9 @@
     {
       "npcId": 1586,
       "npcName": "Crate of Candles",
-      "zoneId": 85,
       "x": 68.1,
       "y": 42.0,
+      "zoneId": 85,
       "zoneName": "Tirisfal Glades"
     }
   ]

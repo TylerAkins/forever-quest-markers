@@ -71,6 +71,18 @@
     ]
   },
   "minLevel": 53,
+  "objectSpawns": [
+    {
+      "entityId": 175587,
+      "entityKind": "object",
+      "entityName": "Damaged Crate",
+      "uiMapId": 1452,
+      "uiMapName": "Winterspring",
+      "x": 59.0,
+      "y": 59.7,
+      "zoneId": 618
+    }
+  ],
   "pageInfo": {
     "name": "Enraged Wildkin",
     "type": 5,
@@ -84,9 +96,9 @@
     {
       "npcId": 175587,
       "npcName": "Damaged Crate",
-      "zoneId": 618,
       "x": 59.0,
       "y": 59.7,
+      "zoneId": 618,
       "zoneName": "Winterspring"
     }
   ]

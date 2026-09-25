@@ -75,6 +75,28 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 2933,
+      "entityKind": "object",
+      "entityName": "Seal of the Earth",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 81.4,
+      "y": 49.8,
+      "zoneId": 3
+    },
+    {
+      "entityId": 2933,
+      "entityKind": "object",
+      "entityName": "Seal of the Earth",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 81.7,
+      "y": 49.9,
+      "zoneId": 3
+    }
+  ],
   "pageInfo": {
     "name": "Seal of the Earth",
     "type": 5,
@@ -88,9 +110,9 @@
     {
       "npcId": 2933,
       "npcName": "Seal of the Earth",
-      "zoneId": 3,
       "x": 81.7,
       "y": 49.9,
+      "zoneId": 3,
       "zoneName": "Badlands"
     }
   ]

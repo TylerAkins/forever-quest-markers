@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 10,
+  "objectSpawns": [
+    {
+      "entityId": 34,
+      "entityKind": "object",
+      "entityName": "Old Jug",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 40.6,
+      "y": 17.1,
+      "zoneId": 40
+    }
+  ],
   "pageInfo": {
     "name": "Captain Sander's Hidden Treasure",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 34,
       "npcName": "Old Jug",
-      "zoneId": 40,
       "x": 40.6,
       "y": 17.1,
+      "zoneId": 40,
       "zoneName": "Westfall"
     }
   ]

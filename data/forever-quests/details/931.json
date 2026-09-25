@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 4,
+  "objectSpawns": [
+    {
+      "entityId": 6752,
+      "entityKind": "object",
+      "entityName": "Strange Fronded Plant",
+      "uiMapId": 1438,
+      "uiMapName": "Teldrassil",
+      "x": 34.7,
+      "y": 28.8,
+      "zoneId": 141
+    }
+  ],
   "pageInfo": {
     "name": "The Shimmering Frond",
     "type": 5,
@@ -89,9 +101,9 @@
     {
       "npcId": 6752,
       "npcName": "Strange Fronded Plant",
-      "zoneId": 141,
       "x": 34.7,
       "y": 28.8,
+      "zoneId": 141,
       "zoneName": "Teldrassil"
     }
   ]

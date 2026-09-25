@@ -84,6 +84,18 @@
     ]
   },
   "minLevel": 55,
+  "objectSpawns": [
+    {
+      "entityId": 176090,
+      "entityKind": "object",
+      "entityName": "Human Remains",
+      "uiMapId": null,
+      "uiMapName": null,
+      "x": 0.0,
+      "y": 0.0,
+      "zoneId": 1583
+    }
+  ],
   "pageInfo": {
     "name": "Hot Fiery Death",
     "type": 5,
@@ -97,9 +109,9 @@
     {
       "npcId": 176090,
       "npcName": "Human Remains",
-      "zoneId": 1583,
       "x": 0.0,
       "y": 0.0,
+      "zoneId": 1583,
       "zoneName": "Blackrock Spire"
     }
   ]

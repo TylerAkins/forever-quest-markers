@@ -70,6 +70,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2701,
+      "entityKind": "object",
+      "entityName": "Iridescent Shards",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 84.3,
+      "y": 30.9,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "Stones of Binding",
     "type": 5,
@@ -85,9 +97,9 @@
     {
       "npcId": 2701,
       "npcName": "Iridescent Shards",
-      "zoneId": 45,
       "x": 84.3,
       "y": 30.9,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

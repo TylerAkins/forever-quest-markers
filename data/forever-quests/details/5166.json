@@ -2310,6 +2310,18 @@
     ]
   },
   "minLevel": 57,
+  "objectSpawns": [
+    {
+      "entityId": 176192,
+      "entityKind": "object",
+      "entityName": "Catalogue of the Wayward",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 39.4,
+      "y": 66.7,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Breastplate of the Chromatic Flight",
     "type": 5,
@@ -2323,9 +2335,9 @@
     {
       "npcId": 176192,
       "npcName": "Catalogue of the Wayward",
-      "zoneId": 28,
       "x": 39.4,
       "y": 66.7,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

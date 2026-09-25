@@ -241,6 +241,18 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 2734,
+      "entityKind": "object",
+      "entityName": "Waterlogged Chest",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 12.1,
+      "y": 64.1,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "The Lost Ingots",
     "type": 5,
@@ -254,9 +266,9 @@
     {
       "npcId": 2734,
       "npcName": "Waterlogged Chest",
-      "zoneId": 11,
       "x": 12.1,
       "y": 64.1,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

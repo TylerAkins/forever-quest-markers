@@ -80,6 +80,18 @@
     ]
   },
   "minLevel": 47,
+  "objectSpawns": [
+    {
+      "entityId": 148504,
+      "entityKind": "object",
+      "entityName": "A Conspicuous Gravestone",
+      "uiMapId": 1446,
+      "uiMapName": "Tanaris",
+      "x": 53.9,
+      "y": 29.0,
+      "zoneId": 440
+    }
+  ],
   "pageInfo": {
     "name": "Linken's Sword",
     "type": 5,
@@ -106,9 +118,9 @@
     {
       "npcId": 148504,
       "npcName": "A Conspicuous Gravestone",
-      "zoneId": 440,
       "x": 53.9,
       "y": 29.0,
+      "zoneId": 440,
       "zoneName": "Tanaris"
     }
   ]

@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 32,
+  "objectSpawns": [
+    {
+      "entityId": 2703,
+      "entityKind": "object",
+      "entityName": "Trollbane's Tomb",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 28.9,
+      "y": 59.6,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "Trol'kalar",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 2703,
       "npcName": "Trollbane's Tomb",
-      "zoneId": 45,
       "x": 28.9,
       "y": 59.6,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

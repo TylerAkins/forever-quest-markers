@@ -88,6 +88,18 @@
     ]
   },
   "minLevel": 47,
+  "objectSpawns": [
+    {
+      "entityId": 161504,
+      "entityKind": "object",
+      "entityName": "A Small Pack",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 63.1,
+      "y": 69.0,
+      "zoneId": 490
+    }
+  ],
   "pageInfo": {
     "name": "It's a Secret to Everybody",
     "type": 5,
@@ -114,9 +126,9 @@
     {
       "npcId": 161504,
       "npcName": "A Small Pack",
-      "zoneId": 490,
       "x": 63.1,
       "y": 69.0,
+      "zoneId": 490,
       "zoneName": "Un'Goro Crater"
     }
   ]

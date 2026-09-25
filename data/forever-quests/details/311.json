@@ -89,6 +89,28 @@
     ]
   },
   "minLevel": 2,
+  "objectSpawns": [
+    {
+      "entityId": 269,
+      "entityKind": "object",
+      "entityName": "Guarded Thunder Ale Barrel",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 47.7,
+      "y": 52.7,
+      "zoneId": 1
+    },
+    {
+      "entityId": 270,
+      "entityKind": "object",
+      "entityName": "Unguarded Thunder Ale Barrel",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 47.7,
+      "y": 52.7,
+      "zoneId": 1
+    }
+  ],
   "pageInfo": {
     "name": "Return to Marleth",
     "type": 5,
@@ -102,17 +124,17 @@
     {
       "npcId": 269,
       "npcName": "Guarded Thunder Ale Barrel",
-      "zoneId": 1,
       "x": 47.7,
       "y": 52.7,
+      "zoneId": 1,
       "zoneName": "Dun Morogh"
     },
     {
       "npcId": 270,
       "npcName": "Unguarded Thunder Ale Barrel",
-      "zoneId": 1,
       "x": 47.7,
       "y": 52.7,
+      "zoneId": 1,
       "zoneName": "Dun Morogh"
     }
   ]

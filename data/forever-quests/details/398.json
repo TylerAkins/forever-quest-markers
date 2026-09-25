@@ -105,6 +105,18 @@
     ]
   },
   "minLevel": 6,
+  "objectSpawns": [
+    {
+      "entityId": 711,
+      "entityKind": "object",
+      "entityName": "Wanted!",
+      "uiMapId": 1420,
+      "uiMapName": "Tirisfal Glades",
+      "x": 60.7,
+      "y": 51.6,
+      "zoneId": 85
+    }
+  ],
   "pageInfo": {
     "name": "Wanted: Maggot Eye",
     "type": 5,
@@ -118,9 +130,9 @@
     {
       "npcId": 711,
       "npcName": "Wanted!",
-      "zoneId": 85,
       "x": 60.7,
       "y": 51.6,
+      "zoneId": 85,
       "zoneName": "Tirisfal Glades"
     }
   ]

@@ -125,6 +125,28 @@
     ]
   },
   "minLevel": 17,
+  "objectSpawns": [
+    {
+      "entityId": 256,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 37.2,
+      "y": 46.4,
+      "zoneId": 38
+    },
+    {
+      "entityId": 256,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 37.2,
+      "y": 46.5,
+      "zoneId": 38
+    }
+  ],
   "pageInfo": {
     "name": "WANTED: Chok'sul",
     "type": 5,
@@ -138,9 +160,9 @@
     {
       "npcId": 256,
       "npcName": "WANTED",
-      "zoneId": 38,
       "x": 37.2,
       "y": 46.4,
+      "zoneId": 38,
       "zoneName": "Loch Modan"
     }
   ]

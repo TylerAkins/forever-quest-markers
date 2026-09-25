@@ -316,6 +316,28 @@
     ]
   },
   "minLevel": 45,
+  "objectSpawns": [
+    {
+      "entityId": 179827,
+      "entityKind": "object",
+      "entityName": "Wanted/Missing/Lost & Found",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 37.6,
+      "y": 26.4,
+      "zoneId": 51
+    },
+    {
+      "entityId": 179827,
+      "entityKind": "object",
+      "entityName": "Wanted/Missing/Lost & Found",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 37.6,
+      "y": 26.6,
+      "zoneId": 51
+    }
+  ],
   "pageInfo": {
     "name": "STOLEN: Smithing Tuyere and Lookout's Spyglass",
     "type": 5,
@@ -329,9 +351,9 @@
     {
       "npcId": 179827,
       "npcName": "Wanted/Missing/Lost & Found",
-      "zoneId": 51,
       "x": 37.6,
       "y": 26.6,
+      "zoneId": 51,
       "zoneName": "Searing Gorge"
     }
   ]

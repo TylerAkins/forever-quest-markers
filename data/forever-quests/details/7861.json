@@ -283,6 +283,18 @@
     ]
   },
   "minLevel": 46,
+  "objectSpawns": [
+    {
+      "entityId": 179913,
+      "entityKind": "object",
+      "entityName": "Call to Arms!",
+      "uiMapId": 1425,
+      "uiMapName": "The Hinterlands",
+      "x": 79.0,
+      "y": 79.0,
+      "zoneId": 47
+    }
+  ],
   "pageInfo": {
     "name": "Wanted: Vile Priestess Hexx and Her Minions",
     "type": 5,
@@ -296,9 +308,9 @@
     {
       "npcId": 179913,
       "npcName": "Call to Arms!",
-      "zoneId": 47,
       "x": 79.0,
       "y": 79.0,
+      "zoneId": 47,
       "zoneName": "The Hinterlands"
     }
   ]

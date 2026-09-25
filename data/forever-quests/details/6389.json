@@ -77,6 +77,28 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 177491,
+      "entityKind": "object",
+      "entityName": "Termite Barrel",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 48.4,
+      "y": 31.9,
+      "zoneId": 28
+    },
+    {
+      "entityId": 177491,
+      "entityKind": "object",
+      "entityName": "Termite Barrel",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 48.5,
+      "y": 31.9,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "A Plague Upon Thee",
     "type": 5,
@@ -90,9 +112,9 @@
     {
       "npcId": 177491,
       "npcName": "Termite Barrel",
-      "zoneId": 28,
       "x": 48.4,
       "y": 31.9,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

@@ -97,6 +97,28 @@
     ]
   },
   "minLevel": 28,
+  "objectSpawns": [
+    {
+      "entityId": 2652,
+      "entityKind": "object",
+      "entityName": "Ebenezer Rustlocke's Corpse",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 51.2,
+      "y": 8.0,
+      "zoneId": 11
+    },
+    {
+      "entityId": 2652,
+      "entityKind": "object",
+      "entityName": "Ebenezer Rustlocke's Corpse",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 45.6,
+      "y": 93.0,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "The Thandol Span",
     "type": 5,
@@ -110,17 +132,17 @@
     {
       "npcId": 2652,
       "npcName": "Ebenezer Rustlocke's Corpse",
-      "zoneId": 11,
       "x": 51.2,
       "y": 8.0,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     },
     {
       "npcId": 2652,
       "npcName": "Ebenezer Rustlocke's Corpse",
-      "zoneId": 45,
       "x": 45.6,
       "y": 93.0,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

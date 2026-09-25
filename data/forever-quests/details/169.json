@@ -121,6 +121,58 @@
     ]
   },
   "minLevel": 15,
+  "objectSpawns": [
+    {
+      "entityId": 60,
+      "entityKind": "object",
+      "entityName": "Wanted: Gath'Ilzogg",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 24.4,
+      "y": 46.2,
+      "zoneId": 44
+    },
+    {
+      "entityId": 60,
+      "entityKind": "object",
+      "entityName": "Wanted: Gath'Ilzogg",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 24.5,
+      "y": 46.3,
+      "zoneId": 44
+    },
+    {
+      "entityId": 60,
+      "entityKind": "object",
+      "entityName": "Wanted: Gath'Ilzogg",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 24.5,
+      "y": 46.5,
+      "zoneId": 44
+    },
+    {
+      "entityId": 60,
+      "entityKind": "object",
+      "entityName": "Wanted: Gath'Ilzogg",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 29.6,
+      "y": 46.3,
+      "zoneId": 44
+    },
+    {
+      "entityId": 60,
+      "entityKind": "object",
+      "entityName": "Wanted: Gath'Ilzogg",
+      "uiMapId": 1433,
+      "uiMapName": "Redridge Mountains",
+      "x": 29.6,
+      "y": 46.5,
+      "zoneId": 44
+    }
+  ],
   "pageInfo": {
     "name": "Wanted: Gath'Ilzogg",
     "type": 5,
@@ -134,9 +186,9 @@
     {
       "npcId": 60,
       "npcName": "Wanted: Gath'Ilzogg",
-      "zoneId": 44,
       "x": 29.6,
       "y": 46.3,
+      "zoneId": 44,
       "zoneName": "Redridge Mountains"
     }
   ]

@@ -425,6 +425,28 @@
     ]
   },
   "minLevel": 19,
+  "objectSpawns": [
+    {
+      "entityId": 2008,
+      "entityKind": "object",
+      "entityName": "Dangerous!",
+      "uiMapId": 1424,
+      "uiMapName": "Hillsbrad Foothills",
+      "x": 62.4,
+      "y": 19.7,
+      "zoneId": 267
+    },
+    {
+      "entityId": 2008,
+      "entityKind": "object",
+      "entityName": "Dangerous!",
+      "uiMapId": 1424,
+      "uiMapName": "Hillsbrad Foothills",
+      "x": 62.5,
+      "y": 19.7,
+      "zoneId": 267
+    }
+  ],
   "pageInfo": {
     "name": "Dangerous!",
     "type": 5,
@@ -438,9 +460,9 @@
     {
       "npcId": 2008,
       "npcName": "Dangerous!",
-      "zoneId": 267,
       "x": 62.5,
       "y": 19.7,
+      "zoneId": 267,
       "zoneName": "Hillsbrad Foothills"
     }
   ]

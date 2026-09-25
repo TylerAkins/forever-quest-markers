@@ -112,6 +112,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 89931,
+      "entityKind": "object",
+      "entityName": "Bath'rah's Cauldron",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 79.3,
+      "y": 66.7,
+      "zoneId": 36
+    },
+    {
+      "entityId": 89931,
+      "entityKind": "object",
+      "entityName": "Bath'rah's Cauldron",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 79.5,
+      "y": 66.8,
+      "zoneId": 36
+    }
+  ],
   "pageInfo": {
     "name": "Essence of the Exile",
     "type": 5,
@@ -125,9 +147,9 @@
     {
       "npcId": 89931,
       "npcName": "Bath'rah's Cauldron",
-      "zoneId": 36,
       "x": 79.3,
       "y": 66.7,
+      "zoneId": 36,
       "zoneName": "Alterac Mountains"
     }
   ]

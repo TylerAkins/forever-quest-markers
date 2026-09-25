@@ -1178,6 +1178,28 @@
     ]
   },
   "minLevel": 49,
+  "objectSpawns": [
+    {
+      "entityId": 174682,
+      "entityKind": "object",
+      "entityName": "Beware of Pterrordax",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 43.6,
+      "y": 8.4,
+      "zoneId": 490
+    },
+    {
+      "entityId": 174682,
+      "entityKind": "object",
+      "entityName": "Beware of Pterrordax",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 43.6,
+      "y": 8.5,
+      "zoneId": 490
+    }
+  ],
   "pageInfo": {
     "name": "Beware of Pterrordax",
     "type": 5,
@@ -1191,9 +1213,9 @@
     {
       "npcId": 174682,
       "npcName": "Beware of Pterrordax",
-      "zoneId": 490,
       "x": 43.6,
       "y": 8.4,
+      "zoneId": 490,
       "zoneName": "Un'Goro Crater"
     }
   ]

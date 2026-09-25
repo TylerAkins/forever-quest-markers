@@ -150,6 +150,78 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.1,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.4,
+      "y": 66.6,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.4,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1455,
+      "uiMapName": "Ironforge",
+      "x": 33.6,
+      "y": 66.5,
+      "zoneId": 1537
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.0,
+      "y": 69.0,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.0,
+      "y": 69.5,
+      "zoneId": 1637
+    },
+    {
+      "entityId": 180748,
+      "entityKind": "object",
+      "entityName": "Ticking Present",
+      "uiMapId": 1454,
+      "uiMapName": "Orgrimmar",
+      "x": 52.5,
+      "y": 69.1,
+      "zoneId": 1637
+    }
+  ],
   "pageInfo": {
     "name": "A Ticking Present",
     "type": 5,
@@ -163,17 +235,17 @@
     {
       "npcId": 180748,
       "npcName": "Ticking Present",
-      "zoneId": 1537,
       "x": 33.6,
       "y": 66.5,
+      "zoneId": 1537,
       "zoneName": "Ironforge"
     },
     {
       "npcId": 180748,
       "npcName": "Ticking Present",
-      "zoneId": 1637,
       "x": 52.0,
       "y": 69.0,
+      "zoneId": 1637,
       "zoneName": "Orgrimmar"
     }
   ]

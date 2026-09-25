@@ -86,6 +86,28 @@
     ]
   },
   "minLevel": 14,
+  "objectSpawns": [
+    {
+      "entityId": 424007,
+      "entityKind": "object",
+      "entityName": "Carved Figurine",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 49.4,
+      "y": 12.9,
+      "zoneId": 38
+    },
+    {
+      "entityId": 424007,
+      "entityKind": "object",
+      "entityName": "Carved Figurine",
+      "uiMapId": 1432,
+      "uiMapName": "Loch Modan",
+      "x": 49.5,
+      "y": 12.8,
+      "zoneId": 38
+    }
+  ],
   "pageInfo": {
     "name": "Eagle's Fist",
     "type": 5,
@@ -99,9 +121,9 @@
     {
       "npcId": 424007,
       "npcName": "Carved Figurine",
-      "zoneId": 38,
       "x": 49.5,
       "y": 12.8,
+      "zoneId": 38,
       "zoneName": "Loch Modan"
     }
   ]

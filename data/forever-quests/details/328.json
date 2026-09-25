@@ -71,6 +71,28 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 287,
+      "entityKind": "object",
+      "entityName": "Bookie Herod's Records",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 43.7,
+      "y": 9.4,
+      "zoneId": 33
+    },
+    {
+      "entityId": 287,
+      "entityKind": "object",
+      "entityName": "Bookie Herod's Records",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 43.7,
+      "y": 9.5,
+      "zoneId": 33
+    }
+  ],
   "pageInfo": {
     "name": "The Hidden Key",
     "type": 5,
@@ -84,9 +106,9 @@
     {
       "npcId": 287,
       "npcName": "Bookie Herod's Records",
-      "zoneId": 33,
       "x": 43.7,
       "y": 9.4,
+      "zoneId": 33,
       "zoneName": "Stranglethorn Vale"
     }
   ]

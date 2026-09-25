@@ -89,6 +89,18 @@
     ]
   },
   "minLevel": 50,
+  "objectSpawns": [
+    {
+      "entityId": 175894,
+      "entityKind": "object",
+      "entityName": "Janice's Parcel",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 38.8,
+      "y": 55.2,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Better Late Than Never",
     "type": 5,
@@ -102,9 +114,9 @@
     {
       "npcId": 175894,
       "npcName": "Janice's Parcel",
-      "zoneId": 28,
       "x": 38.8,
       "y": 55.2,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

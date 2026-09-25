@@ -102,6 +102,28 @@
     ]
   },
   "minLevel": 52,
+  "objectSpawns": [
+    {
+      "entityId": 175924,
+      "entityKind": "object",
+      "entityName": "Locked Cabinet",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 47.4,
+      "y": 49.7,
+      "zoneId": 28
+    },
+    {
+      "entityId": 175924,
+      "entityKind": "object",
+      "entityName": "Locked Cabinet",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 47.5,
+      "y": 49.6,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Locked Away",
     "type": 5,
@@ -115,9 +137,9 @@
     {
       "npcId": 175924,
       "npcName": "Locked Cabinet",
-      "zoneId": 28,
       "x": 47.4,
       "y": 49.7,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

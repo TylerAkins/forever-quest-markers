@@ -66,6 +66,18 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 171939,
+      "entityKind": "object",
+      "entityName": "Corrupted Songflower",
+      "uiMapId": 1448,
+      "uiMapName": "Felwood",
+      "x": 46.0,
+      "y": 85.2,
+      "zoneId": 361
+    }
+  ],
   "pageInfo": {
     "name": "Corrupted Songflower",
     "type": 5,
@@ -79,9 +91,9 @@
     {
       "npcId": 171939,
       "npcName": "Corrupted Songflower",
-      "zoneId": 361,
       "x": 46.0,
       "y": 85.2,
+      "zoneId": 361,
       "zoneName": "Felwood"
     }
   ]

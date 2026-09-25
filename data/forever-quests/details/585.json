@@ -67,6 +67,78 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 51.1,
+      "y": 42.4,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 51.1,
+      "y": 42.5,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 66.7,
+      "y": 87.6,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 67.4,
+      "y": 86.8,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 67.5,
+      "y": 87.4,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1411,
+      "uiMapName": "Durotar",
+      "x": 67.5,
+      "y": 87.9,
+      "zoneId": 14
+    },
+    {
+      "entityId": 2076,
+      "entityKind": "object",
+      "entityName": "Bubbling Cauldron",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 32.2,
+      "y": 27.7,
+      "zoneId": 33
+    }
+  ],
   "pageInfo": {
     "name": "Speaking with Nezzliok",
     "type": 5,
@@ -80,9 +152,9 @@
     {
       "npcId": 2076,
       "npcName": "Bubbling Cauldron",
-      "zoneId": 33,
       "x": 32.2,
       "y": 27.7,
+      "zoneId": 33,
       "zoneName": "Stranglethorn Vale"
     }
   ]

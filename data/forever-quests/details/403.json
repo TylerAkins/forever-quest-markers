@@ -67,6 +67,18 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 269,
+      "entityKind": "object",
+      "entityName": "Guarded Thunder Ale Barrel",
+      "uiMapId": 1426,
+      "uiMapName": "Dun Morogh",
+      "x": 47.7,
+      "y": 52.7,
+      "zoneId": 1
+    }
+  ],
   "pageInfo": {
     "name": "Guarded Thunderbrew Barrel",
     "type": 5,
@@ -83,9 +95,9 @@
     {
       "npcId": 269,
       "npcName": "Guarded Thunder Ale Barrel",
-      "zoneId": 1,
       "x": 47.7,
       "y": 52.7,
+      "zoneId": 1,
       "zoneName": "Dun Morogh"
     }
   ]

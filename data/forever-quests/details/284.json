@@ -79,6 +79,48 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 261,
+      "entityKind": "object",
+      "entityName": "Damaged Crate",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.4,
+      "y": 41.4,
+      "zoneId": 11
+    },
+    {
+      "entityId": 261,
+      "entityKind": "object",
+      "entityName": "Damaged Crate",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.4,
+      "y": 41.5,
+      "zoneId": 11
+    },
+    {
+      "entityId": 261,
+      "entityKind": "object",
+      "entityName": "Damaged Crate",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.5,
+      "y": 41.4,
+      "zoneId": 11
+    },
+    {
+      "entityId": 261,
+      "entityKind": "object",
+      "entityName": "Damaged Crate",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.5,
+      "y": 41.5,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "The Search Continues",
     "type": 5,
@@ -92,9 +134,9 @@
     {
       "npcId": 261,
       "npcName": "Damaged Crate",
-      "zoneId": 11,
       "x": 13.5,
       "y": 41.5,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

@@ -67,6 +67,18 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 142151,
+      "entityKind": "object",
+      "entityName": "Sealed Barrel",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 13.6,
+      "y": 38.1,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "Search More Hovels",
     "type": 5,
@@ -80,9 +92,9 @@
     {
       "npcId": 142151,
       "npcName": "Sealed Barrel",
-      "zoneId": 11,
       "x": 13.6,
       "y": 38.1,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

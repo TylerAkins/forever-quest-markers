@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 18,
+  "objectSpawns": [
+    {
+      "entityId": 19024,
+      "entityKind": "object",
+      "entityName": "Hidden Shrine",
+      "uiMapId": 1440,
+      "uiMapName": "Ashenvale",
+      "x": 56.4,
+      "y": 49.2,
+      "zoneId": 331
+    }
+  ],
   "pageInfo": {
     "name": "Raene's Cleansing",
     "type": 5,
@@ -88,9 +100,9 @@
     {
       "npcId": 19024,
       "npcName": "Hidden Shrine",
-      "zoneId": 331,
       "x": 56.4,
       "y": 49.2,
+      "zoneId": 331,
       "zoneName": "Ashenvale"
     }
   ]

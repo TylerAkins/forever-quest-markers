@@ -189,6 +189,48 @@
     ]
   },
   "minLevel": 40,
+  "objectSpawns": [
+    {
+      "entityId": 175704,
+      "entityKind": "object",
+      "entityName": "Singed Letter",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 74.4,
+      "y": 19.4,
+      "zoneId": 51
+    },
+    {
+      "entityId": 175704,
+      "entityKind": "object",
+      "entityName": "Singed Letter",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 74.4,
+      "y": 19.5,
+      "zoneId": 51
+    },
+    {
+      "entityId": 175704,
+      "entityKind": "object",
+      "entityName": "Singed Letter",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 74.5,
+      "y": 19.4,
+      "zoneId": 51
+    },
+    {
+      "entityId": 175704,
+      "entityKind": "object",
+      "entityName": "Singed Letter",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 74.5,
+      "y": 19.5,
+      "zoneId": 51
+    }
+  ],
   "pageInfo": {
     "name": "Suntara Stones",
     "type": 5,
@@ -202,9 +244,9 @@
     {
       "npcId": 175704,
       "npcName": "Singed Letter",
-      "zoneId": 51,
       "x": 74.5,
       "y": 19.4,
+      "zoneId": 51,
       "zoneName": "Searing Gorge"
     }
   ]

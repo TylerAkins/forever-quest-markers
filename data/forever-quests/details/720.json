@@ -77,6 +77,18 @@
     ]
   },
   "minLevel": 35,
+  "objectSpawns": [
+    {
+      "entityId": 2868,
+      "entityKind": "object",
+      "entityName": "Crumpled Map",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 53.0,
+      "y": 34.1,
+      "zoneId": 3
+    }
+  ],
   "pageInfo": {
     "name": "A Sign of Hope",
     "type": 5,
@@ -90,9 +102,9 @@
     {
       "npcId": 2868,
       "npcName": "Crumpled Map",
-      "zoneId": 3,
       "x": 53.0,
       "y": 34.1,
+      "zoneId": 3,
       "zoneName": "Badlands"
     }
   ]

@@ -7682,6 +7682,18 @@
     ]
   },
   "minLevel": 47,
+  "objectSpawns": [
+    {
+      "entityId": 164957,
+      "entityKind": "object",
+      "entityName": "Eastern Crystal Pylon",
+      "uiMapId": 1449,
+      "uiMapName": "Un'Goro Crater",
+      "x": 77.3,
+      "y": 50.0,
+      "zoneId": 490
+    }
+  ],
   "pageInfo": {
     "name": "Crystal Spire",
     "type": 5,
@@ -7695,9 +7707,9 @@
     {
       "npcId": 164957,
       "npcName": "Eastern Crystal Pylon",
-      "zoneId": 490,
       "x": 77.3,
       "y": 50.0,
+      "zoneId": 490,
       "zoneName": "Un'Goro Crater"
     }
   ]

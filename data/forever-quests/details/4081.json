@@ -132,6 +132,28 @@
     ]
   },
   "minLevel": 48,
+  "objectSpawns": [
+    {
+      "entityId": 164867,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 3.8,
+      "y": 47.5,
+      "zoneId": 3
+    },
+    {
+      "entityId": 164867,
+      "entityKind": "object",
+      "entityName": "WANTED",
+      "uiMapId": 1418,
+      "uiMapName": "Badlands",
+      "x": 3.9,
+      "y": 47.4,
+      "zoneId": 3
+    }
+  ],
   "pageInfo": {
     "name": "KILL ON SIGHT: Dark Iron Dwarves",
     "type": 5,
@@ -145,9 +167,9 @@
     {
       "npcId": 164867,
       "npcName": "WANTED",
-      "zoneId": 3,
       "x": 3.8,
       "y": 47.5,
+      "zoneId": 3,
       "zoneName": "Badlands"
     }
   ]

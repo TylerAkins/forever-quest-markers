@@ -85,6 +85,28 @@
     ]
   },
   "minLevel": 50,
+  "objectSpawns": [
+    {
+      "entityId": 176392,
+      "entityKind": "object",
+      "entityName": "Scourge Cauldron",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 62.5,
+      "y": 58.4,
+      "zoneId": 28
+    },
+    {
+      "entityId": 176392,
+      "entityKind": "object",
+      "entityName": "Scourge Cauldron",
+      "uiMapId": 1422,
+      "uiMapName": "Western Plaguelands",
+      "x": 62.5,
+      "y": 58.6,
+      "zoneId": 28
+    }
+  ],
   "pageInfo": {
     "name": "Return to the Bulwark",
     "type": 5,
@@ -98,9 +120,9 @@
     {
       "npcId": 176392,
       "npcName": "Scourge Cauldron",
-      "zoneId": 28,
       "x": 62.5,
       "y": 58.6,
+      "zoneId": 28,
       "zoneName": "Western Plaguelands"
     }
   ]

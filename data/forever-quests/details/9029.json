@@ -74,6 +74,28 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 181073,
+      "entityKind": "object",
+      "entityName": "Fragrant Cauldron",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 89.3,
+      "y": 75.1,
+      "zoneId": 36
+    },
+    {
+      "entityId": 181073,
+      "entityKind": "object",
+      "entityName": "Fragrant Cauldron",
+      "uiMapId": 1416,
+      "uiMapName": "Alterac Mountains",
+      "x": 89.5,
+      "y": 75.0,
+      "zoneId": 36
+    }
+  ],
   "pageInfo": {
     "name": "A Bubbling Cauldron",
     "type": 5,
@@ -87,9 +109,9 @@
     {
       "npcId": 181073,
       "npcName": "Fragrant Cauldron",
-      "zoneId": 36,
       "x": 89.3,
       "y": 75.1,
+      "zoneId": 36,
       "zoneName": "Alterac Mountains"
     }
   ]

@@ -67,6 +67,18 @@
     ]
   },
   "minLevel": 12,
+  "objectSpawns": [
+    {
+      "entityId": 1599,
+      "entityKind": "object",
+      "entityName": "Shallow Grave",
+      "uiMapId": 1421,
+      "uiMapName": "Silverpine Forest",
+      "x": 67.8,
+      "y": 24.8,
+      "zoneId": 130
+    }
+  ],
   "pageInfo": {
     "name": "The Hidden Niche",
     "type": 5,
@@ -80,9 +92,9 @@
     {
       "npcId": 1599,
       "npcName": "Shallow Grave",
-      "zoneId": 130,
       "x": 67.8,
       "y": 24.8,
+      "zoneId": 130,
       "zoneName": "Silverpine Forest"
     }
   ]

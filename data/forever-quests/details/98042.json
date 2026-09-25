@@ -197,6 +197,18 @@
     ]
   },
   "minLevel": 12,
+  "objectSpawns": [
+    {
+      "entityId": 12666,
+      "entityKind": "object",
+      "entityName": "Twilight Tome",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 38.6,
+      "y": 86.1,
+      "zoneId": 148
+    }
+  ],
   "pageInfo": {
     "name": "It's All Fun and Games Until...",
     "type": 5,
@@ -210,9 +222,9 @@
     {
       "npcId": 12666,
       "npcName": "Twilight Tome",
-      "zoneId": 148,
       "x": 38.6,
       "y": 86.1,
+      "zoneId": 148,
       "zoneName": "Darkshore"
     }
   ]

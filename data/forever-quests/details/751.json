@@ -129,6 +129,38 @@
     ]
   },
   "minLevel": 5,
+  "objectSpawns": [
+    {
+      "entityId": 2908,
+      "entityKind": "object",
+      "entityName": "Sealed Supply Crate",
+      "uiMapId": 1412,
+      "uiMapName": "Mulgore",
+      "x": 51.9,
+      "y": 53.4,
+      "zoneId": 215
+    },
+    {
+      "entityId": 2908,
+      "entityKind": "object",
+      "entityName": "Sealed Supply Crate",
+      "uiMapId": 1412,
+      "uiMapName": "Mulgore",
+      "x": 51.9,
+      "y": 53.5,
+      "zoneId": 215
+    },
+    {
+      "entityId": 2908,
+      "entityKind": "object",
+      "entityName": "Sealed Supply Crate",
+      "uiMapId": 1412,
+      "uiMapName": "Mulgore",
+      "x": 53.8,
+      "y": 48.3,
+      "zoneId": 215
+    }
+  ],
   "pageInfo": {
     "name": "The Ravaged Caravan",
     "type": 5,
@@ -142,9 +174,9 @@
     {
       "npcId": 2908,
       "npcName": "Sealed Supply Crate",
-      "zoneId": 215,
       "x": 53.8,
       "y": 48.3,
+      "zoneId": 215,
       "zoneName": "Mulgore"
     }
   ]

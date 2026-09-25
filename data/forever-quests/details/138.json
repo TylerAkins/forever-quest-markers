@@ -70,6 +70,18 @@
     ]
   },
   "minLevel": 10,
+  "objectSpawns": [
+    {
+      "entityId": 35,
+      "entityKind": "object",
+      "entityName": "Captain's Footlocker",
+      "uiMapId": 1436,
+      "uiMapName": "Westfall",
+      "x": 26.0,
+      "y": 47.8,
+      "zoneId": 40
+    }
+  ],
   "pageInfo": {
     "name": "Captain Sander's Hidden Treasure",
     "type": 5,
@@ -83,9 +95,9 @@
     {
       "npcId": 35,
       "npcName": "Captain's Footlocker",
-      "zoneId": 40,
       "x": 26.0,
       "y": 47.8,
+      "zoneId": 40,
       "zoneName": "Westfall"
     }
   ]

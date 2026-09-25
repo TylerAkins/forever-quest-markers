@@ -69,6 +69,18 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 59,
+      "entityKind": "object",
+      "entityName": "Mound of loose dirt",
+      "uiMapId": 1431,
+      "uiMapName": "Duskwood",
+      "x": 50.0,
+      "y": 77.8,
+      "zoneId": 10
+    }
+  ],
   "pageInfo": {
     "name": "Sven's Camp",
     "type": 5,
@@ -82,9 +94,9 @@
     {
       "npcId": 59,
       "npcName": "Mound of loose dirt",
-      "zoneId": 10,
       "x": 50.0,
       "y": 77.8,
+      "zoneId": 10,
       "zoneName": "Duskwood"
     }
   ]

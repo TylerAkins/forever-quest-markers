@@ -133,6 +133,18 @@
     ]
   },
   "minLevel": 30,
+  "objectSpawns": [
+    {
+      "entityId": 2713,
+      "entityKind": "object",
+      "entityName": "Wanted Board",
+      "uiMapId": 1417,
+      "uiMapName": "Arathi Highlands",
+      "x": 46.0,
+      "y": 47.7,
+      "zoneId": 45
+    }
+  ],
   "pageInfo": {
     "name": "Wanted! Otto and Falconcrest",
     "type": 5,
@@ -146,9 +158,9 @@
     {
       "npcId": 2713,
       "npcName": "Wanted Board",
-      "zoneId": 45,
       "x": 46.0,
       "y": 47.7,
+      "zoneId": 45,
       "zoneName": "Arathi Highlands"
     }
   ]

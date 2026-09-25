@@ -74,6 +74,28 @@
     ]
   },
   "minLevel": 1,
+  "objectSpawns": [
+    {
+      "entityId": 2289,
+      "entityKind": "object",
+      "entityName": "Ruined Lifeboat",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 32.4,
+      "y": 81.9,
+      "zoneId": 33
+    },
+    {
+      "entityId": 2289,
+      "entityKind": "object",
+      "entityName": "Ruined Lifeboat",
+      "uiMapId": 1434,
+      "uiMapName": "Stranglethorn Vale",
+      "x": 32.5,
+      "y": 81.9,
+      "zoneId": 33
+    }
+  ],
   "pageInfo": {
     "name": "Enticing Negolash",
     "type": 5,
@@ -87,9 +109,9 @@
     {
       "npcId": 2289,
       "npcName": "Ruined Lifeboat",
-      "zoneId": 33,
       "x": 32.5,
       "y": 81.9,
+      "zoneId": 33,
       "zoneName": "Stranglethorn Vale"
     }
   ]

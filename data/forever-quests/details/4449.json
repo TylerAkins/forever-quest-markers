@@ -847,6 +847,38 @@
     ]
   },
   "minLevel": 43,
+  "objectSpawns": [
+    {
+      "entityId": 173265,
+      "entityKind": "object",
+      "entityName": "Wooden Outhouse",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 65.4,
+      "y": 62.2,
+      "zoneId": 51
+    },
+    {
+      "entityId": 173265,
+      "entityKind": "object",
+      "entityName": "Wooden Outhouse",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 65.5,
+      "y": 62.2,
+      "zoneId": 51
+    },
+    {
+      "entityId": 173265,
+      "entityKind": "object",
+      "entityName": "Wooden Outhouse",
+      "uiMapId": 1427,
+      "uiMapName": "Searing Gorge",
+      "x": 65.6,
+      "y": 62.5,
+      "zoneId": 51
+    }
+  ],
   "pageInfo": {
     "name": "Caught!",
     "type": 5,
@@ -860,9 +892,9 @@
     {
       "npcId": 173265,
       "npcName": "Wooden Outhouse",
-      "zoneId": 51,
       "x": 65.5,
       "y": 62.2,
+      "zoneId": 51,
       "zoneName": "Searing Gorge"
     }
   ]

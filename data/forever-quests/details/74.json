@@ -101,6 +101,38 @@
     ]
   },
   "minLevel": 22,
+  "objectSpawns": [
+    {
+      "entityId": 1561,
+      "entityKind": "object",
+      "entityName": "Sealed Crate",
+      "uiMapId": 1453,
+      "uiMapName": "Stormwind City",
+      "x": 29.4,
+      "y": 61.7,
+      "zoneId": 1519
+    },
+    {
+      "entityId": 1561,
+      "entityKind": "object",
+      "entityName": "Sealed Crate",
+      "uiMapId": 1453,
+      "uiMapName": "Stormwind City",
+      "x": 29.6,
+      "y": 61.8,
+      "zoneId": 1519
+    },
+    {
+      "entityId": 1561,
+      "entityKind": "object",
+      "entityName": "Sealed Crate",
+      "uiMapId": 1453,
+      "uiMapName": "Stormwind City",
+      "x": 29.8,
+      "y": 61.4,
+      "zoneId": 1519
+    }
+  ],
   "pageInfo": {
     "name": "The Legend of Stalvan",
     "type": 5,
@@ -114,9 +146,9 @@
     {
       "npcId": 1561,
       "npcName": "Sealed Crate",
-      "zoneId": 1519,
       "x": 29.6,
       "y": 61.8,
+      "zoneId": 1519,
       "zoneName": "Stormwind City"
     }
   ]

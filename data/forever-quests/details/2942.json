@@ -73,6 +73,18 @@
     ]
   },
   "minLevel": 42,
+  "objectSpawns": [
+    {
+      "entityId": 144063,
+      "entityKind": "object",
+      "entityName": "Equinex Monolith",
+      "uiMapId": 1444,
+      "uiMapName": "Feralas",
+      "x": 38.9,
+      "y": 13.2,
+      "zoneId": 357
+    }
+  ],
   "pageInfo": {
     "name": "The Morrow Stone",
     "type": 5,
@@ -86,9 +98,9 @@
     {
       "npcId": 144063,
       "npcName": "Equinex Monolith",
-      "zoneId": 357,
       "x": 38.9,
       "y": 13.2,
+      "zoneId": 357,
       "zoneName": "Feralas"
     }
   ]

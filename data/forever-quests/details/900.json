@@ -125,6 +125,28 @@
     ]
   },
   "minLevel": 10,
+  "objectSpawns": [
+    {
+      "entityId": 4141,
+      "entityKind": "object",
+      "entityName": "Control Console",
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 52.4,
+      "y": 11.7,
+      "zoneId": 17
+    },
+    {
+      "entityId": 4141,
+      "entityKind": "object",
+      "entityName": "Control Console",
+      "uiMapId": 1413,
+      "uiMapName": "The Barrens",
+      "x": 52.5,
+      "y": 11.7,
+      "zoneId": 17
+    }
+  ],
   "pageInfo": {
     "name": "Samophlange",
     "type": 5,
@@ -138,9 +160,9 @@
     {
       "npcId": 4141,
       "npcName": "Control Console",
-      "zoneId": 17,
       "x": 52.4,
       "y": 11.7,
+      "zoneId": 17,
       "zoneName": "The Barrens"
     }
   ]

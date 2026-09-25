@@ -395,6 +395,18 @@
     ]
   },
   "minLevel": 7,
+  "objectSpawns": [
+    {
+      "entityId": 17184,
+      "entityKind": "object",
+      "entityName": "Buzzbox 323",
+      "uiMapId": 1439,
+      "uiMapName": "Darkshore",
+      "x": 51.3,
+      "y": 24.6,
+      "zoneId": 148
+    }
+  ],
   "pageInfo": {
     "name": "Buzzbox 525",
     "type": 5,
@@ -408,9 +420,9 @@
     {
       "npcId": 17184,
       "npcName": "Buzzbox 323",
-      "zoneId": 148,
       "x": 51.3,
       "y": 24.6,
+      "zoneId": 148,
       "zoneName": "Darkshore"
     }
   ]

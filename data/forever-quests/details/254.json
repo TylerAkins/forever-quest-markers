@@ -67,6 +67,18 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 51708,
+      "entityKind": "object",
+      "entityName": "Eliza's Grave Dirt",
+      "uiMapId": 1431,
+      "uiMapName": "Duskwood",
+      "x": 28.8,
+      "y": 31.0,
+      "zoneId": 10
+    }
+  ],
   "pageInfo": {
     "name": "Digging Through the Dirt",
     "type": 5,
@@ -83,9 +95,9 @@
     {
       "npcId": 51708,
       "npcName": "Eliza's Grave Dirt",
-      "zoneId": 10,
       "x": 28.8,
       "y": 31.0,
+      "zoneId": 10,
       "zoneName": "Duskwood"
     }
   ]

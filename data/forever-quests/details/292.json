@@ -77,6 +77,28 @@
     ]
   },
   "minLevel": 22,
+  "objectSpawns": [
+    {
+      "entityId": 112948,
+      "entityKind": "object",
+      "entityName": "Intrepid's Locked Strongbox",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 14.3,
+      "y": 24.0,
+      "zoneId": 11
+    },
+    {
+      "entityId": 112948,
+      "entityKind": "object",
+      "entityName": "Intrepid's Locked Strongbox",
+      "uiMapId": 1437,
+      "uiMapName": "Wetlands",
+      "x": 14.5,
+      "y": 24.1,
+      "zoneId": 11
+    }
+  ],
   "pageInfo": {
     "name": "The Eye of Paleth",
     "type": 5,
@@ -90,9 +112,9 @@
     {
       "npcId": 112948,
       "npcName": "Intrepid's Locked Strongbox",
-      "zoneId": 11,
       "x": 14.3,
       "y": 24.0,
+      "zoneId": 11,
       "zoneName": "Wetlands"
     }
   ]

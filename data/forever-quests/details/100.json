@@ -87,6 +87,28 @@
     ]
   },
   "minLevel": 20,
+  "objectSpawns": [
+    {
+      "entityId": 113791,
+      "entityKind": "object",
+      "entityName": "Brazier of Everfount",
+      "uiMapId": 1421,
+      "uiMapName": "Silverpine Forest",
+      "x": 38.2,
+      "y": 44.4,
+      "zoneId": 130
+    },
+    {
+      "entityId": 113791,
+      "entityKind": "object",
+      "entityName": "Brazier of Everfount",
+      "uiMapId": 1421,
+      "uiMapName": "Silverpine Forest",
+      "x": 38.2,
+      "y": 44.5,
+      "zoneId": 130
+    }
+  ],
   "pageInfo": {
     "name": "Call of Water",
     "type": 5,
@@ -104,9 +126,9 @@
     {
       "npcId": 113791,
       "npcName": "Brazier of Everfount",
-      "zoneId": 130,
       "x": 38.2,
       "y": 44.5,
+      "zoneId": 130,
       "zoneName": "Silverpine Forest"
     }
   ]
