@@ -1,4 +1,4 @@
-## 0.1.35 - 2026-09-24
+## 0.1.36 - 2026-09-25
 
-- Learn missing NPC quest starters from offered quests during the current session, including when map coordinates are unavailable.
-- Keep NPC tooltip quests visible with a placeholder when their titles are unavailable, and retry failed title loads on later lookups.
+- Update the ATT Forever quest database to `8c98ec1d81128e317eb04f21bc25290d7d8b2049`.
+- Ship 3818 quests with 4081 coordinate pins across 49 maps.
