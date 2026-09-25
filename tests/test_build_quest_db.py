@@ -16,7 +16,7 @@ from att_dsl.emit import emit_lua_database
 from att_dsl.evaluator import evaluate_chunk, new_environment
 from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
-from att_dsl.preprocessor import preprocess
+from att_dsl.preprocessor import preprocess, unwrap_disabled_module
 
 
 FIXTURES = ROOT / "tests" / "fixtures"
@@ -56,6 +56,19 @@ class PreprocessorTests(unittest.TestCase):
         self.assertEqual(result.quests[1001].faction, "Alliance")
         self.assertIn(1003, result.quests)
         self.assertNotIn(1002, result.quests)
+
+    def test_disabled_module_block_comment_is_unwrapped(self) -> None:
+        source = (FIXTURES / "disabled_module.lua").read_text(encoding="utf-8")
+        processed = preprocess(unwrap_disabled_module(source), _ctx())
+        chunk = parse_lua(processed, filename="disabled_module.lua")
+        env = new_environment(_ctx())
+        evaluate_chunk(chunk, env)
+        result = ExtractResult()
+        extract_from_roots(env.get("_roots", []), "disabled_module.lua", result)
+        mark_attunement_chains(result.quests, result.attunement_quest_ids)
+
+        self.assertIn(7848, result.quests)
+        self.assertTrue(result.quests[7848].is_attunement)
 
 
 class ParserFailureTests(unittest.TestCase):
