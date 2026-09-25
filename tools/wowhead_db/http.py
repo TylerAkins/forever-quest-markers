@@ -38,6 +38,7 @@ class WowheadClient:
         self.batch_pause_s = batch_pause_s
         self._last_fetch_at = 0.0
         self._network_fetches = 0
+        self._use_curl = False
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _cache_path(self, url: str) -> Path:
@@ -48,6 +49,9 @@ class WowheadClient:
         path = self._cache_path(url)
         if not force and path.is_file():
             return path.read_text(encoding="utf-8", errors="replace")
+
+        if self._use_curl:
+            return self._fetch_store(url, path, self._fetch_curl)
 
         last_error: Exception | None = None
         for attempt in range(6):
@@ -64,7 +68,16 @@ class WowheadClient:
                 raise
             except OSError as exc:
                 last_error = exc
-                time.sleep(min(30, 2 * (2**attempt)))
+                if _is_cert_verify_failure(exc):
+                    print(
+                        "  Python cannot verify HTTPS certificates; using curl for the rest of this run",
+                        flush=True,
+                    )
+                    self._use_curl = True
+                    return self._fetch_store(url, path, self._fetch_curl)
+                wait = min(30, 2 * (2**attempt))
+                print(f"  network error ({exc}); retry in {wait}s", flush=True)
+                time.sleep(wait)
                 continue
 
             if _looks_like_block_page(html):
@@ -83,6 +96,14 @@ class WowheadClient:
                 raise last_error from exc
             raise
 
+        return self._store_html(url, path, html)
+
+    def _fetch_store(self, url: str, path: Path, fetch) -> str:
+        self._throttle()
+        html = fetch(url)
+        return self._store_html(url, path, html)
+
+    def _store_html(self, url: str, path: Path, html: str) -> str:
         if _looks_like_block_page(html):
             raise RuntimeError(f"Wowhead blocked fetch for {url}")
         path.write_text(html, encoding="utf-8")
@@ -140,6 +161,11 @@ def quest_detail_url(quest_id: int, name: str | None = None) -> str:
     if slug:
         return f"https://www.wowhead.com/forever/quest={quest_id}/{slug}"
     return f"https://www.wowhead.com/forever/quest={quest_id}"
+
+
+def _is_cert_verify_failure(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return "certificate_verify_failed" in text or "certificate verify failed" in text
 
 
 def _looks_like_block_page(html: str) -> bool:
