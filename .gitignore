@@ -24,11 +24,11 @@ venv/
 
 # Local ATT checkout / scratch
 .cache/
-# Wowhead HTML scrape cache (committed DB lives under data/wowhead/)
-.cache/wowhead-html/
-data/wowhead/sync-quests.log
-data/wowhead/agent-sync-quests.log
-data/wowhead/fetch_errors.jsonl
+# Source HTML scrape cache (committed DB lives under data/forever-quests/)
+.cache/quest-html/
+data/forever-quests/sync-quests.log
+data/forever-quests/agent-sync-quests.log
+data/forever-quests/fetch_errors.jsonl
 *.zip
 .release/
 .compiled/
