@@ -10,11 +10,15 @@ end
 local completedLookup
 local completedLookupReady = false
 local completedListLoaded = false
+local onQuestLookup
+local onQuestLookupReady = false
 
 function ns.InvalidateCompletionCache()
     completedLookup = nil
     completedLookupReady = false
     completedListLoaded = false
+    onQuestLookup = nil
+    onQuestLookupReady = false
 end
 
 local function AddCompletedQuest(lookup, questID)
@@ -104,23 +108,70 @@ function ns.HasQuestGiver(data)
     return false
 end
 
+local function AddOnQuest(lookup, questID)
+    questID = tonumber(questID)
+    if type(questID) == "number" and questID > 0 then
+        lookup[questID] = true
+    end
+end
+
+-- Forever's C_QuestLog.IsOnQuest can return false for a quest that is already
+-- in the log. A false result is not final; the log itself is.
+local function OnQuestLookup()
+    if onQuestLookupReady then
+        return onQuestLookup
+    end
+    onQuestLookupReady = true
+    local lookup = {}
+    if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo then
+        local ok, num = pcall(C_QuestLog.GetNumQuestLogEntries)
+        if ok and type(num) == "number" then
+            for i = 1, num do
+                local infoOk, info = pcall(C_QuestLog.GetInfo, i)
+                if infoOk and type(info) == "table" and not info.isHeader then
+                    AddOnQuest(lookup, info.questID or info.questId)
+                end
+            end
+        end
+    end
+    if GetNumQuestLogEntries and GetQuestLogTitle then
+        local ok, num = pcall(GetNumQuestLogEntries)
+        if ok and type(num) == "number" then
+            for i = 1, num do
+                local titleOk, _, _, _, isHeader, _, _, _, questID = pcall(GetQuestLogTitle, i)
+                if titleOk and not isHeader then
+                    AddOnQuest(lookup, questID)
+                end
+            end
+        end
+    end
+    onQuestLookup = lookup
+    return lookup
+end
+
+local function PositiveLogIndex(fn, questID)
+    if type(fn) ~= "function" then
+        return false
+    end
+    local ok, index = pcall(fn, questID)
+    return ok and type(index) == "number" and index > 0
+end
+
 function ns.IsOnQuest(questID)
     if not questID then
         return false
     end
-    local onQuest = Call(C_QuestLog, "IsOnQuest", questID)
-    if onQuest ~= nil then
-        return onQuest and true or false
+    questID = tonumber(questID)
+    if Call(C_QuestLog, "IsOnQuest", questID) then
+        return true
     end
-    if C_QuestLog and C_QuestLog.GetLogIndexForQuestID then
-        local index = C_QuestLog.GetLogIndexForQuestID(questID)
-        return index and index > 0 or false
+    if PositiveLogIndex(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, questID) then
+        return true
     end
-    if GetQuestLogIndexByID then
-        local index = GetQuestLogIndexByID(questID)
-        return index and index > 0 or false
+    if PositiveLogIndex(GetQuestLogIndexByID, questID) then
+        return true
     end
-    return false
+    return OnQuestLookup()[questID] and true or false
 end
 
 local titleCache = {}

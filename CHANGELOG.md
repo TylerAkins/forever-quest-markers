@@ -7,6 +7,7 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 - Ship quest-start pins from the Wowhead Forever scrape instead of All The Things.
 - 3898 quests with 4701 coordinate pins across 47 maps, including Zephras Isle.
 - Purple pins for PvP quests. Holiday quests stay hidden unless seasonal pins are on.
+- Hide a quest pin when that quest is already in the quest log, even if `C_QuestLog.IsOnQuest` returns false.
 
 ## 0.1.36 - 2026-09-25
 
