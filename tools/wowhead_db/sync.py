@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from .classify import classify_pin_category
-from .http import WowheadClient, quest_detail_url
+from .http import quest_detail_url
+
+
+class _HtmlClient(Protocol):
+    def get_html(self, url: str, *, force: bool = False) -> str: ...
 from .ingest import ingest_html
 from .parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
 from .sources import SOURCE_PAGES
@@ -17,7 +21,7 @@ from .zone_resolver import bootstrap_zone_ui_map_ids
 
 def sync_sources(
     data_root: Path,
-    client: WowheadClient,
+    client: _HtmlClient,
     *,
     force: bool = False,
 ) -> dict[str, Any]:
@@ -38,7 +42,7 @@ def sync_sources(
 
 def sync_quest_details(
     data_root: Path,
-    client: WowheadClient,
+    client: _HtmlClient,
     *,
     limit: int | None = None,
     force: bool = False,
