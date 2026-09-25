@@ -22,6 +22,8 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for ATT-derived attunement chains |
 | `tools/build_quest_db.py` | ATT Forever → `Database/` |
+| `tools/fetch_quest_pages.py` | Forever list pages → `data/forever-quests/` |
+| `data/forever-quests/` | Quest index + details (see `docs/quest-database.md`) |
 | `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
 | `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
