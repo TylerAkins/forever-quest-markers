@@ -200,6 +200,15 @@ function ns.IsQuestReadyForTurnIn(questID)
         return false
     end
     questID = tonumber(questID)
+    -- The quest log wins when it says the objectives are still open. A completion
+    -- API that returns true for that same quest is not enough to draw a turn-in.
+    OnQuestLookup()
+    if turnInReady and turnInReady[questID] == false then
+        return false
+    end
+    if turnInReady and turnInReady[questID] then
+        return true
+    end
     if Call(C_QuestLog, "ReadyForTurnIn", questID) then
         return true
     end
@@ -209,11 +218,7 @@ function ns.IsQuestReadyForTurnIn(questID)
     if IsQuestComplete and IsQuestComplete(questID) then
         return true
     end
-    OnQuestLookup()
-    if turnInReady and turnInReady[questID] ~= nil then
-        return turnInReady[questID] and true or false
-    end
-    return true
+    return false
 end
 
 local titleCache = {}

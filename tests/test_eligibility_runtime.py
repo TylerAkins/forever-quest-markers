@@ -108,6 +108,18 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(ns.IsQuestReadyForTurnIn(1) == false)
         """)
 
+    def test_open_objectives_in_the_log_are_not_ready_to_turn_in(self) -> None:
+        self.lua.execute("""
+            C_QuestLog.IsOnQuest = function(questID) return questID == 1485 end
+            C_QuestLog.ReadyForTurnIn = function() return true end
+            C_QuestLog.IsComplete = function() return true end
+            C_QuestLog.GetNumQuestLogEntries = function() return 1 end
+            C_QuestLog.GetInfo = function()
+                return { questID = 1485, isComplete = false }
+            end
+            assert(ns.IsQuestReadyForTurnIn(1485) == false)
+        """)
+
     def test_single_quest_api_is_used_only_without_a_completed_list(self) -> None:
         self.lua.execute("""
             C_QuestLog.IsQuestFlaggedCompleted = function(questID)

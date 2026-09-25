@@ -808,7 +808,7 @@ function ns.TryRegisterSettings()
             warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
 
             local npcTooltips = CreateOptionCheckbox(self, "showNPCTooltips",
-                "Show NPC quest tooltips", "Show recommended quest levels for available quest starts, and for quests in your log that turn in to the NPC. Independent of map-pin visibility.")
+                "Show NPC quest tooltips", "Show recommended quest levels for available quest starts, and a ? when a quest is ready to turn in to this NPC. Independent of map-pin visibility.")
             npcTooltips:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
 
             local accept = CreateOptionCheckbox(

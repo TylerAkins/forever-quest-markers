@@ -70,19 +70,22 @@ local function TurnInReady(questID)
     if ns.IsQuestReadyForTurnIn then
         return ns.IsQuestReadyForTurnIn(questID) and true or false
     end
-    local ready, saw = ApiSaysReady(C_QuestLog, "ReadyForTurnIn", questID)
+    local ready = ApiSaysReady(C_QuestLog, "ReadyForTurnIn", questID)
     if ready then return true end
-    local complete, sawComplete = ApiSaysReady(C_QuestLog, "IsComplete", questID)
-    saw = saw or sawComplete
+    local complete = ApiSaysReady(C_QuestLog, "IsComplete", questID)
     if complete then return true end
     if type(IsQuestComplete) == "function" then
         local ok, result = pcall(IsQuestComplete, questID)
-        if ok then
-            saw = true
-            if result then return true end
-        end
+        if ok and result then return true end
     end
-    return not saw
+    return false
+end
+
+local function LoadedTitle(questID)
+    local title = ns.GetQuestTitle(questID)
+    if type(title) == "string" and title ~= "" then
+        return title
+    end
 end
 
 local function AddRow(rows, questID, turnIn)
@@ -99,15 +102,43 @@ function Tooltips:GetRows(npcID)
     BuildIndex()
     local rows = {}
     local listed = {}
+    local activeTitles = {}
+    local function NoteActiveTitle(questID)
+        if not ns.IsOnQuest(questID) then return end
+        local title = LoadedTitle(questID)
+        if title then
+            activeTitles[title] = true
+        end
+    end
+    for questID in pairs(starters[npcID] or {}) do
+        NoteActiveTitle(questID)
+    end
+    for questID in pairs(finishers[npcID] or {}) do
+        NoteActiveTitle(questID)
+    end
+    local seenTitles = {}
+    local function DuplicateTitle(questID)
+        local title = LoadedTitle(questID)
+        if not title then
+            return false
+        end
+        if seenTitles[title] then
+            return true
+        end
+        seenTitles[title] = true
+        return false
+    end
     for questID in pairs(starters[npcID] or {}) do
         local data = ns.Quests[questID]
-        if ns.IsQuestAvailable(questID, data) then
+        local title = LoadedTitle(questID)
+        local sameQuestInLog = title and activeTitles[title]
+        if ns.IsQuestAvailable(questID, data) and not sameQuestInLog and not DuplicateTitle(questID) then
             AddRow(rows, questID, false)
             listed[questID] = true
         end
     end
     for questID in pairs(finishers[npcID] or {}) do
-        if not listed[questID] and ns.IsOnQuest(questID) then
+        if not listed[questID] and ns.IsOnQuest(questID) and TurnInReady(questID) and not DuplicateTitle(questID) then
             AddRow(rows, questID, true)
         end
     end

@@ -78,7 +78,7 @@ Forever’s quest data is still moving. A missing pin is usually a quest page wi
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
-- **NPC hover rows** list available quest starts, plus quests in your log that turn in to that NPC. A yellow `?` is ready to turn in; a gray `?` is still in progress. Native objective blocks are left as the client draws them.
+- **NPC hover rows** list available quest starts. A yellow `?` is added on the turn-in NPC once that quest is ready to hand in. Native objective blocks are left as the client draws them.
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. The bundled Zephras Isle data currently contains only six quests, so other quests need to be discovered this way. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Quests with no start coordinate** in the Wowhead scrape will not pin until a gossip offer this session reveals them
 - **Item-started** quests with no map coordinate are omitted

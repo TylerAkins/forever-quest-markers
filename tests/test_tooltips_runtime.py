@@ -53,16 +53,36 @@ class TooltipRuntimeTests(unittest.TestCase):
             ns.active[92469] = true
             ns.ready[92469] = true
             ns.NPCTooltips:Refresh()
-            assert(#GameTooltip.lines == 3)
+            assert(#GameTooltip.lines == 2)
             assert(GameTooltip.lines[2].text == '? [4] Return to Rorian')
             assert(GameTooltip.lines[2].r == 1 and GameTooltip.lines[2].g == .82)
-            assert(GameTooltip.lines[3].text == '? [1] Harmony in Balance')
-            assert(GameTooltip.lines[3].r == .7 and GameTooltip.lines[3].g == .7)
             ns.active[92469] = nil
             ns.active[92461] = nil
             ns.NPCTooltips:Refresh()
             assert(GameTooltip.lines[2].text == '! [1] Harmony in Balance')
             assert(#GameTooltip.lines == 2)
+        """)
+
+    def test_unfinished_quest_does_not_show_a_turn_in_and_an_offer(self) -> None:
+        self.lua.execute("""
+            ns.Quests[1485] = {qg=100, endNpc=100}
+            ns.Quests[1499] = {qg=100, endNpc=200}
+            ns.titles[1485] = 'Vile Familiars'
+            ns.titles[1499] = 'Vile Familiars'
+            ns.levels[1485] = 4
+            ns.levels[1499] = 4
+            ns.active[1485] = true
+            GameTooltip:SetUnit('mouseover')
+            assert(#GameTooltip.lines == 1)
+            ns.ready[1485] = true
+            ns.NPCTooltips:Refresh()
+            assert(#GameTooltip.lines == 2)
+            assert(GameTooltip.lines[2].text == '? [4] Vile Familiars')
+            ns.active[1485] = nil
+            ns.ready[1485] = nil
+            ns.NPCTooltips:Refresh()
+            assert(#GameTooltip.lines == 2)
+            assert(GameTooltip.lines[2].text == '! [4] Vile Familiars')
         """)
 
     def test_quest_state_transitions_refresh_available_rows(self) -> None:

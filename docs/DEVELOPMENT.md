@@ -87,7 +87,7 @@ CI (`validate`) regenerates `Database/` with `tools/emit_wowhead_db.py` and fail
 
 Run the intentionally undocumented `/fqp hoverprobe`, then move the cursor onto an NPC. The next unit tooltip prints its NPC ID, the result of `C_QuestLog.UnitIsRelatedToActiveQuest`, and every exposed structured tooltip line and nested argument. The probe is one-shot and read-only. It does not add active or turn-in rows.
 
-Forever Beta testing found native quest-title/objective lines on objective-related units, but ordinary unit lines and no quest identifier on both incomplete and completed finisher NPCs. `UnitIsRelatedToActiveQuest` also returned false for the incomplete finisher. Turn-in rows therefore come from the database `endNpc` / `endNpcs` fields for quests already in the log, not from hover data. Native objective blocks should not be duplicated.
+Forever Beta testing found native quest-title/objective lines on objective-related units, but ordinary unit lines and no quest identifier on both incomplete and completed finisher NPCs. `UnitIsRelatedToActiveQuest` also returned false for the incomplete finisher. Turn-in rows therefore come from the database `endNpc` / `endNpcs` fields, and only after the quest log says that quest is ready to hand in. Native objective blocks should not be duplicated.
 
 ## Local builds
 
