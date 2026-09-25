@@ -7,13 +7,19 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .classify import classify_pin_category
-from .http import quest_detail_url
+from .http import item_detail_url, object_detail_url, quest_detail_url
 
 
 class _HtmlClient(Protocol):
     def get_html(self, url: str, *, force: bool = False) -> str: ...
 from .ingest import ingest_html
-from .parse_quest import eligibility_restrictions, extract_start_pins, parse_quest_detail
+from .parse_quest import (
+    eligibility_restrictions,
+    extract_spawn_pins,
+    extract_start_pins,
+    parse_quest_detail,
+    quest_ids_from_markup,
+)
 from .sources import SOURCE_PAGES
 from .store import load_manifest, save_manifest, utc_now_iso, write_json
 from .zone_resolver import bootstrap_zone_ui_map_ids
@@ -131,6 +137,149 @@ def sync_quest_details(
     write_json(index_path, quest_index)
     save_manifest(data_root, manifest)
     return manifest
+
+
+def sync_object_details(
+    data_root: Path,
+    client: _HtmlClient,
+    *,
+    limit: int | None = None,
+    object_ids: list[int] | None = None,
+    item_ids: list[int] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Download object (and optional item) pages and copy every spawn onto the quest."""
+    manifest = load_manifest(data_root)
+    errors_path = data_root / "fetch_errors.jsonl"
+    jobs = _object_jobs(data_root, object_ids=object_ids, item_ids=item_ids, force=force)
+    if limit is not None:
+        jobs = jobs[:limit]
+    print(f"object/item pages: {len(jobs)} to fetch", flush=True)
+
+    processed = 0
+    for index, job in enumerate(jobs, start=1):
+        print(f"[{index}/{len(jobs)}] {job['url']}", flush=True)
+        try:
+            html = client.get_html(job["url"], force=force)
+        except Exception as exc:  # noqa: BLE001 — log and continue batch
+            print(f"  failed: {exc}", flush=True)
+            with errors_path.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    json.dumps({"kind": job["kind"], "id": job["id"], "url": job["url"], "error": str(exc)}) + "\n"
+                )
+            continue
+        detail = parse_quest_detail(html, job["id"])
+        spawns = extract_spawn_pins(detail.get("mapper"))
+        quest_ids = quest_ids_from_markup(detail.get("infoboxMarkup"))
+        record = {
+            "id": job["id"],
+            "kind": job["kind"],
+            "name": job.get("name"),
+            "fetchedAt": utc_now_iso(),
+            "spawns": spawns,
+            "startsQuestIds": quest_ids,
+            "infoboxMarkup": detail.get("infoboxMarkup"),
+        }
+        write_json(data_root / job["kind"] / f"{job['id']}.json", record)
+        attached = _attach_spawns_to_quests(data_root, record)
+        processed += 1
+        print(
+            f"  saved {job['kind']} {job['id']} spawns={len(spawns)} quests={quest_ids} attached={attached}",
+            flush=True,
+        )
+        if processed % 25 == 0:
+            manifest["stats"]["objectDetailCount"] = _json_count(data_root / "object")
+            save_manifest(data_root, manifest)
+
+    manifest["stats"]["objectDetailCount"] = _json_count(data_root / "object")
+    manifest["stats"]["itemDetailCount"] = _json_count(data_root / "item")
+    save_manifest(data_root, manifest)
+    return manifest
+
+
+def _json_count(path: Path) -> int:
+    if not path.is_dir():
+        return 0
+    return len(list(path.glob("*.json")))
+
+
+def _object_jobs(
+    data_root: Path,
+    *,
+    object_ids: list[int] | None,
+    item_ids: list[int] | None,
+    force: bool,
+) -> list[dict[str, Any]]:
+    jobs: list[dict[str, Any]] = []
+    fetch_objects = object_ids is not None or item_ids is None
+    if fetch_objects:
+        index_path = data_root / "object_index.json"
+        index: dict[str, Any] = {}
+        if index_path.is_file():
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        ids = object_ids if object_ids is not None else [int(key) for key in index]
+        for oid in sorted(set(ids)):
+            path = data_root / "object" / f"{oid}.json"
+            if not force and path.is_file():
+                continue
+            entry = index.get(str(oid), {})
+            name = entry.get("name") or entry.get("displayName")
+            jobs.append(
+                {
+                    "kind": "object",
+                    "id": oid,
+                    "name": name,
+                    "url": object_detail_url(oid, name),
+                }
+            )
+    for iid in sorted(set(item_ids or [])):
+        path = data_root / "item" / f"{iid}.json"
+        if not force and path.is_file():
+            continue
+        jobs.append({"kind": "item", "id": iid, "name": None, "url": item_detail_url(iid)})
+    return jobs
+
+
+def _attach_spawns_to_quests(data_root: Path, record: dict[str, Any]) -> int:
+    if not record["spawns"] or not record["startsQuestIds"]:
+        return 0
+    details_dir = data_root / "details"
+    index_path = data_root / "quest_index.json"
+    quest_index: dict[str, Any] = {}
+    if index_path.is_file():
+        quest_index = json.loads(index_path.read_text(encoding="utf-8"))
+    attached = 0
+    for qid in record["startsQuestIds"]:
+        detail_path = details_dir / f"{qid}.json"
+        if not detail_path.is_file():
+            continue
+        detail = json.loads(detail_path.read_text(encoding="utf-8"))
+        pins = _merge_spawn_pins(detail.get("objectSpawns") or [], record)
+        detail["objectSpawns"] = pins
+        if not detail.get("startPins"):
+            detail["startPins"] = pins
+        write_json(detail_path, detail)
+        entry = quest_index.get(str(qid))
+        if entry is not None:
+            entry["startPinCount"] = len(detail["startPins"])
+            entry["objectSpawnCount"] = len(pins)
+            if detail["startPins"]:
+                entry["primaryStart"] = detail["startPins"][0]
+        attached += 1
+    if quest_index:
+        write_json(index_path, quest_index)
+    return attached
+
+
+def _merge_spawn_pins(existing: list[dict[str, Any]], record: dict[str, Any]) -> list[dict[str, Any]]:
+    merged = [pin for pin in existing if pin.get("entityId") != record["id"] or pin.get("entityKind") != record["kind"]]
+    for pin in record["spawns"]:
+        copied = dict(pin)
+        copied["entityKind"] = record["kind"]
+        copied["entityId"] = record["id"]
+        copied["entityName"] = record.get("name")
+        merged.append(copied)
+    return merged
 
 
 def backfill_eligibility(data_root: Path) -> int:

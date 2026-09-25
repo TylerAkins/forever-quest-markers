@@ -82,6 +82,61 @@ def parse_quest_detail(html: str, quest_id: int) -> dict[str, Any]:
     return result
 
 
+_QUEST_LINK_RE = re.compile(r"quest=(\d+)")
+
+
+def extract_spawn_pins(mapper: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Every map coordinate on a page, including multi-spawn objects."""
+    if not mapper:
+        return []
+    objectives = mapper.get("objectives") or {}
+    pins: list[dict[str, Any]] = []
+    for zone_id, zone_block in objectives.items():
+        if not isinstance(zone_block, dict):
+            continue
+        levels = zone_block.get("levels") or []
+        for level in levels:
+            if not isinstance(level, list):
+                continue
+            for entry in level:
+                if not isinstance(entry, dict):
+                    continue
+                for x_coord, y_coord in _entry_coordinates(entry):
+                    pins.append(
+                        {
+                            "zoneId": int(zone_id) if str(zone_id).isdigit() else zone_id,
+                            "zoneName": zone_block.get("zone"),
+                            "x": x_coord,
+                            "y": y_coord,
+                            "npcId": entry.get("id"),
+                            "npcName": entry.get("name"),
+                            "point": entry.get("point"),
+                        }
+                    )
+    return pins
+
+
+def quest_ids_from_markup(markup: str | None) -> list[int]:
+    if not markup:
+        return []
+    return sorted({int(match) for match in _QUEST_LINK_RE.findall(markup)})
+
+
+def _entry_coordinates(entry: dict[str, Any]) -> list[tuple[float, float]]:
+    coords = entry.get("coords")
+    pairs: list[tuple[float, float]] = []
+    if isinstance(coords, list):
+        for pair in coords:
+            if isinstance(pair, list) and len(pair) == 2:
+                pairs.append((float(pair[0]), float(pair[1])))
+    if pairs:
+        return pairs
+    coord = entry.get("coord")
+    if isinstance(coord, list) and len(coord) == 2:
+        return [(float(coord[0]), float(coord[1]))]
+    return []
+
+
 def extract_start_pins(mapper: dict[str, Any] | None) -> list[dict[str, Any]]:
     if not mapper:
         return []

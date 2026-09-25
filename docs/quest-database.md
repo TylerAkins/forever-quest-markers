@@ -195,6 +195,18 @@ One quest, ignoring the saved file:
 python3 tools/fetch_quest_pages.py sync-quests --browser --force --quest 7507
 ```
 
+Object spawn points. This fetches every id in `object_index.json` (329) and writes `object/<id>.json`. When the page names a quest, each spawn is copied onto that quest.
+
+```bash
+python3 tools/fetch_quest_pages.py sync-objects --browser --delay 5 --batch-size 10 --batch-pause 15
+```
+
+Chen's Empty Keg is not in that list. Its object id is 3238 and the item id is 4926:
+
+```bash
+python3 tools/fetch_quest_pages.py sync-objects --browser --force --object 3238 --item 4926
+```
+
 One list page, ignoring the HTML cache:
 
 ```bash

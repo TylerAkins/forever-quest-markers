@@ -16,7 +16,13 @@ if str(TOOLS) not in sys.path:
 
 from quest_db.http import PageClient
 from quest_db.ingest import ingest_html
-from quest_db.sync import backfill_eligibility, rebuild_zone_map, sync_quest_details, sync_sources
+from quest_db.sync import (
+    backfill_eligibility,
+    rebuild_zone_map,
+    sync_object_details,
+    sync_quest_details,
+    sync_sources,
+)
 
 DEFAULT_DATA_ROOT = ROOT / "data" / "forever-quests"
 DEFAULT_CACHE = ROOT / ".cache" / "quest-html"
@@ -50,6 +56,17 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.rebuild_zone_map:
             rebuild_zone_map(data_root, Path(args.att_quests))
+        return 0
+
+    if args.command == "sync-objects":
+        sync_object_details(
+            data_root,
+            client,
+            limit=args.limit,
+            object_ids=args.object,
+            item_ids=args.item,
+            force=args.force,
+        )
         return 0
 
     if args.command == "rebuild-zone-map":
@@ -119,7 +136,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("ingest", "sync-sources", "sync-quests", "rebuild-zone-map", "backfill-eligibility"),
+        choices=(
+            "ingest",
+            "sync-sources",
+            "sync-quests",
+            "sync-objects",
+            "rebuild-zone-map",
+            "backfill-eligibility",
+        ),
         help="ingest: scan pasted URL(s); sync-*: bulk (optional)",
     )
     parser.add_argument(
@@ -177,6 +201,20 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         type=int,
         default=None,
         help="Only this quest id (repeatable, sync-quests only)",
+    )
+    parser.add_argument(
+        "--object",
+        action="append",
+        type=int,
+        default=None,
+        help="Only these object ids (repeatable). Omitting this fetches every object in object_index.json",
+    )
+    parser.add_argument(
+        "--item",
+        action="append",
+        type=int,
+        default=None,
+        help="Also fetch these item ids (repeatable). Use for starters that are not in the object list",
     )
     parser.add_argument(
         "--rebuild-zone-map",
