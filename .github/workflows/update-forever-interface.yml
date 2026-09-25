@@ -108,8 +108,9 @@ jobs:
           delete-branch: true
           commit-message: "chore: prepare v${{ steps.update.outputs.version }} for Forever"
           title: "chore: prepare v${{ steps.update.outputs.version }} for Forever ${{ steps.update.outputs.game_build }}"
+          assignees: TylerAkins
           body: |
-            Automated WoW Forever compatibility update.
+            @TylerAkins — automated WoW Forever compatibility update.
 
             - Game build: `${{ steps.update.outputs.game_build }}`
             - TOC Interface: `${{ steps.update.outputs.interface }}`

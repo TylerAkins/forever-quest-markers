@@ -133,8 +133,9 @@ jobs:
           delete-branch: true
           commit-message: "chore: prepare v${{ steps.version.outputs.version }} ATT database"
           title: "chore: prepare v${{ steps.version.outputs.version }} ATT database update"
+          assignees: TylerAkins
           body: |
-            Automated regeneration of `Database/` from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data.
+            @TylerAkins — automated regeneration of `Database/` from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data.
 
             | | SHA | Quests | Coordinate pins |
             |---|---|---|---|
