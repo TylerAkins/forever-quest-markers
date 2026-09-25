@@ -372,6 +372,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("[765] = { mapID=1412, x=53, y=60.2, qg=2988", db)
         self.assertIn("[788] = { mapID=1411, x=42, y=68.4, qg=3143", db)
         self.assertIn("[4641] = { mapID=1411, x=43.2, y=68.6, qg=10176", db)
+        self.assertIn("[92469] = { mapID=2521, x=47.2, y=21.8, qg=249363, endNpc=251361", db)
+        self.assertIn("[92461] = { mapID=2521, x=42, y=23.4, qg=251361, endNpc=251361", db)
         self.assertIn("data.isPvP", pins)
 
     def test_release_workflow_has_versioned_and_preview_artifact(self) -> None:

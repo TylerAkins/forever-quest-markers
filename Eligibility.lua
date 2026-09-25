@@ -12,6 +12,7 @@ local completedLookupReady = false
 local completedListLoaded = false
 local onQuestLookup
 local onQuestLookupReady = false
+local turnInReady
 
 function ns.InvalidateCompletionCache()
     completedLookup = nil
@@ -19,6 +20,7 @@ function ns.InvalidateCompletionCache()
     completedListLoaded = false
     onQuestLookup = nil
     onQuestLookupReady = false
+    turnInReady = nil
 end
 
 local function AddCompletedQuest(lookup, questID)
@@ -113,6 +115,19 @@ local function AddOnQuest(lookup, questID)
     if type(questID) == "number" and questID > 0 then
         lookup[questID] = true
     end
+    return questID
+end
+
+local function NoteTurnInReady(questID, ready)
+    questID = tonumber(questID)
+    if type(questID) ~= "number" or questID <= 0 then
+        return
+    end
+    if ready then
+        turnInReady[questID] = true
+    elseif turnInReady[questID] == nil then
+        turnInReady[questID] = false
+    end
 end
 
 -- Forever's C_QuestLog.IsOnQuest can return false for a quest that is already
@@ -123,13 +138,18 @@ local function OnQuestLookup()
     end
     onQuestLookupReady = true
     local lookup = {}
+    turnInReady = {}
     if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo then
         local ok, num = pcall(C_QuestLog.GetNumQuestLogEntries)
         if ok and type(num) == "number" then
             for i = 1, num do
                 local infoOk, info = pcall(C_QuestLog.GetInfo, i)
                 if infoOk and type(info) == "table" and not info.isHeader then
-                    AddOnQuest(lookup, info.questID or info.questId)
+                    local questID = AddOnQuest(lookup, info.questID or info.questId)
+                    if info.isComplete ~= nil or info.readyForTurnIn ~= nil then
+                        local ready = info.isComplete == true or info.isComplete == 1 or info.readyForTurnIn == true
+                        NoteTurnInReady(questID, ready)
+                    end
                 end
             end
         end
@@ -138,9 +158,10 @@ local function OnQuestLookup()
         local ok, num = pcall(GetNumQuestLogEntries)
         if ok and type(num) == "number" then
             for i = 1, num do
-                local titleOk, _, _, _, isHeader, _, _, _, questID = pcall(GetQuestLogTitle, i)
+                local titleOk, _, _, _, isHeader, _, isComplete, _, questID = pcall(GetQuestLogTitle, i)
                 if titleOk and not isHeader then
                     AddOnQuest(lookup, questID)
+                    NoteTurnInReady(questID, isComplete == 1 or isComplete == true)
                 end
             end
         end
@@ -172,6 +193,27 @@ function ns.IsOnQuest(questID)
         return true
     end
     return OnQuestLookup()[questID] and true or false
+end
+
+function ns.IsQuestReadyForTurnIn(questID)
+    if not questID or not ns.IsOnQuest(questID) then
+        return false
+    end
+    questID = tonumber(questID)
+    if Call(C_QuestLog, "ReadyForTurnIn", questID) then
+        return true
+    end
+    if Call(C_QuestLog, "IsComplete", questID) then
+        return true
+    end
+    if IsQuestComplete and IsQuestComplete(questID) then
+        return true
+    end
+    OnQuestLookup()
+    if turnInReady and turnInReady[questID] ~= nil then
+        return turnInReady[questID] and true or false
+    end
+    return true
 end
 
 local titleCache = {}

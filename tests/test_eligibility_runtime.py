@@ -94,6 +94,20 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(ns.IsOnQuest(92461) == false)
         """)
 
+    def test_log_completion_marks_a_turn_in_when_ready_api_is_false(self) -> None:
+        self.lua.execute("""
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.ReadyForTurnIn = function() return false end
+            C_QuestLog.GetNumQuestLogEntries = function() return 2 end
+            C_QuestLog.GetInfo = function(index)
+                if index == 1 then return { questID = 92469, isComplete = 1 } end
+                return { questID = 92461, isComplete = false }
+            end
+            assert(ns.IsQuestReadyForTurnIn(92469) == true)
+            assert(ns.IsQuestReadyForTurnIn(92461) == false)
+            assert(ns.IsQuestReadyForTurnIn(1) == false)
+        """)
+
     def test_single_quest_api_is_used_only_without_a_completed_list(self) -> None:
         self.lua.execute("""
             C_QuestLog.IsQuestFlaggedCompleted = function(questID)

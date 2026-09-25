@@ -2,7 +2,7 @@ local ADDON_NAME, ns = ...
 
 ns.NPCTooltips = {}
 local Tooltips = ns.NPCTooltips
-local starters
+local starters, finishers
 local initialized, rebuilding, probeArmed = false, false, false
 
 local function Print(message)
@@ -26,33 +26,101 @@ end
 
 function Tooltips:InvalidateIndex()
     starters = nil
+    finishers = nil
+end
+
+local function EachEndNPC(data, visitor)
+    if not data then return end
+    if data.endNpc then
+        visitor(data.endNpc)
+    end
+    for _, npcID in ipairs(data.endNpcs or {}) do
+        visitor(npcID)
+    end
 end
 
 local function BuildIndex()
     if starters then return end
     starters = {}
+    finishers = {}
     for questID, data in pairs(ns.Quests or {}) do
         Index(starters, data.qg, questID)
         for _, npcID in ipairs(data.qgs or {}) do
             Index(starters, npcID, questID)
         end
+        EachEndNPC(data, function(npcID)
+            Index(finishers, npcID, questID)
+        end)
     end
+end
+
+local function ApiSaysReady(apiTable, name, questID)
+    local fn = apiTable and apiTable[name]
+    if type(fn) ~= "function" then
+        return false, false
+    end
+    local ok, result = pcall(fn, questID)
+    if not ok then
+        return false, false
+    end
+    return result and true or false, true
+end
+
+local function TurnInReady(questID)
+    if ns.IsQuestReadyForTurnIn then
+        return ns.IsQuestReadyForTurnIn(questID) and true or false
+    end
+    local ready, saw = ApiSaysReady(C_QuestLog, "ReadyForTurnIn", questID)
+    if ready then return true end
+    local complete, sawComplete = ApiSaysReady(C_QuestLog, "IsComplete", questID)
+    saw = saw or sawComplete
+    if complete then return true end
+    if type(IsQuestComplete) == "function" then
+        local ok, result = pcall(IsQuestComplete, questID)
+        if ok then
+            saw = true
+            if result then return true end
+        end
+    end
+    return not saw
+end
+
+local function AddRow(rows, questID, turnIn)
+    rows[#rows + 1] = {
+        id = questID,
+        title = ns.GetQuestTitle(questID) or ("Quest %d (title unavailable)"):format(questID),
+        level = ns.GetQuestDifficultyLevel(questID),
+        turnIn = turnIn and true or false,
+        ready = turnIn and TurnInReady(questID) or false,
+    }
 end
 
 function Tooltips:GetRows(npcID)
     BuildIndex()
     local rows = {}
+    local listed = {}
     for questID in pairs(starters[npcID] or {}) do
         local data = ns.Quests[questID]
         if ns.IsQuestAvailable(questID, data) then
-            rows[#rows + 1] = {
-                id = questID,
-                title = ns.GetQuestTitle(questID) or ("Quest %d (title unavailable)"):format(questID),
-                level = ns.GetQuestDifficultyLevel(questID),
-            }
+            AddRow(rows, questID, false)
+            listed[questID] = true
         end
     end
+    for questID in pairs(finishers[npcID] or {}) do
+        if not listed[questID] and ns.IsOnQuest(questID) then
+            AddRow(rows, questID, true)
+        end
+    end
+    local function Rank(row)
+        if not row.turnIn then return 0 end
+        if row.ready then return 1 end
+        return 2
+    end
     table.sort(rows, function(a, b)
+        local rankA, rankB = Rank(a), Rank(b)
+        if rankA ~= rankB then
+            return rankA < rankB
+        end
         if a.level ~= b.level then
             return (a.level or math.huge) < (b.level or math.huge)
         end
@@ -71,7 +139,15 @@ function Tooltips:Show(tooltip)
     tooltip.fqpQuestRows = true
     for _, row in ipairs(rows) do
         local title = row.level and ("[%d] %s"):format(row.level, row.title) or row.title
-        tooltip:AddLine("! " .. title, 1, 0.82, 0, true)
+        if row.turnIn then
+            local r, g, b = 0.7, 0.7, 0.7
+            if row.ready then
+                r, g, b = 1, 0.82, 0
+            end
+            tooltip:AddLine("? " .. title, r, g, b, true)
+        else
+            tooltip:AddLine("! " .. title, 1, 0.82, 0, true)
+        end
     end
     tooltip:Show()
 end

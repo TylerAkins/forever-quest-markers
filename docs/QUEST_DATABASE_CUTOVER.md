@@ -76,5 +76,5 @@ Keep `tools/build_quest_db.py` and the ATT workflow until pin parity is proven.
 - [ ] Multi-spawn objects (Chen's Empty Keg and the rest) have one pin per spawn
 - [ ] Diff report: &lt; agreed threshold for coordinate drift vs ATT
 - [ ] PvP quests classified on all three battleground indexes
-- [ ] Manual pass on tooltip regressions (NPC finisher rows unchanged policy)
+- [ ] Manual pass on tooltip regressions (available starts, and log quests on their end NPC)
 - [ ] Player-facing changelog + attribution updated

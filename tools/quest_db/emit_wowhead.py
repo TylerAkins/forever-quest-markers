@@ -41,6 +41,8 @@ PROFESSION_SKILL: dict[str, int] = {
 }
 
 _CAMPING_NAME = re.compile(r"^Camping 101:\s*(.+)$", re.IGNORECASE)
+_END_ICON_RE = re.compile(r"name=quest-end\](.*?)\[/icon\]", re.IGNORECASE | re.DOTALL)
+_NPC_ID_RE = re.compile(r"npc=(\d+)")
 _NPC_TYPE = 1
 
 
@@ -65,7 +67,7 @@ def emit_database(data_root: Path) -> tuple[dict[int, dict[str, Any]], dict[str,
         if not coords:
             skipped_no_coords += 1
             continue
-        quests[quest_id] = _record(quest_id, detail, entry, coords, npc_ids)
+        quests[quest_id] = _record(quest_id, detail, entry, coords, npc_ids, _end_npcs(detail))
 
     stats = _stats(quests, skipped_no_coords, unmapped)
     return quests, stats
@@ -135,6 +137,7 @@ def _record(
     entry: dict[str, Any],
     coords: list[tuple[float, float, int]],
     npc_ids: list[int],
+    end_npcs: list[int],
 ) -> dict[str, Any]:
     category = detail.get("pinCategory") or entry.get("pinCategory") or "normal"
     kinds = set(entry.get("sourceKinds") or [])
@@ -152,8 +155,38 @@ def _record(
         "is_instance_quest": category in {"instance", "raid"},
         "is_pvp": category == "pvp",
         "require_skill": _require_skill(entry),
+        "end_npcs": end_npcs,
     }
     return record
+
+
+def _end_npcs(detail: dict[str, Any]) -> list[int]:
+    """NPC ids that accept this quest. Objects are not included."""
+    ids: list[int] = []
+    seen: set[int] = set()
+
+    def add(npc_id: Any) -> None:
+        if isinstance(npc_id, bool) or not isinstance(npc_id, int) or npc_id <= 0 or npc_id in seen:
+            return
+        seen.add(npc_id)
+        ids.append(npc_id)
+
+    mapper = detail.get("mapper") or {}
+    for block in (mapper.get("objectives") or {}).values():
+        if not isinstance(block, dict):
+            continue
+        for level in block.get("levels") or []:
+            if not isinstance(level, list):
+                continue
+            for entry in level:
+                if not isinstance(entry, dict) or entry.get("point") != "end":
+                    continue
+                if entry.get("type") == _NPC_TYPE:
+                    add(entry.get("id"))
+    for block in _END_ICON_RE.findall(detail.get("infoboxMarkup") or ""):
+        for npc_id in _NPC_ID_RE.findall(block):
+            add(int(npc_id))
+    return ids
 
 
 def _require_skill(entry: dict[str, Any]) -> int | None:
@@ -363,6 +396,11 @@ def _quest_body(record: dict[str, Any]) -> str:
         parts.append(f"qg={npcs[0]}")
     elif npcs:
         parts.append("qgs=" + _lua_int_list(npcs))
+    ends: list[int] = record.get("end_npcs") or []
+    if len(ends) == 1:
+        parts.append(f"endNpc={ends[0]}")
+    elif ends:
+        parts.append("endNpcs=" + _lua_int_list(ends))
     faction = record.get("faction")
     if faction:
         parts.append(f'faction="{faction}"')

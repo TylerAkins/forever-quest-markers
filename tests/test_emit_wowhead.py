@@ -67,6 +67,12 @@ class EmitWowheadTests(unittest.TestCase):
                     "questId": 10,
                     "pinCategory": "instance",
                     "faction": "Alliance",
+                    "infoboxMarkup": (
+                        "[icon name=quest-end]End: [url=/forever/npc=240/deputy-rainer]"
+                        "Deputy Rainer[/url][/icon]"
+                        "[icon name=quest-end]End: [url=/forever/npc=241/marshal-dughan]"
+                        "Marshal Dughan[/url][/icon]"
+                    ),
                     "races": [],
                     "classes": [1],
                     "minLevel": 2,
@@ -90,6 +96,20 @@ class EmitWowheadTests(unittest.TestCase):
                                             "name": "Bowl",
                                             "coord": [10, 20],
                                             "coords": [[10, 20], [11, 21]],
+                                        },
+                                        {
+                                            "point": "end",
+                                            "type": 1,
+                                            "id": 240,
+                                            "name": "Deputy Rainer",
+                                            "coord": [24, 74],
+                                        },
+                                        {
+                                            "point": "end",
+                                            "type": 2,
+                                            "id": 55,
+                                            "name": "Crate",
+                                            "coord": [25, 75],
                                         },
                                     ]
                                 ]
@@ -154,6 +174,7 @@ class EmitWowheadTests(unittest.TestCase):
         self.assertIn((11.0, 21.0, 1429), bowl["coords"])
         self.assertNotIn((1.0, 1.0, 1429), bowl["coords"])
         self.assertEqual(bowl["npcs"], [197])
+        self.assertEqual(bowl["end_npcs"], [240, 241])
         self.assertTrue(bowl["is_instance_quest"])
         self.assertEqual(bowl["classes"], [1])
         camping = quests[11]
@@ -164,6 +185,7 @@ class EmitWowheadTests(unittest.TestCase):
         lua = emit_lua_database(quests)
         self.assertIn("[10] = { mapID=1429", lua)
         self.assertIn("qg=197", lua)
+        self.assertIn("endNpcs={ 240, 241 }", lua)
         self.assertIn("isInstanceQuest=true", lua)
         self.assertNotIn("[12] =", lua)
         self.assertIn("requireSkill=171", lua)

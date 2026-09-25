@@ -38,6 +38,33 @@ class TooltipRuntimeTests(unittest.TestCase):
             end
         """)
 
+    def test_turn_in_rows_follow_the_quest_in_the_log(self) -> None:
+        self.lua.execute("""
+            ns.Quests[92469] = {qg=200, endNpc=100}
+            ns.Quests[92461] = {qg=100, endNpc=100}
+            ns.titles[92469] = 'Return to Rorian'
+            ns.titles[92461] = 'Harmony in Balance'
+            ns.levels[92469] = 4
+            ns.levels[92461] = 1
+            GameTooltip:SetUnit('mouseover')
+            assert(#GameTooltip.lines == 2)
+            assert(GameTooltip.lines[2].text == '! [1] Harmony in Balance')
+            ns.active[92461] = true
+            ns.active[92469] = true
+            ns.ready[92469] = true
+            ns.NPCTooltips:Refresh()
+            assert(#GameTooltip.lines == 3)
+            assert(GameTooltip.lines[2].text == '? [4] Return to Rorian')
+            assert(GameTooltip.lines[2].r == 1 and GameTooltip.lines[2].g == .82)
+            assert(GameTooltip.lines[3].text == '? [1] Harmony in Balance')
+            assert(GameTooltip.lines[3].r == .7 and GameTooltip.lines[3].g == .7)
+            ns.active[92469] = nil
+            ns.active[92461] = nil
+            ns.NPCTooltips:Refresh()
+            assert(GameTooltip.lines[2].text == '! [1] Harmony in Balance')
+            assert(#GameTooltip.lines == 2)
+        """)
+
     def test_quest_state_transitions_refresh_available_rows(self) -> None:
         self.lua.execute("""
             ns.Quests[1] = {qg=100}; ns.titles[1] = 'Quest'; ns.levels[1]=12
