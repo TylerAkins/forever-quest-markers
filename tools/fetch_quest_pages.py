@@ -21,6 +21,7 @@ from quest_db.sync import (
     rebuild_zone_map,
     sync_object_details,
     sync_quest_details,
+    sync_zone_starters,
     sync_sources,
 )
 
@@ -56,6 +57,16 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.rebuild_zone_map:
             rebuild_zone_map(data_root, Path(args.att_quests))
+        return 0
+
+    if args.command == "sync-zones":
+        sync_zone_starters(
+            data_root,
+            client,
+            limit=args.limit,
+            zone_ids=args.zone,
+            force=args.force,
+        )
         return 0
 
     if args.command == "sync-objects":
@@ -141,6 +152,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             "sync-sources",
             "sync-quests",
             "sync-objects",
+            "sync-zones",
             "rebuild-zone-map",
             "backfill-eligibility",
         ),
@@ -201,6 +213,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         type=int,
         default=None,
         help="Only this quest id (repeatable, sync-quests only)",
+    )
+    parser.add_argument(
+        "--zone",
+        action="append",
+        type=int,
+        default=None,
+        help="Only these zone ids (repeatable, sync-zones). Example: 17 for the Barrens",
     )
     parser.add_argument(
         "--object",

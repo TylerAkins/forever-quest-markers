@@ -201,7 +201,14 @@ Object spawn points. This fetches every id in `object_index.json` (329) and writ
 python3 tools/fetch_quest_pages.py sync-objects --browser --delay 5 --batch-size 10 --batch-pause 15
 ```
 
-Chen's Empty Keg is not in that list. Its object id is 3238 and the item id is 4926:
+Zone pages list what starts a quest. The `#starts-quest` part only selects the tab; the item list is in the page itself. Dun Morogh is zone 1 and the Barrens is zone 17. This writes `zone_starters.json` and adds any missing object ids (Chen's Empty Keg is object 3238) to `object_index.json`. It does not contain each spawn coordinate. Run `sync-objects` after it for those.
+
+```bash
+python3 tools/fetch_quest_pages.py sync-zones --browser --delay 5 --batch-size 10 --batch-pause 15
+python3 tools/fetch_quest_pages.py sync-zones --browser --zone 17
+```
+
+Chen's Empty Keg can also be fetched directly. Its object id is 3238 and the item id is 4926:
 
 ```bash
 python3 tools/fetch_quest_pages.py sync-objects --browser --force --object 3238 --item 4926

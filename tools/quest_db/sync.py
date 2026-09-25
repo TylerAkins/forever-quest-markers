@@ -13,6 +13,7 @@ from .http import item_detail_url, object_detail_url, quest_detail_url
 class _HtmlClient(Protocol):
     def get_html(self, url: str, *, force: bool = False) -> str: ...
 from .ingest import ingest_html
+from .parse_page import extract_inline_listviews
 from .parse_quest import (
     eligibility_restrictions,
     extract_spawn_pins,
@@ -137,6 +138,141 @@ def sync_quest_details(
     write_json(index_path, quest_index)
     save_manifest(data_root, manifest)
     return manifest
+
+
+def zone_page_url(zone_id: int) -> str:
+    return f"https://www.wowhead.com/forever/zone={zone_id}"
+
+
+def sync_zone_starters(
+    data_root: Path,
+    client: _HtmlClient,
+    *,
+    limit: int | None = None,
+    zone_ids: list[int] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Read each zone's starts-quest tab and record item and object starters."""
+    manifest = load_manifest(data_root)
+    errors_path = data_root / "fetch_errors.jsonl"
+    index_path = data_root / "quest_index.json"
+    if not index_path.is_file():
+        raise SystemExit("quest_index.json missing; ingest list URLs first")
+    quest_index = json.loads(index_path.read_text(encoding="utf-8"))
+    if zone_ids is None:
+        zone_ids = sorted(
+            {
+                int(entry["zoneId"])
+                for entry in quest_index.values()
+                if isinstance(entry.get("zoneId"), int) and entry["zoneId"] > 0
+            }
+        )
+    else:
+        zone_ids = sorted(set(zone_ids))
+    if limit is not None:
+        zone_ids = zone_ids[:limit]
+
+    starters_path = data_root / "zone_starters.json"
+    starters: dict[str, Any] = {}
+    if starters_path.is_file() and not force:
+        starters = json.loads(starters_path.read_text(encoding="utf-8"))
+
+    print(f"zone pages: {len(zone_ids)} to fetch", flush=True)
+    for index, zone_id in enumerate(zone_ids, start=1):
+        url = zone_page_url(zone_id)
+        print(f"[{index}/{len(zone_ids)}] {url}", flush=True)
+        try:
+            html = client.get_html(url, force=force)
+        except Exception as exc:  # noqa: BLE001 — log and continue batch
+            print(f"  failed: {exc}", flush=True)
+            with errors_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps({"kind": "zone", "id": zone_id, "url": url, "error": str(exc)}) + "\n")
+            continue
+        added_objects = _merge_zone_starters(data_root, starters, zone_id, extract_inline_listviews(html))
+        print(f"  zone {zone_id} new object starters={added_objects}", flush=True)
+        if index % 10 == 0:
+            write_json(starters_path, starters)
+
+    write_json(starters_path, starters)
+    manifest["stats"]["zoneStarterItems"] = len(starters.get("items") or {})
+    manifest["stats"]["zoneStarterObjects"] = len(starters.get("objects") or {})
+    save_manifest(data_root, manifest)
+    print(
+        f"starters: {manifest['stats']['zoneStarterItems']} items, "
+        f"{manifest['stats']['zoneStarterObjects']} objects",
+        flush=True,
+    )
+    return manifest
+
+
+def _merge_zone_starters(
+    data_root: Path,
+    starters: dict[str, Any],
+    zone_id: int,
+    views: list[dict[str, Any]],
+) -> int:
+    items = starters.setdefault("items", {})
+    objects = starters.setdefault("objects", {})
+    added = 0
+    for view in views:
+        if view.get("id") != "starts-quest":
+            continue
+        for row in view.get("data") or []:
+            item_id = row.get("id")
+            if not isinstance(item_id, int):
+                continue
+            sources = []
+            for source in row.get("sourcemore") or []:
+                if not isinstance(source, dict):
+                    continue
+                sources.append(
+                    {
+                        "type": source.get("t"),
+                        "id": source.get("ti"),
+                        "name": source.get("n"),
+                        "zoneId": source.get("z", zone_id),
+                    }
+                )
+                if source.get("t") == 2 and isinstance(source.get("ti"), int):
+                    key = str(source["ti"])
+                    if key not in objects:
+                        added += 1
+                    objects[key] = {
+                        "id": source["ti"],
+                        "name": source.get("n") or row.get("name"),
+                        "zoneId": source.get("z", zone_id),
+                        "itemId": item_id,
+                    }
+            items[str(item_id)] = {
+                "id": item_id,
+                "name": row.get("name"),
+                "zoneId": zone_id,
+                "sources": sources,
+            }
+    _add_starter_objects_to_index(data_root, objects)
+    return added
+
+
+def _add_starter_objects_to_index(data_root: Path, objects: dict[str, Any]) -> None:
+    index_path = data_root / "object_index.json"
+    object_index: dict[str, Any] = {}
+    if index_path.is_file():
+        object_index = json.loads(index_path.read_text(encoding="utf-8"))
+    changed = False
+    for key, obj in objects.items():
+        if key in object_index:
+            continue
+        object_index[key] = {
+            "id": obj["id"],
+            "name": obj.get("name"),
+            "displayName": obj.get("name"),
+            "locations": [obj.get("zoneId")] if obj.get("zoneId") is not None else [],
+            "fromZoneStarter": True,
+            "itemId": obj.get("itemId"),
+        }
+        changed = True
+    if changed:
+        write_json(index_path, object_index)
 
 
 def sync_object_details(

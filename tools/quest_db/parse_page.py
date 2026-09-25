@@ -15,6 +15,36 @@ _LISTVIEWS_JSON_RE = re.compile(
 _QUEST_ID_RE = re.compile(r"quest=(\d+)")
 
 
+def extract_inline_listviews(html: str) -> list[dict[str, Any]]:
+    """Parse `new Listview({... data: [...]})` blocks, including zone tabs."""
+    views: list[dict[str, Any]] = []
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r"new Listview\(\{", html):
+        window = html[match.start() : match.start() + 700]
+        template_match = re.search(r"template:\s*'([^']+)'", window)
+        id_match = re.search(r"id:\s*'([^']+)'", window)
+        data_at = window.find("data:")
+        if template_match is None or data_at < 0:
+            continue
+        bracket = html.find("[", match.start() + data_at)
+        if bracket < 0:
+            continue
+        try:
+            data, _end = decoder.raw_decode(html[bracket:])
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(data, list):
+            continue
+        views.append(
+            {
+                "template": template_match.group(1),
+                "id": id_match.group(1) if id_match else None,
+                "data": [row for row in data if isinstance(row, dict)],
+            }
+        )
+    return views
+
+
 def extract_page_listviews(html: str) -> list[dict[str, Any]]:
     views: list[dict[str, Any]] = []
 
