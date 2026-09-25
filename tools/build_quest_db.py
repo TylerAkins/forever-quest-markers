@@ -18,7 +18,7 @@ from att_dsl.emit import write_outputs
 from att_dsl.evaluator import Environment, evaluate_chunk, new_environment
 from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
-from att_dsl.preprocessor import PreprocessError, preprocess
+from att_dsl.preprocessor import PreprocessError, preprocess, unwrap_disabled_module
 
 
 ATT_REPO_URL = "https://github.com/ATTWoWAddon/AllTheThings.git"
@@ -188,7 +188,7 @@ def _lua_files(forever_db: Path) -> tuple[list[Path], list[Path]]:
 
 
 def _parse_file(path: Path, rel: str, ctx: BuildContext, result: ExtractResult) -> None:
-    source = path.read_text(encoding="utf-8")
+    source = unwrap_disabled_module(path.read_text(encoding="utf-8"))
     processed = preprocess(source, ctx)
     chunk = parse_lua(processed, filename=rel)
     env: Environment = new_environment(ctx)
