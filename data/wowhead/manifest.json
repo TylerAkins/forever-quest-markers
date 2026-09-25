@@ -1,7 +1,7 @@
 {
   "dataEnv": 16,
   "lastCheckedForChanges": "2026-09-24T23:20:12+00:00",
-  "lastFullSyncCompleted": null,
+  "lastFullSyncCompleted": "2026-09-25T11:33:22+00:00",
   "lastFullSyncStarted": "2026-09-24T23:19:10+00:00",
   "product": "wowhead-forever",
   "schemaVersion": 1,
@@ -785,7 +785,8 @@
   },
   "stats": {
     "objectIndexCount": 329,
-    "questDetailCount": 998,
+    "questDetailCount": 5057,
+    "questDetailFetchErrors": 1,
     "questIndexCount": 5058,
     "sourcePageCount": 111
   }
