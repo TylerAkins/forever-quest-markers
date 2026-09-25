@@ -1,0 +1,5716 @@
+{
+  "sourceBranch": "tylerakins/wowhead-quest-pins-6815",
+  "sourceCommit": "43f22e73ff3bf19f564d20d1e6846b0d57dbd3de",
+  "zoneName": "Zephras Isle",
+  "zoneId": 16593,
+  "uiMapId": 2521,
+  "questCount": 150,
+  "notes": [
+    "requiredLevel is Wowhead Forever's Requires level, not the suggested level.",
+    "Race 95 is Skyborne Alliance. Race 96 is Skyborne Horde. An empty races list means the quest page did not list a race.",
+    "prerequisiteQuestIds is empty for almost every quest. This file does not contain the quest chain."
+  ],
+  "quests": [
+    {
+      "id": 92454,
+      "name": "Welcome!",
+      "requiredLevel": 1,
+      "suggestedLevel": 1,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 0,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92454"
+    },
+    {
+      "id": 92460,
+      "name": "Coming of Age",
+      "requiredLevel": 1,
+      "suggestedLevel": 1,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251362,
+          "npcName": "Ailee Farheart",
+          "x": 42.8,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          264908,
+          1
+        ]
+      ],
+      "experience": 40,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92460"
+    },
+    {
+      "id": 92461,
+      "name": "Harmony in Balance",
+      "requiredLevel": 1,
+      "suggestedLevel": 1,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 80,
+      "money": 15,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92461"
+    },
+    {
+      "id": 92462,
+      "name": "Infestation Investigation",
+      "requiredLevel": 1,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251368,
+          "npcName": "Elatrell Featherlight",
+          "x": 43.4,
+          "y": 24.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251368,
+          "npcName": "Elatrell Featherlight"
+        }
+      ],
+      "prerequisiteQuestIds": [
+        92463
+      ],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 170,
+      "money": 35,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92462"
+    },
+    {
+      "id": 92463,
+      "name": "The Cirrusfly Queen",
+      "requiredLevel": 2,
+      "suggestedLevel": 3,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251368,
+          "npcName": "Elatrell Featherlight",
+          "x": 43.4,
+          "y": 24.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251368,
+          "npcName": "Elatrell Featherlight"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 315,
+      "money": 100,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92463"
+    },
+    {
+      "id": 92464,
+      "name": "Elemental Unrest",
+      "requiredLevel": 2,
+      "suggestedLevel": 3,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 249363,
+          "npcName": "Yala Windwatcher"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 25,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92464"
+    },
+    {
+      "id": 92465,
+      "name": "Agitators",
+      "requiredLevel": 2,
+      "suggestedLevel": 3,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 249363,
+          "npcName": "Yala Windwatcher",
+          "x": 47.2,
+          "y": 21.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 249363,
+          "npcName": "Yala Windwatcher"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 250,
+      "money": 50,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92465"
+    },
+    {
+      "id": 92466,
+      "name": "Call of Earth",
+      "requiredLevel": 3,
+      "suggestedLevel": 4,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251374,
+          "npcName": "Windshaper Boro",
+          "x": 42.8,
+          "y": 23.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251374,
+          "npcName": "Windshaper Boro"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92466"
+    },
+    {
+      "id": 92467,
+      "name": "Call of Earth",
+      "requiredLevel": 3,
+      "suggestedLevel": 4,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251374,
+          "npcName": "Windshaper Boro",
+          "x": 42.8,
+          "y": 23.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251166,
+          "npcName": "Minor Manifestation of Earth"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 180,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92467"
+    },
+    {
+      "id": 92468,
+      "name": "Call of Earth",
+      "requiredLevel": 3,
+      "suggestedLevel": 4,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251166,
+          "npcName": "Minor Manifestation of Earth",
+          "x": 49.6,
+          "y": 24.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251374,
+          "npcName": "Windshaper Boro"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          5175,
+          1
+        ]
+      ],
+      "experience": 355,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92468"
+    },
+    {
+      "id": 92469,
+      "name": "Return to Rorian",
+      "requiredLevel": 3,
+      "suggestedLevel": 4,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 249363,
+          "npcName": "Yala Windwatcher",
+          "x": 47.2,
+          "y": 21.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 35,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92469"
+    },
+    {
+      "id": 92470,
+      "name": "Foul Matriarch",
+      "requiredLevel": 2,
+      "suggestedLevel": 5,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251366,
+          "npcName": "Aetheen of the Gales",
+          "x": 42.6,
+          "y": 23.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251366,
+          "npcName": "Aetheen of the Gales"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 560,
+      "money": 100,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92470"
+    },
+    {
+      "id": 92471,
+      "name": "Aetheen of the Gales",
+      "requiredLevel": 4,
+      "suggestedLevel": 4,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251366,
+          "npcName": "Aetheen of the Gales"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 35,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92471"
+    },
+    {
+      "id": 92472,
+      "name": "The Next Step",
+      "requiredLevel": 3,
+      "suggestedLevel": 5,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251366,
+          "npcName": "Aetheen of the Gales",
+          "x": 42.6,
+          "y": 23.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 225,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92472"
+    },
+    {
+      "id": 92473,
+      "name": "Aggressive Encroachment",
+      "requiredLevel": 3,
+      "suggestedLevel": 4,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257551,
+          "npcName": "Valreaa Valewind",
+          "x": 42.4,
+          "y": 25.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257551,
+          "npcName": "Valreaa Valewind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 355,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92473"
+    },
+    {
+      "id": 92474,
+      "name": "Falling With Style",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263113,
+          "npcName": "Myriaal Mistwake",
+          "x": 43.6,
+          "y": 24.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92474"
+    },
+    {
+      "id": 92480,
+      "name": "zzOLD UNUSED Cult Ambush",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92480"
+    },
+    {
+      "id": 92481,
+      "name": "A Student of the Arcane",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 8,
+          "name": "Mage"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251379,
+          "npcName": "Dorii Brightwhisper"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92481"
+    },
+    {
+      "id": 92482,
+      "name": "The Way of the Hunter",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 3,
+          "name": "Hunter"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251376,
+          "npcName": "Tai'ree Farsight"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92482"
+    },
+    {
+      "id": 92483,
+      "name": "At Home in the Shadows",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 4,
+          "name": "Rogue"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251389,
+          "npcName": "Akeri Duskblade"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92483"
+    },
+    {
+      "id": 92484,
+      "name": "Embracing the Elements",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 7,
+          "name": "Shaman"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251374,
+          "npcName": "Windshaper Boro"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92484"
+    },
+    {
+      "id": 92485,
+      "name": "A Student of Nature",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 11,
+          "name": "Druid"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251373,
+          "npcName": "Xyton Silverwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92485"
+    },
+    {
+      "id": 92514,
+      "name": "Welcome to Shen'dar Village",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 135,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92514"
+    },
+    {
+      "id": 92515,
+      "name": "The Problem With Prideclaws",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251993,
+          "npcName": "Indari Sunseam",
+          "x": 44.6,
+          "y": 44.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251993,
+          "npcName": "Indari Sunseam"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          256935,
+          1
+        ]
+      ],
+      "experience": 540,
+      "money": 125,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92515"
+    },
+    {
+      "id": 92516,
+      "name": "Hippogryph Harrassment",
+      "requiredLevel": 4,
+      "suggestedLevel": 7,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251906,
+          "npcName": "Teeri Wellwind",
+          "x": 44.4,
+          "y": 45.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251906,
+          "npcName": "Teeri Wellwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 630,
+      "money": 175,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92516"
+    },
+    {
+      "id": 92517,
+      "name": "The Criminal Element",
+      "requiredLevel": 4,
+      "suggestedLevel": 7,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 475,
+      "money": 175,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92517"
+    },
+    {
+      "id": 92528,
+      "name": "Among the Faithful",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257065,
+          "npcName": "Missionary Jasaan",
+          "x": 46.8,
+          "y": 56.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 350,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92528"
+    },
+    {
+      "id": 92529,
+      "name": "Falaath Village",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251904,
+          "npcName": "Sania Silverstream",
+          "x": 44.8,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257065,
+          "npcName": "Missionary Jasaan"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 350,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92529"
+    },
+    {
+      "id": 92532,
+      "name": "The Warrior's Path",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [
+        {
+          "id": 1,
+          "name": "Warrior"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 251361,
+          "npcName": "Rorian the Dayseeker",
+          "x": 42.0,
+          "y": 23.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251964,
+          "npcName": "Blademaster Ren"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92532"
+    },
+    {
+      "id": 92544,
+      "name": "Al'Aketh Thugs",
+      "requiredLevel": 2,
+      "suggestedLevel": 5,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252095,
+          "npcName": "Hanaa Nightwind",
+          "x": 38.2,
+          "y": 30.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252095,
+          "npcName": "Hanaa Nightwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 560,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92544"
+    },
+    {
+      "id": 92550,
+      "name": "Havoc in the Highlands",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 700,
+      "money": 225,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92550"
+    },
+    {
+      "id": 92551,
+      "name": "Stolen Supplies",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252172,
+          "npcName": "Danarii Bellowveil",
+          "x": 45.2,
+          "y": 45.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252172,
+          "npcName": "Danarii Bellowveil"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 530,
+      "money": 225,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92551"
+    },
+    {
+      "id": 92553,
+      "name": "Restocking the Larders",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251905,
+          "npcName": "Zerril Softbreeze",
+          "x": 43.8,
+          "y": 43.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251905,
+          "npcName": "Zerril Softbreeze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263511,
+          1
+        ],
+        [
+          263509,
+          5
+        ]
+      ],
+      "experience": 405,
+      "money": 65,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92553"
+    },
+    {
+      "id": 92579,
+      "name": "To Valanaar",
+      "requiredLevel": 6,
+      "suggestedLevel": 8,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 175,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92579"
+    },
+    {
+      "id": 92595,
+      "name": "The Windshapers",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251902,
+          "npcName": "Illaya Amberwind",
+          "x": 43.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251902,
+          "npcName": "Illaya Amberwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 135,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92595"
+    },
+    {
+      "id": 92596,
+      "name": "The High Order",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251903,
+          "npcName": "Rathiril Sunlance",
+          "x": 45.0,
+          "y": 46.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251903,
+          "npcName": "Rathiril Sunlance"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 135,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92596"
+    },
+    {
+      "id": 92597,
+      "name": "Reading the Ley Lines",
+      "requiredLevel": 2,
+      "suggestedLevel": 4,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251371,
+          "npcName": "Falorne Fallwind",
+          "x": 43.2,
+          "y": 24.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251371,
+          "npcName": "Falorne Fallwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 180,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92597"
+    },
+    {
+      "id": 92598,
+      "name": "The Gift of Skysight",
+      "requiredLevel": 2,
+      "suggestedLevel": 4,
+      "side": 2,
+      "faction": "Horde",
+      "races": [
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251487,
+          "npcName": "Ventaari Brightwish",
+          "x": 42.6,
+          "y": 24.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251487,
+          "npcName": "Ventaari Brightwish"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 180,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92598"
+    },
+    {
+      "id": 92640,
+      "name": "Desperate Times",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 660,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92640"
+    },
+    {
+      "id": 92642,
+      "name": "Disrupting Logistics",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed",
+          "x": 69.6,
+          "y": 67.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 440,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92642"
+    },
+    {
+      "id": 92643,
+      "name": "The Turncoat",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253372,
+          "npcName": "Dead Cultist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 660,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92643"
+    },
+    {
+      "id": 92644,
+      "name": "Unfortunate News",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253372,
+          "npcName": "Dead Cultist",
+          "x": 56.0,
+          "y": 58.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 440,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92644"
+    },
+    {
+      "id": 92645,
+      "name": "Breaking the Breaker",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed",
+          "x": 69.6,
+          "y": 67.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 660,
+      "money": 300,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92645"
+    },
+    {
+      "id": 92646,
+      "name": "Confront Lorthuna",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253590,
+          "npcName": "Valennia Stormfist",
+          "x": 65.2,
+          "y": 50.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 1000,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92646"
+    },
+    {
+      "id": 92679,
+      "name": "Blood Tithe",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252448,
+          "npcName": "Alvarion Windfield",
+          "x": 62.0,
+          "y": 73.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 390,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92679"
+    },
+    {
+      "id": 92682,
+      "name": "Make Yourself Useful",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          252032,
+          5
+        ]
+      ],
+      "experience": 780,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92682"
+    },
+    {
+      "id": 92683,
+      "name": "Flutterfly Dust",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263329,
+          1
+        ],
+        [
+          2455,
+          5
+        ]
+      ],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92683"
+    },
+    {
+      "id": 92684,
+      "name": "Ornery Ornery Galestriders",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          252032,
+          5
+        ]
+      ],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92684"
+    },
+    {
+      "id": 92685,
+      "name": "The Hills Have Eyes",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          252032,
+          5
+        ]
+      ],
+      "experience": 780,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92685"
+    },
+    {
+      "id": 92693,
+      "name": "Standing Our Ground",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          252032,
+          5
+        ]
+      ],
+      "experience": 195,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92693"
+    },
+    {
+      "id": 92698,
+      "name": "What Is My Purpose?",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 250929,
+          "npcName": "Malfunctioning Cyclone Construct",
+          "x": 48.8,
+          "y": 78.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 195,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92698"
+    },
+    {
+      "id": 92699,
+      "name": "The Supreme Magister",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 80,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92699"
+    },
+    {
+      "id": 92700,
+      "name": "The Grand Skyseer",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 80,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92700"
+    },
+    {
+      "id": 92701,
+      "name": "To Valanaar",
+      "requiredLevel": 6,
+      "suggestedLevel": 9,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 80,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92701"
+    },
+    {
+      "id": 92703,
+      "name": "Deliver the News",
+      "requiredLevel": 5,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252800,
+          "npcName": "Aamelia Windfield",
+          "x": 46.6,
+          "y": 81.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252448,
+          "npcName": "Alvarion Windfield"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92703"
+    },
+    {
+      "id": 92708,
+      "name": "A Grand Adventure",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92708"
+    },
+    {
+      "id": 92709,
+      "name": "A Grand Adventure",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92709"
+    },
+    {
+      "id": 92727,
+      "name": "The Missing Scholar",
+      "requiredLevel": 4,
+      "suggestedLevel": 10,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253204,
+          "npcName": "Dondallion Whisperwind",
+          "x": 66.2,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 210,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92727"
+    },
+    {
+      "id": 92741,
+      "name": "Unwelcome Visitors",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253004,
+          "npcName": "Iaadaria Bitterwind",
+          "x": 66.2,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253004,
+          "npcName": "Iaadaria Bitterwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92741"
+    },
+    {
+      "id": 92834,
+      "name": "Avenged Tenfold",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 400,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92834"
+    },
+    {
+      "id": 92840,
+      "name": "Catching Wind",
+      "requiredLevel": 5,
+      "suggestedLevel": 11,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263404,
+          1
+        ],
+        [
+          3382,
+          5
+        ]
+      ],
+      "experience": 880,
+      "money": 400,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92840"
+    },
+    {
+      "id": 92849,
+      "name": "The Missing Scholar",
+      "requiredLevel": 4,
+      "suggestedLevel": 10,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [
+        {
+          "npcId": 253284,
+          "npcName": "Fillion Flamebreeze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92849"
+    },
+    {
+      "id": 92850,
+      "name": "The Missing Scholar",
+      "requiredLevel": 4,
+      "suggestedLevel": 10,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253284,
+          "npcName": "Fillion Flamebreeze",
+          "x": 52.0,
+          "y": 69.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253204,
+          "npcName": "Dondallion Whisperwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 700,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92850"
+    },
+    {
+      "id": 92860,
+      "name": "In Service of Zephras",
+      "requiredLevel": 6,
+      "suggestedLevel": 12,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 225,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92860"
+    },
+    {
+      "id": 92871,
+      "name": "In Service of Zephras",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 220,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92871"
+    },
+    {
+      "id": 92880,
+      "name": "Return to Valanaar",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed",
+          "x": 69.6,
+          "y": 67.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 440,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92880"
+    },
+    {
+      "id": 92881,
+      "name": "The High Elder's Request",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92881"
+    },
+    {
+      "id": 92947,
+      "name": "Making Our Move",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253844,
+          "npcName": "Valennia Stormfist",
+          "x": 61.2,
+          "y": 71.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253576,
+          "npcName": "Hyusaa Quickbreeze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 500,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=92947"
+    },
+    {
+      "id": 93036,
+      "name": "Infiltrating the Cult",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251904,
+          "npcName": "Sania Silverstream"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 70,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93036"
+    },
+    {
+      "id": 93065,
+      "name": "Prepare for Battle",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253844,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93065"
+    },
+    {
+      "id": 93089,
+      "name": "What Comes Next",
+      "requiredLevel": 7,
+      "suggestedLevel": 13,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93089"
+    },
+    {
+      "id": 93090,
+      "name": "What Comes Next",
+      "requiredLevel": 7,
+      "suggestedLevel": 13,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93090"
+    },
+    {
+      "id": 93159,
+      "name": "The Strange Hermit",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit",
+          "x": 54.0,
+          "y": 39.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 230,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93159"
+    },
+    {
+      "id": 93160,
+      "name": "The Forest's Bounty",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit",
+          "x": 54.0,
+          "y": 39.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 680,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93160"
+    },
+    {
+      "id": 93165,
+      "name": "Mercy Falls on Deaf Ears",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 254151,
+          "npcName": "Vayn Moongaze",
+          "x": 63.8,
+          "y": 36.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 254151,
+          "npcName": "Vayn Moongaze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 400,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93165"
+    },
+    {
+      "id": 93172,
+      "name": "Free the Hollows",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit",
+          "x": 54.0,
+          "y": 39.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 680,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93172"
+    },
+    {
+      "id": 93317,
+      "name": "Crab Season",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257006,
+          "npcName": "Nyalah Brightfire",
+          "x": 60.6,
+          "y": 72.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257006,
+          "npcName": "Nyalah Brightfire"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263513,
+          1
+        ],
+        [
+          263512,
+          5
+        ]
+      ],
+      "experience": 590,
+      "money": 200,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93317"
+    },
+    {
+      "id": 93318,
+      "name": "WANTED: Vulgara the Insatiable",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [
+        {
+          "npcId": 252172,
+          "npcName": "Danarii Bellowveil"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 780,
+      "money": 600,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93318"
+    },
+    {
+      "id": 93319,
+      "name": "Pilfered Windstones",
+      "requiredLevel": 4,
+      "suggestedLevel": 7,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251906,
+          "npcName": "Teeri Wellwind",
+          "x": 44.4,
+          "y": 45.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251906,
+          "npcName": "Teeri Wellwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 475,
+      "money": 175,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93319"
+    },
+    {
+      "id": 93320,
+      "name": "Tower Defense",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252378,
+          "npcName": "Yorana Windyreed"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 440,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93320"
+    },
+    {
+      "id": 93459,
+      "name": "More Al'Aketh Ears",
+      "requiredLevel": 8,
+      "suggestedLevel": 13,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [
+        {
+          "npcId": 254151,
+          "npcName": "Vayn Moongaze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 0,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93459"
+    },
+    {
+      "id": 93461,
+      "name": "Welcome to Shen'dar Village",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 135,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93461"
+    },
+    {
+      "id": 93552,
+      "name": "Harvesting Windstones",
+      "requiredLevel": 2,
+      "suggestedLevel": 4,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251363,
+          "npcName": "Dalia the Collector",
+          "x": 43.2,
+          "y": 24.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251363,
+          "npcName": "Dalia the Collector"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          255663,
+          3
+        ]
+      ],
+      "experience": 355,
+      "money": 75,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93552"
+    },
+    {
+      "id": 93735,
+      "name": "The Broken Construct",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 256083,
+          "npcName": "Riaani Nightwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93735"
+    },
+    {
+      "id": 93736,
+      "name": "Unwelcome Spirits",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 254344,
+          "npcName": "Endaria Mistgaze",
+          "x": 58.2,
+          "y": 78.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 254344,
+          "npcName": "Endaria Mistgaze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 780,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93736"
+    },
+    {
+      "id": 93737,
+      "name": "The Broken Construct",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 256083,
+          "npcName": "Riaani Nightwind",
+          "x": 59.0,
+          "y": 73.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 256083,
+          "npcName": "Riaani Nightwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 780,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93737"
+    },
+    {
+      "id": 93738,
+      "name": "The Broken Construct",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 256083,
+          "npcName": "Riaani Nightwind",
+          "x": 59.0,
+          "y": 73.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93738"
+    },
+    {
+      "id": 93740,
+      "name": "Blood for Blood",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 660,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93740"
+    },
+    {
+      "id": 93746,
+      "name": "A Firm Response",
+      "requiredLevel": 4,
+      "suggestedLevel": 9,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263305,
+          1
+        ],
+        [
+          250339,
+          5
+        ]
+      ],
+      "experience": 590,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93746"
+    },
+    {
+      "id": 93791,
+      "name": "Speak with Belann",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [
+        {
+          "id": 8,
+          "name": "Mage"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 252373,
+          "npcName": "Anathamaas Aetherwind",
+          "x": 65.8,
+          "y": 80.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        },
+        {
+          "npcId": 256507,
+          "npcName": "Belann Windwood",
+          "x": 62.8,
+          "y": 77.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 256507,
+          "npcName": "Belann Windwood"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 420,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93791"
+    },
+    {
+      "id": 93797,
+      "name": "Boughs in the Wind",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [
+        {
+          "id": 8,
+          "name": "Mage"
+        }
+      ],
+      "starts": [
+        {
+          "npcId": 256507,
+          "npcName": "Belann Windwood",
+          "x": 62.8,
+          "y": 77.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 256507,
+          "npcName": "Belann Windwood"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263430,
+          1
+        ],
+        [
+          250344,
+          5
+        ]
+      ],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93797"
+    },
+    {
+      "id": 93835,
+      "name": "Confront Lorthuna",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253590,
+          "npcName": "Valennia Stormfist",
+          "x": 65.2,
+          "y": 50.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 1000,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93835"
+    },
+    {
+      "id": 93836,
+      "name": "The Fate of Zephras",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93836"
+    },
+    {
+      "id": 93926,
+      "name": "The Western Watch",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252155,
+          "npcName": "Peacekeeper Vaaniel"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 350,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93926"
+    },
+    {
+      "id": 93927,
+      "name": "A Last Request",
+      "requiredLevel": 5,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252155,
+          "npcName": "Peacekeeper Vaaniel",
+          "x": 42.4,
+          "y": 62.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 530,
+      "money": 225,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93927"
+    },
+    {
+      "id": 93948,
+      "name": "Deliver the Signet",
+      "requiredLevel": 6,
+      "suggestedLevel": 9,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251523,
+          "npcName": "Constable Aonda",
+          "x": 45.6,
+          "y": 45.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 390,
+      "money": 150,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93948"
+    },
+    {
+      "id": 93949,
+      "name": "Bugged",
+      "requiredLevel": 6,
+      "suggestedLevel": 8,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252383,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 700,
+      "money": 225,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93949"
+    },
+    {
+      "id": 93951,
+      "name": "A Little Beauty",
+      "requiredLevel": 4,
+      "suggestedLevel": 7,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251991,
+          "npcName": "Taleen Shimmerthread",
+          "x": 44.8,
+          "y": 44.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251991,
+          "npcName": "Taleen Shimmerthread"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 475,
+      "money": 125,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93951"
+    },
+    {
+      "id": 93958,
+      "name": "The Inner Sanctum",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 253576,
+          "npcName": "Hyusaa Quickbreeze",
+          "x": 63.8,
+          "y": 50.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 253590,
+          "npcName": "Valennia Stormfist"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 500,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=93958"
+    },
+    {
+      "id": 94003,
+      "name": "The Skybreaker Bulwark",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252377,
+          "npcName": "Seena Skybreaker",
+          "x": 59.8,
+          "y": 72.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252377,
+          "npcName": "Seena Skybreaker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          275290,
+          1
+        ]
+      ],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94003"
+    },
+    {
+      "id": 94006,
+      "name": "The Great Ursera Spirit",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252359,
+          "npcName": "Lotheluum Starbreeze",
+          "x": 64.0,
+          "y": 75.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 255853,
+          "npcName": "Urs'endris"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94006"
+    },
+    {
+      "id": 94007,
+      "name": "Taming the Beast",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 254084,
+          "npcName": "Elayaa Easewind",
+          "x": 45.2,
+          "y": 44.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 210,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94007"
+    },
+    {
+      "id": 94013,
+      "name": "Taming the Beast",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale",
+          "x": 59.6,
+          "y": 72.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94013"
+    },
+    {
+      "id": 94050,
+      "name": "Training the Beast",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale",
+          "x": 59.6,
+          "y": 72.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 254411,
+          "npcName": "Quel'dora Quickgale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 420,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94050"
+    },
+    {
+      "id": 94369,
+      "name": "The Fate of Zephras",
+      "requiredLevel": 7,
+      "suggestedLevel": 12,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94369"
+    },
+    {
+      "id": 94411,
+      "name": "Meddlesome Mages",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251902,
+          "npcName": "Illaya Amberwind",
+          "x": 43.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251902,
+          "npcName": "Illaya Amberwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 405,
+      "money": 100,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94411"
+    },
+    {
+      "id": 94413,
+      "name": "A Magical Affront",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251903,
+          "npcName": "Rathiril Sunlance",
+          "x": 45.0,
+          "y": 46.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251903,
+          "npcName": "Rathiril Sunlance"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          263428,
+          1
+        ],
+        [
+          2454,
+          1
+        ]
+      ],
+      "experience": 540,
+      "money": 125,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94413"
+    },
+    {
+      "id": 94414,
+      "name": "The Anchors of Zephras",
+      "requiredLevel": 2,
+      "suggestedLevel": 2,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257554,
+          "npcName": "Halaan Hawk-Eye",
+          "x": 43.8,
+          "y": 24.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257554,
+          "npcName": "Halaan Hawk-Eye"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 85,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94414"
+    },
+    {
+      "id": 94484,
+      "name": "Unnerving Silence",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252359,
+          "npcName": "Lotheluum Starbreeze",
+          "x": 64.0,
+          "y": 75.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 220,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94484"
+    },
+    {
+      "id": 94485,
+      "name": "Tears of the Lady",
+      "requiredLevel": 8,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 225,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94485"
+    },
+    {
+      "id": 94486,
+      "name": "Feathers for Binding",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94486"
+    },
+    {
+      "id": 94487,
+      "name": "Unwanted and Unworthy",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94487"
+    },
+    {
+      "id": 94488,
+      "name": "The Ties That Bind",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94488"
+    },
+    {
+      "id": 94489,
+      "name": "The Wounds of Betrayal",
+      "requiredLevel": 8,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94489"
+    },
+    {
+      "id": 94490,
+      "name": "Ripped Missive",
+      "requiredLevel": 9,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 910,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94490"
+    },
+    {
+      "id": 94491,
+      "name": "The Fate of the Den",
+      "requiredLevel": 8,
+      "suggestedLevel": 12,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252359,
+          "npcName": "Lotheluum Starbreeze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 455,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94491"
+    },
+    {
+      "id": 94493,
+      "name": "A Sacrifice in Vain",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw",
+          "x": 61.6,
+          "y": 39.2,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257944,
+          "npcName": "Elegael Thornpaw"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 220,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94493"
+    },
+    {
+      "id": 94559,
+      "name": "UNUSED",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 660,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94559"
+    },
+    {
+      "id": 94568,
+      "name": "The Cult's True Plans",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong",
+          "x": 66.2,
+          "y": 76.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252476,
+          "npcName": "Talaanis Shadowsong"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 440,
+      "money": 400,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94568"
+    },
+    {
+      "id": 94638,
+      "name": "Strength and Mercy",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 255853,
+          "npcName": "Urs'endris",
+          "x": 69.8,
+          "y": 61.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 255853,
+          "npcName": "Urs'endris"
+        }
+      ],
+      "prerequisiteQuestIds": [
+        92840
+      ],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94638"
+    },
+    {
+      "id": 94896,
+      "name": "Aid For The Refugees",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 259012,
+          "npcName": "Ealaane Nimbuswalker",
+          "x": 65.8,
+          "y": 74.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 259012,
+          "npcName": "Ealaane Nimbuswalker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94896"
+    },
+    {
+      "id": 94897,
+      "name": "The Fate of a Loved One",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 259012,
+          "npcName": "Ealaane Nimbuswalker",
+          "x": 65.8,
+          "y": 74.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 259012,
+          "npcName": "Ealaane Nimbuswalker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94897"
+    },
+    {
+      "id": 94898,
+      "name": "Violent Winds (Temp Disabled)",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94898"
+    },
+    {
+      "id": 94901,
+      "name": "Hopping Helpers",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94901"
+    },
+    {
+      "id": 94902,
+      "name": "Valanaar Vintages",
+      "requiredLevel": 8,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [],
+      "ends": [],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": false,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94902"
+    },
+    {
+      "id": 94946,
+      "name": "The Magical City of Dalaran",
+      "requiredLevel": 7,
+      "suggestedLevel": 13,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252475,
+          "npcName": "Elaadrin Evengale",
+          "x": 66.6,
+          "y": 79.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 259084,
+          "npcName": "Denaaris Stargale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94946"
+    },
+    {
+      "id": 94978,
+      "name": "Taming the Beast",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale",
+          "x": 59.6,
+          "y": 72.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94978"
+    },
+    {
+      "id": 94979,
+      "name": "Taming the Beast",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 3,
+      "faction": null,
+      "races": [
+        {
+          "id": 95,
+          "name": "Skyborne Alliance"
+        },
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale",
+          "x": 59.6,
+          "y": 72.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252389,
+          "npcName": "Quel'ana Quickgale"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=94979"
+    },
+    {
+      "id": 95349,
+      "name": "The Earthen Ring",
+      "requiredLevel": 7,
+      "suggestedLevel": 13,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251968,
+          "npcName": "Ayessa Dawnsinger",
+          "x": 59.0,
+          "y": 79.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 259119,
+          "npcName": "Alaana Stormwalker"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 90,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=95349"
+    },
+    {
+      "id": 96101,
+      "name": "The Great Outdoors",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 405,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=96101"
+    },
+    {
+      "id": 96638,
+      "name": "The Adventurer",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251366,
+          "npcName": "Aetheen of the Gales",
+          "x": 42.6,
+          "y": 23.6,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 405,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=96638"
+    },
+    {
+      "id": 96646,
+      "name": "Camping 101: Cooking",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251905,
+          "npcName": "Zerril Softbreeze"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=96646"
+    },
+    {
+      "id": 97243,
+      "name": "Call of Fire",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 2,
+      "faction": "Horde",
+      "races": [
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 252382,
+          "npcName": "Sessaria Skystride",
+          "x": 58.2,
+          "y": 78.4,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        },
+        {
+          "npcId": 254082,
+          "npcName": "Aarnor Galestrike",
+          "x": 43.4,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 420,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97243"
+    },
+    {
+      "id": 97244,
+      "name": "Call of Fire",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 2,
+      "faction": "Horde",
+      "races": [
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn",
+          "x": 51.2,
+          "y": 86.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 350,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97244"
+    },
+    {
+      "id": 97245,
+      "name": "Call of Fire",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 2,
+      "faction": "Horde",
+      "races": [
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn",
+          "x": 51.2,
+          "y": 86.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 840,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97245"
+    },
+    {
+      "id": 97257,
+      "name": "Call of Fire",
+      "requiredLevel": 10,
+      "suggestedLevel": 10,
+      "side": 2,
+      "faction": "Horde",
+      "races": [
+        {
+          "id": 96,
+          "name": "Skyborne Horde"
+        }
+      ],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 268592,
+          "npcName": "Olariaan Swiftburn",
+          "x": 51.2,
+          "y": 86.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 252382,
+          "npcName": "Sessaria Skystride"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [
+        [
+          5176,
+          1
+        ]
+      ],
+      "experience": 1050,
+      "money": 350,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97257"
+    },
+    {
+      "id": 97963,
+      "name": "Camping 101: Alchemy",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257019,
+          "npcName": "Nyassa Swiftdraught"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97963"
+    },
+    {
+      "id": 97964,
+      "name": "Camping 101: Blacksmithing",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251913,
+          "npcName": "Aedi Thriceforged"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97964"
+    },
+    {
+      "id": 97965,
+      "name": "Camping 101: First Aid",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257018,
+          "npcName": "Naleeia Tattermend"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97965"
+    },
+    {
+      "id": 97967,
+      "name": "Camping 101: Fishing",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251992,
+          "npcName": "Fenn Fairweather"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97967"
+    },
+    {
+      "id": 97968,
+      "name": "Camping 101: Herbalism",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 254345,
+          "npcName": "Syriel Nightrain"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97968"
+    },
+    {
+      "id": 97969,
+      "name": "Camping 101: Leatherworking",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251993,
+          "npcName": "Indari Sunseam"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97969"
+    },
+    {
+      "id": 97970,
+      "name": "Camping 101: Mining",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257022,
+          "npcName": "Messana Crestwind"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97970"
+    },
+    {
+      "id": 97971,
+      "name": "Camping 101: Skinning",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257024,
+          "npcName": "Mendalass Tattermend"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97971"
+    },
+    {
+      "id": 97972,
+      "name": "Camping 101: Tailoring",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251991,
+          "npcName": "Taleen Shimmerthread"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97972"
+    },
+    {
+      "id": 97973,
+      "name": "Camping 101: Tailoring",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251991,
+          "npcName": "Taleen Shimmerthread"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=97973"
+    },
+    {
+      "id": 98284,
+      "name": "Camping 101: Enchanting",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 2,
+      "faction": "Horde",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257020,
+          "npcName": "Nasalanna Windsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=98284"
+    },
+    {
+      "id": 98285,
+      "name": "Camping 101: Engineering",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit",
+          "x": 54.0,
+          "y": 39.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 251684,
+          "npcName": "Strange Hermit"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=98285"
+    },
+    {
+      "id": 98286,
+      "name": "Camping 101: Enchanting",
+      "requiredLevel": 4,
+      "suggestedLevel": 6,
+      "side": 1,
+      "faction": "Alliance",
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 263664,
+          "npcName": "Raan Wildwind",
+          "x": 41.6,
+          "y": 44.8,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 257020,
+          "npcName": "Nasalanna Windsinger"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 270,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=98286"
+    },
+    {
+      "id": 98512,
+      "name": "Al'Aketh Assassins",
+      "requiredLevel": 6,
+      "suggestedLevel": 11,
+      "side": 0,
+      "faction": null,
+      "races": [],
+      "classes": [],
+      "starts": [
+        {
+          "npcId": 273017,
+          "npcName": "Fendaal Windstone",
+          "x": 56.8,
+          "y": 61.0,
+          "zoneId": 16593,
+          "zoneName": "Zephras Isle",
+          "uiMapId": 2521
+        }
+      ],
+      "ends": [
+        {
+          "npcId": 273017,
+          "npcName": "Fendaal Windstone"
+        }
+      ],
+      "prerequisiteQuestIds": [],
+      "sharable": true,
+      "repeatable": false,
+      "itemRewards": [],
+      "experience": 880,
+      "money": 0,
+      "zoneId": 16593,
+      "uiMapId": 2521,
+      "startedOnZephras": true,
+      "wowheadUrl": "https://www.wowhead.com/forever/quest=98512"
+    }
+  ]
+}
