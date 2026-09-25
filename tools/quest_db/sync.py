@@ -13,7 +13,7 @@ from .http import item_detail_url, object_detail_url, quest_detail_url
 class _HtmlClient(Protocol):
     def get_html(self, url: str, *, force: bool = False) -> str: ...
 from .ingest import ingest_html
-from .parse_page import extract_inline_listviews
+from .parse_page import extract_inline_listviews, extract_map_quest_givers
 from .parse_quest import (
     eligibility_restrictions,
     extract_spawn_pins,
@@ -189,7 +189,14 @@ def sync_zone_starters(
                 handle.write(json.dumps({"kind": "zone", "id": zone_id, "url": url, "error": str(exc)}) + "\n")
             continue
         added_objects = _merge_zone_starters(data_root, starters, zone_id, extract_inline_listviews(html))
-        print(f"  zone {zone_id} new object starters={added_objects}", flush=True)
+        givers = extract_map_quest_givers(html)
+        zone_givers = starters.setdefault("givers", {})
+        zone_givers[str(zone_id)] = givers
+        print(
+            f"  zone {zone_id} item starters={_item_count(starters, zone_id)} "
+            f"map givers={len(givers)} new objects={added_objects}",
+            flush=True,
+        )
         if index % 10 == 0:
             write_json(starters_path, starters)
 
@@ -203,6 +210,10 @@ def sync_zone_starters(
         flush=True,
     )
     return manifest
+
+
+def _item_count(starters: dict[str, Any], zone_id: int) -> int:
+    return sum(1 for item in (starters.get("items") or {}).values() if item.get("zoneId") == zone_id)
 
 
 def _merge_zone_starters(
