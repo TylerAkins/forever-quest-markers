@@ -4,15 +4,29 @@ from __future__ import annotations
 
 import hashlib
 import re
+import ssl
+
+try:
+    import certifi
+except ImportError:
+    certifi = None
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
+# python.org macOS builds ship without a CA bundle, so the Linux UA plus
+# default SSL context fails there even when Safari can open Wowhead.
 USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+    if sys.platform == "darwin"
+    else (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+    )
 )
 DEFAULT_MIN_INTERVAL_S = 1.25
 _DEFAULT_HEADERS = {
@@ -38,7 +52,7 @@ class WowheadClient:
         self.batch_pause_s = batch_pause_s
         self._last_fetch_at = 0.0
         self._network_fetches = 0
-        self._use_curl = False
+        self._unverified_ssl = False
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _cache_path(self, url: str) -> Path:
@@ -49,9 +63,6 @@ class WowheadClient:
         path = self._cache_path(url)
         if not force and path.is_file():
             return path.read_text(encoding="utf-8", errors="replace")
-
-        if self._use_curl:
-            return self._fetch_store(url, path, self._fetch_curl)
 
         last_error: Exception | None = None
         for attempt in range(6):
@@ -68,13 +79,14 @@ class WowheadClient:
                 raise
             except OSError as exc:
                 last_error = exc
-                if _is_cert_verify_failure(exc):
+                if _is_cert_verify_failure(exc) and not self._unverified_ssl:
                     print(
-                        "  Python cannot verify HTTPS certificates; using curl for the rest of this run",
+                        "  Python has no CA certificates (common with python.org on Mac); "
+                        "continuing without certificate verification",
                         flush=True,
                     )
-                    self._use_curl = True
-                    return self._fetch_store(url, path, self._fetch_curl)
+                    self._unverified_ssl = True
+                    continue
                 wait = min(30, 2 * (2**attempt))
                 print(f"  network error ({exc}); retry in {wait}s", flush=True)
                 time.sleep(wait)
@@ -92,15 +104,13 @@ class WowheadClient:
         try:
             html = self._fetch_curl(url)
         except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or b"").decode("utf-8", errors="replace").strip()
+            if detail:
+                print(f"  curl failed: {detail}", flush=True)
             if last_error is not None:
                 raise last_error from exc
             raise
 
-        return self._store_html(url, path, html)
-
-    def _fetch_store(self, url: str, path: Path, fetch) -> str:
-        self._throttle()
-        html = fetch(url)
         return self._store_html(url, path, html)
 
     def _store_html(self, url: str, path: Path, html: str) -> str:
@@ -117,7 +127,8 @@ class WowheadClient:
 
     def _fetch_urllib(self, url: str) -> str:
         request = urllib.request.Request(url, headers=dict(_DEFAULT_HEADERS))
-        with urllib.request.urlopen(request, timeout=120) as response:
+        context = _ssl_context(unverified=self._unverified_ssl)
+        with urllib.request.urlopen(request, timeout=120, context=context) as response:
             raw = response.read()
         return raw.decode("utf-8", errors="replace")
 
@@ -126,8 +137,11 @@ class WowheadClient:
             [
                 "curl",
                 "-fsSL",
+                "--http1.1",
                 "-A",
                 USER_AGENT,
+                "-H",
+                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "-H",
                 "Accept-Language: en-US,en;q=0.9",
                 "-H",
@@ -161,6 +175,14 @@ def quest_detail_url(quest_id: int, name: str | None = None) -> str:
     if slug:
         return f"https://www.wowhead.com/forever/quest={quest_id}/{slug}"
     return f"https://www.wowhead.com/forever/quest={quest_id}"
+
+
+def _ssl_context(*, unverified: bool) -> ssl.SSLContext:
+    if unverified:
+        return ssl._create_unverified_context()
+    if certifi is None:
+        return ssl.create_default_context()
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 def _is_cert_verify_failure(exc: BaseException) -> bool:
