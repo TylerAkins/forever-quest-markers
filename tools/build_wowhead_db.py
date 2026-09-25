@@ -31,12 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "ingest":
         return _cmd_ingest(args, data_root)
 
-    client = WowheadClient(
-        cache_dir=Path(args.cache_dir),
-        min_interval_s=args.delay,
-        batch_size=args.batch_size,
-        batch_pause_s=args.batch_pause,
-    )
+    client = _make_client(args)
 
     if args.command == "sync-sources":
         sync_sources(data_root, client, force=args.force)
@@ -77,12 +72,7 @@ def _cmd_ingest(args: argparse.Namespace, data_root: Path) -> int:
     if not urls:
         raise SystemExit("ingest requires --url and/or --url-file")
 
-    client = WowheadClient(
-        cache_dir=Path(args.cache_dir),
-        min_interval_s=args.delay,
-        batch_size=args.batch_size,
-        batch_pause_s=args.batch_pause,
-    )
+    client = _make_client(args)
     reports: list[dict] = []
 
     for index, url in enumerate(urls):
@@ -99,6 +89,29 @@ def _cmd_ingest(args: argparse.Namespace, data_root: Path) -> int:
     if args.rebuild_zone_map:
         rebuild_zone_map(data_root, Path(args.att_quests))
     return 0
+
+
+def _make_client(args: argparse.Namespace):
+    if args.browser:
+        # Playwright is optional so the Python HTTP commands still run without it.
+        try:
+            from wowhead_db.browser import BrowserWowheadClient
+        except ImportError as exc:
+            raise SystemExit("Browser fetch needs Playwright: pip3 install playwright") from exc
+
+        print("Opening Chrome. Leave the window alone until this command finishes.", flush=True)
+        return BrowserWowheadClient(
+            cache_dir=Path(args.cache_dir),
+            min_interval_s=args.delay,
+            batch_size=args.batch_size,
+            batch_pause_s=args.batch_pause,
+        )
+    return WowheadClient(
+        cache_dir=Path(args.cache_dir),
+        min_interval_s=args.delay,
+        batch_size=args.batch_size,
+        batch_pause_s=args.batch_pause,
+    )
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -146,6 +159,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Pause between multiple URLs in one ingest run",
     )
     parser.add_argument("--force", action="store_true", help="Ignore HTML cache / re-fetch")
+    parser.add_argument(
+        "--browser",
+        action="store_true",
+        help="Fetch with local Chrome instead of Python. Run this on your machine.",
+    )
     parser.add_argument(
         "--limit",
         type=int,
