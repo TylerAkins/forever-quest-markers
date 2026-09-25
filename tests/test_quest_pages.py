@@ -15,7 +15,7 @@ sys.path.insert(0, str(TOOLS))
 from quest_db.classify import classify_pin_category
 from quest_db.ingest import ingest_html
 from quest_db.parse_list import parse_quest_list
-from quest_db.parse_page import extract_page_listviews
+from quest_db.parse_page import extract_inline_listviews, extract_page_listviews
 from quest_db.parse_quest import (
     eligibility_restrictions,
     extract_spawn_pins,
@@ -76,6 +76,14 @@ class ParseQuestTests(unittest.TestCase):
 
 
 class ParsePageTests(unittest.TestCase):
+    def test_zone_starts_quest_listview(self) -> None:
+        html = """
+        new Listview({template: 'item', id: 'starts-quest', data: [{"id":4926,"name":"Chen's Empty Keg","sourcemore":[{"n":"Chen's Empty Keg","t":2,"ti":3238,"z":17}]}]});
+        """
+        views = extract_inline_listviews(html)
+        self.assertEqual("starts-quest", views[0]["id"])
+        self.assertEqual(3238, views[0]["data"][0]["sourcemore"][0]["ti"])
+
     def test_objects_page_json_listview(self) -> None:
         html = (FIXTURES / "objects-quests.html").read_text(encoding="utf-8")
         views = extract_page_listviews(html)
