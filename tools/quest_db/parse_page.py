@@ -45,6 +45,52 @@ def extract_inline_listviews(html: str) -> list[dict[str, Any]]:
     return views
 
 
+def extract_g_mapper_spawns(html: str) -> list[dict[str, Any]]:
+    """Coordinates from an object page's `g_mapperData` block."""
+    marker = "var g_mapperData = "
+    start = html.find(marker)
+    if start < 0:
+        return []
+    try:
+        payload, _end = json.JSONDecoder().raw_decode(html[start + len(marker) :])
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    pins: list[dict[str, Any]] = []
+    for zone_id, rows in payload.items():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            for pair in row.get("coords") or []:
+                if not (isinstance(pair, list) and len(pair) == 2):
+                    continue
+                pins.append(
+                    {
+                        "zoneId": int(zone_id) if str(zone_id).isdigit() else zone_id,
+                        "uiMapId": row.get("uiMapId"),
+                        "uiMapName": row.get("uiMapName"),
+                        "x": float(pair[0]),
+                        "y": float(pair[1]),
+                    }
+                )
+    return pins
+
+
+def listview_ids(html: str, view_id: str) -> list[int]:
+    ids: list[int] = []
+    for view in extract_inline_listviews(html):
+        if view.get("id") != view_id:
+            continue
+        for row in view.get("data") or []:
+            row_id = row.get("id")
+            if isinstance(row_id, int):
+                ids.append(row_id)
+    return ids
+
+
 def extract_map_quest_givers(html: str) -> list[dict[str, Any]]:
     """NPCs and objects plotted as quest givers on a zone map.
 

@@ -13,7 +13,7 @@ from .http import item_detail_url, object_detail_url, quest_detail_url
 class _HtmlClient(Protocol):
     def get_html(self, url: str, *, force: bool = False) -> str: ...
 from .ingest import ingest_html
-from .parse_page import extract_inline_listviews, extract_map_quest_givers
+from .parse_page import extract_g_mapper_spawns, extract_inline_listviews, extract_map_quest_givers, listview_ids
 from .parse_quest import (
     eligibility_restrictions,
     extract_spawn_pins,
@@ -316,15 +316,20 @@ def sync_object_details(
                 )
             continue
         detail = parse_quest_detail(html, job["id"])
-        spawns = extract_spawn_pins(detail.get("mapper"))
-        quest_ids = quest_ids_from_markup(detail.get("infoboxMarkup"))
+        page_info = detail.get("pageInfo") if isinstance(detail.get("pageInfo"), dict) else {}
+        spawns = extract_g_mapper_spawns(html) or extract_spawn_pins(detail.get("mapper"))
+        quest_ids = listview_ids(html, "starts") or quest_ids_from_markup(detail.get("infoboxMarkup"))
+        contained_items = listview_ids(html, "contains") if job["kind"] == "object" else []
+        for item_id in contained_items:
+            quest_ids = _merge_ids(quest_ids, _quest_ids_from_item(client, item_id, force=False))
         record = {
             "id": job["id"],
             "kind": job["kind"],
-            "name": job.get("name"),
+            "name": job.get("name") or page_info.get("name"),
             "fetchedAt": utc_now_iso(),
             "spawns": spawns,
             "startsQuestIds": quest_ids,
+            "containedItemIds": contained_items,
             "infoboxMarkup": detail.get("infoboxMarkup"),
         }
         write_json(data_root / job["kind"] / f"{job['id']}.json", record)
@@ -342,6 +347,21 @@ def sync_object_details(
     manifest["stats"]["itemDetailCount"] = _json_count(data_root / "item")
     save_manifest(data_root, manifest)
     return manifest
+
+
+def _merge_ids(left: list[int], right: list[int]) -> list[int]:
+    return sorted(set(left) | set(right))
+
+
+def _quest_ids_from_item(client: _HtmlClient, item_id: int, *, force: bool) -> list[int]:
+    url = item_detail_url(item_id)
+    try:
+        html = client.get_html(url, force=force)
+    except Exception as exc:  # noqa: BLE001 — object spawns still save if the item page fails
+        print(f"  contained item {item_id} failed: {exc}", flush=True)
+        return []
+    detail = parse_quest_detail(html, item_id)
+    return listview_ids(html, "starts") or quest_ids_from_markup(detail.get("infoboxMarkup"))
 
 
 def _json_count(path: Path) -> int:
@@ -364,8 +384,10 @@ def _object_jobs(
         index: dict[str, Any] = {}
         if index_path.is_file():
             index = json.loads(index_path.read_text(encoding="utf-8"))
-        ids = object_ids if object_ids is not None else [int(key) for key in index]
-        for oid in sorted(set(ids)):
+        ids = set(object_ids) if object_ids is not None else {int(key) for key in index}
+        if object_ids is None:
+            ids.update(int(path.stem) for path in (data_root / "object").glob("*.json") if path.stem.isdigit())
+        for oid in sorted(ids):
             path = data_root / "object" / f"{oid}.json"
             if not force and path.is_file():
                 continue

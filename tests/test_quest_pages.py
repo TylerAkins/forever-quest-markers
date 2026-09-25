@@ -15,7 +15,13 @@ sys.path.insert(0, str(TOOLS))
 from quest_db.classify import classify_pin_category
 from quest_db.ingest import ingest_html
 from quest_db.parse_list import parse_quest_list
-from quest_db.parse_page import extract_inline_listviews, extract_map_quest_givers, extract_page_listviews
+from quest_db.parse_page import (
+    extract_g_mapper_spawns,
+    extract_inline_listviews,
+    extract_map_quest_givers,
+    extract_page_listviews,
+    listview_ids,
+)
 from quest_db.parse_quest import (
     eligibility_restrictions,
     extract_spawn_pins,
@@ -92,6 +98,18 @@ class ParsePageTests(unittest.TestCase):
         self.assertEqual(3292, givers[0]["id"])
         self.assertEqual(["Chen's Empty Keg"], givers[0]["questNames"])
         self.assertEqual([[62.2, 38.4]], givers[0]["coords"])
+
+    def test_object_page_spawns_and_item_quest_link(self) -> None:
+        html = """
+        <script>var g_mapperData = {"17":[{"count":2,"coords":[[55.8,20],[57.1,9]],"uiMapId":1413,"uiMapName":"The Barrens"}]};</script>
+        new Listview({template: 'item', id: 'contains', data: [{"id":4926,"name":"Chen's Empty Keg"}]});
+        new Listview({template: 'quest', id: 'starts', data: [{"id":819,"name":"Chen's Empty Keg"}]});
+        """
+        pins = extract_g_mapper_spawns(html)
+        self.assertEqual(1413, pins[0]["uiMapId"])
+        self.assertEqual([(55.8, 20.0), (57.1, 9.0)], [(pin["x"], pin["y"]) for pin in pins])
+        self.assertEqual([4926], listview_ids(html, "contains"))
+        self.assertEqual([819], listview_ids(html, "starts"))
 
     def test_objects_page_json_listview(self) -> None:
         html = (FIXTURES / "objects-quests.html").read_text(encoding="utf-8")
