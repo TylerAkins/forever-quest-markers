@@ -56,6 +56,23 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(ns.IsQuestFlaggedCompleted(3090) == false)
         """)
 
+    def test_secret_npc_name_is_ignored_without_being_cached(self) -> None:
+        self.lua.execute("""
+            local secretName = 'secret npc name'
+            issecretvalue = function(value) return value == secretName end
+            C_TooltipInfo = {
+                GetHyperlink = function()
+                    return { lines = { { leftText = secretName } } }
+                end,
+            }
+            assert(ns.GetNPCName(3139) == nil)
+
+            C_TooltipInfo.GetHyperlink = function()
+                return { lines = { { leftText = "Gar'Thok" } } }
+            end
+            assert(ns.GetNPCName(3139) == "Gar'Thok")
+        """)
+
 
 if __name__ == "__main__":
     unittest.main()
