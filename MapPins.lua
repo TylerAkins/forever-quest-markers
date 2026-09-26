@@ -410,6 +410,9 @@ local function ReleasePin(pin)
 end
 
 function MapPins:Clear()
+    if InCombatLockdown and InCombatLockdown() then
+        return false
+    end
     if hoveredPin then
         hoveredPin = nil
     end
@@ -419,6 +422,7 @@ function MapPins:Clear()
     wipe(active)
     lastStatus.count = 0
     lastStatus.paintedIDs = {}
+    return true
 end
 
 local function QuestGiverID(data)
@@ -1007,6 +1011,13 @@ function MapPins:GetStatus()
 end
 
 function MapPins:Refresh(reason)
+    -- Forever's MapCanvas calls the protected SetPassThroughButtons method
+    -- while managed pins are added or removed. Defer the whole refresh so the
+    -- existing pin set remains intact until PLAYER_REGEN_ENABLED.
+    if InCombatLockdown and InCombatLockdown() then
+        lastStatus.mode = "combat-deferred"
+        return
+    end
     self:Clear()
     lastStatus.lastError = nil
     lastStatus.mode = "canvas"
