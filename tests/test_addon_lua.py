@@ -282,6 +282,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("ns.InitSettings", pew)
         self.assertNotIn("ns.allowCreateSettings", core)
         self.assertIn('"PLAYER_LOGOUT"', core)
+        self.assertIn('"PLAYER_REGEN_ENABLED"', core)
         self.assertIn("ns.FlushSettings()", core)
 
     def test_debug_option_in_settings_panel(self) -> None:
@@ -337,6 +338,12 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("ProjectToViewedMap", text)
         self.assertIn("function RaisePin(pin, parent)", text)
         self.assertIn("function MapPins:RepositionAll()", text)
+        self.assertIn('lastStatus.mode = "combat-deferred"', text)
+        self.assertIn("InCombatLockdown and InCombatLockdown()", text)
+        refresh_at = text.find("function MapPins:Refresh(reason)")
+        combat_at = text.find("if InCombatLockdown and InCombatLockdown() then", refresh_at)
+        clear_at = text.find("self:Clear()", refresh_at)
+        self.assertLess(combat_at, clear_at)
         self.assertIn("function ns.TryQuestGiverPosition(npcID, viewedMapID)", text)
         self.assertIn("function MapPins:SnapToQuestGivers()", text)
         self.assertIn("OnCanvasScaleChanged", text)
