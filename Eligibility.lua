@@ -226,6 +226,9 @@ function ns.OnQuestDataLoadFailed(questID)
 end
 
 local function CacheNPCName(npcID, name)
+    if issecretvalue and issecretvalue(name) then
+        return nil
+    end
     if npcID and type(name) == "string" and name ~= "" and name ~= "Unknown" then
         npcNameCache[npcID] = name
         return name
