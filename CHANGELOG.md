@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.39 - 2026-09-25
+
+- Defer map-pin refreshes until combat ends to prevent blocked `SetPassThroughButtons` actions from Blizzard's map canvas.
+
 ## 0.1.38 - 2026-09-25
 
 - Update the ATT Forever quest database to `37c4c06a6e9978c3698c4c93fce38090c58f9163`.
