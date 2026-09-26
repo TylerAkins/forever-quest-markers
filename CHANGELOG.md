@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.42 - 2026-09-26
+
+- Ignore protected NPC names returned by Blizzard's tooltip API before comparing or caching them, preventing taint errors during map refreshes in instances.
+
 ## 0.1.41 - 2026-09-26
 
 - Update the ATT Forever quest database to `e93755e1fa7a412fd54aeedfc229e4b06a96d8bf`.

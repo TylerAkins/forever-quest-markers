@@ -1,4 +1,3 @@
-## 0.1.41 - 2026-09-26
+## 0.1.42 - 2026-09-26
 
-- Update the ATT Forever quest database to `e93755e1fa7a412fd54aeedfc229e4b06a96d8bf`.
-- Ship 3983 quests with 4246 coordinate pins across 49 maps.
+- Ignore protected NPC names returned by Blizzard's tooltip API before comparing or caching them, preventing taint errors during map refreshes in instances.
