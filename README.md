@@ -45,6 +45,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
+| Icon Scale | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Debug tooltips | Off |

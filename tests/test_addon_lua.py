@@ -173,6 +173,18 @@ class AddonLuaTests(unittest.TestCase):
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         self.assertIn("Interface\\GossipFrame\\AvailableQuestIcon", toc)
 
+    def test_icon_scale_option_sizes_map_pins(self) -> None:
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("iconScale = 100", config)
+        self.assertIn('key == "iconScale"', config)
+        self.assertIn("math.max(50, math.min(150", config)
+        self.assertIn('iconScale:SetMinMaxValues(50, 150)', config)
+        self.assertIn('iconScale:SetValueStep(5)', config)
+        self.assertIn('("Icon Scale: %d%%"):format(value)', config)
+        self.assertIn('PIN_SIZE * ns.GetOption("iconScale") / 100', pins)
+        self.assertIn("pin.placedSize == pinSize", pins)
+
     def test_repeatable_pins_are_blue_and_opt_out(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")

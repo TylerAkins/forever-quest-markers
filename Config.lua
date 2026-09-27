@@ -10,6 +10,7 @@ ns.defaults = {
     autoAccept = false,
     autoAcceptRangeEnabled = false,
     autoAcceptLevelOffset = 1,
+    iconScale = 100,
     autoTurnIn = false,
     debug = false,
 }
@@ -17,6 +18,17 @@ ns.defaults = {
 local optionChecks = {}
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
 local worldMapDropdownHooked = false
+
+local function NormalizeNumber(key, value)
+    value = tonumber(value)
+    if not value or value ~= value then
+        return ns.defaults[key]
+    end
+    if key == "iconScale" then
+        return math.max(50, math.min(150, math.floor(value + 0.5)))
+    end
+    return math.max(-5, math.min(5, math.floor(value + 0.5)))
+end
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -63,6 +75,10 @@ local function DecodeMirror()
     if offset and offset >= -5 and offset <= 5 then
         mirror.autoAcceptLevelOffset = offset
     end
+    local iconScale = tonumber(text:match("iconScale=(%d+)"))
+    if iconScale and iconScale >= 50 and iconScale <= 150 then
+        mirror.iconScale = iconScale
+    end
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     for key, raw in text:gmatch("([%w_]+)=([01])") do
         if type(ns.defaults[key]) == "boolean" then
@@ -99,8 +115,7 @@ local function CopySettings(src, dest, revision)
     for key in pairs(ns.defaults) do
         if src[key] ~= nil then
             if type(ns.defaults[key]) == "number" then
-                local value = tonumber(src[key])
-                dest[key] = value and value == value and math.max(-5, math.min(5, math.floor(value))) or ns.defaults[key]
+                dest[key] = NormalizeNumber(key, src[key])
             else
                 dest[key] = src[key] and true or false
             end
@@ -151,6 +166,7 @@ local function SaveMirror(db)
     table.sort(keys)
     local parts = { "revision=" .. tostring(Revision(db)) }
     parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
+    parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -247,11 +263,10 @@ end
 
 function ns.SetOption(key, value)
     if type(ns.defaults[key]) == "number" then
-        value = tonumber(value)
-        if not value or value ~= value then
+        if tonumber(value) == nil then
             return
         end
-        value = math.max(-5, math.min(5, math.floor(value + 0.5)))
+        value = NormalizeNumber(key, value)
     else
         value = value and true or false
     end
@@ -482,6 +497,7 @@ function ns.PrintSettingsDebug()
         "autoAccept",
         "autoAcceptRangeEnabled",
         "autoAcceptLevelOffset",
+        "iconScale",
         "autoTurnIn",
         "debug",
     }) do
@@ -820,13 +836,34 @@ function ns.TryRegisterSettings()
             )
             warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
 
+            local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+            iconScale:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 8, -24)
+            iconScale:SetSize(260, 16)
+            iconScale:SetMinMaxValues(50, 150)
+            iconScale:SetValueStep(5)
+            local iconScaleLabel = iconScale:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            iconScaleLabel:SetPoint("BOTTOM", iconScale, "TOP", 0, 4)
+            iconScale.ApplySaved = function(control)
+                control.syncing = true
+                local value = ns.GetOption("iconScale")
+                control:SetValue(value)
+                iconScaleLabel:SetText(("Icon Scale: %d%%"):format(value))
+                control.syncing = false
+            end
+            iconScale:SetScript("OnValueChanged", function(control, value)
+                if control.syncing then return end
+                ns.SetOption("iconScale", value)
+                control:ApplySaved()
+            end)
+            optionChecks[#optionChecks + 1] = iconScale
+
             local accept = CreateOptionCheckbox(
                 self,
                 "autoAccept",
                 "Auto-accept quests",
                 "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
             )
-            accept:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, -4)
+            accept:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -8, -16)
 
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 "Limit auto-accept quest level", "Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance.")
