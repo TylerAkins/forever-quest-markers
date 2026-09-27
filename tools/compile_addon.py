@@ -23,7 +23,6 @@ ROOT_FILES = (
     "LICENSE",
     "MapPins.lua",
     "MapPins.xml",
-    "NPCTooltips.lua",
     "README.md",
     "RELEASE_NOTES.md",
     "WarEffort.lua",

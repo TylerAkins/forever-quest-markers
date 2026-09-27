@@ -50,7 +50,6 @@ function ns.RefreshNow(reason)
     if ns.MapPins then
         ns.MapPins:Refresh(reason or "manual")
     end
-    if ns.NPCTooltips then ns.NPCTooltips:Refresh() end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -62,7 +61,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.InitSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
-        if ns.NPCTooltips then ns.NPCTooltips:Initialize() end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -81,7 +79,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_LOGIN" then
         ns.TryRegisterSettings()
-        if ns.NPCTooltips then ns.NPCTooltips:Initialize() end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
