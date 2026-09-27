@@ -1,4 +1,3 @@
-## 0.1.44 - 2026-09-27
+## 0.1.45 - 2026-09-27
 
-- Update the ATT Forever quest database to `89ce67b27e31c2d1f85775c9382aff8861828fbe`.
-- Ship 3984 quests with 4247 coordinate pins across 49 maps.
+- Add **Show quest-start pins** to the world map's **Show** dropdown, synchronized with the existing addon setting and slash commands.
