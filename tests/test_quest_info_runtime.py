@@ -114,6 +114,21 @@ class QuestInfoRuntimeTests(unittest.TestCase):
             assert(ns.IsQuestAvailable(4,{requireSkill=164}) == true)
         """)
 
+    def test_skyborne_race_restrictions_filter_the_opposite_faction(self) -> None:
+        self.lua.execute("""
+            ns.options={showRepeatable=true,showSeasonal=true,showWarEffort=true,showTrivial=true}
+            UnitRace=function() return 'Skyborne','Skyborne',96 end
+            UnitClass=function() return 'Hunter','HUNTER',3 end
+            UnitFactionGroup=function() return 'Horde' end
+            UnitLevel=function() return 10 end
+        """)
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            assert(ns.IsQuestAvailable(92598,{races={96}}) == true)
+            local available, reason = ns.IsQuestAvailable(92597,{races={95}})
+            assert(available == false and reason == 'race')
+        """)
+
     def test_failed_data_event_does_not_trigger_success_handler(self) -> None:
         self.lua.execute("""
             CreateFrame=function()
