@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-# WoW Classic-era race IDs. Forever adds extra races whose IDs are not published
-# in ATT constants yet; unresolved names are stored but never used to hide pins.
+# WoW race IDs used by Classic and Forever quest restrictions.
 RACE_IDS: dict[str, int] = {
     "HUMAN": 1,
     "ORC": 2,
@@ -30,6 +29,8 @@ RACE_IDS: dict[str, int] = {
     "PANDAREN_NEUTRAL": 24,
     "PANDAREN_ALLIANCE": 25,
     "PANDAREN_HORDE": 26,
+    "SKYBORNE_ALLIANCE": 95,
+    "SKYBORNE_HORDE": 96,
 }
 
 CLASS_IDS: dict[str, int] = {

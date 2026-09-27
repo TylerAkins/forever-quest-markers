@@ -121,7 +121,8 @@ class ZephrasTests(unittest.TestCase):
         self.assertAlmostEqual(start.coords[0].x, 42.8)
         self.assertAlmostEqual(start.coords[0].y, 23.4)
         self.assertEqual(start.qgs, [251362])
-        self.assertEqual(start.unresolved_races, ["SKYBORNE_ALLIANCE", "SKYBORNE_HORDE"])
+        self.assertEqual(start.races, [95, 96])
+        self.assertEqual(start.unresolved_races, [])
         follow = result.quests[92461]
         self.assertEqual(follow.source_quests, [92460])
         self.assertAlmostEqual(follow.coords[0].x, 42.1)

@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.44 - 2026-09-27
+
+- Preserve ATT's Skyborne Alliance and Horde race restrictions so faction-specific Zephras Isle quests are filtered correctly.
+
 ## 0.1.43 - 2026-09-27
 
 - Update the ATT Forever quest database to `89ce67b27e31c2d1f85775c9382aff8861828fbe`.
