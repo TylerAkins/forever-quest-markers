@@ -68,6 +68,19 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(available == true and reason == 'ok')
         """)
 
+    def test_trivial_pins_use_client_quest_level_without_db_min_level(self) -> None:
+        self.lua.execute("""
+            ns.GetOption = function(key) return key == 'showTrivial' and false or nil end
+            UnitLevel = function() return 20 end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            C_QuestLog.GetQuestDifficultyLevel = function(questID)
+                return questID == 8 and 5 or nil
+            end
+            local available, reason = ns.IsQuestAvailable(8, { faction = 'Horde' })
+            assert(available == false and reason == 'trivial')
+        """)
+
     def test_trivial_pins_shown_when_option_enabled(self) -> None:
         self.lua.execute("""
             ns.GetOption = function(key) return key == 'showTrivial' and true or nil end
