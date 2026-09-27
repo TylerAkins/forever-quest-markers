@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.45 - 2026-09-27
+
+- Add **Show quest-start pins** to the world map's **Show** dropdown, synchronized with the existing addon setting and slash commands.
+
 ## 0.1.44 - 2026-09-27
 
 - Preserve ATT's Skyborne Alliance and Horde race restrictions so faction-specific Zephras Isle quests are filtered correctly.

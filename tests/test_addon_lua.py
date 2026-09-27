@@ -190,6 +190,20 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("if not data or not data.repeatable then", pins)
         self.assertIn("SetPinTexture(existing)", pins)
 
+    def test_world_map_dropdown_uses_shared_enabled_option(self) -> None:
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("function ns.TryRegisterWorldMapDropdown()", config)
+        self.assertIn('MenuUtil.CreateCheckbox("Show quest-start pins"', config)
+        self.assertIn('Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING"', config)
+        self.assertIn('rootDescription:CreateTitle("Forever Quest Pins")', config)
+        self.assertIn("rootDescription:Insert(button)", config)
+        self.assertIn('return ns.GetOption("enabled")', config)
+        self.assertIn('ns.SetOption("enabled", not ns.GetOption("enabled"))', config)
+        self.assertIn("ns.TryRegisterWorldMapDropdown()", pins)
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertIn('loaded == "Blizzard_WorldMap"', core)
+
     def test_attunement_pins_are_orange_only_for_uniform_stacks(self) -> None:
         pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
         self.assertIn("local function IsAttunementOnly(pin)", pins)

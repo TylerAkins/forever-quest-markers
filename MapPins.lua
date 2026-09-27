@@ -1124,6 +1124,9 @@ function MapPins:HookMap()
     if self.hooked or not WorldMapFrame then
         return
     end
+    if ns.TryRegisterWorldMapDropdown then
+        ns.TryRegisterWorldMapDropdown()
+    end
     self.hooked = true
     if WorldMapFrame.OnMapChanged then
         hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
