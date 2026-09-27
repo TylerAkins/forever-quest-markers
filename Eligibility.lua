@@ -215,6 +215,9 @@ function ns.OnQuestDataLoad(questID)
     if ns.MapPins and ns.MapPins.OnTitleLoaded then
         ns.MapPins:OnTitleLoaded(questID)
     end
+    if ns.RequestRefresh and not ns.GetOption("showTrivial") then
+        ns.RequestRefresh("quest-level")
+    end
 end
 
 function ns.OnQuestDataLoadFailed(questID)
@@ -529,13 +532,25 @@ end
 
 local TRIVIAL_LEVEL_GAP = 9
 
-local function IsTrivial(data)
-    local minLevel = data.minLevel
-    if not minLevel then
+local function QuestLevelForTrivial(questID, data)
+    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+    if type(level) == "number" and level > 0 then
+        return level, true
+    end
+    local minLevel = data and data.minLevel
+    if minLevel then
+        return minLevel, true
+    end
+    return nil, false
+end
+
+local function IsTrivial(questID, data)
+    local questLevel, reliable = QuestLevelForTrivial(questID, data)
+    if not reliable or not questLevel then
         return false, false
     end
     local playerLevel = UnitLevel("player") or 1
-    if (playerLevel - minLevel) >= TRIVIAL_LEVEL_GAP then
+    if (playerLevel - questLevel) >= TRIVIAL_LEVEL_GAP then
         return true, true
     end
     return false, true
@@ -639,7 +654,7 @@ function ns.IsQuestAvailable(questID, data)
     end
 
     if not ns.GetOption("showTrivial") then
-        local trivial, reliable = IsTrivial(data)
+        local trivial, reliable = IsTrivial(questID, data)
         if reliable and trivial then
             return false, "trivial"
         end
