@@ -55,12 +55,21 @@ end
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
+        if loaded == "Blizzard_WorldMap" then
+            if ns.TryRegisterWorldMapDropdown then
+                ns.TryRegisterWorldMapDropdown()
+            end
+            return
+        end
         if loaded ~= ADDON_NAME then
             return
         end
         ns.InitSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
+        if ns.TryRegisterWorldMapDropdown then
+            ns.TryRegisterWorldMapDropdown()
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -79,6 +88,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_LOGIN" then
         ns.TryRegisterSettings()
+        if ns.TryRegisterWorldMapDropdown then
+            ns.TryRegisterWorldMapDropdown()
+        end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
@@ -90,6 +102,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_ENTERING_WORLD" then
         ns.TryRegisterSettings()
+        if ns.TryRegisterWorldMapDropdown then
+            ns.TryRegisterWorldMapDropdown()
+        end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
