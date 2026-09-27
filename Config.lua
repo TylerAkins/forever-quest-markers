@@ -16,6 +16,7 @@ ns.defaults = {
 
 local optionChecks = {}
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
+local worldMapDropdownHooked = false
 
 local function CopyDefaults(src, dest)
     dest = dest or {}
@@ -265,6 +266,31 @@ function ns.SetOption(key, value)
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
+end
+
+function ns.TryRegisterWorldMapDropdown()
+    if worldMapDropdownHooked then
+        return true
+    end
+    if not MenuUtil
+        or type(MenuUtil.CreateCheckbox) ~= "function"
+        or not Menu
+        or type(Menu.ModifyMenu) ~= "function" then
+        return false
+    end
+
+    local button = MenuUtil.CreateCheckbox("Show quest-start pins", function()
+        return ns.GetOption("enabled")
+    end, function()
+        ns.SetOption("enabled", not ns.GetOption("enabled"))
+    end)
+    Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", function(_, rootDescription)
+        rootDescription:CreateDivider()
+        rootDescription:CreateTitle("Forever Quest Pins")
+        rootDescription:Insert(button)
+    end)
+    worldMapDropdownHooked = true
+    return true
 end
 
 local function Print(message)
