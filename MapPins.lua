@@ -571,6 +571,10 @@ local function GetCanvasScale(parent)
     return 1
 end
 
+local function GetPinSize()
+    return PIN_SIZE * ns.GetOption("iconScale") / 100
+end
+
 local function CanvasOffsets(parent, nx, ny)
     if not parent or not nx or not ny or not parent.GetWidth then
         return nil, nil
@@ -607,6 +611,8 @@ end
 
 local function ApplyPinPoint(pin, parent)
     if pin.managed then
+        local pinSize = GetPinSize()
+        pin:SetSize(pinSize, pinSize)
         pin:SetPosition(pin.nx, pin.ny)
         return true
     end
@@ -621,16 +627,17 @@ local function ApplyPinPoint(pin, parent)
     -- Match MapCanvas ApplyPinPosition: pin scale counters canvas zoom so the
     -- bang stays PIN_SIZE on screen in both windowed and maximized layouts.
     local canvasScale = GetCanvasScale(parent)
+    local pinSize = GetPinSize()
     if pin.placedParent == parent and pin.placedX == ox and pin.placedY == oy
-        and pin.placedScale == canvasScale then
+        and pin.placedScale == canvasScale and pin.placedSize == pinSize then
         return true
     end
-    pin.placedParent, pin.placedX, pin.placedY, pin.placedScale = parent, ox, oy, canvasScale
+    pin.placedParent, pin.placedX, pin.placedY, pin.placedScale, pin.placedSize = parent, ox, oy, canvasScale, pinSize
     if pin.SetIgnoreParentScale then
         pin:SetIgnoreParentScale(false)
     end
     pin:SetScale(1 / canvasScale)
-    pin:SetSize(PIN_SIZE, PIN_SIZE)
+    pin:SetSize(pinSize, pinSize)
     local pinScale = pin.GetScale and pin:GetScale() or 1
     if not pinScale or pinScale == 0 then
         pinScale = 1
@@ -682,7 +689,8 @@ local function AcquirePin(parent)
         pin:SetIgnoreParentScale(false)
     end
     pin:SetScale(1)
-    pin:SetSize(PIN_SIZE, PIN_SIZE)
+    local pinSize = GetPinSize()
+    pin:SetSize(pinSize, pinSize)
     RaisePin(pin, parent)
     return pin
 end
@@ -699,6 +707,8 @@ function ForeverQuestPinsMapPinMixin:OnLoad()
 end
 
 function ForeverQuestPinsMapPinMixin:OnAcquired()
+    local pinSize = GetPinSize()
+    self:SetSize(pinSize, pinSize)
     self:SetAlpha(1)
 end
 
