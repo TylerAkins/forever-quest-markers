@@ -41,7 +41,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Option | Default |
 |--------|---------|
 | Show quest-start pins | On |
-| Show trivial / low-level pins | Off (only hides them if the client has `GetQuestGreenRange`) |
+| Show trivial / low-level pins | Off (hides pins for quests 9+ levels below your character) |
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |

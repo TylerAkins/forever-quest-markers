@@ -56,6 +56,28 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(ns.IsQuestFlaggedCompleted(3090) == false)
         """)
 
+    def test_trivial_pins_hidden_when_nine_or_more_levels_below_player(self) -> None:
+        self.lua.execute("""
+            ns.GetOption = function(key) return key == 'showTrivial' and false or nil end
+            UnitLevel = function() return 30 end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            local available, reason = ns.IsQuestAvailable(1, { minLevel = 21 })
+            assert(available == false and reason == 'trivial')
+            available, reason = ns.IsQuestAvailable(2, { minLevel = 22 })
+            assert(available == true and reason == 'ok')
+        """)
+
+    def test_trivial_pins_shown_when_option_enabled(self) -> None:
+        self.lua.execute("""
+            ns.GetOption = function(key) return key == 'showTrivial' and true or nil end
+            UnitLevel = function() return 30 end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            local available, reason = ns.IsQuestAvailable(1, { minLevel = 1 })
+            assert(available == true and reason == 'ok')
+        """)
+
     def test_secret_npc_name_is_ignored_without_being_cached(self) -> None:
         self.lua.execute("""
             local secretName = 'secret npc name'
