@@ -808,7 +808,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showTrivial",
                 "Show trivial / low-level pins",
-                "Only hides trivial pins when GetQuestGreenRange exists."
+                "Hides pins for quests 9+ levels below your character when off."
             )
             trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
 

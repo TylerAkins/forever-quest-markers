@@ -1,3 +1,3 @@
-## 0.1.46 - 2026-09-27
+## 0.1.47 - 2026-09-27
 
-- Add an **Icon Scale** option for resizing world-map quest markers from 50% to 150%, defaulting to 100%.
+- Hide trivial / low-level map pins when the quest is 9+ levels below your character while **Show trivial / low-level pins** is off.

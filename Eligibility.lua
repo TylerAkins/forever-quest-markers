@@ -527,20 +527,18 @@ function ns.CaptureOfferContext()
     ns.SetLastOfferNPC(qg, mapID, x, y)
 end
 
+local TRIVIAL_LEVEL_GAP = 9
+
 local function IsTrivial(data)
     local minLevel = data.minLevel
     if not minLevel then
         return false, false
     end
     local playerLevel = UnitLevel("player") or 1
-    if GetQuestGreenRange then
-        local greenRange = GetQuestGreenRange()
-        if type(greenRange) == "number" then
-            return (playerLevel - minLevel) > greenRange, true
-        end
+    if (playerLevel - minLevel) >= TRIVIAL_LEVEL_GAP then
+        return true, true
     end
-    -- No reliable trivial API on this client. Do not hide the pin.
-    return false, false
+    return false, true
 end
 
 --- Conservative availability check. Unknown restrictions keep the pin visible.
