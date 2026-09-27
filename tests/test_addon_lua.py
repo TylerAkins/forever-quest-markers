@@ -12,7 +12,6 @@ LUA_FILES = [
     "Config.lua",
     "WarEffort.lua",
     "Eligibility.lua",
-    "NPCTooltips.lua",
     "MapPins.lua",
     "AutoQuests.lua",
     "Core.lua",
@@ -120,6 +119,15 @@ class AddonLuaTests(unittest.TestCase):
         core = (ROOT / "Core.lua").read_text(encoding="utf-8")
         self.assertIn('"SKILL_LINES_CHANGED"', core)
         self.assertIn("ns.InvalidateProfessionCache()", core)
+
+    def test_npc_quest_tooltip_feature_is_not_shipped(self) -> None:
+        toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertNotIn("NPCTooltips.lua", toc)
+        self.assertNotIn("showNPCTooltips", config)
+        self.assertNotIn("hoverprobe", config)
+        self.assertNotIn("NPCTooltips", core)
 
     def test_no_herebedragons_or_att_runtime_dep(self) -> None:
         combined = "\n".join((ROOT / rel).read_text(encoding="utf-8") for rel in LUA_FILES)

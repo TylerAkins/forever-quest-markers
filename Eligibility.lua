@@ -127,7 +127,7 @@ local titleCache = {}
 local npcNameCache = {}
 local requestedTitles = {}
 local requestedLevels = {}
-local npcTip
+local npcNameScanner
 
 local function RememberTitle(questID, title)
     if questID and type(title) == "string" and title ~= "" then
@@ -215,7 +215,6 @@ function ns.OnQuestDataLoad(questID)
     if ns.MapPins and ns.MapPins.OnTitleLoaded then
         ns.MapPins:OnTitleLoaded(questID)
     end
-    if ns.NPCTooltips then ns.NPCTooltips:Refresh() end
 end
 
 function ns.OnQuestDataLoadFailed(questID)
@@ -250,21 +249,21 @@ local function NPCNameFromTooltipInfo(npcID)
     return CacheNPCName(npcID, text)
 end
 
-local function EnsureNPCTooltip()
-    if npcTip then
-        return npcTip
+local function EnsureNPCNameScanner()
+    if npcNameScanner then
+        return npcNameScanner
     end
     local ok, tip = pcall(CreateFrame, "GameTooltip", "ForeverQuestPinsNpcTip", UIParent, "GameTooltipTemplate")
     if not ok then
         return nil
     end
-    npcTip = tip
-    npcTip:SetOwner(UIParent, "ANCHOR_NONE")
-    return npcTip
+    npcNameScanner = tip
+    npcNameScanner:SetOwner(UIParent, "ANCHOR_NONE")
+    return npcNameScanner
 end
 
 local function NPCNameFromScanner(npcID)
-    local tip = EnsureNPCTooltip()
+    local tip = EnsureNPCNameScanner()
     if not tip or not tip.SetHyperlink then
         return nil
     end
@@ -477,7 +476,6 @@ function ns.NoteOfferedQuest(questID)
             end
             data.qgs = data.qgs or {}
             data.qgs[#data.qgs + 1] = offer.qg
-            if ns.NPCTooltips then ns.NPCTooltips:InvalidateIndex() end
         end
         return
     end
@@ -500,7 +498,6 @@ function ns.NoteOfferedQuest(questID)
         end
         list[#list + 1] = questID
     end
-    if ns.NPCTooltips then ns.NPCTooltips:InvalidateIndex() end
 end
 
 function ns.CaptureOfferContext()

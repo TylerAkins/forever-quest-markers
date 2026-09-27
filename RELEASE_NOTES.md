@@ -1,3 +1,5 @@
-## 0.1.42 - 2026-09-26
+## 0.1.43 - 2026-09-27
 
-- Ignore protected NPC names returned by Blizzard's tooltip API before comparing or caching them, preventing taint errors during map refreshes in instances.
+- Update the ATT Forever quest database to `89ce67b27e31c2d1f85775c9382aff8861828fbe`.
+- Ship 3984 quests with 4247 coordinate pins across 49 maps.
+- Remove NPC quest rows from unit tooltips because the Forever client does not expose enough reliable quest relationship data to keep them accurate.

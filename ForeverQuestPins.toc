@@ -19,7 +19,6 @@ Database\ForeverQuests.lua
 Config.lua
 WarEffort.lua
 Eligibility.lua
-NPCTooltips.lua
 MapPins.lua
 MapPins.xml
 AutoQuests.lua
