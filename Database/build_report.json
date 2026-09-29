@@ -1,5 +1,5 @@
 {
-  "att_sha": "be1b98585edb9efb6fcfb5cf1e6394de3df9133d",
+  "att_sha": "7d9aac9674cac5d88f914cda2a04f11fad1a66e2",
   "att_source": "https://github.com/ATTWoWAddon/AllTheThings.git",
   "attunement_quests": 27,
   "coord_pins": 4258,
@@ -7,8 +7,8 @@
     "no_coords": 505,
     "timeline": 161
   },
-  "files_discovered": 146,
-  "files_parsed": 146,
+  "files_discovered": 157,
+  "files_parsed": 157,
   "map_count": 49,
   "map_ids": [
     35,

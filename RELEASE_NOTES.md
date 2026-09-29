@@ -1,4 +1,4 @@
-## 0.1.49 - 2026-09-28
+## 0.1.50 - 2026-09-29
 
-- Update the ATT Forever quest database to `be1b98585edb9efb6fcfb5cf1e6394de3df9133d`.
+- Update the ATT Forever quest database to `7d9aac9674cac5d88f914cda2a04f11fad1a66e2`.
 - Ship 3995 quests with 4258 coordinate pins across 49 maps.
