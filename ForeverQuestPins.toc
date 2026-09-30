@@ -12,6 +12,7 @@
 ## SavedVariables: ForeverQuestPinsDB, ForeverQuestPinsDB_Settings
 ## SavedVariablesPerCharacter: ForeverQuestPinsCharDB, ForeverQuestPinsCharacterSettings
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
+## OptionalDeps: TomTom
 ## DefaultState: enabled
 
 Database\Metadata.lua
@@ -19,6 +20,7 @@ Database\ForeverQuests.lua
 Config.lua
 WarEffort.lua
 Eligibility.lua
+Waypoints.lua
 MapPins.lua
 MapPins.xml
 AutoQuests.lua
