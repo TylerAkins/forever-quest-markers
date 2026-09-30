@@ -1,3 +1,4 @@
-## 0.1.50 - 2026-09-30
+## 0.1.51 - 2026-09-30
 
-- Add **Hide Blizzard Quest Tracker in combat** (off by default). Collapses the default objective tracker while you are in combat and restores it afterward.
+- Update the ATT Forever quest database to `9308dc1d7d5f61c72fe440f744bb16dd6459899c`.
+- Ship 3837 quests with 4021 coordinate pins across 49 maps.
