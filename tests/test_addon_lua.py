@@ -12,6 +12,7 @@ LUA_FILES = [
     "Config.lua",
     "WarEffort.lua",
     "Eligibility.lua",
+    "Waypoints.lua",
     "MapPins.lua",
     "AutoQuests.lua",
     "Core.lua",
@@ -134,7 +135,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("HereBeDragons", combined)
         self.assertNotIn("LibStub", combined)
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
-        self.assertNotIn("OptionalDeps", toc)
+        self.assertIn("## OptionalDeps: TomTom", toc)
         self.assertNotIn("RequiredDeps", toc)
 
     def test_pins_use_normal_repeatable_and_attunement_icons(self) -> None:
@@ -181,7 +182,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("math.max(50, math.min(150", config)
         self.assertIn('iconScale:SetMinMaxValues(50, 150)', config)
         self.assertIn('iconScale:SetValueStep(5)', config)
-        self.assertIn('("Icon Scale: %d%%"):format(value)', config)
+        self.assertIn('("Pin size: %d%%"):format(value)', config)
         self.assertIn('PIN_SIZE * ns.GetOption("iconScale") / 100', pins)
         self.assertIn("pin.placedSize == pinSize", pins)
 
@@ -323,7 +324,7 @@ class AddonLuaTests(unittest.TestCase):
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         core = (ROOT / "Core.lua").read_text(encoding="utf-8")
         self.assertIn("hideQuestTrackerInCombat = false", config)
-        self.assertIn("Hide Blizzard Quest Tracker in combat", config)
+        self.assertIn("Hide quest tracker in combat", config)
         self.assertIn("function ns.ApplyQuestTrackerCombatHide(enteringCombat)", core)
         self.assertIn("SetCollapsed(true)", core)
         self.assertIn('"PLAYER_REGEN_DISABLED"', core)
@@ -332,8 +333,8 @@ class AddonLuaTests(unittest.TestCase):
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         self.assertIn("debug = false", config)
         self.assertIn("Debug tooltips", config)
-        self.assertLess(config.find('"autoTurnIn"'), config.find("Hide Blizzard Quest Tracker in combat"))
-        self.assertLess(config.find("Hide Blizzard Quest Tracker in combat"), config.find("Debug tooltips"))
+        self.assertLess(config.find('"autoTurnIn"'), config.find("Hide quest tracker in combat"))
+        self.assertLess(config.find("Hide quest tracker in combat"), config.find("Debug tooltips"))
         self.assertIn('msg == "debug"', config)
 
     def test_tooltips_use_names_unless_debug(self) -> None:

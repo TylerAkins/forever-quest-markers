@@ -10,6 +10,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Config.lua` | Saved variables, slash commands, settings panel |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `MapPins.lua` | World-map start pins |
+| `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated start records (do not edit by hand) |
@@ -74,6 +75,7 @@ python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
 python3 -m pip install -r tests/requirements.txt
 python3 tests/test_quest_info_runtime.py
+python3 tests/test_waypoints_runtime.py
 python3 tests/test_compile_addon.py
 python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py
@@ -139,3 +141,36 @@ Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repe
 
 - Pin / eligibility / auto-quest bugs → this repo’s issues
 - Wrong coordinates or missing Forever quests in the converted DB → [All The Things](https://github.com/ATTWoWAddon/AllTheThings) unless our converter dropped a row that ATT has
+
+## Waypoint providers
+
+Blizzard Map Pins is the default. Start clicks use zone coordinates, normalized
+from the database's 0–100 units, with `UiMapPoint.CreateFromCoordinates`,
+`C_Map.SetUserWaypoint`, and optionally `C_SuperTrack.SetSuperTrackedUserWaypoint`.
+On acceptance, `C_SuperTrack.SetSuperTrackedQuestID` hands objective and turn-in
+navigation to Blizzard. TomTom receives the location returned by
+`C_QuestLog.GetNextWaypoint` and updates on quest-log / POI refreshes.
+Unavailable coordinates remove the old TomTom target until new data arrives.
+
+References checked during implementation:
+
+- [Blizzard map API documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/MapDocumentation.lua)
+- [Blizzard quest location API documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/QuestLogDocumentation.lua)
+- [Blizzard super-tracking API documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/SuperTrackManagerDocumentation.lua)
+- [Adventure Guide Forever](https://github.com/cjber/adventure-guide-forever), which documents native waypoint guidance as its optional-provider fallback
+
+The published Classic and Classic Beta API snapshots omit the retail user
+waypoint functions. Check actual Forever support with `/fqp apis`; runtime
+capability checks report unsupported clients/maps. TomTom signatures and options
+were also verified against the locally installed Forever-compatible TomTom.
+The user verified that `/console showInGameNavigation 1` enables Forever's
+native floating navigation marker. The Navigation checkbox reads and writes
+that shared CVar directly, so it reflects changes from the console or other
+addons and does not overwrite the player's choice on login. Verify presentation
+in game.
+
+In-game verification: choose Blizzard Map Pins with TomTom disabled, click a
+start on both its zone map and a parent map, accept it, progress its objectives,
+and turn it in. Repeat with TomTom selected. Check changing provider, manually
+replacing a Blizzard pin, abandoning a selected quest, and reloading the saved
+provider setting. Stacked start markers select their first quest.

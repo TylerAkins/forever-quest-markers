@@ -2,6 +2,13 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.53 - 2026-09-30
+
+- Track quest starts with Blizzard Map Pins by default, with TomTom available as an optional waypoint provider.
+- Follow Blizzard quest tracking for objectives and turn-ins after accepting a selected quest.
+- Add a checkbox for Blizzard’s in-world destination marker and reorganize options into clearer groups.
+- Preserve manually changed Blizzard destinations and add waypoint tracking and clearing commands.
+
 ## 0.1.52 - 2026-09-30
 
 - Stop using `HookScript` on `WorldMapFrame` for quest pin show, resize, and live snap; watch the map from the addon frame instead to reduce Edit Mode layout taint risk.
