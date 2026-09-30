@@ -7,10 +7,51 @@ local eventFrame = CreateFrame("Frame")
 local pending = false
 local accum = 0
 local REFRESH_GAP = 0.15
-local questTrackerCollapsedBeforeCombat
+local questTrackerVisualBeforeCombat
 
 local function GetObjectiveTrackerFrame()
     return ObjectiveTrackerFrame
+end
+
+local function RestoreQuestTrackerVisual(frame)
+    if not questTrackerVisualBeforeCombat then
+        return
+    end
+    if not frame then
+        questTrackerVisualBeforeCombat = nil
+        return
+    end
+    local saved = questTrackerVisualBeforeCombat
+    if frame.SetAlpha and saved.alpha ~= nil then
+        frame:SetAlpha(saved.alpha)
+    end
+    if frame.EnableMouse and saved.mouseEnabled ~= nil then
+        frame:EnableMouse(saved.mouseEnabled)
+    end
+    questTrackerVisualBeforeCombat = nil
+end
+
+local function HideQuestTrackerVisual(frame)
+    if not frame then
+        return
+    end
+    if questTrackerVisualBeforeCombat == nil then
+        local alpha = 1
+        if frame.GetAlpha then
+            alpha = frame:GetAlpha()
+        end
+        local mouseEnabled = true
+        if frame.IsMouseEnabled then
+            mouseEnabled = frame:IsMouseEnabled()
+        end
+        questTrackerVisualBeforeCombat = { alpha = alpha, mouseEnabled = mouseEnabled }
+    end
+    if frame.SetAlpha then
+        frame:SetAlpha(0)
+    end
+    if frame.EnableMouse then
+        frame:EnableMouse(false)
+    end
 end
 
 function ns.ApplyQuestTrackerCombatHide(enteringCombat)
@@ -18,29 +59,20 @@ function ns.ApplyQuestTrackerCombatHide(enteringCombat)
         return
     end
     local frame = GetObjectiveTrackerFrame()
-    if not frame or not frame.SetCollapsed then
+    if not frame then
         return
     end
     if enteringCombat then
-        if questTrackerCollapsedBeforeCombat == nil then
-            questTrackerCollapsedBeforeCombat = frame.IsCollapsed and frame:IsCollapsed() or false
-        end
-        frame:SetCollapsed(true)
-    elseif questTrackerCollapsedBeforeCombat ~= nil then
-        frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
-        questTrackerCollapsedBeforeCombat = nil
+        HideQuestTrackerVisual(frame)
+    else
+        RestoreQuestTrackerVisual(frame)
     end
 end
 
 function ns.SyncQuestTrackerCombatVisibility()
     if not ns.GetOption("hideQuestTrackerInCombat") then
-        if questTrackerCollapsedBeforeCombat ~= nil then
-            local frame = GetObjectiveTrackerFrame()
-            if frame and frame.SetCollapsed then
-                frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
-            end
-            questTrackerCollapsedBeforeCombat = nil
-        end
+        local frame = GetObjectiveTrackerFrame()
+        RestoreQuestTrackerVisual(frame)
         return
     end
     if UnitAffectingCombat("player") then

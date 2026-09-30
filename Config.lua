@@ -908,7 +908,7 @@ function ns.TryRegisterSettings()
                 self,
                 "hideQuestTrackerInCombat",
                 "Hide Blizzard Quest Tracker in combat",
-                "Collapses the default objective tracker while you are in combat and restores it afterward."
+                "Hides the default objective tracker visually while you are in combat and restores it afterward."
             )
             hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
 
