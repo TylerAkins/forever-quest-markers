@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.50 - 2026-09-30
+
+- Add **Hide Blizzard Quest Tracker in combat** (off by default). Collapses the default objective tracker while you are in combat and restores it afterward.
+
 ## 0.1.49 - 2026-09-28
 
 - Update the ATT Forever quest database to `be1b98585edb9efb6fcfb5cf1e6394de3df9133d`.
