@@ -12,6 +12,7 @@ ns.defaults = {
     autoAcceptLevelOffset = 1,
     iconScale = 100,
     autoTurnIn = false,
+    hideQuestTrackerInCombat = false,
     debug = false,
 }
 
@@ -278,6 +279,9 @@ function ns.SetOption(key, value)
         ns.MapPins:Clear()
     end
     if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
+    if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
+        ns.SyncQuestTrackerCombatVisibility()
+    end
     if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
@@ -499,6 +503,7 @@ function ns.PrintSettingsDebug()
         "autoAcceptLevelOffset",
         "iconScale",
         "autoTurnIn",
+        "hideQuestTrackerInCombat",
         "debug",
     }) do
         local raw = account and account[key]
@@ -899,13 +904,21 @@ function ns.TryRegisterSettings()
             )
             turnin:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -8, -16)
 
+            local hideTracker = CreateOptionCheckbox(
+                self,
+                "hideQuestTrackerInCombat",
+                "Hide Blizzard Quest Tracker in combat",
+                "Collapses the default objective tracker while you are in combat and restores it afterward."
+            )
+            hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
+
             local debugBox = CreateOptionCheckbox(
                 self,
                 "debug",
                 "Debug tooltips",
                 "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
             )
-            debugBox:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
+            debugBox:SetPoint("TOPLEFT", hideTracker, "BOTTOMLEFT", 0, -4)
 
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
             slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)

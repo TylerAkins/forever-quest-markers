@@ -319,11 +319,21 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn('"PLAYER_REGEN_ENABLED"', core)
         self.assertIn("ns.FlushSettings()", core)
 
+    def test_hide_quest_tracker_in_combat_option(self) -> None:
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertIn("hideQuestTrackerInCombat = false", config)
+        self.assertIn("Hide Blizzard Quest Tracker in combat", config)
+        self.assertIn("function ns.ApplyQuestTrackerCombatHide(enteringCombat)", core)
+        self.assertIn("SetCollapsed(true)", core)
+        self.assertIn('"PLAYER_REGEN_DISABLED"', core)
+
     def test_debug_option_in_settings_panel(self) -> None:
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         self.assertIn("debug = false", config)
         self.assertIn("Debug tooltips", config)
-        self.assertLess(config.find('"autoTurnIn"'), config.find("Debug tooltips"))
+        self.assertLess(config.find('"autoTurnIn"'), config.find("Hide Blizzard Quest Tracker in combat"))
+        self.assertLess(config.find("Hide Blizzard Quest Tracker in combat"), config.find("Debug tooltips"))
         self.assertIn('msg == "debug"', config)
 
     def test_tooltips_use_names_unless_debug(self) -> None:
