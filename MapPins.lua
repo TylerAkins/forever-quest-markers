@@ -1119,67 +1119,87 @@ function MapPins:Refresh(reason)
     end
 end
 
--- Size, show, hide, and live snap run on our frame. HookScript on WorldMapFrame
--- (an Edit Mode system) runs inside UpdateLayoutInfo's secureexecuterange, which
--- taints later systems and makes GetAuraDataByIndex error while auras are secret.
+-- Avoid HookScript on WorldMapFrame; use hooksecurefunc and our own OnUpdate while open.
 local mapWatch = CreateFrame("Frame")
-local mapWasShown = false
-local watchedWidth, watchedHeight
+local mapOpen = false
+local sizeWatchFrames = {}
+local sizeSnapshot = {}
 
-local function WatchMapLayout()
-    if not WorldMapFrame or not WorldMapFrame.IsShown then
+local function ResetSizeSnapshots()
+    sizeSnapshot = {}
+    sizeWatchFrames = {}
+    if not WorldMapFrame then
         return
     end
-    local shown = WorldMapFrame:IsShown()
-    if shown and not mapWasShown then
-        mapWasShown = true
-        watchedWidth, watchedHeight = nil, nil
-        InvalidateCanvas()
-        ns.RequestRefresh("map-show")
-        if C_Timer and C_Timer.After then
-            C_Timer.After(0, function()
-                InvalidateCanvas()
-                ns.RequestRefresh("map-show-layout")
-            end)
+    local function add(frame)
+        if frame and frame.GetWidth then
+            sizeWatchFrames[#sizeWatchFrames + 1] = frame
         end
-    elseif mapWasShown and not shown then
-        mapWasShown = false
-        watchedWidth, watchedHeight = nil, nil
-        liveAccum = 0
-        InvalidateCanvas()
-        MapPins:Clear()
-        return
     end
-    if not shown then
-        return
+    add(WorldMapFrame)
+    add(WorldMapFrame.ScrollContainer)
+    add(WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer.Child)
+    add(WorldMapDetailFrame)
+    add(GetCanvas())
+end
+
+local function MapSizeChanged()
+    for i = 1, #sizeWatchFrames do
+        local frame = sizeWatchFrames[i]
+        if frame and frame.GetWidth and frame.GetHeight then
+            local width, height = frame:GetWidth(), frame:GetHeight()
+            local prev = sizeSnapshot[frame]
+            if not prev or prev.width ~= width or prev.height ~= height then
+                sizeSnapshot[frame] = { width = width, height = height }
+                return true
+            end
+        end
     end
-    local canvas = GetCanvas()
-    if canvas and canvas.GetWidth and canvas.GetHeight then
-        local width, height = canvas:GetWidth(), canvas:GetHeight()
-        if width ~= watchedWidth or height ~= watchedHeight then
-            watchedWidth, watchedHeight = width, height
+    return false
+end
+
+local function OnMapOpen()
+    mapOpen = true
+    ResetSizeSnapshots()
+    InvalidateCanvas()
+    ns.RequestRefresh("map-show")
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function()
             InvalidateCanvas()
-            MapPins:RepositionAll()
-        end
+            ns.RequestRefresh("map-show-layout")
+        end)
     end
-    if #active == 0 then
-        liveAccum = 0
-        return
-    end
-    MapPins:RepositionAll()
+end
+
+local function OnMapClose()
+    mapOpen = false
+    sizeSnapshot = {}
+    sizeWatchFrames = {}
+    liveAccum = 0
+    InvalidateCanvas()
+    MapPins:Clear()
 end
 
 mapWatch:SetScript("OnUpdate", function(_, elapsed)
-    WatchMapLayout()
-    if not mapWasShown or #active == 0 then
+    if not mapOpen then
         return
     end
-    liveAccum = liveAccum + elapsed
-    if liveAccum < LIVE_SNAP_GAP then
-        return
+    local sizeChanged = MapSizeChanged()
+    if sizeChanged then
+        InvalidateCanvas()
     end
-    liveAccum = 0
-    MapPins:SnapToQuestGivers()
+    if #active > 0 then
+        MapPins:RepositionAll()
+        liveAccum = liveAccum + elapsed
+        if liveAccum >= LIVE_SNAP_GAP then
+            liveAccum = 0
+            MapPins:SnapToQuestGivers()
+        end
+    elseif sizeChanged then
+        liveAccum = 0
+    else
+        liveAccum = 0
+    end
 end)
 
 function MapPins:HookMap()
@@ -1190,6 +1210,24 @@ function MapPins:HookMap()
         ns.TryRegisterWorldMapDropdown()
     end
     self.hooked = true
+    mapOpen = WorldMapFrame.IsShown and WorldMapFrame:IsShown() or false
+    if mapOpen then
+        OnMapOpen()
+    end
+    if WorldMapFrame.Show then
+        hooksecurefunc(WorldMapFrame, "Show", function()
+            if not mapOpen then
+                OnMapOpen()
+            end
+        end)
+    end
+    if WorldMapFrame.Hide then
+        hooksecurefunc(WorldMapFrame, "Hide", function()
+            if mapOpen then
+                OnMapClose()
+            end
+        end)
+    end
     if WorldMapFrame.OnMapChanged then
         hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
             InvalidateCanvas()
