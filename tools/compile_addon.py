@@ -26,6 +26,7 @@ ROOT_FILES = (
     "README.md",
     "RELEASE_NOTES.md",
     "WarEffort.lua",
+    "Waypoints.lua",
 )
 DIRECTORIES = ("Database", "Media")
 IGNORED_NAMES = {"build_report.json", ".DS_Store", "Thumbs.db", "__pycache__"}

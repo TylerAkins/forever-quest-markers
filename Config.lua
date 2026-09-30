@@ -3,6 +3,7 @@ local ADDON_NAME, ns = ...
 ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
+    waypointProvider = "blizzard",
     showTrivial = false,
     showRepeatable = true,
     showSeasonal = false,
@@ -80,6 +81,7 @@ local function DecodeMirror()
     if iconScale and iconScale >= 50 and iconScale <= 150 then
         mirror.iconScale = iconScale
     end
+    mirror.waypointProvider = text:match("waypointProvider=(%a+)")
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     for key, raw in text:gmatch("([%w_]+)=([01])") do
         if type(ns.defaults[key]) == "boolean" then
@@ -117,6 +119,8 @@ local function CopySettings(src, dest, revision)
         if src[key] ~= nil then
             if type(ns.defaults[key]) == "number" then
                 dest[key] = NormalizeNumber(key, src[key])
+            elseif key == "waypointProvider" then
+                dest[key] = src[key] == "tomtom" and "tomtom" or "blizzard"
             else
                 dest[key] = src[key] and true or false
             end
@@ -165,7 +169,7 @@ local function SaveMirror(db)
         end
     end
     table.sort(keys)
-    local parts = { "revision=" .. tostring(Revision(db)) }
+    local parts = { "revision=" .. tostring(Revision(db)), "waypointProvider=" .. db.waypointProvider }
     parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     for i = 1, #keys do
@@ -240,6 +244,7 @@ end
 
 function ns.WipeSettings()
     local db = ns.InitSettings()
+    if ns.ClearWaypoint then ns.ClearWaypoint() end
     for key, value in pairs(ns.defaults) do
         db[key] = value
     end
@@ -255,6 +260,10 @@ function ns.GetSettings()
 end
 
 function ns.GetOption(key)
+    if key == "showInGameNavigation" then
+        return C_CVar and type(C_CVar.GetCVar) == "function"
+            and C_CVar.GetCVar("showInGameNavigation") == "1" or false
+    end
     local settings = ns.db
     if settings and settings[key] ~= nil then
         return settings[key]
@@ -263,7 +272,21 @@ function ns.GetOption(key)
 end
 
 function ns.SetOption(key, value)
-    if type(ns.defaults[key]) == "number" then
+    if key == "showInGameNavigation" then
+        if not C_CVar or type(C_CVar.GetCVar) ~= "function"
+            or type(C_CVar.SetCVar) ~= "function"
+            or C_CVar.GetCVar("showInGameNavigation") == nil then
+            print("|cff33ff99Forever Quest Pins:|r In-world navigation is unavailable on this client.")
+            return
+        end
+        C_CVar.SetCVar("showInGameNavigation", value and "1" or "0")
+        if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
+        return
+    end
+    if key == "waypointProvider" then
+        if value ~= "blizzard" and value ~= "tomtom" then return end
+        if value ~= ns.GetOption(key) and ns.ClearWaypoint then ns.ClearWaypoint() end
+    elseif type(ns.defaults[key]) == "number" then
         if tonumber(value) == nil then
             return
         end
@@ -327,6 +350,8 @@ function ns.SlashCommand(msg)
     msg = (msg or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
     if msg == "" or msg == "help" then
         Print("Commands:")
+        print("  /fqp track <id> Track a quest start, objective, or turn-in")
+        print("  /fqp clear    Clear the addon waypoint")
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins (off by default)")
@@ -346,6 +371,15 @@ function ns.SlashCommand(msg)
         return
     end
 
+    local trackID = tonumber(msg:match("^track%s+(%d+)$"))
+    if trackID and ns.TrackQuest then
+        ns.TrackQuest(trackID)
+        return
+    end
+    if msg == "clear" and ns.ClearWaypoint then
+        ns.ClearWaypoint()
+        return
+    end
     if msg == "on" then
         ns.SetOption("enabled", true)
         Print("Pins enabled.")
@@ -502,6 +536,7 @@ function ns.PrintSettingsDebug()
         "autoAcceptRangeEnabled",
         "autoAcceptLevelOffset",
         "iconScale",
+        "waypointProvider",
         "autoTurnIn",
         "hideQuestTrackerInCombat",
         "debug",
@@ -666,6 +701,10 @@ function ns.PrintAPIProbe()
     print("  C_QuestLog.GetQuestDifficultyLevel: " .. has(C_QuestLog and C_QuestLog.GetQuestDifficultyLevel))
     print("  C_QuestLog.RequestLoadQuestByID: " .. has(C_QuestLog and C_QuestLog.RequestLoadQuestByID))
     print("  C_TooltipInfo.GetHyperlink: " .. has(C_TooltipInfo and C_TooltipInfo.GetHyperlink))
+    print("  C_Map.SetUserWaypoint: " .. has(C_Map and C_Map.SetUserWaypoint))
+    print("  C_Map.CanSetUserWaypointOnMap: " .. has(C_Map and C_Map.CanSetUserWaypointOnMap))
+    print("  C_SuperTrack.SetSuperTrackedQuestID: " .. has(C_SuperTrack and C_SuperTrack.SetSuperTrackedQuestID))
+    print("  C_QuestLog.GetNextWaypoint: " .. has(C_QuestLog and C_QuestLog.GetNextWaypoint))
     print("  C_Map.GetMapRectOnMap: " .. has(C_Map and C_Map.GetMapRectOnMap))
     print("  C_Map.GetMapChildrenInfo: " .. has(C_Map and C_Map.GetMapChildrenInfo))
     print("  WorldMapFrame.AddDataProvider: " .. has(WorldMapFrame and WorldMapFrame.AddDataProvider))
@@ -799,7 +838,11 @@ function ns.TryRegisterSettings()
             help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
             help:SetWidth(500)
             help:SetJustifyH("LEFT")
-            help:SetText("Yellow ! markers for normal quests, blue ! markers for repeatable quests, and red-orange ! markers for dungeon/raid quests and attunement chains. Hold Shift while talking to an NPC to skip auto accept / turn-in once.")
+            help:SetText("Quest starts on your world map. Click a marker to track its location.")
+
+            local mapHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+            mapHeading:SetPoint("TOPLEFT", help, "BOTTOMLEFT", 0, -16)
+            mapHeading:SetText("Map pins")
 
             local pins = CreateOptionCheckbox(
                 self,
@@ -807,15 +850,15 @@ function ns.TryRegisterSettings()
                 "Show quest-start pins",
                 "Start markers on the world map for unaccepted quests."
             )
-            pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
+            pins:SetPoint("TOPLEFT", mapHeading, "BOTTOMLEFT", -4, -4)
 
             local trivial = CreateOptionCheckbox(
                 self,
                 "showTrivial",
-                "Show trivial / low-level pins",
+                "Show low-level quests",
                 "Hides pins for quests 9+ levels below your character when off."
             )
-            trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, -4)
+            trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
 
             local repeatable = CreateOptionCheckbox(
                 self,
@@ -823,15 +866,15 @@ function ns.TryRegisterSettings()
                 "Show repeatable quest pins",
                 "Blue start markers for quests ATT explicitly marks repeatable."
             )
-            repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, -4)
+            repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, 0)
 
             local seasonal = CreateOptionCheckbox(
                 self,
                 "showSeasonal",
-                "Show seasonal / holiday pins",
+                "Show seasonal / holiday quests",
                 "Lunar Festival elders, Darkmoon Faire, and other event quests."
             )
-            seasonal:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, -4)
+            seasonal:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
 
             local warEffort = CreateOptionCheckbox(
                 self,
@@ -839,20 +882,22 @@ function ns.TryRegisterSettings()
                 "Show AQ war effort pins",
                 "Commodity turn-ins at Orgrimmar / Ironforge (Senior Sergeants, signets, \"Needs Your Help\")."
             )
-            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, -4)
+            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
 
             local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
             iconScale:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 8, -24)
-            iconScale:SetSize(260, 16)
+            iconScale:SetSize(240, 16)
             iconScale:SetMinMaxValues(50, 150)
             iconScale:SetValueStep(5)
+            if iconScale.Low then iconScale.Low:SetText("50%") end
+            if iconScale.High then iconScale.High:SetText("150%") end
             local iconScaleLabel = iconScale:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             iconScaleLabel:SetPoint("BOTTOM", iconScale, "TOP", 0, 4)
             iconScale.ApplySaved = function(control)
                 control.syncing = true
                 local value = ns.GetOption("iconScale")
                 control:SetValue(value)
-                iconScaleLabel:SetText(("Icon Scale: %d%%"):format(value))
+                iconScaleLabel:SetText(("Pin size: %d%%"):format(value))
                 control.syncing = false
             end
             iconScale:SetScript("OnValueChanged", function(control, value)
@@ -862,31 +907,70 @@ function ns.TryRegisterSettings()
             end)
             optionChecks[#optionChecks + 1] = iconScale
 
+            local navigationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+            navigationHeading:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
+            navigationHeading:SetText("Navigation")
+            local providerLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            providerLabel:SetPoint("TOPLEFT", navigationHeading, "BOTTOMLEFT", 0, -12)
+            providerLabel:SetText("Waypoint provider")
+            local provider = CreateFrame("DropdownButton", nil, self, "WowStyle1DropdownTemplate")
+            provider:SetPoint("TOPLEFT", providerLabel, "BOTTOMLEFT", 0, -6)
+            provider:SetSize(240, 24)
+            provider:SetDefaultText("Blizzard Map Pins")
+            provider:SetupMenu(function(_, root)
+                local function IsSelected(value) return ns.GetOption("waypointProvider") == value end
+                local function SetSelected(value) ns.SetOption("waypointProvider", value) end
+                root:CreateRadio("Blizzard Map Pins", IsSelected, SetSelected, "blizzard")
+                root:CreateRadio("TomTom (optional addon)", IsSelected, SetSelected, "tomtom")
+            end)
+            provider.ApplySaved = function(control) control:GenerateMenu() end
+            optionChecks[#optionChecks + 1] = provider
+
+            local inWorld = CreateOptionCheckbox(
+                self,
+                "showInGameNavigation",
+                "Show in-world destination marker",
+                "Show Blizzard's floating destination marker and distance for the tracked quest or map pin. This changes the game's shared navigation setting."
+            )
+            inWorld:SetPoint("TOPLEFT", provider, "BOTTOMLEFT", -4, -8)
+
+            local automationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+            automationHeading:SetPoint("TOPLEFT", mapHeading, "TOPLEFT", 300, 0)
+            automationHeading:SetText("Quest automation")
+            local automationHelp = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+            automationHelp:SetPoint("TOPLEFT", automationHeading, "BOTTOMLEFT", 0, -4)
+            automationHelp:SetWidth(260)
+            automationHelp:SetJustifyH("LEFT")
+            automationHelp:SetText("Hold Shift at an NPC to skip automation once.")
+
             local accept = CreateOptionCheckbox(
                 self,
                 "autoAccept",
                 "Auto-accept quests",
                 "Accept quests automatically when you talk to an NPC. Hold Shift to skip."
             )
-            accept:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -8, -16)
+            accept:SetPoint("TOPLEFT", automationHelp, "BOTTOMLEFT", -4, -4)
 
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 "Limit auto-accept quest level", "Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance.")
-            range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, -4)
+            range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
             local slider = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
             slider:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 8, -24)
-            slider:SetSize(260, 16)
+            slider:SetSize(240, 16)
             slider:SetMinMaxValues(-5, 5)
             slider:SetValueStep(1)
+            if slider.Low then slider.Low:SetText("-5 levels") end
+            if slider.High then slider.High:SetText("+5 levels") end
             local label = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             label:SetPoint("BOTTOM", slider, "TOP", 0, 4)
             slider.ApplySaved = function(control)
                 control.syncing = true
                 local offset = ns.GetOption("autoAcceptLevelOffset")
                 control:SetValue(offset)
-                label:SetText(("Auto Accept quest Range: %+d levels"):format(offset))
-                control:EnableMouse(ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled"))
-                control:SetAlpha(ns.GetOption("autoAcceptRangeEnabled") and 1 or 0.5)
+                label:SetText(("Maximum quest level: yours %+d"):format(offset))
+                local enabled = ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled")
+                control:EnableMouse(enabled)
+                control:SetAlpha(enabled and 1 or 0.5)
                 control.syncing = false
             end
             slider:SetScript("OnValueChanged", function(control, value)
@@ -907,10 +991,10 @@ function ns.TryRegisterSettings()
             local hideTracker = CreateOptionCheckbox(
                 self,
                 "hideQuestTrackerInCombat",
-                "Hide Blizzard Quest Tracker in combat",
+                "Hide quest tracker in combat",
                 "Collapses the default objective tracker while you are in combat and restores it afterward."
             )
-            hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -4)
+            hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -12)
 
             local debugBox = CreateOptionCheckbox(
                 self,
@@ -918,11 +1002,11 @@ function ns.TryRegisterSettings()
                 "Debug tooltips",
                 "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
             )
-            debugBox:SetPoint("TOPLEFT", hideTracker, "BOTTOMLEFT", 0, -4)
+            debugBox:SetPoint("TOPLEFT", hideTracker, "BOTTOMLEFT", 0, 0)
 
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            slash:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 8, -12)
-            slash:SetText("Slash commands: /fqp  /fqp repeatable  /fqp accept  /fqp turnin  /fqp debug  /fqp why <id>")
+            slash:SetPoint("TOPLEFT", inWorld, "BOTTOMLEFT", 4, -16)
+            slash:SetText("Type /fqp for commands and troubleshooting.")
         end
         ns.SyncSettingsCheckboxes()
     end)

@@ -29,6 +29,7 @@ class CompileAddonTests(unittest.TestCase):
             self.assertFalse(stale.exists())
             self.assertIn(output / "ForeverQuestPins.toc", built)
             self.assertIn(output / "MapPins.xml", built)
+            self.assertIn(output / "Waypoints.lua", built)
             self.assertTrue((output / "Database" / "ForeverQuests.lua").is_file())
             self.assertTrue((output / "Media" / "QuestAvailable.tga").is_file())
             self.assertTrue((output / "Media" / "QuestRepeatable.tga").is_file())
