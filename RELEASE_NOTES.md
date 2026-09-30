@@ -1,4 +1,3 @@
-## 0.1.49 - 2026-09-28
+## 0.1.50 - 2026-09-30
 
-- Update the ATT Forever quest database to `be1b98585edb9efb6fcfb5cf1e6394de3df9133d`.
-- Ship 3995 quests with 4258 coordinate pins across 49 maps.
+- Add **Hide Blizzard Quest Tracker in combat** (off by default). Collapses the default objective tracker while you are in combat and restores it afterward.
