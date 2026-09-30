@@ -244,10 +244,15 @@ class Lexer:
         while self._peek().isdigit():
             self._advance()
         is_float = False
-        if self._peek() == "." and self._peek(1).isdigit():
-            is_float = True
-            self._advance()
-            while self._peek().isdigit():
+        if self._peek() == ".":
+            if self._peek(1).isdigit():
+                is_float = True
+                self._advance()
+                while self._peek().isdigit():
+                    self._advance()
+            elif self._peek(1) not in "eE":
+                # Lua allows a trailing decimal point (e.g. 41.).
+                is_float = True
                 self._advance()
         if self._peek() in "eE":
             is_float = True
