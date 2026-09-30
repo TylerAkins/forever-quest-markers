@@ -76,6 +76,10 @@ class ParserFailureTests(unittest.TestCase):
         with self.assertRaises(ParseError):
             parse_lua("q(1, { qg = 2, ", filename="broken.lua")
 
+    def test_coord_with_trailing_decimal_point(self) -> None:
+        # Regression: ATT westfall.lua uses Lua float literal 41.
+        parse_lua("q(1, { coord = { 41., 79.0, 1 } })", filename="coords.lua")
+
 
 class RecipeHelperTests(unittest.TestCase):
     def test_profession_recipe_helper_calls_do_not_emit_roots(self) -> None:
