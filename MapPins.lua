@@ -1119,16 +1119,68 @@ function MapPins:Refresh(reason)
     end
 end
 
-local function HookSize(frame)
-    if not frame or not frame.HookScript or frame.ForeverQuestPinsSizeHooked then
+-- Size, show, hide, and live snap run on our frame. HookScript on WorldMapFrame
+-- (an Edit Mode system) runs inside UpdateLayoutInfo's secureexecuterange, which
+-- taints later systems and makes GetAuraDataByIndex error while auras are secret.
+local mapWatch = CreateFrame("Frame")
+local mapWasShown = false
+local watchedWidth, watchedHeight
+
+local function WatchMapLayout()
+    if not WorldMapFrame or not WorldMapFrame.IsShown then
         return
     end
-    frame.ForeverQuestPinsSizeHooked = true
-    frame:HookScript("OnSizeChanged", function()
+    local shown = WorldMapFrame:IsShown()
+    if shown and not mapWasShown then
+        mapWasShown = true
+        watchedWidth, watchedHeight = nil, nil
         InvalidateCanvas()
-        MapPins:RepositionAll()
-    end)
+        ns.RequestRefresh("map-show")
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0, function()
+                InvalidateCanvas()
+                ns.RequestRefresh("map-show-layout")
+            end)
+        end
+    elseif mapWasShown and not shown then
+        mapWasShown = false
+        watchedWidth, watchedHeight = nil, nil
+        liveAccum = 0
+        InvalidateCanvas()
+        MapPins:Clear()
+        return
+    end
+    if not shown then
+        return
+    end
+    local canvas = GetCanvas()
+    if canvas and canvas.GetWidth and canvas.GetHeight then
+        local width, height = canvas:GetWidth(), canvas:GetHeight()
+        if width ~= watchedWidth or height ~= watchedHeight then
+            watchedWidth, watchedHeight = width, height
+            InvalidateCanvas()
+            MapPins:RepositionAll()
+        end
+    end
+    if #active == 0 then
+        liveAccum = 0
+        return
+    end
+    MapPins:RepositionAll()
 end
+
+mapWatch:SetScript("OnUpdate", function(_, elapsed)
+    WatchMapLayout()
+    if not mapWasShown or #active == 0 then
+        return
+    end
+    liveAccum = liveAccum + elapsed
+    if liveAccum < LIVE_SNAP_GAP then
+        return
+    end
+    liveAccum = 0
+    MapPins:SnapToQuestGivers()
+end)
 
 function MapPins:HookMap()
     if self.hooked or not WorldMapFrame then
@@ -1156,37 +1208,4 @@ function MapPins:HookMap()
             ns.RequestRefresh("map-display")
         end)
     end
-    WorldMapFrame:HookScript("OnShow", function()
-        InvalidateCanvas()
-        HookSize(GetCanvas())
-        ns.RequestRefresh("map-show")
-        if C_Timer and C_Timer.After then
-            C_Timer.After(0, function()
-                InvalidateCanvas()
-                ns.RequestRefresh("map-show-layout")
-            end)
-        end
-    end)
-    WorldMapFrame:HookScript("OnHide", function()
-        InvalidateCanvas()
-        MapPins:Clear()
-    end)
-    WorldMapFrame:HookScript("OnUpdate", function(_, elapsed)
-        if #active == 0 then
-            liveAccum = 0
-            return
-        end
-        MapPins:RepositionAll()
-        liveAccum = liveAccum + elapsed
-        if liveAccum < LIVE_SNAP_GAP then
-            return
-        end
-        liveAccum = 0
-        MapPins:SnapToQuestGivers()
-    end)
-    HookSize(WorldMapFrame)
-    HookSize(WorldMapFrame.ScrollContainer)
-    HookSize(WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer.Child)
-    HookSize(WorldMapDetailFrame)
-    HookSize(GetCanvas())
 end
