@@ -7,11 +7,54 @@ local eventFrame = CreateFrame("Frame")
 local pending = false
 local accum = 0
 local REFRESH_GAP = 0.15
+local questTrackerCollapsedBeforeCombat
+
+local function GetObjectiveTrackerFrame()
+    return ObjectiveTrackerFrame
+end
+
+function ns.ApplyQuestTrackerCombatHide(enteringCombat)
+    if not ns.GetOption("hideQuestTrackerInCombat") then
+        return
+    end
+    local frame = GetObjectiveTrackerFrame()
+    if not frame or not frame.SetCollapsed then
+        return
+    end
+    if enteringCombat then
+        if questTrackerCollapsedBeforeCombat == nil then
+            questTrackerCollapsedBeforeCombat = frame.IsCollapsed and frame:IsCollapsed() or false
+        end
+        frame:SetCollapsed(true)
+    elseif questTrackerCollapsedBeforeCombat ~= nil then
+        frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
+        questTrackerCollapsedBeforeCombat = nil
+    end
+end
+
+function ns.SyncQuestTrackerCombatVisibility()
+    if not ns.GetOption("hideQuestTrackerInCombat") then
+        if questTrackerCollapsedBeforeCombat ~= nil then
+            local frame = GetObjectiveTrackerFrame()
+            if frame and frame.SetCollapsed then
+                frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
+            end
+            questTrackerCollapsedBeforeCombat = nil
+        end
+        return
+    end
+    if UnitAffectingCombat("player") then
+        ns.ApplyQuestTrackerCombatHide(true)
+    else
+        ns.ApplyQuestTrackerCombatHide(false)
+    end
+end
 
 local WATCHED_EVENTS = {
     "ADDON_LOADED",
     "PLAYER_LOGIN",
     "PLAYER_ENTERING_WORLD",
+    "PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED",
     "PLAYER_LOGOUT",
     "QUEST_LOG_UPDATE",
@@ -115,6 +158,15 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if ns.FlushSettings then
             ns.FlushSettings()
         end
+        return
+    end
+    if event == "PLAYER_REGEN_DISABLED" then
+        ns.ApplyQuestTrackerCombatHide(true)
+        return
+    end
+    if event == "PLAYER_REGEN_ENABLED" then
+        ns.ApplyQuestTrackerCombatHide(false)
+        ns.RequestRefresh(event)
         return
     end
     ns.RequestRefresh(event)
