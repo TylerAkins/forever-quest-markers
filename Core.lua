@@ -90,6 +90,7 @@ function ns.RefreshNow(reason)
     if ns.InvalidateProfessionCache then
         ns.InvalidateProfessionCache()
     end
+    if ns.UpdateWaypoint then ns.UpdateWaypoint() end
     if ns.MapPins then
         ns.MapPins:Refresh(reason or "manual")
     end
@@ -154,6 +155,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.RequestRefresh(event)
         return
     end
+    if event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
+        if ns.OnWaypointQuestEnded then ns.OnWaypointQuestEnded(...) end
+    end
     if event == "PLAYER_LOGOUT" then
         if ns.FlushSettings then
             ns.FlushSettings()
@@ -195,3 +199,5 @@ if WorldMapFrame then
         ns.MapPins:HookMap()
     end
 end
+
+pcall(eventFrame.RegisterEvent, eventFrame, "QUEST_POI_UPDATE")

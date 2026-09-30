@@ -529,6 +529,7 @@ local function ShowTooltip(pin)
             GameTooltip:AddLine(("normalized %.3f, %.3f"):format(pin.nx, pin.ny), 0.6, 0.8, 1)
         end
     end
+    GameTooltip:AddLine("Click to track this quest start.", 1, 1, 1)
     GameTooltip:Show()
 end
 
@@ -675,6 +676,7 @@ local function AcquirePin(parent)
             pin:EnableMouse(true)
         end
         EnsurePinTextures(pin)
+        pin:SetScript("OnClick", function(self) ns.TrackQuest(self.questID, self.data) end)
         pin:SetScript("OnEnter", ShowTooltip)
         pin:SetScript("OnLeave", function(self)
             if hoveredPin == self then
@@ -710,6 +712,10 @@ function ForeverQuestPinsMapPinMixin:OnAcquired()
     local pinSize = GetPinSize()
     self:SetSize(pinSize, pinSize)
     self:SetAlpha(1)
+end
+
+function ForeverQuestPinsMapPinMixin:OnClick(button)
+    if button == "LeftButton" then ns.TrackQuest(self.questID, self.data) end
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()

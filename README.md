@@ -12,6 +12,8 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 - Folder name must be exactly `ForeverQuestPins`
 - No other addons required (not All The Things, Questie, TomTom, or HereBeDragons)
 
+TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
+
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for dungeon/raid quests and complete attunement chains
@@ -45,10 +47,16 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
+| Show in-world destination marker | Uses Blizzard’s current shared navigation setting |
+| Waypoint provider | Blizzard Map Pins (TomTom optional) |
 | Icon Scale | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Debug tooltips | Off |
+
+Click a quest-start marker to set a waypoint at its zone coordinates. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
+
+Blizzard supports one user waypoint at a time. Clicking a start replaces that waypoint. Manually changing the Blizzard pin or tracking another quest stops the pending handoff. The addon only clears a matching pin that it created. Forever builds may differ in API support; an unavailable API is reported in chat. Enable **Show in-world destination marker** under Navigation to display Blizzard’s floating marker and distance. This controls the shared `showInGameNavigation` game setting and reflects its current value, including changes made by other addons.
 
 ## Commands
 
@@ -63,6 +71,8 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
 | `/fqp debug` | Toggle debug tooltips |
+| `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
+| `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
 | `/fqp settings` | Print saved and effective option values for debugging |
