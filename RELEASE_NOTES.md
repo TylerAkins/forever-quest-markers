@@ -1,4 +1,4 @@
-## 0.1.51 - 2026-09-30
+## 0.1.52 - 2026-09-30
 
-- Update the ATT Forever quest database to `9308dc1d7d5f61c72fe440f744bb16dd6459899c`.
-- Ship 3837 quests with 4021 coordinate pins across 49 maps.
+- Stop using `HookScript` on `WorldMapFrame` for quest pin show, resize, and live snap; watch the map from the addon frame instead to reduce Edit Mode layout taint risk.
+- Refine that watcher with `hooksecurefunc` Show/Hide, resize checks on the map frame, scroll container, detail frame, and canvas, and `OnUpdate` only while the world map is open.
