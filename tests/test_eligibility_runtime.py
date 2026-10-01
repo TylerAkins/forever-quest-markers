@@ -91,6 +91,31 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(available == true and reason == 'ok')
         """)
 
+    def test_secret_unit_guid_does_not_crash_offer_capture(self) -> None:
+        self.lua.execute("""
+            local secretGuid = 'Creature-0-0-0-0-3139-0000000000'
+            issecretvalue = function(value) return value == secretGuid end
+            UnitGUID = function(unit)
+                if unit == 'npc' then return secretGuid end
+            end
+            C_Map = {
+                GetBestMapForUnit = function() return 1 end,
+                GetPlayerMapPosition = function()
+                    return { x = 0.5, y = 0.25 }
+                end,
+            }
+            ns.CaptureOfferContext()
+            assert(ns.lastOffer ~= nil)
+            assert(ns.lastOffer.qg == nil)
+            assert(ns.lastOffer.mapID == 1)
+            assert(ns.lastOffer.x == 50)
+            assert(ns.lastOffer.y == 25)
+
+            issecretvalue = function() return false end
+            assert(ns.NpcIDFromGUID('Creature-0-0-0-0-3139-0000000000') == 3139)
+            assert(ns.NpcIDFromGUID('Vehicle-0-0-0-0-417-0000000000') == 417)
+        """)
+
     def test_secret_npc_name_is_ignored_without_being_cached(self) -> None:
         self.lua.execute("""
             local secretName = 'secret npc name'
