@@ -1,6 +1,4 @@
-## 0.1.53 - 2026-09-30
+## 0.1.54 - 2026-10-01
 
-- Track quest starts with Blizzard Map Pins by default, with TomTom available as an optional waypoint provider.
-- Follow Blizzard quest tracking for objectives and turn-ins after accepting a selected quest.
-- Add a checkbox for Blizzard’s in-world destination marker and reorganize options into clearer groups.
-- Preserve manually changed Blizzard destinations and add waypoint tracking and clearing commands.
+- Update the ATT Forever quest database to `b03ef10e7e174a06654011099e9194c31e8d90b8`.
+- Ship 3838 quests with 4026 coordinate pins across 49 maps.
