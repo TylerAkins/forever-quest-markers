@@ -992,7 +992,7 @@ function ns.TryRegisterSettings()
                 self,
                 "hideQuestTrackerInCombat",
                 "Hide quest tracker in combat",
-                "Collapses the default objective tracker while you are in combat and restores it afterward."
+                "Makes the default objective tracker transparent while you are in combat and restores its opacity afterward. Keeps your manual collapse setting."
             )
             hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, -12)
 

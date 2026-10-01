@@ -326,7 +326,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("hideQuestTrackerInCombat = false", config)
         self.assertIn("Hide quest tracker in combat", config)
         self.assertIn("function ns.ApplyQuestTrackerCombatHide(enteringCombat)", core)
-        self.assertIn("SetCollapsed(true)", core)
+        self.assertNotIn(":SetCollapsed(", core)
         self.assertIn('"PLAYER_REGEN_DISABLED"', core)
 
     def test_debug_option_in_settings_panel(self) -> None:
