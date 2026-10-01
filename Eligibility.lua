@@ -503,12 +503,28 @@ function ns.NoteOfferedQuest(questID)
     end
 end
 
+--- Creature/Vehicle id from a unit GUID. Secret GUIDs (tainted execution cannot
+--- index them) are ignored so gossip capture does not error.
+function ns.NpcIDFromGUID(guid)
+    if type(guid) ~= "string" then
+        return nil
+    end
+    if issecretvalue and issecretvalue(guid) then
+        return nil
+    end
+    local ok, npcID = pcall(function()
+        return tonumber(guid:match("Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
+            or tonumber(guid:match("Vehicle%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
+    end)
+    if ok then
+        return npcID
+    end
+    return nil
+end
+
 function ns.CaptureOfferContext()
     local guid = UnitGUID and (UnitGUID("npc") or UnitGUID("questnpc") or UnitGUID("target"))
-    local qg
-    if type(guid) == "string" then
-        qg = tonumber(guid:match("Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
-    end
+    local qg = ns.NpcIDFromGUID(guid)
     local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
     if not mapID and ns.GetViewedMapID then
         mapID = ns.GetViewedMapID()
