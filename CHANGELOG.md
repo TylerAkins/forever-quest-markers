@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.55 - 2026-10-01
+
+- Hide the quest tracker in combat using opacity instead of automatic collapse to avoid tracker layout taint affecting secret aura reads.
+- Restore the tracker's original opacity after combat or when combat hiding is disabled, preserving manual collapse settings.
+
 ## 0.1.54 - 2026-10-01
 
 - Update the ATT Forever quest database to `b03ef10e7e174a06654011099e9194c31e8d90b8`.
