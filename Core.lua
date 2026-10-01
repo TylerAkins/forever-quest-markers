@@ -7,47 +7,31 @@ local eventFrame = CreateFrame("Frame")
 local pending = false
 local accum = 0
 local REFRESH_GAP = 0.15
-local questTrackerCollapsedBeforeCombat
-
-local function GetObjectiveTrackerFrame()
-    return ObjectiveTrackerFrame
-end
+local hiddenQuestTracker
+local questTrackerAlphaBeforeCombat
 
 function ns.ApplyQuestTrackerCombatHide(enteringCombat)
-    if not ns.GetOption("hideQuestTrackerInCombat") then
-        return
-    end
-    local frame = GetObjectiveTrackerFrame()
-    if not frame or not frame.SetCollapsed then
-        return
-    end
-    if enteringCombat then
-        if questTrackerCollapsedBeforeCombat == nil then
-            questTrackerCollapsedBeforeCombat = frame.IsCollapsed and frame:IsCollapsed() or false
+    if enteringCombat and ns.GetOption("hideQuestTrackerInCombat") then
+        local frame = ObjectiveTrackerFrame
+        if not frame or not frame.GetAlpha or not frame.SetAlpha then
+            return
         end
-        frame:SetCollapsed(true)
-    elseif questTrackerCollapsedBeforeCombat ~= nil then
-        frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
-        questTrackerCollapsedBeforeCombat = nil
+        if not hiddenQuestTracker then
+            hiddenQuestTracker = frame
+            questTrackerAlphaBeforeCombat = frame:GetAlpha()
+        end
+        -- SetCollapsed runs Blizzard layout code and can taint secret aura reads.
+        -- Alpha leaves the tracker collapse and anchor state untouched.
+        hiddenQuestTracker:SetAlpha(0)
+    elseif hiddenQuestTracker then
+        hiddenQuestTracker:SetAlpha(questTrackerAlphaBeforeCombat)
+        hiddenQuestTracker = nil
+        questTrackerAlphaBeforeCombat = nil
     end
 end
 
 function ns.SyncQuestTrackerCombatVisibility()
-    if not ns.GetOption("hideQuestTrackerInCombat") then
-        if questTrackerCollapsedBeforeCombat ~= nil then
-            local frame = GetObjectiveTrackerFrame()
-            if frame and frame.SetCollapsed then
-                frame:SetCollapsed(questTrackerCollapsedBeforeCombat)
-            end
-            questTrackerCollapsedBeforeCombat = nil
-        end
-        return
-    end
-    if UnitAffectingCombat("player") then
-        ns.ApplyQuestTrackerCombatHide(true)
-    else
-        ns.ApplyQuestTrackerCombatHide(false)
-    end
+    ns.ApplyQuestTrackerCombatHide(UnitAffectingCombat("player"))
 end
 
 local WATCHED_EVENTS = {

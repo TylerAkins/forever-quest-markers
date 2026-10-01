@@ -150,5 +150,95 @@ class QuestInfoRuntimeTests(unittest.TestCase):
         """)
 
 
+class QuestTrackerCombatRuntimeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.lua = LuaRuntime()
+        self.lua.execute("""
+            ns = {hideTracker=true}
+            function ns.GetOption() return ns.hideTracker end
+            function CreateFrame()
+                frame = {}
+                function frame:SetScript(name, fn) self[name] = fn end
+                function frame:RegisterEvent() end
+                return frame
+            end
+            inCombat = false
+            function UnitAffectingCombat() return inCombat end
+            tracker = {alpha=0.65, collapsed=false}
+            function tracker:GetAlpha() return self.alpha end
+            function tracker:SetAlpha(alpha) self.alpha = alpha end
+            function tracker:SetCollapsed() error('Blizzard layout was tainted') end
+            function tracker:Show() error('Blizzard visibility was changed') end
+            function tracker:Hide() error('Blizzard visibility was changed') end
+            ObjectiveTrackerFrame = tracker
+        """)
+        self.lua.execute((ROOT / "Core.lua").read_text(), "ForeverQuestPins", self.lua.globals().ns)
+
+    def test_combat_hides_without_layout_changes_and_restores_original_alpha(self) -> None:
+        self.lua.execute("""
+            frame.OnEvent(frame, 'PLAYER_REGEN_DISABLED')
+            assert(tracker.alpha == 0 and tracker.collapsed == false)
+            frame.OnEvent(frame, 'PLAYER_REGEN_DISABLED')
+            frame.OnEvent(frame, 'PLAYER_REGEN_ENABLED')
+            assert(tracker.alpha == 0.65 and tracker.collapsed == false)
+            tracker.collapsed = true
+            tracker.alpha = 0
+            frame.OnEvent(frame, 'PLAYER_REGEN_DISABLED')
+            frame.OnEvent(frame, 'PLAYER_REGEN_ENABLED')
+            assert(tracker.alpha == 0 and tracker.collapsed == true)
+        """)
+
+    def test_disabling_option_during_combat_restores_tracker(self) -> None:
+        self.lua.execute("""
+            inCombat = true
+            ns.SyncQuestTrackerCombatVisibility()
+            assert(tracker.alpha == 0)
+            ns.hideTracker = false
+            ns.SyncQuestTrackerCombatVisibility()
+            assert(tracker.alpha == 0.65)
+            tracker.alpha = 0.8
+            frame.OnEvent(frame, 'PLAYER_REGEN_ENABLED')
+            assert(tracker.alpha == 0.8)
+        """)
+
+    def test_disabled_option_leaves_tracker_untouched(self) -> None:
+        self.lua.execute("""
+            ns.hideTracker = false
+            frame.OnEvent(frame, 'PLAYER_REGEN_DISABLED')
+            frame.OnEvent(frame, 'PLAYER_REGEN_ENABLED')
+            assert(tracker.alpha == 0.65)
+        """)
+
+    def test_missing_tracker_can_be_retried_and_original_frame_is_restored(self) -> None:
+        self.lua.execute("""
+            ObjectiveTrackerFrame = nil
+            ns.ApplyQuestTrackerCombatHide(true)
+            ObjectiveTrackerFrame = {}
+            ns.ApplyQuestTrackerCombatHide(true)
+            ObjectiveTrackerFrame = tracker
+            ns.ApplyQuestTrackerCombatHide(true)
+            ObjectiveTrackerFrame = nil
+            ns.ApplyQuestTrackerCombatHide(false)
+            assert(tracker.alpha == 0.65)
+        """)
+
+    def test_quest_completion_and_level_up_refresh_leave_collapse_unchanged(self) -> None:
+        self.lua.execute("""
+            refreshes = 0
+            ns.MapPins = {Refresh=function(_, reason)
+                assert(reason == 'PLAYER_LEVEL_UP' or reason == 'QUEST_TURNED_IN')
+                refreshes = refreshes + 1
+            end}
+            frame.OnEvent(frame, 'PLAYER_REGEN_DISABLED')
+            frame.OnEvent(frame, 'QUEST_TURNED_IN', 1)
+            frame.OnUpdate(frame, 0.2)
+            frame.OnEvent(frame, 'PLAYER_LEVEL_UP')
+            frame.OnUpdate(frame, 0.2)
+            assert(refreshes == 2 and tracker.alpha == 0)
+            frame.OnEvent(frame, 'PLAYER_REGEN_ENABLED')
+            assert(tracker.alpha == 0.65 and tracker.collapsed == false)
+        """)
+
+
 if __name__ == "__main__":
     unittest.main()
