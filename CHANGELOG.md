@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.56 - 2026-10-01
+
+- Skip secret unit GUIDs when capturing a quest offer so gossip no longer errors under addon taint.
+
 ## 0.1.55 - 2026-10-01
 
 - Hide the quest tracker in combat using opacity instead of automatic collapse to avoid tracker layout taint affecting secret aura reads.

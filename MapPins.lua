@@ -830,11 +830,10 @@ local function EachCoord(data, fn)
 end
 
 local function NpcIDFromGUID(guid)
-    if type(guid) ~= "string" then
-        return nil
+    if ns.NpcIDFromGUID then
+        return ns.NpcIDFromGUID(guid)
     end
-    return tonumber(guid:match("Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
-        or tonumber(guid:match("Vehicle%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
+    return nil
 end
 
 local function MapPosFromVector(pos)
