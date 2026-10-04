@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.59 - 2026-10-04
+
+- Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
+- Ship 3877 quests with 4066 coordinate pins across 49 maps.
+
 ## 0.1.58 - 2026-10-03
 
 - Update the ATT Forever quest database to `308bd0938fbaf206e13678f4b3f0f3b92dfb19d4`.
