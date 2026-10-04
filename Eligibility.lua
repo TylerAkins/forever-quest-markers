@@ -460,6 +460,39 @@ function ns.IsOffered(questID)
     return questID and ns.offeredQuestIDs[questID] and true or false
 end
 
+function ns.NpcListsQuestStarter(npcID, questID, data)
+    if not npcID or not questID or not data then
+        return false
+    end
+    if data.qg == npcID then
+        return true
+    end
+    local qgs = data.qgs
+    if qgs then
+        for i = 1, #qgs do
+            if qgs[i] == npcID then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+--- Whether this NPC may offer questID for accept tooltip rows (ATT qg/qgs or session gossip).
+function ns.NpcOffersQuestAccept(npcID, questID, data)
+    if not npcID or not questID then
+        return false
+    end
+    if ns.IsOffered(questID) then
+        return true
+    end
+    data = data or (ns.Quests and ns.Quests[questID])
+    if not data then
+        return false
+    end
+    return ns.NpcListsQuestStarter(npcID, questID, data)
+end
+
 function ns.SetLastOfferNPC(qg, mapID, x, y)
     ns.lastOffer = { qg = qg, mapID = mapID, x = x, y = y }
 end
@@ -475,10 +508,15 @@ function ns.NoteOfferedQuest(questID)
     if data then
         if offer and offer.qg and data.qg ~= offer.qg then
             for _, npcID in ipairs(data.qgs or {}) do
-                if npcID == offer.qg then return end
+                if npcID == offer.qg then
+                    return
+                end
             end
             data.qgs = data.qgs or {}
             data.qgs[#data.qgs + 1] = offer.qg
+            if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
+                ns.NPCTooltips:InvalidateStarterIndex()
+            end
         end
         return
     end
@@ -500,6 +538,9 @@ function ns.NoteOfferedQuest(questID)
             ns.ByMap[offer.mapID] = list
         end
         list[#list + 1] = questID
+    end
+    if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
+        ns.NPCTooltips:InvalidateStarterIndex()
     end
 end
 
