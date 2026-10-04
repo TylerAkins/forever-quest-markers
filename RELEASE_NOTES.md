@@ -1,4 +1,4 @@
-## 0.1.59 - 2026-10-04
+## 0.1.60 - 2026-10-04
 
-- Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
-- Ship 3877 quests with 4066 coordinate pins across 49 maps.
+- Restore NPC mouseover tooltips that list available quest accepts with level-colored titles.
+- Add **Show quests on NPC tooltips** (on by default) and `/fqp npctooltip`. Turn-in lines are not shown.

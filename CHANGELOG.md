@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.60 - 2026-10-04
+
+- Restore NPC mouseover tooltips that list available quest accepts with level-colored titles.
+- Add **Show quests on NPC tooltips** (on by default) and `/fqp npctooltip`. Turn-in lines are not shown.
+
 ## 0.1.59 - 2026-10-04
 
 - Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
