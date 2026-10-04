@@ -12,6 +12,7 @@ LUA_FILES = [
     "Config.lua",
     "WarEffort.lua",
     "Eligibility.lua",
+    "NPCTooltips.lua",
     "Waypoints.lua",
     "MapPins.lua",
     "AutoQuests.lua",
@@ -121,14 +122,23 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn('"SKILL_LINES_CHANGED"', core)
         self.assertIn("ns.InvalidateProfessionCache()", core)
 
-    def test_npc_quest_tooltip_feature_is_not_shipped(self) -> None:
+    def test_npc_quest_accept_tooltips_shipped(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
         config = (ROOT / "Config.lua").read_text(encoding="utf-8")
         core = (ROOT / "Core.lua").read_text(encoding="utf-8")
-        self.assertNotIn("NPCTooltips.lua", toc)
-        self.assertNotIn("showNPCTooltips", config)
+        tooltips = (ROOT / "NPCTooltips.lua").read_text(encoding="utf-8")
+        self.assertIn("NPCTooltips.lua", toc)
+        self.assertIn("showNPCTooltips = true", config)
+        self.assertIn("NPCTooltips:Initialize", core)
+        self.assertIn("TooltipDataProcessor", tooltips)
+        self.assertNotIn("ClearLines", tooltips)
         self.assertNotIn("hoverprobe", config)
-        self.assertNotIn("NPCTooltips", core)
+        self.assertIn("function ns.NpcOffersQuestAccept", (ROOT / "Eligibility.lua").read_text(encoding="utf-8"))
+        eligibility_at = toc.find("Eligibility.lua")
+        tooltips_at = toc.find("NPCTooltips.lua")
+        waypoints_at = toc.find("Waypoints.lua")
+        self.assertLess(eligibility_at, tooltips_at)
+        self.assertLess(tooltips_at, waypoints_at)
 
     def test_no_herebedragons_or_att_runtime_dep(self) -> None:
         combined = "\n".join((ROOT / rel).read_text(encoding="utf-8") for rel in LUA_FILES)
