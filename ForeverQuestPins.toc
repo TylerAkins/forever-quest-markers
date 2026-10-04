@@ -20,6 +20,7 @@ Database\ForeverQuests.lua
 Config.lua
 WarEffort.lua
 Eligibility.lua
+NPCTooltips.lua
 Waypoints.lua
 MapPins.lua
 MapPins.xml

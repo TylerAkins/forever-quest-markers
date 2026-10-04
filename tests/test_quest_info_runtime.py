@@ -129,6 +129,50 @@ class QuestInfoRuntimeTests(unittest.TestCase):
             assert(available == false and reason == 'race')
         """)
 
+    def test_npc_offers_quest_accept_respects_starter_and_offered(self) -> None:
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            ns.Quests[7]={qg=197}
+            assert(ns.NpcOffersQuestAccept(197, 7, ns.Quests[7]) == true)
+            assert(ns.NpcOffersQuestAccept(198, 7, ns.Quests[7]) == false)
+            ns.offeredQuestIDs[99]=true
+            assert(ns.NpcOffersQuestAccept(555, 99, nil) == true)
+        """)
+
+    def test_npc_tooltip_accept_rows_skip_in_log_quests(self) -> None:
+        self.lua.execute("""
+            ns.options={showNPCTooltips=true,showRepeatable=true,showSeasonal=true,showWarEffort=true,showTrivial=true}
+            ns.Quests={}
+            ns.active={}
+            function GetQuestsCompleted() return {} end
+            C_QuestLog={
+                IsOnQuest=function(id) return ns.active[id] end,
+                IsQuestFlaggedCompleted=function() return false end,
+            }
+            UnitLevel=function() return 20 end
+            function ns.GetQuestTitle(id) return 'Quest '..id end
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+            function ns.GetQuestDifficultyRGB() return 1,1,1 end
+        """)
+        self.load("Eligibility.lua")
+        self.load("NPCTooltips.lua")
+        self.lua.execute("""
+            ns.Quests[10]={qg=100}
+            ns.NPCTooltips:InvalidateStarterIndex()
+            local rows=ns.NPCTooltips:GetAcceptRows(100)
+            assert(#rows==1 and rows[1].id==10)
+            ns.active[10]=true
+            rows=ns.NPCTooltips:GetAcceptRows(100)
+            assert(#rows==0)
+        """)
+
+    def test_npc_id_from_secret_guid_returns_nil(self) -> None:
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            issecretvalue=function() return true end
+            assert(ns.NpcIDFromGUID('secret-guid')==nil)
+        """)
+
     def test_failed_data_event_does_not_trigger_success_handler(self) -> None:
         self.lua.execute("""
             CreateFrame=function()

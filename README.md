@@ -17,7 +17,8 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for dungeon/raid quests and complete attunement chains
-- Tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
+- Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
+- NPC mouseover tooltips listing available **quest accepts** at that NPC (on by default; not turn-in lines)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
@@ -52,6 +53,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Icon Scale | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
+| Show quests on NPC tooltips | On (accept only) |
 | Debug tooltips | Off |
 
 Click a quest-start marker to set a waypoint at its zone coordinates. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
@@ -70,6 +72,7 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
+| `/fqp npctooltip` | Toggle NPC quest accept tooltips |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
@@ -87,7 +90,7 @@ Forever’s quest data is still moving. Missing or extra pins are often an upstr
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
-- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing ATT prerequisites can therefore produce early pins until the database is corrected.
+- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing ATT prerequisites can therefore produce early pins until the database is corrected. NPC accept tooltips use the same ATT starter data (and session gossip offers); they do not show turn-in quests.
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. The bundled Zephras Isle data currently contains only six quests, so other quests need to be discovered this way. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
 - **Item-started** quests with no map coordinate are omitted
