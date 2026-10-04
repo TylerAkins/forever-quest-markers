@@ -78,6 +78,9 @@ function ns.RefreshNow(reason)
     if ns.MapPins then
         ns.MapPins:Refresh(reason or "manual")
     end
+    if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
+        ns.NPCTooltips:InvalidateStarterIndex()
+    end
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -100,6 +103,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         end
         if ns.MapPins then
             ns.MapPins:HookMap()
+        end
+        if ns.NPCTooltips and ns.NPCTooltips.Initialize then
+            ns.NPCTooltips:Initialize()
         end
         return
     end

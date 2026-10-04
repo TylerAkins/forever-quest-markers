@@ -14,6 +14,7 @@ ns.defaults = {
     iconScale = 100,
     autoTurnIn = false,
     hideQuestTrackerInCombat = false,
+    showNPCTooltips = true,
     debug = false,
 }
 
@@ -360,6 +361,7 @@ function ns.SlashCommand(msg)
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
+        print("  /fqp npctooltip Toggle quest accept lines on NPC mouseover")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -391,6 +393,10 @@ function ns.SlashCommand(msg)
         if ns.MapPins then
             ns.MapPins:Clear()
         end
+        return
+    end
+    if msg == "npctooltip" or msg == "npctooltips" then
+        ToggleFlag("showNPCTooltips", "NPC quest accept tooltips")
         return
     end
     if msg == "debug" then
@@ -539,6 +545,7 @@ function ns.PrintSettingsDebug()
         "waypointProvider",
         "autoTurnIn",
         "hideQuestTrackerInCombat",
+        "showNPCTooltips",
         "debug",
     }) do
         local raw = account and account[key]
@@ -907,8 +914,16 @@ function ns.TryRegisterSettings()
             end)
             optionChecks[#optionChecks + 1] = iconScale
 
+            local npcTooltips = CreateOptionCheckbox(
+                self,
+                "showNPCTooltips",
+                "Show quests on NPC tooltips",
+                "List available quest starts when you mouse over an NPC. Turn-in lines are not shown."
+            )
+            npcTooltips:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
+
             local navigationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-            navigationHeading:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
+            navigationHeading:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 4, -16)
             navigationHeading:SetText("Navigation")
             local providerLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             providerLabel:SetPoint("TOPLEFT", navigationHeading, "BOTTOMLEFT", 0, -12)
