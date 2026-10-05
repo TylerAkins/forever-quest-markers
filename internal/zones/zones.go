@@ -1,6 +1,6 @@
 package zones
 
-// uiMapIDs maps a Questie zone id to a Blizzard UiMapID.
+// uiMapIDs maps a wow-database zone id to a Blizzard UiMapID.
 // A stored 0 means the zone has no single verified world map, so no pin is emitted.
 // Entries were taken from quests whose current start pin and only real available
 // spawn agreed on one UiMapID. Disagreeing or unseen zones stay 0.
@@ -57,7 +57,7 @@ var uiMapIDs = map[int]int{
 	16593: 2521,
 }
 
-// UIMap returns the Blizzard UiMapID for a Questie zone id.
+// UIMap returns the Blizzard UiMapID for a wow-database zone id.
 // The second result is false when the zone is absent from the table.
 func UIMap(zoneID int) (int, bool) {
 	uiMapID, ok := uiMapIDs[zoneID]

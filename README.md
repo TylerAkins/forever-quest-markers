@@ -10,7 +10,7 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 - World of Warcraft **Forever** only (not Retail, Classic Era, or Cataclysm Classic)
 - Folder name must be exactly `ForeverQuestPins`
-- No other addons required (not Questie, TomTom, or HereBeDragons)
+- No other addons required (not TomTom or HereBeDragons)
 
 TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
@@ -25,7 +25,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
 
-Quest coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database), which is built from [QuestieDB](https://github.com/Questie/QuestieDB). Questie is **not** bundled and is **not** required at runtime. This build has start coordinates for 782 quests. Quests Questie lists without a usable spawn stay in the database for tooltips and prerequisites.
+Quest coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database). This build has start coordinates for 782 quests. Quests without a usable spawn in that export stay in the database for tooltips and prerequisites.
 
 ## Install
 
@@ -77,7 +77,7 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
-| `/fqp stats` | Print the Questie commit, quest count, and painted pin count |
+| `/fqp stats` | Print the database commit, quest count, and painted pin count |
 | `/fqp settings` | Print saved and effective option values for debugging |
 | `/fqp why <id>` | Why a quest is pinned or hidden |
 | `/fqp available` | Starts that should pin on the open map |
@@ -86,13 +86,13 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 
 ## Beta limitations
 
-Forever’s quest data is still moving. Missing pins are often a Questie spawn gap: most quest givers in the export have no coordinates, so those quests cannot be pinned.
+Forever’s quest data is still moving. Missing pins are often a gap in the published export: most quest givers have no coordinates, so those quests cannot be pinned.
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
 - **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips use the same starter and turn-in data (accepts also include session gossip offers).
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
-- **Forever-only quests** that Questie does not list yet will not pin until Questie (or a gossip offer we already saw this session) knows them
+- **Forever-only quests** missing from the export will not pin until the export (or a gossip offer we already saw this session) knows them
 - **Item-started** quests stay in the database. They get a start pin only when the export has a usable spawn
 - **Holiday** starts stay hidden unless seasonal pins are on
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
@@ -106,11 +106,11 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
-- Quest **database** mistakes belong on [QuestieDB](https://github.com/Questie/QuestieDB), not here
+- Quest **database** mistakes belong on [wow-database](https://github.com/TylerAkins/wow-database), not here
 - If you ran a **0.1.10–0.1.16** beta and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
 ## License
 
-Addon code is **GPLv3** ([LICENSE](LICENSE)). Quest records come from QuestieDB through [wow-database](https://github.com/TylerAkins/wow-database). See [ATTRIBUTION.md](ATTRIBUTION.md).
+Addon code is **GPLv3** ([LICENSE](LICENSE)). Quest records come from [wow-database](https://github.com/TylerAkins/wow-database). See [ATTRIBUTION.md](ATTRIBUTION.md).
 
 Maintainers: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

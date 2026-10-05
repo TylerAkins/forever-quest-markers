@@ -126,13 +126,13 @@ def validate_release_notes(notes: str, version: Version) -> None:
 
 
 def _changelog_entry(version: Version, release_date: str, report: dict[str, object]) -> str:
-    sha = _required_string(report, "questie_commit")
+    sha = _required_string(report, "database_commit")
     quests = _required_int(report, "quests_emitted")
     coordinates = _required_int(report, "coord_pins")
     maps = _required_int(report, "map_count")
     return (
         f"## {version} - {release_date}\n\n"
-        f"- Update the Questie Forever quest database to `{sha}`.\n"
+        f"- Update the Forever quest database to wow-database `{sha}`.\n"
         f"- Ship {quests} quests with {coordinates} coordinate pins across {maps} maps.\n"
     )
 

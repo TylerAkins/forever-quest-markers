@@ -34,7 +34,7 @@ class AttReleaseTests(unittest.TestCase):
             self.assertEqual("0.1.22\n", (root / "VERSION").read_text(encoding="utf-8"))
             changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             self.assertIn("## 0.1.22 - 2026-09-20", changelog)
-            self.assertIn("Questie Forever quest database", changelog)
+            self.assertIn("Forever quest database", changelog)
             self.assertIn("`abc123`", changelog)
             self.assertLess(changelog.index("## 0.1.22"), changelog.index("## 0.1.21"))
             notes = (root / "RELEASE_NOTES.md").read_text(encoding="utf-8")
@@ -151,7 +151,7 @@ class AttReleaseTests(unittest.TestCase):
         (root / "Database" / "build_report.json").write_text(
             json.dumps(
                 {
-                    "questie_commit": "abc123",
+                    "database_commit": "abc123",
                     "quests_emitted": 3501,
                     "coord_pins": 3725,
                     "map_count": 68,

@@ -93,9 +93,9 @@ body:
     id: other-addons
     attributes:
       label: Other addons
-      description: Especially Questie, TomTom, or anything that also draws world-map pins. `/fqp stats` and `/fqp apis` output is helpful for map issues.
+      description: Especially TomTom or anything that also draws world-map pins. `/fqp stats` and `/fqp apis` output is helpful for map issues.
       placeholder: |
-        Questie: yes/no
+        TomTom: yes/no
         Others:
 
   - type: textarea
@@ -109,4 +109,4 @@ body:
     id: context
     attributes:
       label: Additional context
-      description: Screenshots, character faction/race/class/level, zone, quest IDs, Questie commit from `/fqp stats`, etc.
+      description: Screenshots, character faction/race/class/level, zone, quest IDs, database commit from `/fqp stats`, etc.

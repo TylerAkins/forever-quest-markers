@@ -14,7 +14,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
-| `Database/Metadata.lua` | Pinned QuestieDB and wow-database commits |
+| `Database/Metadata.lua` | Pinned wow-database commit |
 | `Database/build_report.json` | Compiler stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
@@ -23,7 +23,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
 | `cmd/compile` | wow-database Forever export → `Database/` |
 | `internal/compile` | Quest mapping and Lua output |
-| `internal/zones` | Questie zone id → UiMapID |
+| `internal/zones` | Export zone id → UiMapID |
 | `tools/release.py` | Prepares database releases and validates automated patch releases |
 | `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
@@ -31,7 +31,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 
 ## Database
 
-Coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database). That tree is produced from QuestieDB. Runtime Questie is not required.
+Coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database).
 
 ```bash
 go run ./cmd/compile \
@@ -42,16 +42,16 @@ go run ./cmd/compile \
 
 `--check` compares that export with `Database/` and writes nothing. A second run on the same export produces the same bytes. The Go module has no third-party dependencies, so there is no `go.sum`.
 
-Start pins use available-role spawns whose zone id has a verified UiMapID. Coordinates are 0–100. Negative Questie points (`-1, -1`) and zones stored as `0` in `internal/zones` are omitted. NPC turn-in ids are stored for tooltips and are not drawn as map pins.
+Start pins use available-role spawns whose zone id has a verified UiMapID. Coordinates are 0–100. Unknown spawn points (`-1, -1`) and zones stored as `0` in `internal/zones` are omitted. NPC turn-in ids are stored for tooltips and are not drawn as map pins.
 
 ### Automated updates
 
-Workflow **Update Questie database** (`.github/workflows/update-questie-db.yml`):
+Workflow **Update wow-database** (`.github/workflows/update-wow-database.yml`):
 
 - Daily at 12:00 UTC, after wow-database's 11:00 UTC export, and on manual **Run workflow**
 - Checks out `export/forever` from the public wow-database `main` branch
-- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; Questie commit-only updates are ignored
-- Closes its existing `questie-db-update` PR if regenerated quest records return to the version already on `main`
+- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; wow-database commit-only updates with no quest diff are ignored
+- Closes its existing `wow-database-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
@@ -135,7 +135,7 @@ The payload URL contains the API token. Never commit it, add it as an Actions se
 
 The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
-License on CurseForge: **GPLv3**. Credit QuestieDB for the converted quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
+License on CurseForge: **GPLv3**. Credit wow-database for the converted quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## Pin textures
 
@@ -144,7 +144,7 @@ Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repe
 ## Support split
 
 - Pin / eligibility / auto-quest bugs → this repo’s issues
-- Wrong coordinates or missing Forever quests in the converted DB → [QuestieDB](https://github.com/Questie/QuestieDB), unless our compiler dropped a spawn the export has
+- Wrong coordinates or missing Forever quests in the converted DB → [wow-database](https://github.com/TylerAkins/wow-database), unless our compiler dropped a spawn the export has
 
 ## Waypoint providers
 
