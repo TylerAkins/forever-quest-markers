@@ -484,8 +484,8 @@ function ns.PrintStats()
     for _ in pairs(byMap) do
         maps = maps + 1
     end
-    Print(("Questie %s | %d quests | %d maps"):format(
-        tostring(meta.questieCommit or "?"),
+    Print(("Database %s | %d quests | %d maps"):format(
+        tostring(meta.databaseCommit or "?"),
         count,
         maps
     ))

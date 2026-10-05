@@ -1,4 +1,4 @@
-name: Update Questie database
+name: Update wow-database
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: update-questie-database
+  group: update-wow-database
   cancel-in-progress: false
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
           data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
           output = os.environ["GITHUB_OUTPUT"]
           with open(output, "a", encoding="utf-8") as handle:
-              handle.write(f"old_sha={data.get('questie_commit', 'unknown')}\n")
+              handle.write(f"old_sha={data.get('database_commit', 'unknown')}\n")
               handle.write(f"old_quests={data.get('quests_emitted', 0)}\n")
           PY
 
@@ -87,7 +87,7 @@ jobs:
           data = json.loads(Path("Database/build_report.json").read_text(encoding="utf-8"))
           output = os.environ["GITHUB_OUTPUT"]
           with open(output, "a", encoding="utf-8") as handle:
-              handle.write(f"sha={data.get('questie_commit', 'unknown')}\n")
+              handle.write(f"sha={data.get('database_commit', 'unknown')}\n")
               handle.write(f"quests={data.get('quests_emitted', 0)}\n")
               handle.write(f"coords={data.get('coord_pins', 0)}\n")
           PY
@@ -110,7 +110,7 @@ jobs:
           PR_NUMBER="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
-            --head questie-db-update \
+            --head wow-database-update \
             --state open \
             --limit 1 \
             --json number \
@@ -139,13 +139,13 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: questie-db-update
+          branch: wow-database-update
           delete-branch: true
-          commit-message: "chore: prepare v${{ steps.version.outputs.version }} Questie database"
-          title: "chore: prepare v${{ steps.version.outputs.version }} Questie database update"
+          commit-message: "chore: prepare v${{ steps.version.outputs.version }} wow-database"
+          title: "chore: prepare v${{ steps.version.outputs.version }} wow-database update"
           assignees: TylerAkins
           body: |
-            @TylerAkins, automated regeneration of `Database/` from [wow-database](https://github.com/TylerAkins/wow-database) Questie Forever data.
+            @TylerAkins, automated regeneration of `Database/` from [wow-database](https://github.com/TylerAkins/wow-database) Forever export data.
 
             | | SHA | Quests | Coordinate pins |
             |---|---|---|---|
@@ -154,7 +154,7 @@ jobs:
 
             Merging this reviewed PR automatically publishes `v${{ steps.version.outputs.version }}` to GitHub and triggers CurseForge packaging.
 
-            This PR is created only when the shipped quest database changes. Questie commit-only updates do not create releases.
+            This PR is created only when the shipped quest database changes. wow-database commit-only updates with no quest diff do not create releases.
           add-paths: |
             Database/ForeverQuests.lua
             Database/Metadata.lua

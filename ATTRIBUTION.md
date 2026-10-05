@@ -1,16 +1,12 @@
 # Attribution
 
-## QuestieDB
+## Quest database
 
-Quest coordinates, quest-giver IDs, turn-in NPCs, and eligibility fields in `Database/` are converted from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database). That export is built from [Questie/QuestieDB](https://github.com/Questie/QuestieDB).
+Quest coordinates, quest-giver IDs, turn-in NPCs, and eligibility fields in `Database/` are converted from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database).
 
-- Upstream data: https://github.com/Questie/QuestieDB
 - Published export: https://github.com/TylerAkins/wow-database
-- `Database/Metadata.lua` records the QuestieDB commit and the wow-database commit used for that conversion
-- This repository does not bundle Questie or QuestieDB, and neither is required at runtime
-- This repository does not claim ownership of QuestieDB data
-
-QuestieDB and Questie remain under their own licenses.
+- `Database/Metadata.lua` records the wow-database commit used for that conversion
+- This repository does not claim ownership of the upstream quest data
 
 ## World of Warcraft
 
@@ -25,4 +21,4 @@ Map pins use Blizzard’s `QuestNormal` atlas. The generated yellow, blue, and r
 ## License
 
 - Addon source: **GPLv3** ([LICENSE](LICENSE))
-- Quest records: QuestieDB, via the wow-database export
+- Quest records: [wow-database](https://github.com/TylerAkins/wow-database) Forever export

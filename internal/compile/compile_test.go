@@ -9,14 +9,14 @@ import (
 )
 
 const databaseCommit = "fc16119debb3b76a3ad9cf59c64b91f213924d9a"
-const questieCommit = "9d39232dab48e35811a7cc02473c2f4e42b62ab6"
+const exportCommit = "9d39232dab48e35811a7cc02473c2f4e42b62ab6"
 
 func TestTranslatesElwynnSpawnIntoUiMapCoordinates(t *testing.T) {
 	lua := compileOne(t, questJSON(123, `"places":[{"role":"available","type":"npc","id":448,"spawns":[[12,25.02,92.9]]}]`))
 	if !strings.Contains(lua, "[123] = { mapID=1429, x=25.02, y=92.9, qg=448 }") {
 		t.Fatalf("elwynn line missing:\n%s", lua)
 	}
-	if strings.Contains(lua, "questieCommit") {
+	if strings.Contains(lua, "databaseCommit") {
 		t.Fatal("ForeverQuests.lua embeds the commit")
 	}
 }
@@ -154,7 +154,7 @@ func TestCheckIsStableAndWritesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(meta)
-	if !strings.Contains(text, `questieCommit = "`+questieCommit+`"`) || !strings.Contains(text, `databaseCommit = "`+databaseCommit+`"`) {
+	if !strings.Contains(text, `databaseCommit = "`+databaseCommit+`"`) || strings.Contains(text, "questieCommit") {
 		t.Fatalf("metadata:\n%s", text)
 	}
 	if strings.Contains(text, "generatedAt") || strings.Contains(text, "attCommit") {
@@ -185,7 +185,7 @@ func writeExport(t *testing.T, dir, body string) string {
 	}
 	manifest := `{
 	  "schemaVersion": 2,
-	  "commit": "` + questieCommit + `",
+	  "commit": "` + exportCommit + `",
 	  "shards": [{"path": "quests/0001.json"}]
 	}`
 	shard := `{"schemaVersion":2,"quests":{"1":` + body + `}}`

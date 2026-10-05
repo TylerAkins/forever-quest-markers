@@ -70,7 +70,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("## 0.1.9", changelog)
         self.assertIn("## 0.1.8", changelog)
         attribution = (ROOT / "ATTRIBUTION.md").read_text(encoding="utf-8")
-        self.assertIn("Questie", attribution)
+        self.assertIn("wow-database", attribution)
         self.assertIn("GPLv3", attribution)
         self.assertNotIn("All The Things", attribution)
         development = (ROOT / "docs" / "DEVELOPMENT.md").read_text(encoding="utf-8")
@@ -463,8 +463,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("gh release create latest", text)
         self.assertIn("uses: BigWigsMods/packager@v2", text)
 
-    def test_questie_update_workflow_prepares_release_only_for_quest_changes(self) -> None:
-        text = (ROOT / ".github" / "workflows" / "update-questie-db.yml").read_text(
+    def test_wow_database_update_workflow_prepares_release_only_for_quest_changes(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "update-wow-database.yml").read_text(
             encoding="utf-8"
         )
         self.assertIn('cron: "0 12 * * *"', text)
@@ -475,7 +475,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("repository: TylerAkins/wow-database", text)
         self.assertNotIn("AllTheThings", text)
         self.assertIn("pull-requests: write", text)
-        self.assertIn("branch: questie-db-update", text)
+        self.assertIn("branch: wow-database-update", text)
         self.assertNotIn("git push", text)
         self.assertIn("VERSION", text)
         self.assertIn("CHANGELOG.md", text)
