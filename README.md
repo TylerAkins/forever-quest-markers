@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for ATT dungeon/raid quests and attunement chains on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for dungeon and raid quests on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests.
 
@@ -10,22 +10,22 @@ Forever already has a modern quest tracker and objective pins for quests **in yo
 
 - World of Warcraft **Forever** only (not Retail, Classic Era, or Cataclysm Classic)
 - Folder name must be exactly `ForeverQuestPins`
-- No other addons required (not All The Things, Questie, TomTom, or HereBeDragons)
+- No other addons required (not Questie, TomTom, or HereBeDragons)
 
 TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
 ## Features
 
-- Yellow `!` pins for normal quest starts, blue `!` pins for ATT-marked repeatable starts, and red-orange `!` pins for dungeon/raid quests and complete attunement chains
+- Yellow `!` pins for normal quest starts, blue `!` pins for repeatable starts, and red-orange `!` pins for dungeon and raid quests
 - Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
-- NPC mouseover tooltips listing available **quest accepts** at that NPC (on by default; not turn-in lines)
+- NPC mouseover tooltips listing quests you can accept and quests in your log that this NPC turns in (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
 
-Quest coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings)’s Forever database. ATT is **not** bundled and is **not** required at runtime.
+Quest coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database), which is built from [QuestieDB](https://github.com/Questie/QuestieDB). Questie is **not** bundled and is **not** required at runtime. This build has start coordinates for 782 quests. Quests Questie lists without a usable spawn stay in the database for tooltips and prerequisites.
 
 ## Install
 
@@ -53,7 +53,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Icon Scale | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
-| Show quests on NPC tooltips | On (accept only) |
+| Show quests on NPC tooltips | On (accept and in-log turn-in) |
 | Debug tooltips | Off |
 
 Click a quest-start marker to set a waypoint at its zone coordinates. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
@@ -72,12 +72,12 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
-| `/fqp npctooltip` | Toggle NPC quest accept tooltips |
+| `/fqp npctooltip` | Toggle NPC quest accept and turn-in tooltips |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
-| `/fqp stats` | Print ATT SHA, quest count, and painted pin count |
+| `/fqp stats` | Print the Questie commit, quest count, and painted pin count |
 | `/fqp settings` | Print saved and effective option values for debugging |
 | `/fqp why <id>` | Why a quest is pinned or hidden |
 | `/fqp available` | Starts that should pin on the open map |
@@ -86,19 +86,19 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 
 ## Beta limitations
 
-Forever’s quest data is still moving. Missing or extra pins are often an upstream ATT gap, not a pin bug.
+Forever’s quest data is still moving. Missing pins are often a Questie spawn gap: most quest givers in the export have no coordinates, so those quests cannot be pinned.
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
-- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing ATT prerequisites can therefore produce early pins until the database is corrected. NPC accept tooltips use the same ATT starter data (and session gossip offers); they do not show turn-in quests.
-- Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. The bundled Zephras Isle data currently contains only six quests, so other quests need to be discovered this way. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
-- **Forever-only quests** that ATT does not list yet will not pin until ATT (or a gossip offer we already saw this session) knows them
-- **Item-started** quests with no map coordinate are omitted
-- **Holiday** starts stay hidden unless seasonal pins are on or the client reports the event as active
+- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips use the same starter and turn-in data (accepts also include session gossip offers).
+- Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
+- **Forever-only quests** that Questie does not list yet will not pin until Questie (or a gossip offer we already saw this session) knows them
+- **Item-started** quests stay in the database. They get a start pin only when the export has a usable spawn
+- **Holiday** starts stay hidden unless seasonal pins are on
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
-- **Patrols** (for example Morin Cloudstalker) use ATT’s static points, plus a second pin at a known path end, until the NPC is visible and near those points
-- Reputation gates from ATT are stored but not used to hide pins yet
-- Normal, repeatable, and attunement pins share Blizzard’s `QuestNormal` shape; special pins tint it blue or red-orange, with bundled fallbacks for all three colors
+- **Patrols** (for example Morin Cloudstalker) use the exported static points, plus a second pin at a known path end, until the NPC is visible and near those points
+- Reputation requirements are not copied into the addon database, so they do not hide pins
+- Normal, repeatable, and dungeon/raid pins share Blizzard’s `QuestNormal` shape; special pins tint it blue or red-orange, with bundled fallbacks for all three colors
 
 ## Support
 
@@ -106,11 +106,11 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
-- Quest **database** mistakes belong on [All The Things](https://github.com/ATTWoWAddon/AllTheThings), not here
+- Quest **database** mistakes belong on [QuestieDB](https://github.com/Questie/QuestieDB), not here
 - If you ran a **0.1.10–0.1.16** beta and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
 ## License
 
-Addon code is **GPLv3** ([LICENSE](LICENSE)). Converted quest data remains **MIT** from All The Things. See [ATTRIBUTION.md](ATTRIBUTION.md).
+Addon code is **GPLv3** ([LICENSE](LICENSE)). Quest records come from QuestieDB through [wow-database](https://github.com/TylerAkins/wow-database). See [ATTRIBUTION.md](ATTRIBUTION.md).
 
 Maintainers: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

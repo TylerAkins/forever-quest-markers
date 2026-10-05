@@ -11,13 +11,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 if __package__:
-    from tools.att_release import (
+    from tools.release import (
         Version,
         release_notes,
         replace_or_insert_changelog_entry,
     )
 else:
-    from att_release import Version, release_notes, replace_or_insert_changelog_entry
+    from release import Version, release_notes, replace_or_insert_changelog_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSIONS_URL = "https://us.version.battle.net/v2/products/wow_classic_beta/versions"

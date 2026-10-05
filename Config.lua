@@ -361,7 +361,7 @@ function ns.SlashCommand(msg)
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
-        print("  /fqp npctooltip Toggle quest accept lines on NPC mouseover")
+        print("  /fqp npctooltip Toggle quest accept and turn-in lines on NPC mouseover")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -396,7 +396,7 @@ function ns.SlashCommand(msg)
         return
     end
     if msg == "npctooltip" or msg == "npctooltips" then
-        ToggleFlag("showNPCTooltips", "NPC quest accept tooltips")
+        ToggleFlag("showNPCTooltips", "NPC quest tooltips")
         return
     end
     if msg == "debug" then
@@ -484,10 +484,9 @@ function ns.PrintStats()
     for _ in pairs(byMap) do
         maps = maps + 1
     end
-    Print(("ATT %s | %d quests | %d attunements | %d maps"):format(
-        tostring(meta.attCommit or "?"),
+    Print(("Questie %s | %d quests | %d maps"):format(
+        tostring(meta.questieCommit or "?"),
         count,
-        tonumber(meta.attunementCount) or 0,
         maps
     ))
     Print(("  auto-accept %s | auto-turn-in %s"):format(
@@ -571,7 +570,7 @@ function ns.PrintQuestWhy(questID)
     end
     local data = ns.Quests and ns.Quests[questID]
     if not data then
-        Print("Quest " .. tostring(questID) .. " is not in the ATT start database.")
+        Print("Quest " .. tostring(questID) .. " is not in the quest database.")
         return
     end
     local title = ns.GetQuestTitle and ns.GetQuestTitle(questID)
@@ -871,7 +870,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showRepeatable",
                 "Show repeatable quest pins",
-                "Blue start markers for quests ATT explicitly marks repeatable."
+                "Blue start markers for repeatable, daily, weekly, and monthly quests."
             )
             repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, 0)
 
@@ -918,7 +917,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showNPCTooltips",
                 "Show quests on NPC tooltips",
-                "List available quest starts when you mouse over an NPC. Turn-in lines are not shown."
+                "List quests you can accept, and quests in your log that this NPC turns in."
             )
             npcTooltips:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
 

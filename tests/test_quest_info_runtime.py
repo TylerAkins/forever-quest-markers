@@ -166,6 +166,76 @@ class QuestInfoRuntimeTests(unittest.TestCase):
             assert(#rows==0)
         """)
 
+    def test_npc_tooltip_shows_in_log_turn_ins_and_accepts(self) -> None:
+        self.lua.execute("""
+            ns.options={showNPCTooltips=true,showRepeatable=true,showSeasonal=true,showWarEffort=true,showTrivial=true}
+            ns.Quests={}
+            ns.active={}
+            ns.complete={}
+            function ns.GetOption(key) return ns.options[key] end
+            function GetQuestsCompleted() return {} end
+            C_QuestLog={
+                IsOnQuest=function(id) return ns.active[id] and true or false end,
+                IsQuestFlaggedCompleted=function() return false end,
+                IsComplete=function(id) return ns.complete[id] and true or false end,
+            }
+            UnitLevel=function() return 20 end
+            UnitGUID=function() return 'Creature-0-0-0-0-100-0000000000' end
+            lines={}
+            GameTooltip={
+                AddLine=function(_, text) lines[#lines+1]=text end,
+                Show=function() end,
+            }
+        """)
+        self.load("Eligibility.lua")
+        self.load("NPCTooltips.lua")
+        self.lua.execute("""
+            function ns.GetQuestTitle(id) return 'Quest '..id end
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+            function ns.GetQuestDifficultyRGB() return 1,0.8,0 end
+            ns.Quests[10]={qg=100}
+            ns.Quests[20]={turnIns={100}}
+            ns.Quests[30]={turnIns={100}}
+            ns.active[20]=true
+            ns.complete[20]=true
+            ns.NPCTooltips:InvalidateStarterIndex()
+            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
+            assert(lines[1]=='! [5] Quest 10')
+            assert(lines[2]=='? [5] Quest 20')
+            assert(#lines==2)
+
+            lines={}
+            GameTooltip.fqpQuestRows=nil
+            ns.Quests[10]=nil
+            ns.NPCTooltips:InvalidateStarterIndex()
+            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
+            assert(#lines==1 and lines[1]=='? [5] Quest 20')
+
+            lines={}
+            GameTooltip.fqpQuestRows=nil
+            ns.active[20]=false
+            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
+            assert(#lines==0)
+        """)
+
+    def test_yearly_quests_stay_hidden_until_seasonal_pins_are_on(self) -> None:
+        self.lua.execute("""
+            ns.options={showRepeatable=true,showSeasonal=false,showWarEffort=true,showTrivial=true}
+            function ns.GetOption(key) return ns.options[key] end
+            UnitLevel=function() return 60 end
+            C_QuestLog={
+                IsOnQuest=function() return false end,
+                IsQuestFlaggedCompleted=function() return false end,
+            }
+        """)
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            local available, reason = ns.IsQuestAvailable(8673, {isYearly=true, minLevel=1})
+            assert(available == false and reason == 'seasonal')
+            available, reason = ns.IsQuestAvailable(155, {minLevel=14})
+            assert(available == true and reason == 'no-prereq')
+        """)
+
     def test_npc_id_from_secret_guid_returns_nil(self) -> None:
         self.load("Eligibility.lua")
         self.lua.execute("""
