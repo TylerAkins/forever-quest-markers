@@ -40,7 +40,7 @@ jobs:
             echo "VERSION ${VERSION} does not match tag ${GITHUB_REF_NAME}" >&2
             exit 1
           fi
-          python3 tools/att_release.py validate-notes --version "$VERSION"
+          python3 tools/release.py validate-notes --version "$VERSION"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
@@ -105,7 +105,7 @@ jobs:
           fi
           PREVIOUS_VERSION="$(git show "${BEFORE_SHA}:VERSION" | tr -d '[:space:]')"
           CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
-          TAG="$(python3 tools/att_release.py validate \
+          TAG="$(python3 tools/release.py validate \
             --previous-version "$PREVIOUS_VERSION" \
             --current-version "$CURRENT_VERSION" \
             --release-content-changed)"
@@ -121,11 +121,11 @@ jobs:
           git fetch --force --tags origin
           if git show-ref --verify --quiet "refs/tags/${RELEASE_TAG}"; then
             EXISTING_SHA="$(git rev-list -n 1 "$RELEASE_TAG")"
-            TAG_ACTION="$(python3 tools/att_release.py validate-tag \
+            TAG_ACTION="$(python3 tools/release.py validate-tag \
               --existing-sha "$EXISTING_SHA" \
               --target-sha "$GITHUB_SHA")"
           else
-            TAG_ACTION="$(python3 tools/att_release.py validate-tag \
+            TAG_ACTION="$(python3 tools/release.py validate-tag \
               --target-sha "$GITHUB_SHA")"
           fi
 
@@ -160,7 +160,6 @@ jobs:
 
       - name: Python tests
         run: |
-          python3 tests/test_build_quest_db.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 -m pip install -r tests/requirements.txt

@@ -104,6 +104,26 @@ function ns.HasQuestGiver(data)
     return false
 end
 
+function ns.IsQuestReadyForTurnIn(questID)
+    if not questID then
+        return false
+    end
+    if C_QuestLog and C_QuestLog.IsComplete then
+        local ok, complete = pcall(C_QuestLog.IsComplete, questID)
+        if ok and complete ~= nil then
+            return complete and true or false
+        end
+    end
+    local index = Call(C_QuestLog, "GetLogIndexForQuestID", questID)
+    if index and index > 0 and GetQuestLogTitle then
+        local ok, _, _, _, _, _, isComplete = pcall(GetQuestLogTitle, index)
+        if ok then
+            return isComplete == 1 or isComplete == true
+        end
+    end
+    return false
+end
+
 function ns.IsOnQuest(questID)
     if not questID then
         return false
@@ -175,7 +195,7 @@ function ns.GetQuestTitle(questID)
     return nil
 end
 
--- Suggested quest level (tracker [9]), not ATT minLevel. Forever exposes this
+-- Suggested quest level (tracker [9]), not the database required level. Forever exposes this
 -- for unaccepted IDs via C_QuestLog.GetQuestDifficultyLevel.
 function ns.GetQuestDifficultyLevel(questID)
     if not questID then
@@ -380,7 +400,7 @@ function ns.IsEventActive(eventID)
     return false
 end
 
--- ATT: sourceQuests is AND unless sourceQuestNumRequired is set.
+-- sourceQuests is AND unless sourceQuestNumRequired is set.
 -- sourceQuestNumRequired = 1 means any one prerequisite (OR).
 -- sourceQuestNumRequired = 0 means no prerequisite is required.
 --
@@ -478,7 +498,7 @@ function ns.NpcListsQuestStarter(npcID, questID, data)
     return false
 end
 
---- Whether this NPC may offer questID for accept tooltip rows (ATT qg/qgs or session gossip).
+--- Whether this NPC may offer questID for accept tooltip rows (starter ids or session gossip).
 function ns.NpcOffersQuestAccept(npcID, questID, data)
     if not npcID or not questID then
         return false

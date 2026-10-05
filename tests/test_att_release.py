@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for automated ATT database release preparation."""
+"""Tests for automated quest database release preparation."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "tools" / "att_release.py"
-SPEC = importlib.util.spec_from_file_location("att_release", SCRIPT)
+SCRIPT = ROOT / "tools" / "release.py"
+SPEC = importlib.util.spec_from_file_location("release", SCRIPT)
 assert SPEC and SPEC.loader
 ATT_RELEASE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = ATT_RELEASE
@@ -24,7 +24,7 @@ class AttReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = self._repository_fixture(Path(temp_dir))
 
-            version = ATT_RELEASE.prepare_att_release(
+            version = ATT_RELEASE.prepare_release(
                 root,
                 base_version="0.1.21",
                 release_date="2026-09-20",
@@ -34,6 +34,7 @@ class AttReleaseTests(unittest.TestCase):
             self.assertEqual("0.1.22\n", (root / "VERSION").read_text(encoding="utf-8"))
             changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             self.assertIn("## 0.1.22 - 2026-09-20", changelog)
+            self.assertIn("Forever quest database", changelog)
             self.assertIn("`abc123`", changelog)
             self.assertLess(changelog.index("## 0.1.22"), changelog.index("## 0.1.21"))
             notes = (root / "RELEASE_NOTES.md").read_text(encoding="utf-8")
@@ -45,7 +46,7 @@ class AttReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = self._repository_fixture(Path(temp_dir))
             for _ in range(2):
-                ATT_RELEASE.prepare_att_release(
+                ATT_RELEASE.prepare_release(
                     root,
                     base_version="0.1.21",
                     release_date="2026-09-20",
@@ -63,7 +64,7 @@ class AttReleaseTests(unittest.TestCase):
             before_version = (root / "VERSION").read_text(encoding="utf-8")
             before_changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
 
-            version = ATT_RELEASE.prepare_att_release(
+            version = ATT_RELEASE.prepare_release(
                 root,
                 base_version="0.1.21",
                 release_date="2026-09-20",
@@ -98,7 +99,7 @@ class AttReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = self._repository_fixture(Path(temp_dir), version="0.1.20")
             with self.assertRaisesRegex(ValueError, "released version 0.1.21"):
-                ATT_RELEASE.prepare_att_release(
+                ATT_RELEASE.prepare_release(
                     root,
                     base_version="0.1.21",
                     release_date="2026-09-20",
@@ -150,7 +151,7 @@ class AttReleaseTests(unittest.TestCase):
         (root / "Database" / "build_report.json").write_text(
             json.dumps(
                 {
-                    "att_sha": "abc123",
+                    "database_commit": "abc123",
                     "quests_emitted": 3501,
                     "coord_pins": 3725,
                     "map_count": 68,

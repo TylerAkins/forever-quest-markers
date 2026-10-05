@@ -17,7 +17,7 @@ local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
 local LIVE_NEAR = 0.20
 
--- Extra static ends of known patrols. ATT stores one coord (usually the village).
+-- Extra static ends of known patrols. The export stores one coord (usually the village).
 -- Morin Cloudstalker (2988) walks Bloodhoof 54.4,60.4 ↔ crate 53.8,48.3.
 local PATROL_EXTRA = {
     [2988] = {
@@ -174,7 +174,7 @@ function ns.GetViewedMapID()
     return nil
 end
 
--- Project ATT 0-100 coordinates onto the currently viewed UiMapID.
+-- Project 0-100 coordinates onto the currently viewed UiMapID.
 -- Needs C_Map.GetMapRectOnMap for continent / parent maps. If that API is
 -- missing, pins only appear when the viewed map equals the quest map.
 function ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
@@ -738,12 +738,26 @@ local function SameSpot(ax, ay, bx, by)
     return (dx * dx + dy * dy) < (0.002 * 0.002)
 end
 
+local function PinAlreadyListsQuest(pin, questID)
+    local quests = pin.quests
+    if quests then
+        for i = 1, #quests do
+            if quests[i].id == questID then
+                return true
+            end
+        end
+    end
+    return pin.questID == questID
+end
+
 local function PlacePin(parent, nx, ny, questID, data, reason, live)
     for i = 1, #active do
         local existing = active[i]
         if SameSpot(existing.nx, existing.ny, nx, ny) then
             existing.quests = existing.quests or { { id = existing.questID, data = existing.data, reason = existing.reason } }
-            existing.quests[#existing.quests + 1] = { id = questID, data = data, reason = reason }
+            if not PinAlreadyListsQuest(existing, questID) then
+                existing.quests[#existing.quests + 1] = { id = questID, data = data, reason = reason }
+            end
             SetPinTexture(existing)
             ns.PrefetchQuestInfo(questID, data)
             return true
@@ -861,7 +875,7 @@ local function UnitMapPosition(unit, mapID)
     end
     -- GetPlayerMapPosition is player-only on retail-style clients. Using it for
     -- target/nameplate can return the player's point (or a dummy 0-1 value) and
-    -- v0.1.4 then replaced Morin's ATT bang with that, so 764 vanished.
+    -- v0.1.4 then replaced Morin's quest bang with that, so 764 vanished.
     if unit == "player" and C_Map and C_Map.GetPlayerMapPosition then
         local ok, pos = pcall(C_Map.GetPlayerMapPosition, mapID, unit)
         if ok then
