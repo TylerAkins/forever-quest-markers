@@ -13,41 +13,45 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
-| `Database/ForeverQuests.lua` | Generated start records (do not edit by hand) |
-| `Database/Metadata.lua` | Pinned ATT commit SHA |
-| `Database/build_report.json` | Converter stats (not shipped in the player zip) |
+| `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
+| `Database/Metadata.lua` | Pinned QuestieDB and wow-database commits |
+| `Database/build_report.json` | Compiler stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
-| `Media/QuestAttunement.tga` | Red-orange fallback for ATT-derived attunement chains |
-| `tools/build_quest_db.py` | ATT Forever → `Database/` |
-| `tools/fetch_quest_pages.py` | Forever list pages → `data/forever-quests/` |
-| `data/forever-quests/` | Quest index + details (see `docs/quest-database.md`) |
-| `tools/att_release.py` | Prepares ATT releases and validates automated patch releases |
+| `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
+| `cmd/compile` | wow-database Forever export → `Database/` |
+| `internal/compile` | Quest mapping and Lua output |
+| `internal/zones` | Questie zone id → UiMapID |
+| `tools/release.py` | Prepares database releases and validates automated patch releases |
 | `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
 | `.pkgmeta` | [BigWigs packager](https://github.com/BigWigsMods/packager) rules |
 
 ## Database
 
-Coordinates and restrictions come from ATT `.contrib/.db/forever/`. Runtime ATT is not required.
+Coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database). That tree is produced from QuestieDB. Runtime Questie is not required.
 
 ```bash
-python3 tools/build_quest_db.py --att /path/to/AllTheThings
+go run ./cmd/compile \
+  --export /path/to/wow-database/export/forever \
+  --out Database \
+  --database-commit <wow-database git sha>
 ```
 
-If `--att` is omitted, the script clones ATT into `.cache/AllTheThings`.
+`--check` compares that export with `Database/` and writes nothing. A second run on the same export produces the same bytes. The Go module has no third-party dependencies, so there is no `go.sum`.
 
-Live Forever zone files are preferred. `zzOLD` is a fallback for quest IDs still missing from the live tree. Cata-and-later `ADDED_*` rows are skipped; classic `REMOVED_4_0_3` rows are kept.
+Start pins use available-role spawns whose zone id has a verified UiMapID. Coordinates are 0–100. Negative Questie points (`-1, -1`) and zones stored as `0` in `internal/zones` are omitted. NPC turn-in ids are stored for tooltips and are not drawn as map pins.
 
 ### Automated updates
 
-Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
+Workflow **Update Questie database** (`.github/workflows/update-questie-db.yml`):
 
-- Daily at 06:00 UTC, and on manual **Run workflow**
-- Opens a versioned PR only when the shipped quest records changed; ATT SHA-only updates are ignored
-- Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
+- Daily at 12:00 UTC, after wow-database's 11:00 UTC export, and on manual **Run workflow**
+- Checks out `export/forever` from the public wow-database `main` branch
+- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; Questie commit-only updates are ignored
+- Closes its existing `questie-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
@@ -70,7 +74,7 @@ Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzar
 ## Tests
 
 ```bash
-python3 tests/test_build_quest_db.py
+go test ./...
 python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
 python3 -m pip install -r tests/requirements.txt
@@ -81,7 +85,7 @@ python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py
 ```
 
-CI (`validate`) also regenerates the database at the pinned ATT SHA and fails on drift, then dry-runs the packager.
+CI (`validate`) also regenerates the database at the pinned wow-database commit and fails on drift, then dry-runs the packager.
 
 ## Local builds
 
@@ -99,16 +103,16 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 | Channel | Trigger | Result |
 |---------|---------|--------|
-| Stable | Push an annotated `v*` tag, or merge a prepared ATT database/interface PR | Numbered GitHub Release and CurseForge package |
+| Stable | Push an annotated `v*` tag, or merge a prepared quest database/interface PR | Numbered GitHub Release and CurseForge package |
 | Preview | Merge to `main` or manually run the Release workflow | Commit-specific GitHub Actions artifact |
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
-`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
+`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `cmd/`, `internal/`, `go.mod`, `.github/`, or `build_report.json`.
 
-The packager uploads `RELEASE_NOTES.md` as the release changelog instead of generating notes from Git commits. This prevents commit metadata from appearing on CurseForge and avoids publishing the full release history. Automated ATT and Forever Interface PRs replace this file with only their prepared release entry. CI requires that entry to match `VERSION` and rejects email addresses.
+The packager uploads `RELEASE_NOTES.md` as the release changelog instead of generating notes from Git commits. This prevents commit metadata from appearing on CurseForge and avoids publishing the full release history. Automated database and Forever Interface PRs replace this file with only their prepared release entry. CI requires that entry to match `VERSION` and rejects email addresses.
 
-All stable releases must update `VERSION` to match the tag. Automated ATT and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION`, `CHANGELOG.md`, and `RELEASE_NOTES.md` in the release PR before creating the tag.
+All stable releases must update `VERSION` to match the tag. Automated database and Forever Interface PRs do this, and merging either creates the tag. If both prepare the same patch concurrently, merge one and manually rerun the other updater so its fixed PR refreshes against the new `main`. For other releases, update `VERSION`, `CHANGELOG.md`, and `RELEASE_NOTES.md` in the release PR before creating the tag.
 
 ## CurseForge
 
@@ -131,16 +135,16 @@ The payload URL contains the API token. Never commit it, add it as an Actions se
 
 The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
-License on CurseForge: **GPLv3**. Credit All The Things (MIT) for converted data.
+License on CurseForge: **GPLv3**. Credit QuestieDB for the converted quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## Pin textures
 
-Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repeatable and attunement pins use the same atlas with desaturation and blue or red-orange vertex tints so their silhouettes match exactly. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
+Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Repeatable and dungeon/raid pins use the same atlas with desaturation and blue or red-orange vertex tints so their silhouettes match exactly. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
 ## Support split
 
 - Pin / eligibility / auto-quest bugs → this repo’s issues
-- Wrong coordinates or missing Forever quests in the converted DB → [All The Things](https://github.com/ATTWoWAddon/AllTheThings) unless our converter dropped a row that ATT has
+- Wrong coordinates or missing Forever quests in the converted DB → [QuestieDB](https://github.com/Questie/QuestieDB), unless our compiler dropped a spawn the export has
 
 ## Waypoint providers
 

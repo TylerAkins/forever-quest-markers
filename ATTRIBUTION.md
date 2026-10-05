@@ -1,48 +1,28 @@
 # Attribution
 
-## All The Things
+## QuestieDB
 
-Quest coordinates, quest-giver IDs, source quests, and eligibility fields in `Database/` are **converted** from the [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever database.
+Quest coordinates, quest-giver IDs, turn-in NPCs, and eligibility fields in `Database/` are converted from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database). That export is built from [Questie/QuestieDB](https://github.com/Questie/QuestieDB).
 
-- Upstream: https://github.com/ATTWoWAddon/AllTheThings
-- License: MIT
-- This repository does not bundle the ATT addon and does not require it at runtime
-- This repository does not claim ownership of ATT data
-- Each generated Lua file records the ATT commit SHA used for that conversion
+- Upstream data: https://github.com/Questie/QuestieDB
+- Published export: https://github.com/TylerAkins/wow-database
+- `Database/Metadata.lua` records the QuestieDB commit and the wow-database commit used for that conversion
+- This repository does not bundle Questie or QuestieDB, and neither is required at runtime
+- This repository does not claim ownership of QuestieDB data
 
-The MIT license requires that ATT’s copyright notice be preserved for derived portions:
+QuestieDB and Questie remain under their own licenses.
 
-```
-MIT License
+## World of Warcraft
 
-Copyright (c) 2026 AllTheThings WoW Addon
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+World of Warcraft, its quests, and related names are trademarks and copyrights of Blizzard Entertainment, Inc.
 
 ## Addon code
 
-Forever Quest Pins is original GPLv3 code: a native-map overlay and its own ATT converter. Tracker UI, Questie integration, and HereBeDragons usage from other addons were not copied.
+Forever Quest Pins is original GPLv3 code: a native-map overlay and a compiler that turns the published export into addon Lua. Tracker UI and HereBeDragons usage from other addons were not copied.
 
 Map pins use Blizzard’s `QuestNormal` atlas. The generated yellow, blue, and red-orange textures under `Media/` are original fallback art used only when the preferred atlas rendering fails.
 
 ## License
 
 - Addon source: **GPLv3** ([LICENSE](LICENSE))
-- ATT-derived `Database/` records: **MIT**, as above
+- Quest records: QuestieDB, via the wow-database export

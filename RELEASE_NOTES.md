@@ -1,4 +1,4 @@
-## 0.1.60 - 2026-10-04
+## 0.1.61 - 2026-10-04
 
-- Restore NPC mouseover tooltips that list available quest accepts with level-colored titles.
-- Add **Show quests on NPC tooltips** (on by default) and `/fqp npctooltip`. Turn-in lines are not shown.
+- Quest data now comes from Questie through wow-database. This build has 782 quests with start coordinates.
+- NPC tooltips list in-log turn-ins as well as quests you can accept.
