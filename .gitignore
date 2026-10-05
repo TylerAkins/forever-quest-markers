@@ -22,13 +22,8 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
-# Local ATT checkout / scratch
+# Local checkouts / scratch
 .cache/
-# Source HTML scrape cache (committed DB lives under data/forever-quests/)
-.cache/quest-html/
-data/forever-quests/sync-quests.log
-data/forever-quests/agent-sync-quests.log
-data/forever-quests/fetch_errors.jsonl
 *.zip
 .release/
 .compiled/

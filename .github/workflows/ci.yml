@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+
       - name: Check TOC and tree
         run: |
           set -euo pipefail
@@ -40,14 +45,15 @@ jobs:
           test -f VERSION
           test -f docs/DEVELOPMENT.md
           test -f tools/update_forever_interface.py
-          python3 tools/att_release.py validate-notes \
+          python3 tools/release.py validate-notes \
             --version "$(tr -d '[:space:]' < VERSION)"
           grep -qE '^## X-Website:' ForeverQuestPins.toc
           grep -qE '^## X-Issues:' ForeverQuestPins.toc
 
       - name: Python tests
         run: |
-          python3 tests/test_build_quest_db.py
+          go test ./...
+          test -z "$(gofmt -l .)"
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 -m pip install -r tests/requirements.txt
@@ -75,44 +81,46 @@ jobs:
           fi
           PREVIOUS_VERSION="$(git show "${BASE_SHA}:VERSION" | tr -d '[:space:]')"
           CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
-          python3 tools/att_release.py validate \
+          python3 tools/release.py validate \
             --previous-version "$PREVIOUS_VERSION" \
             --current-version "$CURRENT_VERSION" \
             --release-content-changed
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
-      - name: Read pinned ATT SHA
-        id: att
+      - name: Read pinned wow-database commit
+        id: database
         run: |
           set -euo pipefail
           SHA=$(python3 - <<'PY'
           import re
           from pathlib import Path
           text = Path("Database/Metadata.lua").read_text(encoding="utf-8")
-          match = re.search(r'attCommit = "([0-9a-f]+)"', text)
+          match = re.search(r'databaseCommit = "([0-9a-f]+)"', text)
           if not match:
-              raise SystemExit("attCommit missing from Database/Metadata.lua")
+              raise SystemExit("databaseCommit missing from Database/Metadata.lua")
           print(match.group(1))
           PY
           )
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout ATT at pinned SHA
+      - name: Checkout wow-database at pinned commit
         uses: actions/checkout@v6
         with:
-          repository: ATTWoWAddon/AllTheThings
-          ref: ${{ steps.att.outputs.sha }}
-          path: .cache/AllTheThings
+          repository: TylerAkins/wow-database
+          ref: ${{ steps.database.outputs.sha }}
+          path: .cache/wow-database
           sparse-checkout: |
-            .contrib/.db/forever
-            .contrib/Parser/lib/Constants
+            export/forever
           sparse-checkout-cone-mode: false
 
       - name: Regenerate database and fail on drift
         run: |
           set -euo pipefail
-          python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
-          git diff --exit-code -- Database/ForeverQuests.lua Database/Metadata.lua Database/build_report.json
+          go run ./cmd/compile \
+            --export .cache/wow-database/export/forever \
+            --out Database \
+            --database-commit "${{ steps.database.outputs.sha }}" \
+            --check
 
       - name: Dry-run package
         uses: BigWigsMods/packager@v2

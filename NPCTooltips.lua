@@ -3,6 +3,7 @@ local ADDON_NAME, ns = ...
 ns.NPCTooltips = {}
 local Tooltips = ns.NPCTooltips
 local starters
+local finishers
 local initialized = false
 
 local function NpcIDFromUnit(unit)
@@ -25,6 +26,7 @@ end
 
 function Tooltips:InvalidateStarterIndex()
     starters = nil
+    finishers = nil
 end
 
 local function BuildStarterIndex()
@@ -32,10 +34,14 @@ local function BuildStarterIndex()
         return
     end
     starters = {}
+    finishers = {}
     for questID, data in pairs(ns.Quests or {}) do
         IndexStarter(starters, data.qg, questID)
         for _, npcID in ipairs(data.qgs or {}) do
             IndexStarter(starters, npcID, questID)
+        end
+        for _, npcID in ipairs(data.turnIns or {}) do
+            IndexStarter(finishers, npcID, questID)
         end
     end
 end
@@ -82,6 +88,48 @@ function Tooltips:GetAcceptRows(npcID)
     return rows
 end
 
+function Tooltips:GetTurnInRows(npcID)
+    BuildStarterIndex()
+    local bucket = finishers[npcID]
+    if not bucket then
+        return {}
+    end
+    local rows = {}
+    for questID in pairs(bucket) do
+        if ns.IsOnQuest(questID) then
+            local data = ns.Quests and ns.Quests[questID]
+            if ns.PrefetchQuestInfo then
+                ns.PrefetchQuestInfo(questID, data)
+            end
+            local text, level = QuestLine(questID)
+            rows[#rows + 1] = {
+                id = questID,
+                text = text,
+                level = level,
+                ready = ns.IsQuestReadyForTurnIn and ns.IsQuestReadyForTurnIn(questID) or false,
+            }
+        end
+    end
+    table.sort(rows, function(a, b)
+        if a.level ~= b.level then
+            return (a.level or math.huge) < (b.level or math.huge)
+        end
+        return a.id < b.id
+    end)
+    return rows
+end
+
+local function AddQuestLine(tooltip, prefix, row, ready)
+    local r, g, b = 0.55, 0.55, 0.55
+    if ready then
+        r, g, b = 1, 0.82, 0
+        if ns.GetQuestDifficultyRGB and row.level then
+            r, g, b = ns.GetQuestDifficultyRGB(row.level)
+        end
+    end
+    tooltip:AddLine(prefix .. row.text, r, g, b, true)
+end
+
 function Tooltips:AppendAcceptRows(tooltip, unit)
     if tooltip ~= GameTooltip or not ns.GetOption("showNPCTooltips") then
         return
@@ -99,17 +147,17 @@ function Tooltips:AppendAcceptRows(tooltip, unit)
     if not npcID or tooltip.fqpQuestRows then
         return
     end
-    local rows = self:GetAcceptRows(npcID)
-    if #rows == 0 then
+    local accepts = self:GetAcceptRows(npcID)
+    local turnIns = self:GetTurnInRows(npcID)
+    if #accepts == 0 and #turnIns == 0 then
         return
     end
     tooltip.fqpQuestRows = true
-    for _, row in ipairs(rows) do
-        local r, g, b = 1, 0.82, 0
-        if ns.GetQuestDifficultyRGB and row.level then
-            r, g, b = ns.GetQuestDifficultyRGB(row.level)
-        end
-        tooltip:AddLine("! " .. row.text, r, g, b, true)
+    for _, row in ipairs(accepts) do
+        AddQuestLine(tooltip, "! ", row, true)
+    end
+    for _, row in ipairs(turnIns) do
+        AddQuestLine(tooltip, "? ", row, row.ready)
     end
     tooltip:Show()
 end
