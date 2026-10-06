@@ -1,4 +1,7 @@
-## 0.1.62 - 2026-10-06
+## 0.2.0 - 2026-10-06
 
-- Update the Forever quest database to wow-database `af14dffe4d656c8afa55b14c101be0e370460dde`.
-- Ship 5010 quests with 4122 coordinate pins across 40 maps.
+- Class-restricted quest starts use your class color; profession starts use copper.
+- Rogue class pins add a dark bang shadow so yellow does not blend into normal starts.
+- Dungeon/raid pins still win over class and profession when a stack is instance-only.
+- Start pins hide right away after accept or turn-in, without needing `/reload`.
+- Lower memory churn on map open/pan by keeping quest and NPC indexes across layout refreshes.

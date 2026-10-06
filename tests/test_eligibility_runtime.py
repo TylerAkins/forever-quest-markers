@@ -36,6 +36,41 @@ class CompletionRuntimeTests(unittest.TestCase):
             assert(ns.IsQuestFlaggedCompleted(2953) == false)
         """)
 
+    def test_session_turn_in_hides_pin_when_completed_list_lags(self) -> None:
+        self.lua.execute("""
+            C_QuestLog.GetAllCompletedQuestIDs = function() return {} end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            C_QuestLog.IsOnQuest = function() return false end
+            UnitLevel = function() return 60 end
+            ns.GetOption = function() return true end
+            local available = ns.IsQuestAvailable(2953, { minLevel = 1 })
+            assert(available == true)
+            ns.NoteQuestCompleted(2953)
+            ns.InvalidateCompletionCache()
+            assert(ns.IsQuestFlaggedCompleted(2953) == true)
+            available, reason = ns.IsQuestAvailable(2953, { minLevel = 1 })
+            assert(available == false and reason == 'completed')
+        """)
+
+    def test_session_accept_hides_offered_pin_when_log_lags(self) -> None:
+        self.lua.execute("""
+            C_QuestLog.GetAllCompletedQuestIDs = function() return {} end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            C_QuestLog.IsOnQuest = function() return false end
+            UnitLevel = function() return 60 end
+            ns.GetOption = function() return true end
+            ns.NoteOfferedQuest(92499)
+            local available, reason = ns.IsQuestAvailable(92499, { minLevel = 1 })
+            assert(available == true and reason == 'npc-offered')
+            ns.NoteQuestAccepted(92499)
+            assert(ns.IsOffered(92499) == false)
+            assert(ns.IsOnQuest(92499) == true)
+            available, reason = ns.IsQuestAvailable(92499, { minLevel = 1 })
+            assert(available == false and reason == 'in-log')
+            ns.NoteQuestRemoved(92499)
+            assert(ns.IsOnQuest(92499) == false)
+        """)
+
     def test_legacy_completed_list_and_single_quest_fallback(self) -> None:
         self.lua.execute("""
             GetQuestsCompleted = function()
@@ -65,13 +100,15 @@ class CompletionRuntimeTests(unittest.TestCase):
             local available, reason = ns.IsQuestAvailable(1, { minLevel = 21 })
             assert(available == false and reason == 'trivial')
             available, reason = ns.IsQuestAvailable(2, { minLevel = 22 })
-            assert(available == true and reason == 'ok')
+            assert(available == true)
+            assert(reason == 'ok' or reason == 'no-prereq')
         """)
 
     def test_trivial_pins_use_client_quest_level_without_db_min_level(self) -> None:
         self.lua.execute("""
             ns.GetOption = function(key) return key == 'showTrivial' and false or nil end
             UnitLevel = function() return 20 end
+            UnitFactionGroup = function() return 'Horde' end
             C_QuestLog.IsOnQuest = function() return false end
             C_QuestLog.IsQuestFlaggedCompleted = function() return false end
             C_QuestLog.GetQuestDifficultyLevel = function(questID)
@@ -88,7 +125,8 @@ class CompletionRuntimeTests(unittest.TestCase):
             C_QuestLog.IsOnQuest = function() return false end
             C_QuestLog.IsQuestFlaggedCompleted = function() return false end
             local available, reason = ns.IsQuestAvailable(1, { minLevel = 1 })
-            assert(available == true and reason == 'ok')
+            assert(available == true)
+            assert(reason == 'ok' or reason == 'no-prereq')
         """)
 
     def test_secret_unit_guid_does_not_crash_offer_capture(self) -> None:

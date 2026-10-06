@@ -11,10 +11,54 @@ local completedLookup
 local completedLookupReady = false
 local completedListLoaded = false
 
+-- Session overrides for Forever quest APIs that lag behind QUEST_* events.
+-- The completed-ID list stays authoritative for historical progress (alts),
+-- but turn-ins and accepts must hide pins immediately without waiting on
+-- GetAllCompletedQuestIDs / IsOnQuest to catch up.
+ns.sessionCompleted = ns.sessionCompleted or {}
+ns.sessionInLog = ns.sessionInLog or {}
+
 function ns.InvalidateCompletionCache()
     completedLookup = nil
     completedLookupReady = false
     completedListLoaded = false
+end
+
+function ns.NoteQuestCompleted(questID)
+    questID = tonumber(questID)
+    if not questID or questID <= 0 then
+        return
+    end
+    ns.sessionCompleted[questID] = true
+    ns.sessionInLog[questID] = nil
+    if ns.offeredQuestIDs then
+        ns.offeredQuestIDs[questID] = nil
+    end
+    if completedLookup then
+        completedLookup[questID] = true
+    end
+end
+
+function ns.NoteQuestAccepted(questID)
+    questID = tonumber(questID)
+    if not questID or questID <= 0 then
+        return
+    end
+    ns.sessionInLog[questID] = true
+    if ns.offeredQuestIDs then
+        ns.offeredQuestIDs[questID] = nil
+    end
+end
+
+function ns.NoteQuestRemoved(questID)
+    questID = tonumber(questID)
+    if not questID or questID <= 0 then
+        return
+    end
+    ns.sessionInLog[questID] = nil
+    if ns.offeredQuestIDs then
+        ns.offeredQuestIDs[questID] = nil
+    end
 end
 
 local function AddCompletedQuest(lookup, questID)
@@ -68,6 +112,9 @@ end
 function ns.IsQuestFlaggedCompleted(questID)
     if not questID then
         return false
+    end
+    if ns.sessionCompleted[questID] then
+        return true
     end
     local lookup = CompletedLookup()
     if completedListLoaded then
@@ -127,6 +174,9 @@ end
 function ns.IsOnQuest(questID)
     if not questID then
         return false
+    end
+    if ns.sessionInLog[questID] then
+        return true
     end
     local onQuest = Call(C_QuestLog, "IsOnQuest", questID)
     if onQuest ~= nil then

@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Forever Quest Pins
-## Notes: Beta: yellow, blue, and red-orange ! start markers on the Forever map for unaccepted quests.
+## Notes: Beta: colored ! start markers on the Forever map for unaccepted quests (normal, repeatable, dungeon/raid, class, profession).
 ## Author: Tyler Akins
 ## Version: @project-version@
 ## X-License: GPL-3.0-or-later
