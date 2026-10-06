@@ -433,8 +433,8 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotRegex(db, r"\[751\] = \{[^}]*qg=")
         self.assertIn("[764] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }", db)
         self.assertIn("[765] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }", db)
-        self.assertIn("[788] = { qg=3143", db)
-        self.assertIn("[4641] = { qg=10176", db)
+        self.assertRegex(db, r"\[788\] = \{[^}]*qg=3143")
+        self.assertRegex(db, r"\[4641\] = \{[^}]*qg=10176")
         self.assertIn("isBreadcrumb=true", db[db.find("[4641]"):db.find("[4641]") + 200])
 
     def test_release_workflow_has_versioned_and_preview_artifact(self) -> None:
