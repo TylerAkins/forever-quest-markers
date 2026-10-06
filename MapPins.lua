@@ -3,8 +3,8 @@ local ADDON_NAME, ns = ...
 ns.MapPins = ns.MapPins or {}
 local MapPins = ns.MapPins
 
--- Keep native atlas size off so pins stay PIN_SIZE. Repeatable pins reuse the
--- QuestNormal silhouette with desaturation + a blue tint because Forever's
+-- Keep native atlas size off so pins stay PIN_SIZE. Special pins reuse the
+-- QuestNormal silhouette with desaturation + a vertex tint because Forever's
 -- QuestDaily atlas can resolve to yellow. Gossip AvailableQuestIcon is not
 -- used: it can bind with no pixels.
 local NORMAL_ICON_ATLAS = "QuestNormal"
@@ -12,6 +12,7 @@ local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestA
 local REPEATABLE_ICON_ATLAS = "QuestDaily"
 local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
 local ATTUNEMENT_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
+local PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B = 1.00, 0.65, 0.20
 local PIN_SIZE = 24
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
@@ -298,6 +299,88 @@ local function IsAttunementOnly(pin)
     return pin.data and (pin.data.isAttunement or pin.data.isInstanceQuest) or false
 end
 
+local function HasClassRestriction(data)
+    return data and data.classes and #data.classes > 0
+end
+
+local function IsClassOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            if not HasClassRestriction(quests[i].data) then
+                return false
+            end
+        end
+        return true
+    end
+    return HasClassRestriction(pin.data)
+end
+
+local function IsProfessionOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.requireSkill then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.requireSkill and true or false
+end
+
+local function PlayerClassFile()
+    local _, classFile = UnitClass("player")
+    if type(classFile) == "string" and classFile ~= "" then
+        return classFile
+    end
+    return nil
+end
+
+local function PlayerClassRGB()
+    local classFile = PlayerClassFile()
+    if not classFile then
+        return nil
+    end
+    if C_ClassColor and C_ClassColor.GetClassColor then
+        local color = C_ClassColor.GetClassColor(classFile)
+        if color then
+            if color.GetRGB then
+                return color:GetRGB()
+            end
+            if color.r then
+                return color.r, color.g, color.b
+            end
+        end
+    end
+    local colors = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
+    if colors and colors.r then
+        return colors.r, colors.g, colors.b
+    end
+    return nil
+end
+
+-- Rogue yellow matches normal quest gold too closely; a 1px dark bang
+-- under the class tint reads as a shadowed mark instead.
+local function ShowRoguePinShadow(fill, pin)
+    if not fill or not pin then
+        return false
+    end
+    if not TrySetTintedAtlas(fill, NORMAL_ICON_ATLAS, 0.06, 0.06, 0.06) then
+        return false
+    end
+    if fill.ClearAllPoints and fill.SetPoint then
+        fill:ClearAllPoints()
+        fill:SetPoint("TOPLEFT", pin, "TOPLEFT", 1, -1)
+        fill:SetPoint("BOTTOMRIGHT", pin, "BOTTOMRIGHT", 1, -1)
+    end
+    if fill.Show then
+        fill:Show()
+    end
+    return true
+end
+
 local function EnsurePinTextures(pin)
     if not pin.Fill then
         pin.Fill = pin:CreateTexture(nil, "ARTWORK")
@@ -317,14 +400,23 @@ local function SetPinTexture(pin)
         pin.icon = "none"
         return
     end
-    if fill and fill.Hide then
-        fill:Hide()
+    if fill then
+        if fill.SetAllPoints then
+            fill:SetAllPoints()
+        end
+        if fill.Hide then
+            fill:Hide()
+        end
     end
     if tex.Hide then
         tex:Hide()
     end
+    -- Priority: instance/attunement > class > profession > repeatable > normal.
+    -- Mixed stacks stay on the first matching uniform type, else yellow.
     local attunement = IsAttunementOnly(pin)
-    local repeatable = IsRepeatableOnly(pin)
+    local classQuest = not attunement and IsClassOnly(pin)
+    local profession = not attunement and not classQuest and IsProfessionOnly(pin)
+    local repeatable = not attunement and not classQuest and not profession and IsRepeatableOnly(pin)
     local fallbackFile = NORMAL_ICON_FILE
     local fallbackName = "QuestAvailable.tga"
     if attunement then
@@ -349,6 +441,42 @@ local function SetPinTexture(pin)
         end
         if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
             pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif classQuest then
+        local r, g, b = PlayerClassRGB()
+        local painted = false
+        if r and TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, r, g, b) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":class" .. (hasFallback and "+fallback" or "")
+            painted = true
+        elseif TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            painted = true
+        elseif TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
+            painted = true
+        end
+        if painted then
+            if PlayerClassFile() == "ROGUE" and ShowRoguePinShadow(fill, pin) then
+                pin.icon = pin.icon .. "+shadow"
+            end
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif profession then
+        if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":copper" .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
             lastStatus.icon = pin.icon
             return
         end
@@ -386,9 +514,13 @@ end
 
 local function ReleasePin(pin)
     if pin.managed then
-        local map = pin:GetMap()
-        if map then
+        local map = pin.GetMap and pin:GetMap()
+        if map and map.RemovePin then
             map:RemovePin(pin)
+        elseif WorldMapFrame and WorldMapFrame.RemovePin then
+            pcall(WorldMapFrame.RemovePin, WorldMapFrame, pin)
+        elseif pin.Hide then
+            pin:Hide()
         end
         pin.quests, pin.questID, pin.data = nil, nil, nil
         return

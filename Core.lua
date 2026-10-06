@@ -65,22 +65,54 @@ function ns.RequestRefresh(reason)
     end
 end
 
+-- Map layout refreshes must not rebuild completion / profession tables. The
+-- wow-database quest set is large enough that invalidating those on every
+-- map-show or map-changed causes heavy memory churn.
+local function ShouldInvalidateQuestState(reason)
+    reason = reason or "manual"
+    return reason ~= "map-show"
+        and reason ~= "map-show-layout"
+        and reason ~= "map-changed"
+        and reason ~= "map-display"
+        and reason ~= "canvas-zero"
+end
+
 function ns.RefreshNow(reason)
     pending = false
     accum = 0
-    if ns.InvalidateCompletionCache then
-        ns.InvalidateCompletionCache()
-    end
-    if ns.InvalidateProfessionCache then
-        ns.InvalidateProfessionCache()
+    reason = reason or "manual"
+    if ShouldInvalidateQuestState(reason) then
+        if ns.InvalidateCompletionCache then
+            ns.InvalidateCompletionCache()
+        end
+        if ns.InvalidateProfessionCache then
+            ns.InvalidateProfessionCache()
+        end
     end
     if ns.UpdateWaypoint then ns.UpdateWaypoint() end
     if ns.MapPins then
-        ns.MapPins:Refresh(reason or "manual")
+        ns.MapPins:Refresh(reason)
     end
-    if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
-        ns.NPCTooltips:InvalidateStarterIndex()
+    -- NPC starter/finisher indexes are rebuilt lazily and already invalidated
+    -- when NoteOfferedQuest mutates ns.Quests. Do not drop them on map refresh.
+end
+
+-- Classic: QUEST_ACCEPTED(questLogIndex, questID). Some clients pass questID only.
+local function QuestIDFromEvent(event, ...)
+    local first, second = ...
+    if event == "QUEST_ACCEPTED" then
+        if type(second) == "number" and second > 0 then
+            return second
+        end
+        if type(first) == "number" and first > 0 then
+            return first
+        end
+        return nil
     end
+    if type(first) == "number" and first > 0 then
+        return first
+    end
+    return nil
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -145,8 +177,27 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.RequestRefresh(event)
         return
     end
-    if event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
-        if ns.OnWaypointQuestEnded then ns.OnWaypointQuestEnded(...) end
+    if event == "QUEST_ACCEPTED" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestAccepted then
+            ns.NoteQuestAccepted(questID)
+        end
+    elseif event == "QUEST_TURNED_IN" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestCompleted then
+            ns.NoteQuestCompleted(questID)
+        end
+        if ns.OnWaypointQuestEnded then
+            ns.OnWaypointQuestEnded(questID)
+        end
+    elseif event == "QUEST_REMOVED" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestRemoved then
+            ns.NoteQuestRemoved(questID)
+        end
+        if ns.OnWaypointQuestEnded then
+            ns.OnWaypointQuestEnded(questID)
+        end
     end
     if event == "PLAYER_LOGOUT" then
         if ns.FlushSettings then
