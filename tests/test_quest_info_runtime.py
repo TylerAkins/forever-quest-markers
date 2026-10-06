@@ -353,6 +353,23 @@ class QuestTrackerCombatRuntimeTests(unittest.TestCase):
             assert(tracker.alpha == 0.65 and tracker.collapsed == false)
         """)
 
+    def test_map_refresh_skips_quest_state_cache_invalidation(self) -> None:
+        self.lua.execute("""
+            completion = 0
+            profession = 0
+            starter = 0
+            ns.InvalidateCompletionCache = function() completion = completion + 1 end
+            ns.InvalidateProfessionCache = function() profession = profession + 1 end
+            ns.NPCTooltips = {InvalidateStarterIndex=function() starter = starter + 1 end}
+            ns.MapPins = {Refresh=function() end}
+            ns.RefreshNow('map-show')
+            ns.RefreshNow('map-changed')
+            ns.RefreshNow('canvas-zero')
+            assert(completion == 0 and profession == 0 and starter == 0)
+            ns.RefreshNow('QUEST_TURNED_IN')
+            assert(completion == 1 and profession == 1 and starter == 0)
+        """)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -65,22 +65,36 @@ function ns.RequestRefresh(reason)
     end
 end
 
+-- Map layout refreshes must not rebuild completion / profession tables. The
+-- wow-database quest set is large enough that invalidating those on every
+-- map-show or map-changed causes heavy memory churn.
+local function ShouldInvalidateQuestState(reason)
+    reason = reason or "manual"
+    return reason ~= "map-show"
+        and reason ~= "map-show-layout"
+        and reason ~= "map-changed"
+        and reason ~= "map-display"
+        and reason ~= "canvas-zero"
+end
+
 function ns.RefreshNow(reason)
     pending = false
     accum = 0
-    if ns.InvalidateCompletionCache then
-        ns.InvalidateCompletionCache()
-    end
-    if ns.InvalidateProfessionCache then
-        ns.InvalidateProfessionCache()
+    reason = reason or "manual"
+    if ShouldInvalidateQuestState(reason) then
+        if ns.InvalidateCompletionCache then
+            ns.InvalidateCompletionCache()
+        end
+        if ns.InvalidateProfessionCache then
+            ns.InvalidateProfessionCache()
+        end
     end
     if ns.UpdateWaypoint then ns.UpdateWaypoint() end
     if ns.MapPins then
-        ns.MapPins:Refresh(reason or "manual")
+        ns.MapPins:Refresh(reason)
     end
-    if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
-        ns.NPCTooltips:InvalidateStarterIndex()
-    end
+    -- NPC starter/finisher indexes are rebuilt lazily and already invalidated
+    -- when NoteOfferedQuest mutates ns.Quests. Do not drop them on map refresh.
 end
 
 -- Classic: QUEST_ACCEPTED(questLogIndex, questID). Some clients pass questID only.
