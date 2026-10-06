@@ -6,9 +6,9 @@
 local ADDON_NAME, ns = ...
 ns.Metadata = {
 	source = "wow-database",
-	databaseCommit = "fc16119debb3b76a3ad9cf59c64b91f213924d9a",
-	questCount = 5009,
-	coordCount = 2751,
+	databaseCommit = "af14dffe4d656c8afa55b14c101be0e370460dde",
+	questCount = 5010,
+	coordCount = 4122,
 	mapCount = 40,
 	generatedBy = "cmd/compile",
 }
