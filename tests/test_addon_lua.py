@@ -236,6 +236,16 @@ class AddonLuaTests(unittest.TestCase):
         self.assertLess(pins.find("if attunement then"), pins.find("elseif repeatable then"))
         self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange"', pins)
 
+    def test_map_refresh_does_not_drop_npc_or_completion_caches(self) -> None:
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        self.assertIn("local function ShouldInvalidateQuestState(reason)", core)
+        self.assertIn('reason ~= "map-show"', core)
+        refresh_at = core.find("function ns.RefreshNow(reason)")
+        next_fn = core.find("local function QuestIDFromEvent", refresh_at)
+        body = core[refresh_at:next_fn]
+        self.assertIn("ShouldInvalidateQuestState(reason)", body)
+        self.assertNotIn("InvalidateStarterIndex", body)
+
     def test_quest_events_update_session_availability(self) -> None:
         core = (ROOT / "Core.lua").read_text(encoding="utf-8")
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
