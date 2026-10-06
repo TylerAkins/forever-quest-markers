@@ -57,6 +57,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("New users can ignore this", readme)
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.1.63", changelog)
         self.assertIn("## 0.1.18", changelog)
         self.assertIn("0.1.10–0.1.16", changelog)
         self.assertIn("## 0.1.17", changelog)
@@ -234,6 +235,37 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("if not data or not (data.isAttunement or data.isInstanceQuest) then", pins)
         self.assertLess(pins.find("if attunement then"), pins.find("elseif repeatable then"))
         self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange"', pins)
+
+    def test_class_and_profession_pin_colors(self) -> None:
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("local function IsClassOnly(pin)", pins)
+        self.assertIn("local function IsProfessionOnly(pin)", pins)
+        self.assertIn("local function PlayerClassRGB()", pins)
+        self.assertIn("PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B = 1.00, 0.65, 0.20", pins)
+        self.assertIn("RAID_CLASS_COLORS", pins)
+        self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":class"', pins)
+        self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":copper"', pins)
+        self.assertIn("local function ShowRoguePinShadow(fill, pin)", pins)
+        self.assertIn('PlayerClassFile() == "ROGUE"', pins)
+        self.assertIn('pin.icon = pin.icon .. "+shadow"', pins)
+        self.assertIn('fill:SetPoint("TOPLEFT", pin, "TOPLEFT", 1, -1)', pins)
+        set_fn = pins.find("local function SetPinTexture(pin)")
+        next_fn = pins.find("local function ReleasePin(pin)", set_fn)
+        set_body = pins[set_fn:next_fn]
+        paint_start = set_body.find("local hasFallback = false")
+        paint_body = set_body[paint_start:]
+        attunement = paint_body.find("if attunement then")
+        class_branch = paint_body.find("elseif classQuest then")
+        profession_branch = paint_body.find("elseif profession then")
+        repeatable_branch = paint_body.find("elseif repeatable then")
+        for position in (attunement, class_branch, profession_branch, repeatable_branch):
+            self.assertNotEqual(position, -1)
+        self.assertLess(attunement, class_branch)
+        self.assertLess(class_branch, profession_branch)
+        self.assertLess(profession_branch, repeatable_branch)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("class-colored", readme)
+        self.assertIn("copper", readme)
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")

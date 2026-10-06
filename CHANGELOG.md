@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.1.63 - 2026-10-06
+
+- Tint class-restricted start pins with your class color and profession start pins copper.
+- Rogue class pins keep class yellow and add a 1px dark bang shadow so they do not read as normal quest gold.
+- Pin color priority is dungeon/raid, then class, profession, repeatable, then normal; mixed stacks stay yellow.
+
 ## 0.1.62 - 2026-10-06
 
 - Update the Forever quest database to wow-database `af14dffe4d656c8afa55b14c101be0e370460dde`.
