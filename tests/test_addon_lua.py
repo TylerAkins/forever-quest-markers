@@ -236,6 +236,21 @@ class AddonLuaTests(unittest.TestCase):
         self.assertLess(pins.find("if attunement then"), pins.find("elseif repeatable then"))
         self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange"', pins)
 
+    def test_quest_events_update_session_availability(self) -> None:
+        core = (ROOT / "Core.lua").read_text(encoding="utf-8")
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("function ns.NoteQuestCompleted(questID)", eligibility)
+        self.assertIn("function ns.NoteQuestAccepted(questID)", eligibility)
+        self.assertIn("function ns.NoteQuestRemoved(questID)", eligibility)
+        self.assertIn("local function QuestIDFromEvent(event, ...)", core)
+        self.assertIn("ns.NoteQuestAccepted(questID)", core)
+        self.assertIn("ns.NoteQuestCompleted(questID)", core)
+        self.assertIn("ns.NoteQuestRemoved(questID)", core)
+        self.assertIn("WorldMapFrame.RemovePin", pins)
+        self.assertIn("ns.sessionCompleted[questID]", eligibility)
+        self.assertIn("ns.sessionInLog[questID]", eligibility)
+
     def test_class_and_profession_pin_colors(self) -> None:
         pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
         self.assertIn("local function IsClassOnly(pin)", pins)

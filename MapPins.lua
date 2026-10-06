@@ -514,9 +514,13 @@ end
 
 local function ReleasePin(pin)
     if pin.managed then
-        local map = pin:GetMap()
-        if map then
+        local map = pin.GetMap and pin:GetMap()
+        if map and map.RemovePin then
             map:RemovePin(pin)
+        elseif WorldMapFrame and WorldMapFrame.RemovePin then
+            pcall(WorldMapFrame.RemovePin, WorldMapFrame, pin)
+        elseif pin.Hide then
+            pin:Hide()
         end
         pin.quests, pin.questID, pin.data = nil, nil, nil
         return

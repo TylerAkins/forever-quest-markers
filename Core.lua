@@ -83,6 +83,24 @@ function ns.RefreshNow(reason)
     end
 end
 
+-- Classic: QUEST_ACCEPTED(questLogIndex, questID). Some clients pass questID only.
+local function QuestIDFromEvent(event, ...)
+    local first, second = ...
+    if event == "QUEST_ACCEPTED" then
+        if type(second) == "number" and second > 0 then
+            return second
+        end
+        if type(first) == "number" and first > 0 then
+            return first
+        end
+        return nil
+    end
+    if type(first) == "number" and first > 0 then
+        return first
+    end
+    return nil
+end
+
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
@@ -145,8 +163,27 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.RequestRefresh(event)
         return
     end
-    if event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
-        if ns.OnWaypointQuestEnded then ns.OnWaypointQuestEnded(...) end
+    if event == "QUEST_ACCEPTED" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestAccepted then
+            ns.NoteQuestAccepted(questID)
+        end
+    elseif event == "QUEST_TURNED_IN" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestCompleted then
+            ns.NoteQuestCompleted(questID)
+        end
+        if ns.OnWaypointQuestEnded then
+            ns.OnWaypointQuestEnded(questID)
+        end
+    elseif event == "QUEST_REMOVED" then
+        local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.NoteQuestRemoved then
+            ns.NoteQuestRemoved(questID)
+        end
+        if ns.OnWaypointQuestEnded then
+            ns.OnWaypointQuestEnded(questID)
+        end
     end
     if event == "PLAYER_LOGOUT" then
         if ns.FlushSettings then
