@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, and copper **!** for profession quests on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, copper **!** for profession quests, loot-bag **!** for item-started quests, and scroll **!** for object-started quests on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests.
 
@@ -16,7 +16,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
 ## Features
 
-- Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
+- Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, copper `!` for profession quests, loot-bag `!` for item-started quests, and scroll `!` for object-started quests
 - Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests in your log that this NPC turns in (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
@@ -93,12 +93,12 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 - **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips use the same starter and turn-in data (accepts also include session gossip offers).
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** missing from the export will not pin until the export (or a gossip offer we already saw this session) knows them
-- **Item-started** quests stay in the database. They get a start pin only when the export has a usable spawn
+- **Item-started** and **object-started** quests stay in the database. They get a start pin only when the export has a usable spawn (drop NPC, chest, or world object). Pure item starts with no spawn stay tooltip-only.
 - **Holiday** starts stay hidden unless seasonal pins are on
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use the exported static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation requirements are not copied into the addon database, so they do not hide pins
-- All start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow.
+- Most start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow. Item-only stacks use `INV_Misc_Bag_10` plus a smaller bang; object-only stacks use `INV_Scroll_03` plus a smaller bang. Mixed stacks stay yellow.
 
 ## Support
 

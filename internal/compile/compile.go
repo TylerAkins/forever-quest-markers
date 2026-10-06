@@ -124,6 +124,8 @@ type record struct {
 	warEffort              bool
 	instance               bool
 	yearly                 bool
+	itemStart              bool
+	objectStart            bool
 }
 
 // Run writes Database Lua and the build report, or compares them when Check is set.
@@ -225,21 +227,23 @@ func mapQuest(quest exportQuest) (record, error) {
 		return record{}, fmt.Errorf("quest %d: preQuestGroup and preQuestSingle are both set", quest.ID)
 	}
 	row := record{
-		id:         quest.ID,
-		starters:   npcIDs(quest.StartedBy, quest.Places, "available"),
-		turnIns:    npcIDs(quest.FinishedBy, quest.Places, "turnIn"),
-		altQuests:  sortedCopy(quest.ExclusiveTo),
-		races:      sortedCopy(quest.RequiredRaces),
-		classes:    sortedCopy(quest.RequiredClasses),
-		minLevel:   quest.RequiredLevel,
-		breadcrumb: quest.BreadcrumbForQuestID != 0,
-		daily:      quest.QuestType.Daily,
-		weekly:     quest.QuestType.Weekly,
-		monthly:    quest.QuestType.Monthly,
-		repeatable: quest.QuestType.Repeatable || quest.QuestType.Daily || quest.QuestType.Weekly || quest.QuestType.Monthly,
-		warEffort:  quest.QuestType.Sort == "AHN_QIRAJ_WAR",
-		instance:   quest.QuestType.Dungeon || quest.QuestType.Raid,
-		yearly:     holidaySorts[quest.QuestType.Sort],
+		id:          quest.ID,
+		starters:    npcIDs(quest.StartedBy, quest.Places, "available"),
+		turnIns:     npcIDs(quest.FinishedBy, quest.Places, "turnIn"),
+		altQuests:   sortedCopy(quest.ExclusiveTo),
+		races:       sortedCopy(quest.RequiredRaces),
+		classes:     sortedCopy(quest.RequiredClasses),
+		minLevel:    quest.RequiredLevel,
+		breadcrumb:  quest.BreadcrumbForQuestID != 0,
+		daily:       quest.QuestType.Daily,
+		weekly:      quest.QuestType.Weekly,
+		monthly:     quest.QuestType.Monthly,
+		repeatable:  quest.QuestType.Repeatable || quest.QuestType.Daily || quest.QuestType.Weekly || quest.QuestType.Monthly,
+		warEffort:   quest.QuestType.Sort == "AHN_QIRAJ_WAR",
+		instance:    quest.QuestType.Dungeon || quest.QuestType.Raid,
+		yearly:      holidaySorts[quest.QuestType.Sort],
+		itemStart:   hasProviderType(quest.StartedBy, quest.Places, "available", "item"),
+		objectStart: hasProviderType(quest.StartedBy, quest.Places, "available", "object"),
 	}
 	switch quest.Faction {
 	case "", "Both":
@@ -329,6 +333,20 @@ func npcIDs(providers []provider, places []place, role string) []int {
 	}
 	sort.Ints(ids)
 	return ids
+}
+
+func hasProviderType(providers []provider, places []place, role, typ string) bool {
+	for _, item := range providers {
+		if item.Type == typ && item.ID != 0 {
+			return true
+		}
+	}
+	for _, spot := range places {
+		if spot.Role == role && spot.Type == typ && spot.ID != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func sortedCopy(values []int) []int {
@@ -514,6 +532,12 @@ func questBody(row record) string {
 	}
 	if row.yearly {
 		parts = append(parts, "isYearly=true")
+	}
+	if row.itemStart {
+		parts = append(parts, "isItemStart=true")
+	}
+	if row.objectStart {
+		parts = append(parts, "isObjectStart=true")
 	}
 	return strings.Join(parts, ", ")
 }
