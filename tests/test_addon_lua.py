@@ -282,15 +282,45 @@ class AddonLuaTests(unittest.TestCase):
         attunement = paint_body.find("if attunement then")
         class_branch = paint_body.find("elseif classQuest then")
         profession_branch = paint_body.find("elseif profession then")
+        item_branch = paint_body.find("elseif itemStart then")
+        object_branch = paint_body.find("elseif objectStart then")
         repeatable_branch = paint_body.find("elseif repeatable then")
-        for position in (attunement, class_branch, profession_branch, repeatable_branch):
+        for position in (
+            attunement,
+            class_branch,
+            profession_branch,
+            item_branch,
+            object_branch,
+            repeatable_branch,
+        ):
             self.assertNotEqual(position, -1)
         self.assertLess(attunement, class_branch)
         self.assertLess(class_branch, profession_branch)
-        self.assertLess(profession_branch, repeatable_branch)
+        self.assertLess(profession_branch, item_branch)
+        self.assertLess(item_branch, object_branch)
+        self.assertLess(object_branch, repeatable_branch)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("class-colored", readme)
         self.assertIn("copper", readme)
+
+    def test_item_and_object_start_pins(self) -> None:
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("local function IsItemStartOnly(pin)", pins)
+        self.assertIn("local function IsObjectStartOnly(pin)", pins)
+        self.assertIn("local function ShowStartBang(tex, pin)", pins)
+        self.assertIn("local function PaintProviderStart(pin, fill, tex, baseFile, kind)", pins)
+        self.assertIn('ITEM_START_ICON_FILE = "Interface\\\\Icons\\\\INV_Misc_Bag_10"', pins)
+        self.assertIn('OBJECT_START_ICON_FILE = "Interface\\\\Icons\\\\INV_Scroll_03"', pins)
+        self.assertIn("START_BANG_SCALE = 0.55", pins)
+        self.assertIn("if not data or not data.isItemStart then", pins)
+        self.assertIn("if not data or not data.isObjectStart then", pins)
+        self.assertIn('PaintProviderStart(pin, fill, tex, ITEM_START_ICON_FILE, "item:"', pins)
+        self.assertIn('PaintProviderStart(pin, fill, tex, OBJECT_START_ICON_FILE, "object:"', pins)
+        self.assertNotRegex(pins, r'ICON.*=.*AvailableQuestIcon')
+        self.assertNotIn("Interface\\\\GossipFrame\\\\AvailableQuestIcon", pins)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("item-started", readme.lower())
+        self.assertIn("object-started", readme.lower())
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")

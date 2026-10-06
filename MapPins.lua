@@ -7,13 +7,18 @@ local MapPins = ns.MapPins
 -- QuestNormal silhouette with desaturation + a vertex tint because Forever's
 -- QuestDaily atlas can resolve to yellow. Gossip AvailableQuestIcon is not
 -- used: it can bind with no pixels.
+-- Item/object starts paint a built-in loot bag or scroll on ARTWORK and a
+-- smaller QuestNormal bang on OVERLAY so the base stays readable at 24px.
 local NORMAL_ICON_ATLAS = "QuestNormal"
 local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local REPEATABLE_ICON_ATLAS = "QuestDaily"
 local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
 local ATTUNEMENT_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
+local ITEM_START_ICON_FILE = "Interface\\Icons\\INV_Misc_Bag_10"
+local OBJECT_START_ICON_FILE = "Interface\\Icons\\INV_Scroll_03"
 local PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B = 1.00, 0.65, 0.20
 local PIN_SIZE = 24
+local START_BANG_SCALE = 0.55
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
 local LIVE_NEAR = 0.20
@@ -330,6 +335,34 @@ local function IsProfessionOnly(pin)
     return pin.data and pin.data.requireSkill and true or false
 end
 
+local function IsItemStartOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.isItemStart then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.isItemStart or false
+end
+
+local function IsObjectStartOnly(pin)
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            local data = quests[i].data
+            if not data or not data.isObjectStart then
+                return false
+            end
+        end
+        return true
+    end
+    return pin.data and pin.data.isObjectStart or false
+end
+
 local function PlayerClassFile()
     local _, classFile = UnitClass("player")
     if type(classFile) == "string" and classFile ~= "" then
@@ -381,6 +414,45 @@ local function ShowRoguePinShadow(fill, pin)
     return true
 end
 
+local function ShowStartBang(tex, pin)
+    if not tex or not pin then
+        return false
+    end
+    if not TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+        return false
+    end
+    if tex.ClearAllPoints and tex.SetPoint and tex.SetSize then
+        local scale = ns.GetOption("iconScale") or 100
+        local bang = PIN_SIZE * scale / 100 * START_BANG_SCALE
+        tex:ClearAllPoints()
+        tex:SetSize(bang, bang)
+        tex:SetPoint("CENTER", pin, "CENTER", 0, 2)
+    end
+    return true
+end
+
+local function PaintProviderStart(pin, fill, tex, baseFile, kind)
+    if not fill or not TrySetFile(fill, baseFile) then
+        return false
+    end
+    if fill.SetDrawLayer then
+        fill:SetDrawLayer("ARTWORK", 0)
+    end
+    if fill.SetAllPoints then
+        fill:SetAllPoints()
+    end
+    if fill.Show then
+        fill:Show()
+    end
+    if ShowStartBang(tex, pin) then
+        pin.icon = kind .. "+bang"
+    else
+        pin.icon = kind
+    end
+    lastStatus.icon = pin.icon
+    return true
+end
+
 local function EnsurePinTextures(pin)
     if not pin.Fill then
         pin.Fill = pin:CreateTexture(nil, "ARTWORK")
@@ -408,15 +480,20 @@ local function SetPinTexture(pin)
             fill:Hide()
         end
     end
+    if tex.SetAllPoints then
+        tex:SetAllPoints()
+    end
     if tex.Hide then
         tex:Hide()
     end
-    -- Priority: instance/attunement > class > profession > repeatable > normal.
-    -- Mixed stacks stay on the first matching uniform type, else yellow.
+    -- Priority: instance/attunement > class > profession > item > object >
+    -- repeatable > normal. Mixed stacks stay yellow.
     local attunement = IsAttunementOnly(pin)
     local classQuest = not attunement and IsClassOnly(pin)
     local profession = not attunement and not classQuest and IsProfessionOnly(pin)
-    local repeatable = not attunement and not classQuest and not profession and IsRepeatableOnly(pin)
+    local itemStart = not attunement and not classQuest and not profession and IsItemStartOnly(pin)
+    local objectStart = not attunement and not classQuest and not profession and not itemStart and IsObjectStartOnly(pin)
+    local repeatable = not attunement and not classQuest and not profession and not itemStart and not objectStart and IsRepeatableOnly(pin)
     local fallbackFile = NORMAL_ICON_FILE
     local fallbackName = "QuestAvailable.tga"
     if attunement then
@@ -477,6 +554,24 @@ local function SetPinTexture(pin)
         end
         if TrySetFile(tex, fallbackFile) then
             pin.icon = fallbackName
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif itemStart then
+        if PaintProviderStart(pin, fill, tex, ITEM_START_ICON_FILE, "item:" .. ITEM_START_ICON_FILE) then
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif objectStart then
+        if PaintProviderStart(pin, fill, tex, OBJECT_START_ICON_FILE, "object:" .. OBJECT_START_ICON_FILE) then
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
             lastStatus.icon = pin.icon
             return
         end

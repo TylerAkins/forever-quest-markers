@@ -1,3 +1,8 @@
+## Unreleased
+
+- Item-started quests use a loot-bag pin with a small `!`; object-started quests use a scroll pin with a small `!`.
+- Pin style priority is dungeon/raid, class, profession, item, object, repeatable, then normal; mixed stacks stay yellow.
+
 ## 0.2.0 - 2026-10-06
 
 - Class-restricted quest starts use your class color; profession starts use copper.

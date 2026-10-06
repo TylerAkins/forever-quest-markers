@@ -119,6 +119,47 @@ func TestFlagsAndTurnIns(t *testing.T) {
 	}
 }
 
+func TestItemAndObjectStartFlags(t *testing.T) {
+	item := compileOne(t, questJSON(123, `
+		"startedBy":[{"type":"item","id":1307}],
+		"places":[
+			{"role":"available","type":"item","id":1307,"spawns":[]},
+			{"role":"available","type":"npc","id":448,"spawns":[[12,25.02,92.9]]}
+		]`))
+	if !strings.Contains(item, "isItemStart=true") {
+		t.Fatalf("item start flag missing:\n%s", item)
+	}
+	if strings.Contains(item, "isObjectStart") {
+		t.Fatalf("item start marked object:\n%s", item)
+	}
+	if !strings.Contains(item, "mapID=1429, x=25.02, y=92.9") {
+		t.Fatalf("item drop spawn coords missing:\n%s", item)
+	}
+
+	object := compileOne(t, questJSON(138, `
+		"startedBy":[{"type":"object","id":35}],
+		"places":[{"role":"available","type":"object","id":35,"spawns":[[40,25.91,47.75]]}]`))
+	if !strings.Contains(object, "isObjectStart=true") {
+		t.Fatalf("object start flag missing:\n%s", object)
+	}
+	if strings.Contains(object, "isItemStart") {
+		t.Fatalf("object start marked item:\n%s", object)
+	}
+	if !strings.Contains(object, "mapID=1436, x=25.91, y=47.75") {
+		t.Fatalf("object spawn coords missing:\n%s", object)
+	}
+	if strings.Contains(object, "qg=") || strings.Contains(object, "qgs=") {
+		t.Fatalf("object start should not invent an NPC starter:\n%s", object)
+	}
+
+	npc := compileOne(t, questJSON(16, `
+		"startedBy":[{"type":"npc","id":7}],
+		"places":[{"role":"available","type":"npc","id":7,"spawns":[[12,10,20]]}]`))
+	if strings.Contains(npc, "isItemStart") || strings.Contains(npc, "isObjectStart") {
+		t.Fatalf("npc start got item/object flags:\n%s", npc)
+	}
+}
+
 func TestCheckIsStableAndWritesNothing(t *testing.T) {
 	body := questJSON(18, `"startedBy":[{"type":"npc","id":7}]`)
 	dir := t.TempDir()
