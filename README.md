@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests, blue **!** markers for repeatable quests, and red-orange **!** markers for dungeon and raid quests on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, and copper **!** for profession quests on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests.
 
@@ -16,7 +16,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
 ## Features
 
-- Yellow `!` pins for normal quest starts, blue `!` pins for repeatable starts, and red-orange `!` pins for dungeon and raid quests
+- Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
 - Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests in your log that this NPC turns in (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
@@ -98,7 +98,7 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use the exported static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation requirements are not copied into the addon database, so they do not hide pins
-- Normal, repeatable, and dungeon/raid pins share Blizzard’s `QuestNormal` shape; special pins tint it blue or red-orange, with bundled fallbacks for all three colors
+- All start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow.
 
 ## Support
 
