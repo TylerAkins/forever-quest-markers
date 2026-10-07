@@ -1,7 +1,4 @@
-## 0.2.3 - 2026-10-07
+## 0.2.4 - 2026-10-07
 
-- Restore daily **Update ATT database** builds from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) (`tools/build_quest_db.py`).
-- Remove the unused Go `cmd/compile` wow-database converter from the repository.
-- NPC tooltips list available accepts only (no in-log `?` turn-in lines).
-- Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
-- Ship 3877 quests with 4066 coordinate pins (27 attunement quests).
+- Map and NPC tooltips fall back to quest names parsed from All The Things when Forever has not loaded a title from `C_QuestLog`.
+- ATT commit unchanged: `bff19e245191182bc32279ca69f0648000c643ec` (3877 quests, 3868 with `attTitle`).

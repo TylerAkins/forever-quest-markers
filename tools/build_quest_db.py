@@ -15,6 +15,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 
 from att_dsl.constants import BuildContext, load_forever_constants
 from att_dsl.emit import write_outputs
+from att_dsl.titles import apply_titles_from_source
 from att_dsl.evaluator import Environment, evaluate_chunk, new_environment
 from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
@@ -75,8 +76,12 @@ def main(argv: list[str] | None = None) -> int:
         if quest_id not in result.quests:
             result.quests[quest_id] = record
             zzold_fallback += 1
-        elif record.is_instance_quest:
-            result.quests[quest_id].is_instance_quest = True
+        else:
+            existing = result.quests[quest_id]
+            if record.is_instance_quest:
+                existing.is_instance_quest = True
+            if record.att_title and not existing.att_title:
+                existing.att_title = record.att_title
     result.quests_seen += zzold_result.quests_seen
     result.quests_with_coords = len(result.quests)
     result.files_parsed += zzold_result.files_parsed
@@ -194,6 +199,7 @@ def _parse_file(path: Path, rel: str, ctx: BuildContext, result: ExtractResult) 
     env: Environment = new_environment(ctx)
     evaluate_chunk(chunk, env)
     extract_from_roots(env.get("_roots", []), rel, result)
+    apply_titles_from_source(source, result)
 
 
 def _stats(
@@ -221,6 +227,7 @@ def _stats(
         "quests_with_coords": result.quests_with_coords,
         "coord_pins": coord_pins,
         "attunement_quests": sum(record.is_attunement for record in result.quests.values()),
+        "att_titles": sum(1 for record in result.quests.values() if record.att_title),
         "excluded": dict(sorted(result.excluded.items())),
         "map_ids": maps,
         "map_count": len(maps),
@@ -234,6 +241,7 @@ def _log_summary(stats: dict[str, object]) -> None:
     print(f"Quests with coordinates: {stats['quests_with_coords']}")
     print(f"Coordinate pins: {stats['coord_pins']}")
     print(f"Attunement quests: {stats['attunement_quests']}")
+    print(f"ATT title fallbacks: {stats.get('att_titles', 0)}")
     print(f"Maps indexed: {stats['map_count']}")
     if stats.get("zzold_fallback_quests"):
         print(f"zzOLD fallback quests: {stats['zzold_fallback_quests']}")
