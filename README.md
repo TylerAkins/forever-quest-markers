@@ -17,7 +17,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
-- Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
+- Map pin tooltips with `[level] quest name` (Forever tracker level when available; ATT inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin

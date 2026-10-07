@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.2.4 - 2026-10-07
+
+- Compile ATT inline quest names into `attTitle` at database build time and use them when `C_QuestLog` has no title yet.
+- Regenerate the ATT Forever quest database (3868 quests with ATT title fallbacks).
+
 ## 0.2.3 - 2026-10-07
 
 - Restore daily ATT database updates and `tools/build_quest_db.py`; remove the Go wow-database compiler and CI path.

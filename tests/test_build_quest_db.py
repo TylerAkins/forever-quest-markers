@@ -13,6 +13,7 @@ sys.path.insert(0, str(TOOLS))
 
 from att_dsl.constants import BuildContext, DEFAULT_FOREVER_PATCH
 from att_dsl.emit import emit_lua_database
+from att_dsl.titles import extract_titles_from_source, normalize_att_title
 from att_dsl.evaluator import evaluate_chunk, new_environment
 from att_dsl.extract import ExtractResult, extract_from_roots, mark_attunement_chains
 from att_dsl.parser import ParseError, parse_lua
@@ -228,6 +229,31 @@ class CheckoutTests(unittest.TestCase):
     def test_sparse_checkout_supports_file_paths(self) -> None:
         script = (TOOLS / "build_quest_db.py").read_text(encoding="utf-8")
         self.assertIn('"sparse-checkout",\n            "set",\n            "--no-cone",', script)
+
+
+class AttTitleTests(unittest.TestCase):
+    def test_normalize_strips_level_and_faction_suffixes(self) -> None:
+        raw = "The Battle for Arathi Basin! [Level 20] (Horde)"
+        self.assertEqual(normalize_att_title(raw), "The Battle for Arathi Basin!")
+
+    def test_extract_and_emit_att_title(self) -> None:
+        source = (
+            'q(8171, { -- The Battle for Arathi Basin! [Level 20] (Horde)\n'
+            '\t["qg"] = 15021,\n'
+            '\t["coord"] = { 73.3, 29.7, MAP.ELWYNN_FOREST },\n'
+            "})"
+        )
+        titles = extract_titles_from_source(source)
+        self.assertEqual(titles[8171], "The Battle for Arathi Basin!")
+        env = new_environment(_ctx())
+        evaluate_chunk(parse_lua(preprocess(source, _ctx()), filename="ab.lua"), env)
+        result = ExtractResult()
+        extract_from_roots(env.get("_roots", []), "ab.lua", result)
+        from att_dsl.titles import apply_titles_from_source
+
+        apply_titles_from_source(source, result)
+        self.assertEqual(result.quests[8171].att_title, "The Battle for Arathi Basin!")
+        self.assertIn('attTitle="The Battle for Arathi Basin!"', emit_lua_database(result.quests, "abc123"))
 
 
 class MulgoreTimelineTests(unittest.TestCase):
