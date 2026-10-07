@@ -207,6 +207,15 @@ local function RememberTitle(questID, title)
     return nil
 end
 
+local function AttQuestTitle(questID)
+    local data = ns.Quests and ns.Quests[questID]
+    local title = data and data.attTitle
+    if type(title) == "string" and title ~= "" then
+        return title
+    end
+    return nil
+end
+
 local function ReadQuestTitle(questID)
     local title = Call(C_QuestLog, "GetTitleForQuestID", questID)
     if RememberTitle(questID, title) then
@@ -242,7 +251,7 @@ function ns.GetQuestTitle(questID)
         return title
     end
     ns.RequestQuestTitle(questID)
-    return nil
+    return AttQuestTitle(questID)
 end
 
 -- Suggested quest level (tracker [9]), not the database required level. Forever exposes this

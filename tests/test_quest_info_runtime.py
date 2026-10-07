@@ -50,6 +50,23 @@ class QuestInfoRuntimeTests(unittest.TestCase):
             assert(available == false and reason == 'in-log')
         """)
 
+    def test_att_title_fallback_when_client_has_no_title(self) -> None:
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            ns.Quests = {
+                [8171] = { attTitle = "The Battle for Arathi Basin!" },
+            }
+            assert(ns.GetQuestTitle(8171) == "The Battle for Arathi Basin!")
+        """)
+
+    def test_client_title_wins_over_att_fallback(self) -> None:
+        self.load("Eligibility.lua")
+        self.lua.execute("""
+            ns.Quests = { [1] = { attTitle = "ATT name" } }
+            C_QuestLog.GetTitleForQuestID = function() return "Client name" end
+            assert(ns.GetQuestTitle(1) == "Client name")
+        """)
+
     def test_failed_title_load_retries_on_lookup_and_recovers(self) -> None:
         self.load("Eligibility.lua")
         self.lua.execute("""
