@@ -20,11 +20,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Set up Go
-        uses: actions/setup-go@v7.0.0
-        with:
-          go-version-file: go.mod
-
       - name: Check TOC and tree
         run: |
           set -euo pipefail
@@ -52,8 +47,7 @@ jobs:
 
       - name: Python tests
         run: |
-          go test ./...
-          test -z "$(gofmt -l .)"
+          python3 tests/test_build_quest_db.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 -m pip install -r tests/requirements.txt
@@ -87,40 +81,38 @@ jobs:
             --release-content-changed
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
-      - name: Read pinned wow-database commit
-        id: database
+      - name: Read pinned ATT SHA
+        id: att
         run: |
           set -euo pipefail
           SHA=$(python3 - <<'PY'
           import re
           from pathlib import Path
           text = Path("Database/Metadata.lua").read_text(encoding="utf-8")
-          match = re.search(r'databaseCommit = "([0-9a-f]+)"', text)
+          match = re.search(r'attCommit = "([0-9a-f]+)"', text)
           if not match:
-              raise SystemExit("databaseCommit missing from Database/Metadata.lua")
+              raise SystemExit("attCommit missing from Database/Metadata.lua")
           print(match.group(1))
           PY
           )
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout wow-database at pinned commit
+      - name: Checkout ATT at pinned SHA
         uses: actions/checkout@v6
         with:
-          repository: TylerAkins/wow-database
-          ref: ${{ steps.database.outputs.sha }}
-          path: .cache/wow-database
+          repository: ATTWoWAddon/AllTheThings
+          ref: ${{ steps.att.outputs.sha }}
+          path: .cache/AllTheThings
           sparse-checkout: |
-            export/forever
+            .contrib/.db/forever
+            .contrib/Parser/lib/Constants
           sparse-checkout-cone-mode: false
 
       - name: Regenerate database and fail on drift
         run: |
           set -euo pipefail
-          go run ./cmd/compile \
-            --export .cache/wow-database/export/forever \
-            --out Database \
-            --database-commit "${{ steps.database.outputs.sha }}" \
-            --check
+          python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
+          git diff --exit-code -- Database/ForeverQuests.lua Database/Metadata.lua Database/build_report.json
 
       - name: Dry-run package
         uses: BigWigsMods/packager@v2

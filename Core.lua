@@ -66,7 +66,7 @@ function ns.RequestRefresh(reason)
 end
 
 -- Map layout refreshes must not rebuild completion / profession tables. The
--- wow-database quest set is large enough that invalidating those on every
+-- The quest database is large enough that invalidating those on every
 -- map-show or map-changed causes heavy memory churn.
 local function ShouldInvalidateQuestState(reason)
     reason = reason or "manual"
