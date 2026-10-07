@@ -88,7 +88,8 @@ class GeneratedDatabaseTests(unittest.TestCase):
 
     def test_translated_start_and_quest_flags(self) -> None:
         text = _read("ForeverQuests.lua")
-        self.assertRegex(text, r"\[123\] = \{ mapID=1429, x=25\.02, y=92\.9")
+        self.assertRegex(text, r"\[123\] = \{ mapID=1429, x=25\.02, y=92\.9[^\n]*isItemStart=true")
+        self.assertRegex(text, r"\[138\] = \{ mapID=1436, x=25\.91, y=47\.75[^\n]*isObjectStart=true")
         self.assertRegex(text, r"\[8673\] = \{[^\n]*isYearly=true")
         self.assertNotRegex(text, r"\[155\] = \{[^\n]*isYearly=true")
         self.assertRegex(text, r"\[813\] = \{[^\n]*repeatable=true")
