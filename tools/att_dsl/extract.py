@@ -66,6 +66,7 @@ class QuestRecord:
     is_instance_quest: bool = False
     event: int | None = None
     source_file: str = ""
+    att_title: str | None = None
 
 
 @dataclass

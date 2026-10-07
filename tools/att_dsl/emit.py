@@ -155,6 +155,8 @@ def _quest_body(record: QuestRecord) -> str:
         parts.append("isInstanceQuest=true")
     if record.event is not None:
         parts.append(f"event={int(record.event)}")
+    if record.att_title:
+        parts.append(f'attTitle="{_escape(record.att_title)}"')
     return ", ".join(parts)
 
 
