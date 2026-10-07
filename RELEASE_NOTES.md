@@ -1,7 +1,6 @@
-## 0.2.1 - 2026-10-06
+## 0.2.2 - 2026-10-07
 
-- Item-started quests use a smaller loot-bag pin with a small `!`; object-started quests use a scroll pin the same way.
-- Dungeon item/object drops keep the bag/scroll with an orange bang.
-- Settings and `/fqp itemicons` can turn special bag/scroll icons off.
-- Update the Forever quest database to wow-database `ddcf905d5f558b988448d10b47a44c4db3982856`.
-- Ship 5010 quests with 2751 coordinate pins across 40 maps.
+- Remove bag/scroll item/object start pin icons and the related settings toggle (`/fqp itemicons`).
+- Compile quests that publish both `preQuestGroup` and `preQuestSingle` (for example Arcane Runes) instead of failing database regeneration.
+- Update the Forever quest database to wow-database `25b44519c551ca7c25200ae4f4fac697e2e12521`.
+- Ship 2159 quests with 1728 coordinate pins across 38 maps.
