@@ -151,10 +151,10 @@ class AttReleaseTests(unittest.TestCase):
         (root / "Database" / "build_report.json").write_text(
             json.dumps(
                 {
-                    "database_commit": "abc123",
+                    "att_sha": "abc123",
                     "quests_emitted": 3501,
                     "coord_pins": 3725,
-                    "map_count": 68,
+                    "attunement_quests": 27,
                 }
             ),
             encoding="utf-8",

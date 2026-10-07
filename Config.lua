@@ -361,7 +361,7 @@ function ns.SlashCommand(msg)
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
-        print("  /fqp npctooltip Toggle quest accept and turn-in lines on NPC mouseover")
+        print("  /fqp npctooltip Toggle quest accept lines on NPC mouseover")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -485,7 +485,7 @@ function ns.PrintStats()
         maps = maps + 1
     end
     Print(("Database %s | %d quests | %d maps"):format(
-        tostring(meta.databaseCommit or "?"),
+        tostring(meta.attCommit or "?"),
         count,
         maps
     ))
@@ -917,7 +917,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showNPCTooltips",
                 "Show quests on NPC tooltips",
-                "List quests you can accept, and quests in your log that this NPC turns in."
+                "List quests you can accept from this NPC (same eligibility as start pins)."
             )
             npcTooltips:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
 

@@ -1,6 +1,7 @@
-## 0.2.2 - 2026-10-07
+## 0.2.3 - 2026-10-07
 
-- Remove bag/scroll item/object start pin icons and the related settings toggle (`/fqp itemicons`).
-- Compile quests that publish both `preQuestGroup` and `preQuestSingle` (for example Arcane Runes) instead of failing database regeneration.
-- Update the Forever quest database to wow-database `25b44519c551ca7c25200ae4f4fac697e2e12521`.
-- Ship 2159 quests with 1728 coordinate pins across 38 maps.
+- Restore daily **Update ATT database** builds from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) (`tools/build_quest_db.py`).
+- Remove the unused Go `cmd/compile` wow-database converter from the repository.
+- NPC tooltips list available accepts only (no in-log `?` turn-in lines).
+- Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
+- Ship 3877 quests with 4066 coordinate pins (27 attunement quests).
