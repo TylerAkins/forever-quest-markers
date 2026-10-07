@@ -4,7 +4,7 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 
 ## 0.2.3 - 2026-10-07
 
-- Restore daily ATT database updates and `tools/build_quest_db.py`; remove wow-database / Questie compilation from CI.
+- Restore daily ATT database updates and `tools/build_quest_db.py`; remove the Go wow-database compiler and CI path.
 - NPC tooltips show available accepts only (drop in-log turn-in `?` rows).
 - Update the ATT Forever quest database to `bff19e245191182bc32279ca69f0648000c643ec`.
 - Ship 3877 quests with 4066 coordinate pins (27 attunement quests).
