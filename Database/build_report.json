@@ -1,9 +1,9 @@
 {
-  "coord_pins": 4122,
-  "database_commit": "af14dffe4d656c8afa55b14c101be0e370460dde",
+  "coord_pins": 2751,
+  "database_commit": "ddcf905d5f558b988448d10b47a44c4db3982856",
   "map_count": 40,
   "quests_emitted": 5010,
-  "quests_with_coords": 2051,
+  "quests_with_coords": 782,
   "schema_version": 2,
-  "tooltip_only": 2959
+  "tooltip_only": 4228
 }

@@ -1,7 +1,7 @@
-## 0.2.0 - 2026-10-06
+## 0.2.1 - 2026-10-06
 
-- Class-restricted quest starts use your class color; profession starts use copper.
-- Rogue class pins add a dark bang shadow so yellow does not blend into normal starts.
-- Dungeon/raid pins still win over class and profession when a stack is instance-only.
-- Start pins hide right away after accept or turn-in, without needing `/reload`.
-- Lower memory churn on map open/pan by keeping quest and NPC indexes across layout refreshes.
+- Item-started quests use a smaller loot-bag pin with a small `!`; object-started quests use a scroll pin the same way.
+- Dungeon item/object drops keep the bag/scroll with an orange bang.
+- Settings and `/fqp itemicons` can turn special bag/scroll icons off.
+- Update the Forever quest database to wow-database `ddcf905d5f558b988448d10b47a44c4db3982856`.
+- Ship 5010 quests with 2751 coordinate pins across 40 maps.
