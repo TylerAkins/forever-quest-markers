@@ -2,12 +2,15 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
-## Unreleased
+## 0.2.1 - 2026-10-06
 
-- Distinct map pins for item-started and object-started quests: loot bag (`INV_Misc_Bag_10`) or scroll (`INV_Scroll_03`) base with a smaller `QuestNormal` bang.
+- Distinct map pins for item-started and object-started quests: cropped loot bag (`INV_Misc_Bag_10`) or scroll (`INV_Scroll_03`) base with a smaller `QuestNormal` bang.
+- Dungeon item/object drops use bag/scroll plus an orange bang; plain dungeon starts stay red-orange `!`.
+- Add **Special icons for item/object starts** (on by default) and `/fqp itemicons` to fall back to tinted `!`.
 - Compiler emits `isItemStart` / `isObjectStart` from wow-database starters and keeps available-spawn coordinates.
-- Pin style priority is dungeon/raid, class, profession, item, object, repeatable, then normal; mixed stacks stay yellow.
-- Refresh `Database/` from wow-database `ddcf905d5f558b988448d10b47a44c4db3982856` (5010 quests, 782 with coordinates, 2751 coordinate pins).
+- Pin style priority is class, profession, item, object, dungeon/raid, repeatable, then normal; mixed stacks stay yellow.
+- Update the Forever quest database to wow-database `ddcf905d5f558b988448d10b47a44c4db3982856`.
+- Ship 5010 quests with 2751 coordinate pins across 40 maps.
 
 ## 0.2.0 - 2026-10-06
 
