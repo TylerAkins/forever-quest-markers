@@ -195,25 +195,17 @@ class QuestInfoRuntimeTests(unittest.TestCase):
             function ns.GetQuestDifficultyRGB() return 1,0.8,0 end
             ns.Quests[10]={qg=100}
             ns.Quests[20]={turnIns={100}}
-            ns.Quests[30]={turnIns={100}}
             ns.active[20]=true
             ns.complete[20]=true
             ns.NPCTooltips:InvalidateStarterIndex()
             ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
             assert(lines[1]=='! [5] Quest 10')
-            assert(lines[2]=='? [5] Quest 20')
-            assert(#lines==2)
+            assert(#lines==1)
 
             lines={}
             GameTooltip.fqpQuestRows=nil
             ns.Quests[10]=nil
             ns.NPCTooltips:InvalidateStarterIndex()
-            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
-            assert(#lines==1 and lines[1]=='? [5] Quest 20')
-
-            lines={}
-            GameTooltip.fqpQuestRows=nil
-            ns.active[20]=false
             ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
             assert(#lines==0)
         """)

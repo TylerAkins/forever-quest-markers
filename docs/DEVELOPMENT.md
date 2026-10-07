@@ -14,16 +14,15 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
-| `Database/Metadata.lua` | Pinned wow-database commit |
-| `Database/build_report.json` | Compiler stats (not shipped in the player zip) |
+| `Database/Metadata.lua` | Pinned ATT commit |
+| `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
-| `cmd/compile` | wow-database Forever export → `Database/` |
-| `internal/compile` | Quest mapping and Lua output |
-| `internal/zones` | Export zone id → UiMapID |
+| `tools/build_quest_db.py` | ATT Forever `.contrib/.db/forever` → `Database/` |
+| `tools/att_dsl/` | ATT Lua parser and quest extractor |
 | `tools/release.py` | Prepares database releases and validates automated patch releases |
 | `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
 | `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
@@ -31,27 +30,22 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 
 ## Database
 
-Coordinates and restrictions come from the Forever export in [wow-database](https://github.com/TylerAkins/wow-database).
+Coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data (`.contrib/.db/forever`).
 
 ```bash
-go run ./cmd/compile \
-  --export /path/to/wow-database/export/forever \
-  --out Database \
-  --database-commit <wow-database git sha>
+python3 tools/build_quest_db.py --att /path/to/AllTheThings --out Database
 ```
 
-`--check` compares that export with `Database/` and writes nothing. A second run on the same export produces the same bytes. The Go module has no third-party dependencies, so there is no `go.sum`.
-
-Start pins use available-role spawns whose zone id has a verified UiMapID. Coordinates are 0–100. Unknown spawn points (`-1, -1`) and zones stored as `0` in `internal/zones` are omitted. NPC turn-in ids are stored for tooltips and are not drawn as map pins.
+A second run on the same ATT commit produces the same bytes. NPC turn-in ids are compiled into the database but are not shown on map pins or NPC tooltips.
 
 ### Automated updates
 
-Workflow **Update wow-database** (`.github/workflows/update-wow-database.yml`):
+Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
 
-- Daily at 12:00 UTC, after wow-database's 11:00 UTC export, and on manual **Run workflow**
-- Checks out `export/forever` from the public wow-database `main` branch
-- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; wow-database commit-only updates with no quest diff are ignored
-- Closes its existing `wow-database-update` PR if regenerated quest records return to the version already on `main`
+- Daily at 06:00 UTC and on manual **Run workflow**
+- Checks out ATT `main` (sparse: Forever DB + parser constants)
+- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; ATT SHA-only updates with no quest diff are ignored
+- Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
@@ -74,7 +68,7 @@ Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzar
 ## Tests
 
 ```bash
-go test ./...
+python3 tests/test_build_quest_db.py
 python3 tests/test_validate_generated.py
 python3 tests/test_addon_lua.py
 python3 -m pip install -r tests/requirements.txt
@@ -85,7 +79,7 @@ python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py
 ```
 
-CI (`validate`) also regenerates the database at the pinned wow-database commit and fails on drift, then dry-runs the packager.
+CI (`validate`) also regenerates the database at the pinned ATT commit and fails on drift, then dry-runs the packager.
 
 ## Local builds
 
@@ -135,16 +129,16 @@ The payload URL contains the API token. Never commit it, add it as an Actions se
 
 The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
-License on CurseForge: **GPLv3**. Credit wow-database for the converted quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
+License on CurseForge: **GPLv3**. Credit All The Things for the quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## Pin textures
 
-Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance/attunement, class, profession, repeatable, then normal; mixed stacks stay yellow. The compiler sets `isItemStart` / `isObjectStart` from wow-database `startedBy` and available `places` with `type` item or object, and keeps available-spawn coordinates when present (pins still use the normal `!` art). Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
+Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance/attunement, class, profession, repeatable, then normal; mixed stacks stay yellow. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
 ## Support split
 
 - Pin / eligibility / auto-quest bugs → this repo’s issues
-- Wrong coordinates or missing Forever quests in the converted DB → [wow-database](https://github.com/TylerAkins/wow-database), unless our compiler dropped a spawn the export has
+- Wrong coordinates or missing Forever quests in the converted DB → [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, unless our converter dropped a spawn ATT has
 
 ## Waypoint providers
 

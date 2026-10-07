@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: wow-database (quest database source)
-    url: https://github.com/TylerAkins/wow-database
-    about: Report wrong coordinates or missing Forever quests upstream. This addon only compiles the published export.
+  - name: All The Things (quest database source)
+    url: https://github.com/ATTWoWAddon/AllTheThings
+    about: Report wrong coordinates or missing Forever quests in ATT. This addon converts ATT Forever data.
   - name: Releases (installable zips)
     url: https://github.com/TylerAkins/forever-quest-markers/releases
     about: Packager zips only. Do not install GitHub’s “Source code” archives.

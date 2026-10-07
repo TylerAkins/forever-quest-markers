@@ -73,9 +73,9 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("## 0.1.9", changelog)
         self.assertIn("## 0.1.8", changelog)
         attribution = (ROOT / "ATTRIBUTION.md").read_text(encoding="utf-8")
-        self.assertIn("wow-database", attribution)
+        self.assertIn("All The Things", attribution)
         self.assertIn("GPLv3", attribution)
-        self.assertNotIn("All The Things", attribution)
+        self.assertNotIn("wow-database", attribution)
         development = (ROOT / "docs" / "DEVELOPMENT.md").read_text(encoding="utf-8")
         self.assertIn("## CurseForge", development)
         self.assertIn("## Releases", development)
@@ -240,7 +240,7 @@ class AddonLuaTests(unittest.TestCase):
         set_body = pins[set_fn:next_fn]
         paint_start = set_body.find("local hasFallback = false")
         paint_body = set_body[paint_start:]
-        self.assertLess(paint_body.find("elseif plainAttunement then"), paint_body.find("elseif repeatable then"))
+        self.assertLess(paint_body.find("if attunement then"), paint_body.find("elseif repeatable then"))
         self.assertIn('pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange"', pins)
 
     def test_map_refresh_does_not_drop_npc_or_completion_caches(self) -> None:
@@ -309,9 +309,11 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("local function PrereqListMet(questIDs, required)", eligibility)
         self.assertIn("data.sourceQuestGroup", eligibility)
         self.assertIn("data.sourceQuestSingle", eligibility)
+        tooltips = (ROOT / "NPCTooltips.lua").read_text(encoding="utf-8")
+        self.assertNotIn("GetTurnInRows", tooltips)
+        self.assertNotIn('"? "', tooltips)
         quests = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
-        self.assertRegex(quests, r"\[6\] = \{[^\n]*isItemStart=true")
-        self.assertRegex(quests, r"\[138\] = \{[^\n]*isObjectStart=true")
+        self.assertRegex(quests, r"\[754\] = \{ mapID=1412, x=48\.5, y=60\.4")
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
@@ -506,13 +508,13 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn('msg == "available"', config)
         self.assertIn("function ns.PrintAvailableOnMap()", config)
         db = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
-        self.assertIn("[749] = { qg=2988", db)
-        self.assertIn("[751] = { sourceQuests={ 749 }", db)
+        self.assertIn("[749] = { mapID=1412, x=54.4, y=60.4, qg=2988", db)
+        self.assertIn("[751] = { mapID=1412, x=53.8, y=48.3, sourceQuests={ 749 }", db)
         self.assertNotRegex(db, r"\[751\] = \{[^}]*qg=")
-        self.assertIn("[764] = { qgs={ 2978, 2979, 2988 }, turnIns={ 2978, 2979, 2988 }, sourceQuests={ 751 }", db)
-        self.assertIn("[765] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }, sourceQuestNumRequired=1", db)
-        self.assertRegex(db, r"\[788\] = \{[^}]*qgs=\{ 3098, 3143 \}")
+        self.assertIn("[764] = { mapID=1412, x=54.4, y=60.4, qg=2988, sourceQuests={ 751 }", db)
+        self.assertRegex(db, r"\[788\] = \{[^}]*qg=3143")
         self.assertRegex(db, r"\[4641\] = \{[^}]*qg=10176")
+        self.assertIn("isBreadcrumb=true", db[db.find("[4641]"):db.find("[4641]") + 200])
 
     def test_release_workflow_has_versioned_and_preview_artifact(self) -> None:
         text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
@@ -540,32 +542,30 @@ class AddonLuaTests(unittest.TestCase):
         self.assertNotIn("gh release create latest", text)
         self.assertIn("uses: BigWigsMods/packager@v2", text)
 
-    def test_wow_database_update_workflow_prepares_release_only_for_quest_changes(self) -> None:
-        text = (ROOT / ".github" / "workflows" / "update-wow-database.yml").read_text(
+    def test_att_database_update_workflow_prepares_release_only_for_quest_changes(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "update-att-db.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn('cron: "0 12 * * *"', text)
+        self.assertIn('cron: "0 6 * * *"', text)
         self.assertIn("git diff --quiet -- Database/ForeverQuests.lua", text)
         self.assertIn("python3 tools/release.py prepare", text)
         self.assertIn("steps.changes.outputs.quest_data == 'true'", text)
-        self.assertIn("go-version-file: go.mod", text)
-        self.assertIn("repository: TylerAkins/wow-database", text)
-        self.assertNotIn("AllTheThings", text)
+        self.assertIn("repository: ATTWoWAddon/AllTheThings", text)
         self.assertIn("pull-requests: write", text)
-        self.assertIn("branch: wow-database-update", text)
+        self.assertIn("branch: att-db-update", text)
         self.assertNotIn("git push", text)
         self.assertIn("VERSION", text)
         self.assertIn("CHANGELOG.md", text)
         self.assertIn("RELEASE_NOTES.md", text)
         self.assertIn("automatically publishes", text)
         self.assertIn("assignees: TylerAkins", text)
-        self.assertIn("@TylerAkins, automated regeneration", text)
+        self.assertIn("@TylerAkins", text)
 
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("Validate automated release intent", ci)
         self.assertIn("github.event.pull_request.base.sha", ci)
         self.assertIn("python3 tools/release.py validate", ci)
-        self.assertNotIn("AllTheThings", ci)
+        self.assertIn("ATTWoWAddon/AllTheThings", ci)
         self.assertIn("--release-content-changed", ci)
 
     def test_forever_interface_workflow_is_reviewed_and_weekly(self) -> None:
