@@ -1,16 +1,16 @@
-name: Update wow-database
+name: Update ATT database
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 6 * * *"
 
 permissions:
   contents: write
   pull-requests: write
 
 concurrency:
-  group: update-wow-database
+  group: update-att-database
   cancel-in-progress: false
 
 jobs:
@@ -27,10 +27,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Set up Go
-        uses: actions/setup-go@v7.0.0
+      - name: Checkout All The Things
+        uses: actions/checkout@v6
         with:
-          go-version-file: go.mod
+          repository: ATTWoWAddon/AllTheThings
+          path: .cache/AllTheThings
+          fetch-depth: 1
+          sparse-checkout: |
+            .contrib/.db/forever
+            .contrib/Parser/lib/Constants
+          sparse-checkout-cone-mode: false
 
       - name: Read previous stats
         id: before
@@ -43,32 +49,16 @@ jobs:
           data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
           output = os.environ["GITHUB_OUTPUT"]
           with open(output, "a", encoding="utf-8") as handle:
-              handle.write(f"old_sha={data.get('database_commit', 'unknown')}\n")
+              handle.write(f"old_sha={data.get('att_sha', 'unknown')}\n")
               handle.write(f"old_quests={data.get('quests_emitted', 0)}\n")
           PY
 
-      - name: Checkout wow-database
-        uses: actions/checkout@v6
-        with:
-          repository: TylerAkins/wow-database
-          path: .cache/wow-database
-          fetch-depth: 1
-          sparse-checkout: |
-            export/forever
-          sparse-checkout-cone-mode: false
-
       - name: Generate database
-        run: |
-          set -euo pipefail
-          SHA="$(git -C .cache/wow-database rev-parse HEAD)"
-          go run ./cmd/compile \
-            --export .cache/wow-database/export/forever \
-            --out Database \
-            --database-commit "$SHA"
+        run: python3 tools/build_quest_db.py --att .cache/AllTheThings --out Database
 
       - name: Tests
         run: |
-          go test ./...
+          python3 tests/test_build_quest_db.py
           python3 tests/test_validate_generated.py
           python3 tests/test_addon_lua.py
           python3 -m pip install -r tests/requirements.txt
@@ -87,7 +77,7 @@ jobs:
           data = json.loads(Path("Database/build_report.json").read_text(encoding="utf-8"))
           output = os.environ["GITHUB_OUTPUT"]
           with open(output, "a", encoding="utf-8") as handle:
-              handle.write(f"sha={data.get('database_commit', 'unknown')}\n")
+              handle.write(f"sha={data.get('att_sha', 'unknown')}\n")
               handle.write(f"quests={data.get('quests_emitted', 0)}\n")
               handle.write(f"coords={data.get('coord_pins', 0)}\n")
           PY
@@ -110,13 +100,13 @@ jobs:
           PR_NUMBER="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
-            --head wow-database-update \
+            --head att-db-update \
             --state open \
             --limit 1 \
             --json number \
             --jq '.[0].number // empty')"
           if [[ -z "$PR_NUMBER" ]]; then
-            echo "No stale quest database pull request is open."
+            echo "No stale ATT database pull request is open."
             exit 0
           fi
           gh pr close "$PR_NUMBER" \
@@ -139,13 +129,13 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: wow-database-update
+          branch: att-db-update
           delete-branch: true
-          commit-message: "chore: prepare v${{ steps.version.outputs.version }} wow-database"
-          title: "chore: prepare v${{ steps.version.outputs.version }} wow-database update"
+          commit-message: "chore: prepare v${{ steps.version.outputs.version }} ATT database"
+          title: "chore: prepare v${{ steps.version.outputs.version }} ATT database update"
           assignees: TylerAkins
           body: |
-            @TylerAkins, automated regeneration of `Database/` from [wow-database](https://github.com/TylerAkins/wow-database) Forever export data.
+            @TylerAkins — automated regeneration of `Database/` from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data.
 
             | | SHA | Quests | Coordinate pins |
             |---|---|---|---|
@@ -154,7 +144,7 @@ jobs:
 
             Merging this reviewed PR automatically publishes `v${{ steps.version.outputs.version }}` to GitHub and triggers CurseForge packaging.
 
-            This PR is created only when the shipped quest database changes. wow-database commit-only updates with no quest diff do not create releases.
+            This PR is created only when the shipped quest database changes. ATT SHA-only updates do not create releases.
           add-paths: |
             Database/ForeverQuests.lua
             Database/Metadata.lua
