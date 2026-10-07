@@ -53,10 +53,16 @@ func TestUnknownZoneFails(t *testing.T) {
 	}
 }
 
-func TestBothPrereqListsFail(t *testing.T) {
-	_, err := compileFixture(t, questJSON(13, `"preQuestGroup":[1],"preQuestSingle":[2]`))
-	if err == nil || !strings.Contains(err.Error(), "both set") {
-		t.Fatalf("error = %v", err)
+func TestBothPrereqListsEmitDistinctFields(t *testing.T) {
+	body := compileOne(t, questJSON(13, `"preQuestGroup":[2,1],"preQuestSingle":[4,3]`))
+	if !strings.Contains(body, "sourceQuestGroup={ 1, 2 }") {
+		t.Fatalf("group prereq:\n%s", body)
+	}
+	if !strings.Contains(body, "sourceQuestSingle={ 3, 4 }, sourceQuestNumRequired=1") {
+		t.Fatalf("single prereq:\n%s", body)
+	}
+	if strings.Contains(body, "sourceQuests=") {
+		t.Fatalf("legacy sourceQuests emitted:\n%s", body)
 	}
 }
 

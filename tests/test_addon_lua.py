@@ -57,6 +57,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("New users can ignore this", readme)
         self.assertIn("docs/DEVELOPMENT.md", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## 0.2.2", changelog)
         self.assertIn("## 0.2.1", changelog)
         self.assertIn("## 0.2.0", changelog)
         self.assertIn("## 0.1.18", changelog)
@@ -159,8 +160,7 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("tex:SetDesaturated(true)", text)
         self.assertIn("pcall(tex.SetDesaturated, tex, false)", text)
         self.assertIn("TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 0.12, 0.72, 1.00)", text)
-        self.assertIn("INSTANCE_PIN_R, INSTANCE_PIN_G, INSTANCE_PIN_B = 1.00, 0.32, 0.08", text)
-        self.assertIn("TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, INSTANCE_PIN_R, INSTANCE_PIN_G, INSTANCE_PIN_B)", text)
+        self.assertIn("TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 1.00, 0.32, 0.08)", text)
         self.assertIn("Media\\\\QuestAvailable", text)
         self.assertIn("Media\\\\QuestRepeatable", text)
         self.assertIn("Media\\\\QuestAttunement", text)
@@ -286,59 +286,32 @@ class AddonLuaTests(unittest.TestCase):
         set_body = pins[set_fn:next_fn]
         paint_start = set_body.find("local hasFallback = false")
         paint_body = set_body[paint_start:]
-        class_branch = paint_body.find("if classQuest then")
+        attunement = paint_body.find("if attunement then")
+        class_branch = paint_body.find("elseif classQuest then")
         profession_branch = paint_body.find("elseif profession then")
-        item_branch = paint_body.find("elseif itemStart then")
-        object_branch = paint_body.find("elseif objectStart then")
-        attunement = paint_body.find("elseif plainAttunement then")
         repeatable_branch = paint_body.find("elseif repeatable then")
         for position in (
+            attunement,
             class_branch,
             profession_branch,
-            item_branch,
-            object_branch,
-            attunement,
             repeatable_branch,
         ):
             self.assertNotEqual(position, -1)
+        self.assertLess(attunement, class_branch)
         self.assertLess(class_branch, profession_branch)
-        self.assertLess(profession_branch, item_branch)
-        self.assertLess(item_branch, object_branch)
-        self.assertLess(object_branch, attunement)
-        self.assertLess(attunement, repeatable_branch)
+        self.assertLess(profession_branch, repeatable_branch)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("class-colored", readme)
         self.assertIn("copper", readme)
 
-    def test_item_and_object_start_pins(self) -> None:
-        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
-        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
-        self.assertIn("local function IsItemStartOnly(pin)", pins)
-        self.assertIn("local function IsObjectStartOnly(pin)", pins)
-        self.assertIn("local function ShowStartBang(tex, pin, red, green, blue)", pins)
-        self.assertIn("local function FitProviderBase(fill, pin)", pins)
-        self.assertIn("local function PaintProviderStart(pin, fill, tex, baseFile, kind, bangRed, bangGreen, bangBlue)", pins)
-        self.assertIn('ITEM_START_ICON_FILE = "Interface\\\\Icons\\\\INV_Misc_Bag_10"', pins)
-        self.assertIn('OBJECT_START_ICON_FILE = "Interface\\\\Icons\\\\INV_Scroll_03"', pins)
-        self.assertIn("PROVIDER_BASE_SCALE = 0.68", pins)
-        self.assertIn("PROVIDER_ICON_INSET = 0.10", pins)
-        self.assertIn("START_BANG_SCALE = 0.48", pins)
-        self.assertIn('ns.GetOption("showItemObjectIcons")', pins)
-        self.assertIn("INSTANCE_PIN_R, INSTANCE_PIN_G, INSTANCE_PIN_B = 1.00, 0.32, 0.08", pins)
-        self.assertIn("if not data or not data.isItemStart then", pins)
-        self.assertIn("if not data or not data.isObjectStart then", pins)
-        self.assertIn('PaintProviderStart(pin, fill, tex, ITEM_START_ICON_FILE, "item:"', pins)
-        self.assertIn('PaintProviderStart(pin, fill, tex, OBJECT_START_ICON_FILE, "object:"', pins)
-        self.assertIn("+bang:orange", pins)
-        self.assertNotRegex(pins, r'ICON.*=.*AvailableQuestIcon')
-        self.assertNotIn("Interface\\\\GossipFrame\\\\AvailableQuestIcon", pins)
-        self.assertIn("showItemObjectIcons = true", config)
-        self.assertIn('msg == "itemicons"', config)
-        self.assertIn('"showItemObjectIcons"', config)
-        self.assertIn("Special icons for item/object starts", config)
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("item-started", readme.lower())
-        self.assertIn("object-started", readme.lower())
+    def test_item_and_object_start_flags_stay_in_database(self) -> None:
+        eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
+        self.assertIn("local function PrereqListMet(questIDs, required)", eligibility)
+        self.assertIn("data.sourceQuestGroup", eligibility)
+        self.assertIn("data.sourceQuestSingle", eligibility)
+        quests = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
+        self.assertRegex(quests, r"\[6\] = \{[^\n]*isItemStart=true")
+        self.assertRegex(quests, r"\[138\] = \{[^\n]*isObjectStart=true")
 
     def test_seasonal_pins_are_opt_in(self) -> None:
         eligibility = (ROOT / "Eligibility.lua").read_text(encoding="utf-8")
@@ -534,13 +507,12 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("function ns.PrintAvailableOnMap()", config)
         db = (ROOT / "Database" / "ForeverQuests.lua").read_text(encoding="utf-8")
         self.assertIn("[749] = { qg=2988", db)
-        self.assertIn("[751] = { turnIns={ 2988 }, sourceQuests={ 749 }", db)
+        self.assertIn("[751] = { sourceQuests={ 749 }", db)
         self.assertNotRegex(db, r"\[751\] = \{[^}]*qg=")
-        self.assertIn("[764] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }", db)
-        self.assertIn("[765] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }", db)
-        self.assertRegex(db, r"\[788\] = \{[^}]*qg=3143")
+        self.assertIn("[764] = { qgs={ 2978, 2979, 2988 }, turnIns={ 2978, 2979, 2988 }, sourceQuests={ 751 }", db)
+        self.assertIn("[765] = { qg=2988, turnIns={ 2988 }, sourceQuests={ 751 }, sourceQuestNumRequired=1", db)
+        self.assertRegex(db, r"\[788\] = \{[^}]*qgs=\{ 3098, 3143 \}")
         self.assertRegex(db, r"\[4641\] = \{[^}]*qg=10176")
-        self.assertIn("isBreadcrumb=true", db[db.find("[4641]"):db.find("[4641]") + 200])
 
     def test_release_workflow_has_versioned_and_preview_artifact(self) -> None:
         text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")

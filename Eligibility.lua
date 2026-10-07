@@ -494,21 +494,19 @@ SourceSatisfied = function(questID)
     return ok
 end
 
-SourceQuestsMet = function(data)
-    local sourceQuests = data.sourceQuests
-    if not sourceQuests or #sourceQuests == 0 then
+local function PrereqListMet(questIDs, required)
+    if not questIDs or #questIDs == 0 then
         return true, "no-prereq"
     end
     if not ns.HasQuestCompletionAPI() then
         return true, "prereq-unknown"
     end
-    local required = data.sourceQuestNumRequired
-    local completed = CountCompleted(sourceQuests)
+    local completed = CountCompleted(questIDs)
     if required == 0 then
         return true, "prereq-none-required"
     end
     if required == nil then
-        if completed < #sourceQuests then
+        if completed < #questIDs then
             return false, "prereq-and"
         end
         return true, "prereq-and"
@@ -517,6 +515,28 @@ SourceQuestsMet = function(data)
         return false, "prereq-count"
     end
     return true, "prereq-count"
+end
+
+SourceQuestsMet = function(data)
+    local group = data.sourceQuestGroup
+    local single = data.sourceQuestSingle
+    if group and #group > 0 then
+        local ok, reason = PrereqListMet(group, nil)
+        if not ok then
+            return false, reason
+        end
+    end
+    if single and #single > 0 then
+        local required = data.sourceQuestNumRequired or 1
+        local ok, reason = PrereqListMet(single, required)
+        if not ok then
+            return false, reason
+        end
+    end
+    if (group and #group > 0) or (single and #single > 0) then
+        return true, "prereq-split"
+    end
+    return PrereqListMet(data.sourceQuests, data.sourceQuestNumRequired)
 end
 
 function ns.IsSourceSatisfied(questID)

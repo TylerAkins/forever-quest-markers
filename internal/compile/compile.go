@@ -109,6 +109,8 @@ type record struct {
 	starters               []int
 	turnIns                []int
 	sourceQuests           []int
+	sourceQuestGroup       []int
+	sourceQuestSingle      []int
 	sourceQuestNumRequired *int
 	altQuests              []int
 	faction                string
@@ -223,9 +225,6 @@ func loadExport(exportDir string) (manifestFile, []exportQuest, error) {
 }
 
 func mapQuest(quest exportQuest) (record, error) {
-	if len(quest.PreQuestGroup) > 0 && len(quest.PreQuestSingle) > 0 {
-		return record{}, fmt.Errorf("quest %d: preQuestGroup and preQuestSingle are both set", quest.ID)
-	}
 	row := record{
 		id:          quest.ID,
 		starters:    npcIDs(quest.StartedBy, quest.Places, "available"),
@@ -255,9 +254,15 @@ func mapQuest(quest exportQuest) (record, error) {
 	if quest.RequiredSkill != nil {
 		row.requireSkill = quest.RequiredSkill.SkillID
 	}
-	if len(quest.PreQuestGroup) > 0 {
+	switch {
+	case len(quest.PreQuestGroup) > 0 && len(quest.PreQuestSingle) > 0:
+		row.sourceQuestGroup = sortedCopy(quest.PreQuestGroup)
+		row.sourceQuestSingle = sortedCopy(quest.PreQuestSingle)
+		required := 1
+		row.sourceQuestNumRequired = &required
+	case len(quest.PreQuestGroup) > 0:
 		row.sourceQuests = sortedCopy(quest.PreQuestGroup)
-	} else if len(quest.PreQuestSingle) > 0 {
+	case len(quest.PreQuestSingle) > 0:
 		row.sourceQuests = sortedCopy(quest.PreQuestSingle)
 		required := 1
 		row.sourceQuestNumRequired = &required
@@ -484,6 +489,12 @@ func questBody(row record) string {
 	}
 	if len(row.turnIns) > 0 {
 		parts = append(parts, "turnIns={ "+joinInts(row.turnIns)+" }")
+	}
+	if len(row.sourceQuestGroup) > 0 {
+		parts = append(parts, "sourceQuestGroup={ "+joinInts(row.sourceQuestGroup)+" }")
+	}
+	if len(row.sourceQuestSingle) > 0 {
+		parts = append(parts, "sourceQuestSingle={ "+joinInts(row.sourceQuestSingle)+" }")
 	}
 	if len(row.sourceQuests) > 0 {
 		parts = append(parts, "sourceQuests={ "+joinInts(row.sourceQuests)+" }")
