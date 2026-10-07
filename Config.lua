@@ -485,7 +485,7 @@ function ns.PrintStats()
         maps = maps + 1
     end
     Print(("Database %s | %d quests | %d maps"):format(
-        tostring(meta.databaseCommit or "?"),
+        tostring(meta.attCommit or "?"),
         count,
         maps
     ))
