@@ -2,6 +2,13 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.2.2 - 2026-10-07
+
+- Remove bag/scroll item/object start pin icons and the related settings toggle (`/fqp itemicons`).
+- Honor split prerequisite lists (`sourceQuestGroup` plus `sourceQuestSingle`) from the wow-database export.
+- Update the Forever quest database to wow-database `25b44519c551ca7c25200ae4f4fac697e2e12521`.
+- Ship 2159 quests with 1728 coordinate pins across 38 maps.
+
 ## 0.2.1 - 2026-10-06
 
 - Distinct map pins for item-started and object-started quests: cropped loot bag (`INV_Misc_Bag_10`) or scroll (`INV_Scroll_03`) base with a smaller `QuestNormal` bang.

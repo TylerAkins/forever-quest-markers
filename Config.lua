@@ -8,7 +8,6 @@ ns.defaults = {
     showRepeatable = true,
     showSeasonal = false,
     showWarEffort = false,
-    showItemObjectIcons = true,
     autoAccept = false,
     autoAcceptRangeEnabled = false,
     autoAcceptLevelOffset = 1,
@@ -360,7 +359,6 @@ function ns.SlashCommand(msg)
         print("  /fqp repeatable Toggle repeatable quest pins (on by default)")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
-        print("  /fqp itemicons Toggle bag/scroll icons for item and object starts (on by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
         print("  /fqp npctooltip Toggle quest accept and turn-in lines on NPC mouseover")
@@ -419,10 +417,6 @@ function ns.SlashCommand(msg)
     end
     if msg == "wareffort" or msg == "war" then
         ToggleFlag("showWarEffort", "Show AQ war effort pins")
-        return
-    end
-    if msg == "itemicons" or msg == "itemicon" or msg == "objecticons" then
-        ToggleFlag("showItemObjectIcons", "Bag/scroll icons for item and object starts")
         return
     end
     if msg == "accept" then
@@ -543,7 +537,6 @@ function ns.PrintSettingsDebug()
         "showRepeatable",
         "showSeasonal",
         "showWarEffort",
-        "showItemObjectIcons",
         "autoAccept",
         "autoAcceptRangeEnabled",
         "autoAcceptLevelOffset",
@@ -897,16 +890,8 @@ function ns.TryRegisterSettings()
             )
             warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
 
-            local itemObjectIcons = CreateOptionCheckbox(
-                self,
-                "showItemObjectIcons",
-                "Special icons for item/object starts",
-                "Loot-bag and scroll bases with a small !. Off uses the normal tinted ! (orange for dungeon drops)."
-            )
-            itemObjectIcons:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, 0)
-
             local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            iconScale:SetPoint("TOPLEFT", itemObjectIcons, "BOTTOMLEFT", 8, -24)
+            iconScale:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 8, -24)
             iconScale:SetSize(240, 16)
             iconScale:SetMinMaxValues(50, 150)
             iconScale:SetValueStep(5)

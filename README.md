@@ -2,7 +2,7 @@
 
 **Beta** for World of Warcraft Forever (Interface 16001).
 
-Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, copper **!** for profession quests, loot-bag **!** for item-started quests, and scroll **!** for object-started quests on Blizzard’s native world map.
+Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, and copper **!** for profession quests on Blizzard’s native world map.
 
 Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests.
 
@@ -16,7 +16,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
 ## Features
 
-- Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, copper `!` for profession quests, loot-bag `!` for item-started quests, and scroll `!` for object-started quests
+- Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
 - Map pin tooltips with `[level] quest name` (same suggested level as the Forever tracker) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests in your log that this NPC turns in (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
@@ -48,7 +48,6 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
-| Special icons for item/object starts | On (loot-bag / scroll bases; off uses tinted `!`) |
 | Show in-world destination marker | Uses Blizzard’s current shared navigation setting |
 | Waypoint provider | Blizzard Map Pins (TomTom optional) |
 | Icon Scale | 100% (adjustable from 50% to 150%) |
@@ -71,7 +70,6 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 | `/fqp repeatable` | Toggle repeatable quest pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
-| `/fqp itemicons` | Toggle bag/scroll icons for item and object starts |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
 | `/fqp npctooltip` | Toggle NPC quest accept and turn-in tooltips |
@@ -100,7 +98,7 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use the exported static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation requirements are not copied into the addon database, so they do not hide pins
-- Most start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow. Item-only stacks use a cropped `INV_Misc_Bag_10` plus a smaller bang; object-only stacks use `INV_Scroll_03` the same way. Dungeon item/object drops keep the bag/scroll with an orange bang. Turn special icons off in settings (or `/fqp itemicons`) to fall back to tinted `!`. Mixed stacks stay yellow.
+- Most start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow. Mixed stacks stay yellow.
 
 ## Support
 
