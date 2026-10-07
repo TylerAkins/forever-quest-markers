@@ -1,4 +1,4 @@
-## 0.2.4 - 2026-10-07
+## 0.2.5 - 2026-10-07
 
-- Map and NPC tooltips fall back to quest names parsed from All The Things when Forever has not loaded a title from `C_QuestLog`.
-- ATT commit unchanged: `bff19e245191182bc32279ca69f0648000c643ec` (3877 quests, 3868 with `attTitle`).
+- Update the ATT Forever quest database to `d8a426dfa781057fc8ff4608e963e24bdc6e6761`.
+- Ship 3885 quests with 4073 coordinate pins (27 attunement quests).
