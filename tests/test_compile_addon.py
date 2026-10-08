@@ -54,6 +54,20 @@ class CompileAddonTests(unittest.TestCase):
             self.assertTrue(stale.exists())
             self.assertIn(output / "ForeverQuestPins.toc", built)
 
+    def test_every_toc_entry_is_shipped(self) -> None:
+        toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
+        entries = [
+            line.strip().replace("\\", "/")
+            for line in toc.splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        shipped = {
+            path.relative_to(ROOT).as_posix() for path in COMPILE_ADDON.iter_files()
+        }
+        self.assertIn("HiddenQuests.lua", entries)
+        for entry in entries:
+            self.assertIn(entry, shipped, f"{entry} is in the TOC but not built")
+
 
 if __name__ == "__main__":
     unittest.main()

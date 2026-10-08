@@ -75,6 +75,7 @@ local function ShouldInvalidateQuestState(reason)
         and reason ~= "map-changed"
         and reason ~= "map-display"
         and reason ~= "canvas-zero"
+        and reason ~= "quest-hidden"
 end
 
 function ns.RefreshNow(reason)

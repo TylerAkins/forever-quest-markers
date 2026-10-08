@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LUA_FILES = [
     "Config.lua",
+    "HiddenQuests.lua",
     "WarEffort.lua",
     "Eligibility.lua",
     "NPCTooltips.lua",
@@ -85,6 +86,20 @@ class AddonLuaTests(unittest.TestCase):
         self.assertIn("manual-changelog:", pkgmeta)
         self.assertIn("filename: RELEASE_NOTES.md", pkgmeta)
         self.assertIn("markup-type: markdown", pkgmeta)
+
+    def test_hidden_quest_pins_load_order_and_reset_button(self) -> None:
+        toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")
+        self.assertLess(toc.find("Config.lua"), toc.find("HiddenQuests.lua"))
+        self.assertLess(toc.find("HiddenQuests.lua"), toc.find("Eligibility.lua"))
+        config = (ROOT / "Config.lua").read_text(encoding="utf-8")
+        reset_at = config.find('resetHidden:SetText("Reset hidden quest pins")')
+        self.assertNotEqual(reset_at, -1)
+        self.assertIn("ns.ResetHiddenQuestPins()", config[reset_at:])
+        self.assertIn("control:SetEnabled(count > 0)", config[reset_at:])
+        self.assertNotIn("hiddenQuests =", config[: config.find("local optionChecks")])
+        pins = (ROOT / "MapPins.lua").read_text(encoding="utf-8")
+        self.assertIn("Shift-click to hide this marker.", pins)
+        self.assertIn('pin:SetScript("OnClick", OnPinClick)', pins)
 
     def test_single_savedvariables_name(self) -> None:
         toc = (ROOT / "ForeverQuestPins.toc").read_text(encoding="utf-8")

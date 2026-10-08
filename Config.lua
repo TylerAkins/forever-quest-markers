@@ -5,6 +5,7 @@ ns.defaults = {
     enabled = true,
     waypointProvider = "blizzard",
     showTrivial = false,
+    trivialLevelGap = 9,
     showRepeatable = true,
     showSeasonal = false,
     showWarEffort = false,
@@ -20,6 +21,7 @@ ns.defaults = {
 
 local optionChecks = {}
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
+local TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX = 3, 15
 local worldMapDropdownHooked = false
 
 local function NormalizeNumber(key, value)
@@ -29,6 +31,9 @@ local function NormalizeNumber(key, value)
     end
     if key == "iconScale" then
         return math.max(50, math.min(150, math.floor(value + 0.5)))
+    end
+    if key == "trivialLevelGap" then
+        return math.max(TRIVIAL_GAP_MIN, math.min(TRIVIAL_GAP_MAX, math.floor(value + 0.5)))
     end
     return math.max(-5, math.min(5, math.floor(value + 0.5)))
 end
@@ -81,6 +86,10 @@ local function DecodeMirror()
     local iconScale = tonumber(text:match("iconScale=(%d+)"))
     if iconScale and iconScale >= 50 and iconScale <= 150 then
         mirror.iconScale = iconScale
+    end
+    local trivialLevelGap = tonumber(text:match("trivialLevelGap=(%d+)"))
+    if trivialLevelGap and trivialLevelGap >= TRIVIAL_GAP_MIN and trivialLevelGap <= TRIVIAL_GAP_MAX then
+        mirror.trivialLevelGap = trivialLevelGap
     end
     mirror.waypointProvider = text:match("waypointProvider=(%a+)")
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
@@ -173,6 +182,7 @@ local function SaveMirror(db)
     local parts = { "revision=" .. tostring(Revision(db)), "waypointProvider=" .. db.waypointProvider }
     parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
+    parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -356,12 +366,16 @@ function ns.SlashCommand(msg)
         print("  /fqp on       Enable quest-start pins")
         print("  /fqp off      Disable quest-start pins")
         print("  /fqp trivial  Toggle low-level/trivial pins (off by default)")
+        print(("  /fqp trivial <%d-%d> Hide quests this many levels below you (default %d)"):format(
+            TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX, ns.defaults.trivialLevelGap))
         print("  /fqp repeatable Toggle repeatable quest pins (on by default)")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
         print("  /fqp npctooltip Toggle quest accept lines on NPC mouseover")
+        print("  /fqp hidden   List quest pins hidden with Shift-click on this character")
+        print("  /fqp unhide <id|all> Restore one or all hidden quest pins")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
         print("  /fqp refresh  Rebuild pins on the current map")
         print("  /fqp stats    Print database and pin counts")
@@ -395,6 +409,19 @@ function ns.SlashCommand(msg)
         end
         return
     end
+    if msg == "hidden" then
+        ns.PrintHiddenQuests()
+        return
+    end
+    if msg == "unhide" then
+        ns.UnhideFromSlash("")
+        return
+    end
+    local unhideArg = msg:match("^unhide%s+(.+)$")
+    if unhideArg then
+        ns.UnhideFromSlash(unhideArg)
+        return
+    end
     if msg == "npctooltip" or msg == "npctooltips" then
         ToggleFlag("showNPCTooltips", "NPC quest tooltips")
         return
@@ -405,6 +432,15 @@ function ns.SlashCommand(msg)
     end
     if msg == "trivial" then
         ToggleFlag("showTrivial", "Show trivial quests")
+        return
+    end
+    local trivialGap = msg:match("^trivial%s+(%d+)$")
+    if trivialGap then
+        ns.SetOption("trivialLevelGap", trivialGap)
+        Print(("Low-level pins: hiding quests %d+ levels below you."):format(ns.GetOption("trivialLevelGap")))
+        if ns.GetOption("showTrivial") then
+            Print("Low-level pins are currently shown. Type /fqp trivial to hide them.")
+        end
         return
     end
     if msg == "repeatable" then
@@ -493,6 +529,7 @@ function ns.PrintStats()
         ns.GetOption("autoAccept") and "on" or "off",
         ns.GetOption("autoTurnIn") and "on" or "off"
     ))
+    print(("  hidden quest pins on this character: %d"):format(#ns.HiddenQuestIDs()))
     if ns.settingsMode then
         print("  options UI: " .. tostring(ns.settingsMode))
     end
@@ -534,6 +571,7 @@ function ns.PrintSettingsDebug()
     for _, key in ipairs({
         "enabled",
         "showTrivial",
+        "trivialLevelGap",
         "showRepeatable",
         "showSeasonal",
         "showWarEffort",
@@ -862,9 +900,37 @@ function ns.TryRegisterSettings()
                 self,
                 "showTrivial",
                 "Show low-level quests",
-                "Hides pins for quests 9+ levels below your character when off."
+                "When off, hides pins for quests too far below your level. Set how far with the slider below."
             )
             trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+
+            local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+            trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -24)
+            trivialGap:SetSize(240, 16)
+            trivialGap:SetMinMaxValues(TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX)
+            trivialGap:SetValueStep(1)
+            if trivialGap.Low then trivialGap.Low:SetText(tostring(TRIVIAL_GAP_MIN)) end
+            if trivialGap.High then trivialGap.High:SetText(tostring(TRIVIAL_GAP_MAX)) end
+            local trivialGapLabel = trivialGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            trivialGapLabel:SetPoint("BOTTOM", trivialGap, "TOP", 0, 4)
+            trivialGap.ApplySaved = function(control)
+                control.syncing = true
+                local gap = ns.GetOption("trivialLevelGap")
+                control:SetValue(gap)
+                trivialGapLabel:SetText(("Hide quests %d+ levels below you"):format(gap))
+                local enabled = not ns.GetOption("showTrivial")
+                control:EnableMouse(enabled)
+                control:SetAlpha(enabled and 1 or 0.5)
+                control.syncing = false
+            end
+            trivialGap:SetScript("OnValueChanged", function(control, value)
+                if control.syncing or NormalizeNumber("trivialLevelGap", value) == ns.GetOption("trivialLevelGap") then
+                    return
+                end
+                ns.SetOption("trivialLevelGap", value)
+                control:ApplySaved()
+            end)
+            optionChecks[#optionChecks + 1] = trivialGap
 
             local repeatable = CreateOptionCheckbox(
                 self,
@@ -872,7 +938,7 @@ function ns.TryRegisterSettings()
                 "Show repeatable quest pins",
                 "Blue start markers for repeatable, daily, weekly, and monthly quests."
             )
-            repeatable:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 0, 0)
+            repeatable:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", -8, -16)
 
             local seasonal = CreateOptionCheckbox(
                 self,
@@ -1017,6 +1083,33 @@ function ns.TryRegisterSettings()
                 "Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."
             )
             debugBox:SetPoint("TOPLEFT", hideTracker, "BOTTOMLEFT", 0, 0)
+
+            local resetHidden = CreateFrame("Button", nil, self, "UIPanelButtonTemplate")
+            resetHidden:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 4, -16)
+            resetHidden:SetSize(200, 22)
+            resetHidden:SetText("Reset hidden quest pins")
+            local resetHiddenCaption = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+            resetHiddenCaption:SetPoint("TOPLEFT", resetHidden, "BOTTOMLEFT", 0, -4)
+            resetHiddenCaption:SetWidth(260)
+            resetHiddenCaption:SetJustifyH("LEFT")
+            resetHidden.ApplySaved = function(control)
+                local count = #ns.HiddenQuestIDs()
+                resetHiddenCaption:SetText(("%d hidden on this character. Shift-click a map pin to hide it."):format(count))
+                control:SetEnabled(count > 0)
+            end
+            resetHidden:SetScript("OnClick", function()
+                ns.ResetHiddenQuestPins()
+            end)
+            resetHidden:SetScript("OnEnter", function(control)
+                GameTooltip:SetOwner(control, "ANCHOR_RIGHT")
+                GameTooltip:SetText("Reset hidden quest pins", 1, 0.82, 0)
+                GameTooltip:AddLine("Show every quest pin you hid with Shift-click on this character. Other characters keep their hidden pins.", 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            resetHidden:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+            optionChecks[#optionChecks + 1] = resetHidden
 
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
             slash:SetPoint("TOPLEFT", inWorld, "BOTTOMLEFT", 4, -16)

@@ -21,6 +21,8 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - NPC mouseover tooltips listing quests you can accept (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Overlapping starts on the same spot stack into one pin
+- **Shift-click** a pin to hide it (every quest on a stacked pin) for the current character; restore with **Reset hidden quest pins** in settings or `/fqp unhide`
+- Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
@@ -44,7 +46,8 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Option | Default |
 |--------|---------|
 | Show quest-start pins | On |
-| Show trivial / low-level pins | Off (hides pins for quests 9+ levels below your character) |
+| Show trivial / low-level pins | Off (hides pins for quests too far below your character) |
+| Low-level range slider | 9 (hide quests 9+ levels below you; adjustable from 3 to 15, inactive while low-level pins are shown) |
 | Show repeatable quest pins | On |
 | Show seasonal / holiday pins | Off |
 | Show AQ war effort pins | Off (capital turn-ins: Senior Sergeants, signets, \"Needs Your Help\") |
@@ -55,6 +58,9 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts only) |
 | Debug tooltips | Off |
+| Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |
+
+Shift-click a quest-start marker to hide it. On a stacked marker every quest is hidden, so the marker disappears. Hidden quests also drop out of NPC mouseover tooltips, and `/fqp why <id>` reports them as `user-hidden`. The list is per character but saved in the account SavedVariables file (not the CVar mirror), so the settings repair below covers it. Use **Reset hidden quest pins** in settings, or `/fqp hidden` and `/fqp unhide <id|all>`, to restore them.
 
 Click a quest-start marker to set a waypoint at its zone coordinates. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
 
@@ -67,6 +73,9 @@ Blizzard supports one user waypoint at a time. Clicking a start replaces that wa
 | `/fqp` | Help |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |
+| `/fqp trivial <3-15>` | Hide quests this many levels below you |
+| `/fqp hidden` | List quest pins hidden with Shift-click on this character |
+| `/fqp unhide <id\|all>` | Restore one or all hidden quest pins |
 | `/fqp repeatable` | Toggle repeatable quest pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |

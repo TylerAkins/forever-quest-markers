@@ -662,7 +662,42 @@ local function ShowTooltip(pin)
         end
     end
     GameTooltip:AddLine("Click to track this quest start.", 1, 1, 1)
+    GameTooltip:AddLine("Shift-click to hide this marker.", 0.7, 0.7, 0.7)
     GameTooltip:Show()
+end
+
+local function PinQuestIDs(pin)
+    local ids = {}
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            ids[#ids + 1] = quests[i].id
+        end
+    elseif pin.questID then
+        ids[1] = pin.questID
+    end
+    return ids
+end
+
+local function HidePinQuests(pin)
+    local count = ns.HideQuests(PinQuestIDs(pin))
+    if hoveredPin == pin then
+        hoveredPin = nil
+    end
+    GameTooltip:Hide()
+    if count > 0 then
+        -- Refresh is deferred in combat; hide now so the marker cannot be clicked again.
+        pin:Hide()
+        print(("|cffffd100Forever Quest Pins:|r Hid %d quest(s). Use Reset hidden quest pins in options or /fqp unhide to restore."):format(count))
+    end
+end
+
+local function OnPinClick(pin)
+    if IsShiftKeyDown and IsShiftKeyDown() then
+        HidePinQuests(pin)
+        return
+    end
+    ns.TrackQuest(pin.questID, pin.data)
 end
 
 function MapPins:OnTitleLoaded(questID)
@@ -808,7 +843,7 @@ local function AcquirePin(parent)
             pin:EnableMouse(true)
         end
         EnsurePinTextures(pin)
-        pin:SetScript("OnClick", function(self) ns.TrackQuest(self.questID, self.data) end)
+        pin:SetScript("OnClick", OnPinClick)
         pin:SetScript("OnEnter", ShowTooltip)
         pin:SetScript("OnLeave", function(self)
             if hoveredPin == self then
@@ -847,7 +882,7 @@ function ForeverQuestPinsMapPinMixin:OnAcquired()
 end
 
 function ForeverQuestPinsMapPinMixin:OnClick(button)
-    if button == "LeftButton" then ns.TrackQuest(self.questID, self.data) end
+    if button == "LeftButton" then OnPinClick(self) end
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
