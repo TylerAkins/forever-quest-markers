@@ -686,8 +686,6 @@ function ns.CaptureOfferContext()
     ns.SetLastOfferNPC(qg, mapID, x, y)
 end
 
-local TRIVIAL_LEVEL_GAP = 9
-
 local function QuestLevelForTrivial(questID, data)
     local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
     if type(level) == "number" and level > 0 then
@@ -706,7 +704,7 @@ local function IsTrivial(questID, data)
         return false, false
     end
     local playerLevel = UnitLevel("player") or 1
-    if (playerLevel - questLevel) >= TRIVIAL_LEVEL_GAP then
+    if (playerLevel - questLevel) >= ns.GetOption("trivialLevelGap") then
         return true, true
     end
     return false, true
@@ -724,6 +722,9 @@ function ns.IsQuestAvailable(questID, data)
     end
     if ns.IsOnQuest(questID) then
         return false, "in-log"
+    end
+    if ns.IsQuestHidden and ns.IsQuestHidden(questID) then
+        return false, "user-hidden"
     end
     if data.repeatable and not ns.GetOption("showRepeatable") then
         return false, "repeatable"

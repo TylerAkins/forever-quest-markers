@@ -8,6 +8,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 |------|------|
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
 | `Config.lua` | Saved variables, slash commands, settings panel |
+| `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Realm"]` |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `MapPins.lua` | World-map start pins |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
@@ -74,6 +75,8 @@ python3 tests/test_addon_lua.py
 python3 -m pip install -r tests/requirements.txt
 python3 tests/test_quest_info_runtime.py
 python3 tests/test_waypoints_runtime.py
+python3 tests/test_eligibility_runtime.py
+python3 tests/test_pin_filters_runtime.py
 python3 tests/test_compile_addon.py
 python3 tests/test_att_release.py
 python3 tests/test_update_forever_interface.py

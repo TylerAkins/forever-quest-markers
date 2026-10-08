@@ -18,6 +18,7 @@
 Database\Metadata.lua
 Database\ForeverQuests.lua
 Config.lua
+HiddenQuests.lua
 WarEffort.lua
 Eligibility.lua
 NPCTooltips.lua

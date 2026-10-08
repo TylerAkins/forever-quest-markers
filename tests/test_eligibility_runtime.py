@@ -93,7 +93,10 @@ class CompletionRuntimeTests(unittest.TestCase):
 
     def test_trivial_pins_hidden_when_nine_or_more_levels_below_player(self) -> None:
         self.lua.execute("""
-            ns.GetOption = function(key) return key == 'showTrivial' and false or nil end
+            ns.GetOption = function(key)
+                if key == 'trivialLevelGap' then return 9 end
+                return key == 'showTrivial' and false or nil
+            end
             UnitLevel = function() return 30 end
             C_QuestLog.IsOnQuest = function() return false end
             C_QuestLog.IsQuestFlaggedCompleted = function() return false end
@@ -106,7 +109,10 @@ class CompletionRuntimeTests(unittest.TestCase):
 
     def test_trivial_pins_use_client_quest_level_without_db_min_level(self) -> None:
         self.lua.execute("""
-            ns.GetOption = function(key) return key == 'showTrivial' and false or nil end
+            ns.GetOption = function(key)
+                if key == 'trivialLevelGap' then return 9 end
+                return key == 'showTrivial' and false or nil
+            end
             UnitLevel = function() return 20 end
             UnitFactionGroup = function() return 'Horde' end
             C_QuestLog.IsOnQuest = function() return false end
@@ -116,6 +122,35 @@ class CompletionRuntimeTests(unittest.TestCase):
             end
             local available, reason = ns.IsQuestAvailable(8, { faction = 'Horde' })
             assert(available == false and reason == 'trivial')
+        """)
+
+    def test_trivial_gap_uses_configured_option(self) -> None:
+        self.lua.execute("""
+            ns.GetOption = function(key)
+                if key == 'trivialLevelGap' then return 5 end
+                return key == 'showTrivial' and false or nil
+            end
+            UnitLevel = function() return 30 end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            local available, reason = ns.IsQuestAvailable(1, { minLevel = 25 })
+            assert(available == false and reason == 'trivial')
+            available = ns.IsQuestAvailable(2, { minLevel = 26 })
+            assert(available == true)
+        """)
+
+    def test_hidden_quest_is_unavailable_even_when_offered(self) -> None:
+        self.lua.execute("""
+            ns.GetOption = function() return true end
+            UnitLevel = function() return 30 end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            ns.IsQuestHidden = function(questID) return questID == 5 end
+            ns.NoteOfferedQuest(5)
+            local available, reason = ns.IsQuestAvailable(5, { minLevel = 1 })
+            assert(available == false and reason == 'user-hidden')
+            available, reason = ns.IsQuestAvailable(6, { minLevel = 1 })
+            assert(available == true)
         """)
 
     def test_trivial_pins_shown_when_option_enabled(self) -> None:
