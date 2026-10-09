@@ -24,6 +24,15 @@ ns.defaults = {
 }
 
 local optionChecks = {}
+local pinCategoryOptions = {
+    showNormal = true,
+    showClass = true,
+    showDungeon = true,
+    showProfession = true,
+    showSeasonal = true,
+    showWarEffort = true,
+    showRepeatable = true,
+}
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
 local TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX = 3, 15
 local worldMapDropdownHooked = false
@@ -356,6 +365,9 @@ function ns.TryRegisterWorldMapDropdown()
             end, function()
                 ns.SetOption(key, not ns.GetOption(key))
             end)
+            if pinCategoryOptions[key] then
+                button:SetEnabled(function() return ns.GetOption("enabled") end)
+            end
             rootDescription:Insert(button)
         end
     end)
@@ -848,6 +860,11 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
         self:SetScript("OnClick", nil)
         applying = true
         self:SetChecked(not not ns.GetOption(optionKey))
+        if pinCategoryOptions[optionKey] then
+            local enabled = ns.GetOption("enabled")
+            self:SetEnabled(enabled)
+            self.Text:SetAlpha(enabled and 1 or 0.5)
+        end
         applying = false
         self:SetScript("OnClick", script)
     end
