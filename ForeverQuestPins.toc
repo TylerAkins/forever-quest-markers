@@ -26,4 +26,5 @@ Waypoints.lua
 MapPins.lua
 MapPins.xml
 AutoQuests.lua
+QuestLinks.lua
 Core.lua
