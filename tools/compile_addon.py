@@ -21,6 +21,7 @@ ROOT_FILES = (
     "Eligibility.lua",
     "HiddenQuests.lua",
     "NPCTooltips.lua",
+    "QuestLinks.lua",
     "ForeverQuestPins.toc",
     "LICENSE",
     "MapPins.lua",

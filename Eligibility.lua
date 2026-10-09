@@ -726,6 +726,20 @@ function ns.IsQuestAvailable(questID, data)
     if ns.IsQuestHidden and ns.IsQuestHidden(questID) then
         return false, "user-hidden"
     end
+    local category
+    if data.isAttunement or data.isInstanceQuest then
+        category = "showDungeon"
+    elseif data.classes and #data.classes > 0 then
+        category = "showClass"
+    elseif data.requireSkill then
+        category = "showProfession"
+    elseif not (data.repeatable or data.isYearly or data.event
+        or (ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data))) then
+        category = "showNormal"
+    end
+    if category and ns.GetOption(category) == false then
+        return false, "category-hidden"
+    end
     if data.repeatable and not ns.GetOption("showRepeatable") then
         return false, "repeatable"
     end
