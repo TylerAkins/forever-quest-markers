@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.2.10 - 2026-10-09
+
+- Grey out quest category controls in the world map dropdown and options panel while quest start pins are off. Re-enabling quest start pins restores access to the controls and keeps your saved selections.
+
 ## 0.2.9 - 2026-10-09
 
 - Add normal, class, profession, and dungeon / raid quest pin filters, enabled by default, to the options panel and world map Show dropdown.
