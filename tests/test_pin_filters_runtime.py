@@ -51,6 +51,77 @@ class PinFilterTests(unittest.TestCase):
             }
         """)
 
+    def test_category_defaults_and_saved_false_values(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            for _, key in ipairs({ "showNormal", "showClass", "showProfession", "showDungeon" }) do
+                assert(ns.GetOption(key) == true)
+                ns.SetOption(key, false)
+            end
+            ns.db = nil
+            ns.InitSettings()
+            for _, key in ipairs({ "showNormal", "showClass", "showProfession", "showDungeon" }) do
+                assert(ns.GetOption(key) == false)
+            end
+        """)
+
+    def test_category_filters_apply_to_offered_quests_and_preserve_other_categories(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            ns.IsOffered = function() return true end
+            local examples = {
+                { "showNormal", {} },
+                { "showClass", { classes = { 1 } } },
+                { "showProfession", { requireSkill = 164 } },
+                { "showDungeon", { isInstanceQuest = true } },
+                { "showDungeon", { isAttunement = true } },
+            }
+            for _, example in ipairs(examples) do
+                assert(ns.IsQuestAvailable(101, example[2]))
+                ns.SetOption(example[1], false)
+                local available, reason = ns.IsQuestAvailable(101, example[2])
+                assert(not available and reason == "category-hidden")
+                ns.SetOption(example[1], true)
+            end
+            ns.SetOption("showNormal", false)
+            for _, data in ipairs({ { repeatable = true }, { event = 1 },
+                { isYearly = true }, { classes = { 1 } }, { requireSkill = 164 },
+                { isInstanceQuest = true } }) do
+                assert(ns.IsQuestAvailable(101, data))
+            end
+            ns.SetOption("showClass", false)
+            assert(ns.IsQuestAvailable(101, { classes = { 1 }, isInstanceQuest = true }))
+            ns.SetOption("showProfession", false)
+            ns.SetOption("showClass", true)
+            assert(ns.IsQuestAvailable(101, { classes = { 1 }, requireSkill = 164 }))
+        """)
+
+    def test_map_menu_controls_share_saved_settings(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            ns.MapPins.Clear = function() cleared = true end
+            local modify
+            Menu = { ModifyMenu = function(_, callback) modify = callback end }
+            MenuUtil = { CreateCheckbox = function(label, selected, click)
+                return { label = label, selected = selected, click = click }
+            end }
+            assert(ns.TryRegisterWorldMapDropdown())
+            local buttons = {}
+            modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
+                Insert = function(_, button) table.insert(buttons, button) end })
+            assert(#buttons == 8)
+            local keys = { "enabled", "showNormal", "showClass", "showDungeon",
+                "showProfession", "showSeasonal", "showWarEffort", "showRepeatable" }
+            for i, button in ipairs(buttons) do
+                assert(not button.label:find("Show", 1, true))
+                local before = ns.GetOption(keys[i])
+                assert(button.selected() == before)
+                button.click()
+                assert(ns.GetOption(keys[i]) == not before)
+                assert(button.selected() == not before)
+            end
+        """)
+
     def test_trivial_gap_restores_from_mirror_and_clamps(self) -> None:
         self.use_mirror("revision=42;waypointProvider=blizzard;trivialLevelGap=5;enabled=1")
         self.lua.execute("""

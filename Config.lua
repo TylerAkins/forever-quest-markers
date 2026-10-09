@@ -6,6 +6,10 @@ ns.defaults = {
     waypointProvider = "blizzard",
     showTrivial = false,
     trivialLevelGap = 9,
+    showNormal = true,
+    showClass = true,
+    showProfession = true,
+    showDungeon = true,
     showRepeatable = true,
     showSeasonal = false,
     showWarEffort = false,
@@ -332,15 +336,28 @@ function ns.TryRegisterWorldMapDropdown()
         return false
     end
 
-    local button = MenuUtil.CreateCheckbox("Show quest-start pins", function()
-        return ns.GetOption("enabled")
-    end, function()
-        ns.SetOption("enabled", not ns.GetOption("enabled"))
-    end)
+    local filters = {
+        { "enabled", "Quest start" },
+        { "showNormal", "Normal quest start" },
+        { "showClass", "Class quest" },
+        { "showDungeon", "Dungeon / raid quest" },
+        { "showProfession", "Profession quest" },
+        { "showSeasonal", "Seasonal / holiday quest" },
+        { "showWarEffort", "AQ war effort" },
+        { "showRepeatable", "Repeatable quest" },
+    }
     Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", function(_, rootDescription)
         rootDescription:CreateDivider()
         rootDescription:CreateTitle("Forever Quest Pins")
-        rootDescription:Insert(button)
+        for _, filter in ipairs(filters) do
+            local key = filter[1]
+            local button = MenuUtil.CreateCheckbox(filter[2], function()
+                return ns.GetOption(key)
+            end, function()
+                ns.SetOption(key, not ns.GetOption(key))
+            end)
+            rootDescription:Insert(button)
+        end
     end)
     worldMapDropdownHooked = true
     return true
@@ -891,10 +908,47 @@ function ns.TryRegisterSettings()
             local pins = CreateOptionCheckbox(
                 self,
                 "enabled",
-                "Show quest-start pins",
+                "Show quest start pins",
                 "Start markers on the world map for unaccepted quests."
             )
             pins:SetPoint("TOPLEFT", mapHeading, "BOTTOMLEFT", -4, -4)
+
+            local normal = CreateOptionCheckbox(self, "showNormal", "Show normal quest start pins",
+                "Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories.")
+            normal:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+            local class = CreateOptionCheckbox(self, "showClass", "Show class quest pins",
+                "Class-restricted quest starts, except dungeon / raid quests.")
+            class:SetPoint("TOPLEFT", normal, "BOTTOMLEFT", 0, 0)
+            local dungeon = CreateOptionCheckbox(self, "showDungeon", "Show dungeon / raid quest pins",
+                "Dungeon, raid, and attunement quest starts.")
+            dungeon:SetPoint("TOPLEFT", class, "BOTTOMLEFT", 0, 0)
+
+            local profession = CreateOptionCheckbox(self, "showProfession", "Show profession quest pins",
+                "Profession-restricted quest starts, except class and dungeon / raid quests.")
+            profession:SetPoint("TOPLEFT", dungeon, "BOTTOMLEFT", 0, 0)
+            local seasonal = CreateOptionCheckbox(
+                self,
+                "showSeasonal",
+                "Show seasonal / holiday quest pins",
+                "Lunar Festival elders, Darkmoon Faire, and other event quests."
+            )
+            seasonal:SetPoint("TOPLEFT", profession, "BOTTOMLEFT", 0, 0)
+
+            local warEffort = CreateOptionCheckbox(
+                self,
+                "showWarEffort",
+                "Show AQ war effort pins",
+                "Commodity turn-ins at Orgrimmar / Ironforge (Senior Sergeants, signets, \"Needs Your Help\")."
+            )
+            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
+
+            local repeatable = CreateOptionCheckbox(
+                self,
+                "showRepeatable",
+                "Show repeatable quest pins",
+                "Blue start markers for repeatable, daily, weekly, and monthly quests."
+            )
+            repeatable:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, 0)
 
             local trivial = CreateOptionCheckbox(
                 self,
@@ -902,7 +956,7 @@ function ns.TryRegisterSettings()
                 "Show low-level quests",
                 "When off, hides pins for quests too far below your level. Set how far with the slider below."
             )
-            trivial:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+            trivial:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, -12)
 
             local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
             trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -24)
@@ -932,32 +986,8 @@ function ns.TryRegisterSettings()
             end)
             optionChecks[#optionChecks + 1] = trivialGap
 
-            local repeatable = CreateOptionCheckbox(
-                self,
-                "showRepeatable",
-                "Show repeatable quest pins",
-                "Blue start markers for repeatable, daily, weekly, and monthly quests."
-            )
-            repeatable:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", -8, -16)
-
-            local seasonal = CreateOptionCheckbox(
-                self,
-                "showSeasonal",
-                "Show seasonal / holiday quests",
-                "Lunar Festival elders, Darkmoon Faire, and other event quests."
-            )
-            seasonal:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
-
-            local warEffort = CreateOptionCheckbox(
-                self,
-                "showWarEffort",
-                "Show AQ war effort pins",
-                "Commodity turn-ins at Orgrimmar / Ironforge (Senior Sergeants, signets, \"Needs Your Help\")."
-            )
-            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
-
             local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            iconScale:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 8, -24)
+            iconScale:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", 0, -32)
             iconScale:SetSize(240, 16)
             iconScale:SetMinMaxValues(50, 150)
             iconScale:SetValueStep(5)
@@ -988,7 +1018,6 @@ function ns.TryRegisterSettings()
             npcTooltips:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
 
             local navigationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-            navigationHeading:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 4, -16)
             navigationHeading:SetText("Navigation")
             local providerLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             providerLabel:SetPoint("TOPLEFT", navigationHeading, "BOTTOMLEFT", 0, -12)
@@ -1111,8 +1140,10 @@ function ns.TryRegisterSettings()
             end)
             optionChecks[#optionChecks + 1] = resetHidden
 
+            navigationHeading:SetPoint("TOPLEFT", resetHiddenCaption, "BOTTOMLEFT", 0, -16)
+
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            slash:SetPoint("TOPLEFT", inWorld, "BOTTOMLEFT", 4, -16)
+            slash:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 4, -16)
             slash:SetText("Type /fqp for commands and troubleshooting.")
         end
         ns.SyncSettingsCheckboxes()
