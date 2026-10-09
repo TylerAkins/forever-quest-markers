@@ -119,6 +119,7 @@ end
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
+        ns.TryRegisterQuestLinks()
         if loaded == "Blizzard_WorldMap" then
             if ns.TryRegisterWorldMapDropdown then
                 ns.TryRegisterWorldMapDropdown()
@@ -154,6 +155,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_LOGIN" then
+        ns.TryRegisterQuestLinks()
         ns.TryRegisterSettings()
         if ns.TryRegisterWorldMapDropdown then
             ns.TryRegisterWorldMapDropdown()

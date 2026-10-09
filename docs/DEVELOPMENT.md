@@ -175,3 +175,23 @@ start on both its zone map and a parent map, accept it, progress its objectives,
 and turn it in. Repeat with TomTom selected. Check changing provider, manually
 replacing a Blizzard pin, abandoning a selected quest, and reloading the saved
 provider setting. Stacked start markers select their first quest.
+
+## Quest tracker links
+
+`QuestLinks.lua` appends **Copy Wowhead URL** to `MENU_QUEST_OBJECTIVE_TRACKER`.
+Forever's menu does not supply quest context, so secure post-hooks on the tracker
+header enter/leave methods identify the hovered block. The menu action captures
+its quest ID before the block can be recycled. This supports mouse right-clicks
+on Blizzard's quest titles; gamepad menus without a hovered header are unchanged.
+
+The menu tag, hover methods, owner, and popup edit box contract were checked
+against the [Forever Blizzard UI source at 9465cb2](https://github.com/Gethe/wow-ui-source/tree/9465cb273b5513495d8ecc12fbb19930dd6b8957),
+including `Blizzard_QuestObjectiveTracker.lua`, `Blizzard_ObjectiveTrackerModule.lua`,
+`Blizzard_StaticPopup/StaticPopup.lua`, and `Blizzard_StaticPopup_Game/GameDialog.lua`.
+Runtime tests cover URL selection, invalid IDs, delayed initialization, menu scope,
+and capturing the selected quest independently of later hover changes.
+
+In game, right-click two different tracked quest titles and copy each URL. Confirm
+the Forever quest IDs, existing tracking/details/share/abandon actions, Escape
+closing the copy dialog, and behavior after `/reload`. Combat and taint behavior
+require client verification.
