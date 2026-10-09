@@ -103,13 +103,20 @@ class PinFilterTests(unittest.TestCase):
             local modify
             Menu = { ModifyMenu = function(_, callback) modify = callback end }
             MenuUtil = { CreateCheckbox = function(label, selected, click)
-                return { label = label, selected = selected, click = click }
+                return { label = label, selected = selected, click = click,
+                    SetEnabled = function(self, predicate) self.enabled = predicate end }
             end }
             assert(ns.TryRegisterWorldMapDropdown())
             local buttons = {}
             modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
                 Insert = function(_, button) table.insert(buttons, button) end })
             assert(#buttons == 8)
+            assert(buttons[1].enabled == nil)
+            for i = 2, #buttons do assert(buttons[i].enabled()) end
+            ns.SetOption("enabled", false)
+            for i = 2, #buttons do assert(not buttons[i].enabled()) end
+            ns.SetOption("enabled", true)
+            for i = 2, #buttons do assert(buttons[i].enabled()) end
             local keys = { "enabled", "showNormal", "showClass", "showDungeon",
                 "showProfession", "showSeasonal", "showWarEffort", "showRepeatable" }
             for i, button in ipairs(buttons) do
@@ -120,6 +127,54 @@ class PinFilterTests(unittest.TestCase):
                 assert(ns.GetOption(keys[i]) == not before)
                 assert(button.selected() == not before)
             end
+        """)
+
+    def test_options_category_controls_disable_without_losing_selections(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            local controls = {}
+            local function newRegion()
+                return setmetatable({ SetAlpha = function(self, value) self.alpha = value end },
+                    { __index = function() return function() end end })
+            end
+            CreateFrame = function(kind)
+                local frame = { built = false, scripts = {}, Text = newRegion(), Low = newRegion(), High = newRegion() }
+                frame.SetScript = function(self, name, callback) self.scripts[name] = callback end
+                frame.GetScript = function(self, name) return self.scripts[name] end
+                frame.SetEnabled = function(self, value) self.enabled = value end
+                frame.SetChecked = function(self, value) self.checked = value end
+                frame.CreateFontString = function() return newRegion() end
+                setmetatable(frame, { __index = function() return function() end end })
+                table.insert(controls, frame)
+                return frame
+            end
+            Settings = {
+                RegisterCanvasLayoutCategory = function() return {} end,
+                RegisterAddOnCategory = function() end,
+            }
+            assert(ns.TryRegisterSettings())
+            controls[1].scripts.OnShow(controls[1])
+            ns.MapPins.Clear = function() end
+            local categories = { showNormal = true, showClass = true, showDungeon = true,
+                showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
+            ns.SetOption("showClass", false)
+            ns.SetOption("enabled", false)
+            local count = 0
+            for _, control in ipairs(controls) do
+                if categories[control.optionKey] then
+                    count = count + 1
+                    assert(control.enabled == false and control.Text.alpha == 0.5)
+                    assert(control.checked == ns.GetOption(control.optionKey))
+                end
+            end
+            assert(count == 7)
+            ns.SetOption("enabled", true)
+            for _, control in ipairs(controls) do
+                if categories[control.optionKey] then
+                    assert(control.enabled == true and control.Text.alpha == 1)
+                end
+            end
+            assert(ns.GetOption("showClass") == false)
         """)
 
     def test_trivial_gap_restores_from_mirror_and_clamps(self) -> None:
