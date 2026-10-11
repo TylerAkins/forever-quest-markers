@@ -1,3 +1,4 @@
-## 0.2.10 - 2026-10-09
+## 0.2.11 - 2026-10-11
 
-- Grey out quest category controls in the world map dropdown and options panel while quest start pins are off. Re-enabling quest start pins restores access to the controls and keeps your saved selections.
+- Update the ATT Forever quest database to `f5d90835055a8a21671d5406fc219ba17efba321`.
+- Ship 3906 quests with 4094 coordinate pins (27 attunement quests).
