@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
 
       - name: Checkout All The Things
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ATTWoWAddon/AllTheThings
           path: .cache/AllTheThings
