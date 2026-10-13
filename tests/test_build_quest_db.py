@@ -71,6 +71,30 @@ class PreprocessorTests(unittest.TestCase):
         self.assertIn(7848, result.quests)
         self.assertTrue(result.quests[7848].is_attunement)
 
+    def test_disabled_module_long_comments_preserve_attunement_data(self) -> None:
+        source = (FIXTURES / "disabled_module.lua").read_text(encoding="utf-8")
+        for equals in ("=", "=="):
+            with self.subTest(equals=equals):
+                wrapped = source.replace("--[[", f"--[{equals}[").replace("--]]", f"--]{equals}]")
+                wrapped = wrapped.replace("root(", "--[[ Nested module note ]]\nroot(", 1)
+                processed = preprocess(unwrap_disabled_module(wrapped), _ctx())
+                env = new_environment(_ctx())
+                evaluate_chunk(parse_lua(processed), env)
+                result = ExtractResult()
+                extract_from_roots(env.get("_roots", []), "disabled_module.lua", result)
+                mark_attunement_chains(result.quests, result.attunement_quest_ids)
+                self.assertIn(7848, result.quests)
+                self.assertTrue(result.quests[7848].is_attunement)
+
+    def test_disabled_module_requires_matching_delimiters_and_no_trailing_code(self) -> None:
+        for source in (
+            "--[=[\nq(1, {})\n--]]\n",
+            "--[=[\nq(1, {})\n--]=]\nq(2, {})\n",
+            "--[=[\nq(1, {})\n",
+        ):
+            with self.subTest(source=source):
+                self.assertEqual(source, unwrap_disabled_module(source))
+
 
 class ParserFailureTests(unittest.TestCase):
     def test_malformed_table_fails_loudly(self) -> None:
