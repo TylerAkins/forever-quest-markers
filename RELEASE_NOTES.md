@@ -1,4 +1,3 @@
-## 0.2.14 - 2026-10-13
+## 0.2.15 - 2026-10-13
 
-- Update the ATT Forever quest database to `f62d0552463cbfdf27d9f8a8910bd87f081ec65d`.
-- Ship 3973 quests with 4173 coordinate pins (27 attunement quests).
+- Add an option in settings and the world map Show dropdown to hide quest-start pins on world and continent maps while keeping them on zone, city, and dungeon maps. The option defaults on.
