@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.2.15 - 2026-10-13
+
+- Add an option in settings and the world map Show dropdown to hide quest-start pins on world and continent maps while keeping them on zone, city, and dungeon maps. The option defaults on.
+
 ## 0.2.14 - 2026-10-13
 
 - Update the ATT Forever quest database to `f62d0552463cbfdf27d9f8a8910bd87f081ec65d`.

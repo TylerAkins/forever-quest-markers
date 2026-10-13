@@ -3,6 +3,7 @@ local ADDON_NAME, ns = ...
 ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
+    showWorldMapPins = true,
     waypointProvider = "blizzard",
     showTrivial = false,
     trivialLevelGap = 9,
@@ -25,6 +26,7 @@ ns.defaults = {
 
 local optionChecks = {}
 local pinCategoryOptions = {
+    showWorldMapPins = true,
     showNormal = true,
     showClass = true,
     showDungeon = true,
@@ -347,6 +349,7 @@ function ns.TryRegisterWorldMapDropdown()
 
     local filters = {
         { "enabled", "Quest start" },
+        { "showWorldMapPins", "World and continent quest pins" },
         { "showNormal", "Normal quest start" },
         { "showClass", "Class quest" },
         { "showDungeon", "Dungeon / raid quest" },
@@ -599,6 +602,7 @@ function ns.PrintSettingsDebug()
     print("  Account, character, and CVar settings are synchronized; the newest revision wins.")
     for _, key in ipairs({
         "enabled",
+        "showWorldMapPins",
         "showTrivial",
         "trivialLevelGap",
         "showRepeatable",
@@ -930,9 +934,14 @@ function ns.TryRegisterSettings()
             )
             pins:SetPoint("TOPLEFT", mapHeading, "BOTTOMLEFT", -4, -4)
 
+            local worldPins = CreateOptionCheckbox(self, "showWorldMapPins",
+                "Show quest pins on world and continent maps",
+                "When off, quest starts remain visible on zone, city, and dungeon maps.")
+            worldPins:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+
             local normal = CreateOptionCheckbox(self, "showNormal", "Show normal quest start pins",
                 "Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories.")
-            normal:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+            normal:SetPoint("TOPLEFT", worldPins, "BOTTOMLEFT", 0, 0)
             local class = CreateOptionCheckbox(self, "showClass", "Show class quest pins",
                 "Class-restricted quest starts, except dungeon / raid quests.")
             class:SetPoint("TOPLEFT", normal, "BOTTOMLEFT", 0, 0)
