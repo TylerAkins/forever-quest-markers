@@ -1235,6 +1235,17 @@ function MapPins:Refresh(reason)
         return
     end
 
+    if not ns.GetOption("showWorldMapPins") and C_Map and C_Map.GetMapInfo then
+        local info = C_Map.GetMapInfo(viewedMapID)
+        local mapTypes = Enum and Enum.UIMapType
+        local worldType = mapTypes and mapTypes.World or 1
+        local continentType = mapTypes and mapTypes.Continent or 2
+        if info and (info.mapType == worldType or info.mapType == continentType) then
+            lastStatus.mode = "map-level-hidden"
+            return
+        end
+    end
+
     local canvas = GetCanvas()
     if not canvas or not canvas.GetWidth then
         lastStatus.lastError = "no-canvas"

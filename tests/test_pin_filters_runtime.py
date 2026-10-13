@@ -110,14 +110,14 @@ class PinFilterTests(unittest.TestCase):
             local buttons = {}
             modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
                 Insert = function(_, button) table.insert(buttons, button) end })
-            assert(#buttons == 8)
+            assert(#buttons == 9)
             assert(buttons[1].enabled == nil)
             for i = 2, #buttons do assert(buttons[i].enabled()) end
             ns.SetOption("enabled", false)
             for i = 2, #buttons do assert(not buttons[i].enabled()) end
             ns.SetOption("enabled", true)
             for i = 2, #buttons do assert(buttons[i].enabled()) end
-            local keys = { "enabled", "showNormal", "showClass", "showDungeon",
+            local keys = { "enabled", "showWorldMapPins", "showNormal", "showClass", "showDungeon",
                 "showProfession", "showSeasonal", "showWarEffort", "showRepeatable" }
             for i, button in ipairs(buttons) do
                 assert(not button.label:find("Show", 1, true))
@@ -155,7 +155,7 @@ class PinFilterTests(unittest.TestCase):
             assert(ns.TryRegisterSettings())
             controls[1].scripts.OnShow(controls[1])
             ns.MapPins.Clear = function() end
-            local categories = { showNormal = true, showClass = true, showDungeon = true,
+            local categories = { showWorldMapPins = true, showNormal = true, showClass = true, showDungeon = true,
                 showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
             ns.SetOption("showClass", false)
             ns.SetOption("enabled", false)
@@ -167,7 +167,7 @@ class PinFilterTests(unittest.TestCase):
                     assert(control.checked == ns.GetOption(control.optionKey))
                 end
             end
-            assert(count == 7)
+            assert(count == 8)
             ns.SetOption("enabled", true)
             for _, control in ipairs(controls) do
                 if categories[control.optionKey] then
@@ -175,6 +175,51 @@ class PinFilterTests(unittest.TestCase):
                 end
             end
             assert(ns.GetOption("showClass") == false)
+        """)
+
+    def test_world_map_option_survives_settings_reload(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            assert(ns.GetOption("showWorldMapPins"))
+            ns.SetOption("showWorldMapPins", false)
+            ns.db = nil
+            ns.InitSettings()
+            assert(ns.GetOption("showWorldMapPins") == false)
+        """)
+
+    def test_map_levels_and_missing_metadata(self) -> None:
+        self.lua.execute("""
+            ns.InitSettings()
+            wipe = function(t) for k in pairs(t) do t[k] = nil end end
+            WorldMapFrame = { GetMapID = function() return 947 end, IsShown = function() return true end }
+            C_Map = { GetMapInfo = function() return mapInfo end }
+            -- No usable canvas distinguishes allowed maps from filtered maps.
+            ns.SetOption("showWorldMapPins", false)
+            for _, mapType in ipairs({1, 2}) do
+                mapInfo = { mapType = mapType }
+                ns.MapPins:Refresh()
+                assert(ns.MapPins:GetStatus().mode == "map-level-hidden")
+                assert(ns.MapPins:GetStatus().count == 0)
+            end
+            for _, mapType in ipairs({0, 3, 4, 5, 6}) do
+                mapInfo = { mapType = mapType }
+                ns.MapPins:Refresh()
+                assert(ns.MapPins:GetStatus().mode == "no-canvas")
+            end
+            mapInfo = nil
+            ns.MapPins:Refresh()
+            assert(ns.MapPins:GetStatus().mode == "no-canvas")
+            C_Map.GetMapInfo = nil
+            ns.MapPins:Refresh()
+            assert(ns.MapPins:GetStatus().mode == "no-canvas")
+            C_Map.GetMapInfo = function() return {mapType = 1} end
+            ns.SetOption("showWorldMapPins", true)
+            ns.MapPins:Refresh()
+            assert(ns.MapPins:GetStatus().mode == "no-canvas")
+            ns.SetOption("showWorldMapPins", false)
+            InCombatLockdown = function() return true end
+            ns.MapPins:Refresh()
+            assert(ns.MapPins:GetStatus().mode == "combat-deferred")
         """)
 
     def test_trivial_gap_restores_from_mirror_and_clamps(self) -> None:
