@@ -31,19 +31,23 @@ _MAX_DISABLED_MODULE_START_LINE = 10
 
 
 def unwrap_disabled_module(source: str) -> str:
-    """Unwrap a single top-level `--[[ ... --]]` block near the start of a file."""
+    """Unwrap a single top-level Lua long comment near the start of a file."""
     lines = source.splitlines(keepends=True)
     start_idx = None
     for idx, line in enumerate(lines):
-        if line.strip() == "--[[":
+        match = re.fullmatch(r"--\[(=*)\[", line.strip())
+        if match:
             start_idx = idx
+            equals = match.group(1)
             break
     if start_idx is None or start_idx > _MAX_DISABLED_MODULE_START_LINE:
         return source
 
     end_idx = None
+    opener = f"--[{equals}["
+    closer = f"]{equals}]"
     for idx in range(len(lines) - 1, start_idx, -1):
-        if lines[idx].strip() == "--]]":
+        if lines[idx].strip() == f"--{closer}":
             end_idx = idx
             break
     if end_idx is None or end_idx <= start_idx:
@@ -54,7 +58,7 @@ def unwrap_disabled_module(source: str) -> str:
             return source
 
     body = "".join(lines[start_idx + 1 : end_idx])
-    if "--[[" in body or "--]]" in body:
+    if opener in body or closer in body:
         return source
     return "".join(lines[:start_idx]) + body
 
