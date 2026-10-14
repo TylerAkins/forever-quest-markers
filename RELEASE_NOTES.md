@@ -1,3 +1,4 @@
-## 0.2.15 - 2026-10-13
+## 0.2.16 - 2026-10-14
 
-- Add an option in settings and the world map Show dropdown to hide quest-start pins on world and continent maps while keeping them on zone, city, and dungeon maps. The option defaults on.
+- Update the ATT Forever quest database to `a9ceed3bf928764cb322fdc70f8e49976c4b01f5`.
+- Ship 3982 quests with 4182 coordinate pins (27 attunement quests).
