@@ -29,9 +29,19 @@ class PinFilterTests(unittest.TestCase):
             GetRealmName = function() return realmName end
             UnitLevel = function() return 30 end
             C_QuestLog = {}
+            gamepadEnabled = false
+            timerQueue = {}
+            C_Timer = { After = function(_, callback) table.insert(timerQueue, callback) end }
+            InputUtil = { IsGamepadUIEnabled = function() return gamepadEnabled end }
             shift = false
             IsShiftKeyDown = function() return shift end
-            GameTooltip = { Hide = function() tooltipHidden = true end }
+            GameTooltip = {
+                Hide = function() tooltipHidden = (tooltipHidden or 0) + 1 end,
+                SetOwner = function() tooltipOwners = (tooltipOwners or 0) + 1 end,
+                SetText = function() end,
+                AddLine = function() end,
+                Show = function() end,
+            }
             CreateFrame = function() return { SetScript = function() end } end
         """)
         for name in ADDON_FILES:
@@ -185,6 +195,57 @@ class PinFilterTests(unittest.TestCase):
             ns.db = nil
             ns.InitSettings()
             assert(ns.GetOption("showWorldMapPins") == false)
+        """)
+
+    def test_gamepad_pin_callbacks_run_after_map_input_handling(self) -> None:
+        self.lua.execute("""
+            ns.GetQuestTitle = function() return "Test quest" end
+            ns.TrackQuest = function(questID) tracked = questID end
+            local pin = { questID = 41, data = {}, IsShown = function() return true end }
+            gamepadEnabled = true
+
+            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+            assert((tooltipOwners or 0) == 0)
+            assert(type(timerQueue[1]) == "function")
+            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
+            assert(#timerQueue == 1)
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(tooltipOwners == nil and tooltipHidden == 1)
+
+            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+            assert((tooltipOwners or 0) == 0)
+            assert(type(timerQueue[1]) == "function")
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(tooltipOwners == 1)
+
+            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
+            assert(tooltipHidden == 1)
+            assert(type(timerQueue[1]) == "function")
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(tooltipHidden == 2)
+
+            ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
+            assert(tracked == nil)
+            assert(type(timerQueue[1]) == "function")
+            pin.questID = 42
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(tracked == nil)
+            pin.questID = 41
+
+            ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
+            assert(tracked == nil)
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(tracked == 41)
+
+            gamepadEnabled = false
+            tracked = nil
+            ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
+            assert(tracked == 41 and #timerQueue == 0)
         """)
 
     def test_map_levels_and_missing_metadata(self) -> None:
