@@ -29,6 +29,7 @@ local PATROL_EXTRA = {
 local pool = {}
 local active = {}
 local hoveredPin
+local gamepadTooltipUpdatePending = false
 local liveAccum = 0
 local canvasCache
 local canvasCacheName
@@ -41,6 +42,10 @@ local lastStatus = {
     parent = nil,
     paintedIDs = {},
 }
+
+local function IsGamepadUIEnabled()
+    return InputUtil and InputUtil.IsGamepadUIEnabled and InputUtil.IsGamepadUIEnabled() or false
+end
 
 local BLIZZARD_PIN_TEMPLATES = {
     "GroupMembersPinTemplate",
@@ -666,6 +671,29 @@ local function ShowTooltip(pin)
     GameTooltip:Show()
 end
 
+-- MapCanvas invokes pin hover handlers from its gamepad cursor update. Run
+-- tooltip changes after that update returns and combine rapid hover changes.
+local function ScheduleGamepadTooltipUpdate()
+    if not (C_Timer and C_Timer.After) then
+        return false
+    end
+    if gamepadTooltipUpdatePending then
+        return true
+    end
+    gamepadTooltipUpdatePending = true
+    C_Timer.After(0, function()
+        gamepadTooltipUpdatePending = false
+        local pin = hoveredPin
+        if pin and pin.IsShown and pin:IsShown() then
+            ShowTooltip(pin)
+        else
+            hoveredPin = nil
+            GameTooltip:Hide()
+        end
+    end)
+    return true
+end
+
 local function PinQuestIDs(pin)
     local ids = {}
     local quests = pin.quests
@@ -692,8 +720,11 @@ local function HidePinQuests(pin)
     end
 end
 
-local function OnPinClick(pin)
-    if IsShiftKeyDown and IsShiftKeyDown() then
+local function OnPinClick(pin, shiftDown)
+    if shiftDown == nil then
+        shiftDown = IsShiftKeyDown and IsShiftKeyDown() or false
+    end
+    if shiftDown then
         HidePinQuests(pin)
         return
     end
@@ -882,16 +913,40 @@ function ForeverQuestPinsMapPinMixin:OnAcquired()
 end
 
 function ForeverQuestPinsMapPinMixin:OnClick(button)
-    if button == "LeftButton" then OnPinClick(self) end
+    if button ~= "LeftButton" then
+        return
+    end
+    if IsGamepadUIEnabled() and C_Timer and C_Timer.After then
+        -- MapCanvas dispatches controller pin clicks from its input handler.
+        local pin = self
+        local questID, data = pin.questID, pin.data
+        local shiftDown = IsShiftKeyDown and IsShiftKeyDown() or false
+        C_Timer.After(0, function()
+            if pin.questID == questID and pin.data == data then
+                OnPinClick(pin, shiftDown)
+            end
+        end)
+        return
+    end
+    OnPinClick(self)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
+    if IsGamepadUIEnabled() then
+        hoveredPin = self
+        if ScheduleGamepadTooltipUpdate() then
+            return
+        end
+    end
     ShowTooltip(self)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseLeave()
     if hoveredPin == self then
         hoveredPin = nil
+    end
+    if IsGamepadUIEnabled() and ScheduleGamepadTooltipUpdate() then
+        return
     end
     GameTooltip:Hide()
 end
