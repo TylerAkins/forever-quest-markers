@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.2.17 - 2026-10-15
+
+- Defer controller-driven map pin tooltip and click callbacks until MapCanvas finishes its input update.
+
 ## 0.2.16 - 2026-10-14
 
 - Update the ATT Forever quest database to `a9ceed3bf928764cb322fdc70f8e49976c4b01f5`.
