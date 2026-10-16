@@ -1,3 +1,4 @@
-## 0.2.17 - 2026-10-15
+## 0.2.18 - 2026-10-16
 
-- Defer controller-driven map pin tooltip and click callbacks until MapCanvas finishes its input update.
+- Update the ATT Forever quest database to `00a49a81c9a8b0f030dca9d0b5ada25dfba69980`.
+- Ship 4052 quests with 4254 coordinate pins (27 attunement quests).
