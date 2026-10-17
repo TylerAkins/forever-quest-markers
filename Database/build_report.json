@@ -1,12 +1,12 @@
 {
-  "att_sha": "10164719738bdc1e7baa23dd854bef4c7184a6ac",
+  "att_sha": "70a0b420d8384743994a671f1b946230a5ef5011",
   "att_source": "https://github.com/ATTWoWAddon/AllTheThings.git",
-  "att_titles": 4048,
+  "att_titles": 4053,
   "attunement_quests": 27,
-  "coord_pins": 4254,
+  "coord_pins": 4255,
   "excluded": {
     "no_coords": 500,
-    "timeline": 73
+    "timeline": 33
   },
   "files_discovered": 165,
   "files_parsed": 165,
@@ -63,9 +63,9 @@
     2521
   ],
   "parse_errors": [],
-  "quests_emitted": 4052,
-  "quests_seen": 4626,
-  "quests_with_coords": 4052,
-  "zzold_fallback_quests": 1822,
-  "zzold_files_parsed": 44
+  "quests_emitted": 4053,
+  "quests_seen": 4587,
+  "quests_with_coords": 4053,
+  "zzold_fallback_quests": 1722,
+  "zzold_files_parsed": 39
 }
