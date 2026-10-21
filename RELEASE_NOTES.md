@@ -1,4 +1,4 @@
-## 0.2.24 - 2026-10-20
+## 0.2.25 - 2026-10-21
 
-- Update the ATT Forever quest database to `15a9857ea3c53da111dd12ddeb73660d203a8bf5`.
-- Ship 4061 quests with 4264 coordinate pins (27 attunement quests).
+- Update the ATT Forever quest database to `1eb9f4552d6060944767711d75a6401c0edc8bf4`.
+- Ship 4152 quests with 4366 coordinate pins (27 attunement quests).
