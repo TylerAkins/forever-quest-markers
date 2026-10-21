@@ -14,7 +14,7 @@ World of Warcraft, its quests, and related names are trademarks and copyrights o
 
 ## Addon code
 
-Forever Quest Pins is original GPLv3 code: a native-map overlay and a Python converter that turns ATT Forever Lua into addon database files. Tracker UI and HereBeDragons usage from other addons were not copied.
+Forever Quest Pins is original GPLv3 code: a native-map overlay and a Go converter that turns ATT Forever Lua into addon database files. Tracker UI and HereBeDragons usage from other addons were not copied.
 
 Map pins use Blizzard’s `QuestNormal` atlas. The generated yellow, blue, and red-orange textures under `Media/` are original fallback art used only when the preferred atlas rendering fails.
 

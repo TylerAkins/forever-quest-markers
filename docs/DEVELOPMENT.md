@@ -2,6 +2,8 @@
 
 Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001**). Players should read [README.md](../README.md). This file is for maintaining the repo, database, and releases.
 
+Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT on `PATH`.
+
 ## Layout
 
 | Path | Role |
@@ -22,11 +24,11 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
-| `tools/build_quest_db.py` | ATT Forever `.contrib/.db/forever` → `Database/` |
-| `tools/att_dsl/` | ATT Lua parser and quest extractor |
-| `tools/release.py` | Prepares database releases and validates automated patch releases |
-| `tools/update_forever_interface.py` | Blizzard build feed → TOC compatibility release |
-| `tools/generate_quest_icon.py` | Regenerates the fallback TGA |
+| `cmd/fqp` | Go command-line entry point for repository tools |
+| `internal/attdsl/` | ATT Lua parser, quest extractor, and database emitter |
+| `internal/release/` | Prepares database releases and validates automated patch releases |
+| `internal/foreverupdate/` | Blizzard build feed → TOC compatibility release |
+| `internal/addontools/` | Addon compiler, settings repair, and fallback TGA generation |
 | `.pkgmeta` | [BigWigs packager](https://github.com/BigWigsMods/packager) rules |
 
 ## Database
@@ -34,7 +36,7 @@ Forever Quest Pins is a small World of Warcraft Forever addon (Interface **16001
 Coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data (`.contrib/.db/forever`).
 
 ```bash
-python3 tools/build_quest_db.py --att /path/to/AllTheThings --out Database
+go run ./cmd/fqp build-db --att /path/to/AllTheThings --out Database
 ```
 
 A second run on the same ATT commit produces the same bytes. NPC turn-in ids are compiled into the database but are not shown on map pins or NPC tooltips.
@@ -64,23 +66,16 @@ Workflow **Update Forever interface** (`.github/workflows/update-forever-interfa
 - Closes that fixed PR if the current Interface is already supported on `main`
 - Publishes the prepared GitHub and CurseForge release only after a human merges the PR
 
-Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzard moves Forever off `wow_classic_beta` after launch, change the single `VERSIONS_URL` constant in `tools/update_forever_interface.py` rather than falling back to another WoW flavor.
+Run it manually from `main` when an out-of-cycle Forever patch lands. If Blizzard moves Forever off `wow_classic_beta` after launch, change the single `VersionsURL` constant in `internal/foreverupdate/update.go` rather than falling back to another WoW flavor.
 
 ## Tests
 
 ```bash
-python3 tests/test_build_quest_db.py
-python3 tests/test_validate_generated.py
-python3 tests/test_addon_lua.py
-python3 -m pip install -r tests/requirements.txt
-python3 tests/test_quest_info_runtime.py
-python3 tests/test_waypoints_runtime.py
-python3 tests/test_eligibility_runtime.py
-python3 tests/test_pin_filters_runtime.py
-python3 tests/test_compile_addon.py
-python3 tests/test_att_release.py
-python3 tests/test_update_forever_interface.py
+go test ./...
+go vet ./...
 ```
+
+The Go Lua-runtime tests require LuaJIT on `PATH`. On macOS with Homebrew, install it with `brew install luajit`; CI installs the Ubuntu `luajit` package.
 
 CI (`validate`) also regenerates the database at the pinned ATT commit and fails on drift, then dry-runs the packager.
 
@@ -89,12 +84,20 @@ CI (`validate`) also regenerates the database at the pinned ATT commit and fails
 Build a clean, directly installable addon folder with:
 
 ```bash
-python3 tools/compile_addon.py
+go run ./cmd/fqp compile-addon
 ```
 
 Each run deletes the previous `.compiled/ForeverQuestPins` directory and recreates it from the files shipped by `.pkgmeta`. The generated TOC uses the current Git description as its version. Copy `.compiled/ForeverQuestPins` directly into the client's `Interface/AddOns` directory.
 
-Use `python3 tools/compile_addon.py --dry-run` to list the files without changing `.compiled/`.
+Use `go run ./cmd/fqp compile-addon --dry-run` to list the files without changing `.compiled/`.
+
+## Other repository tools
+
+Run the Blizzard compatibility updater with `go run ./cmd/fqp update-interface`. It fetches the current `wow_classic_beta` version feed and prepares release files only when the interface changes. Use `--versions-file /path/to/feed` to test a saved response, or `--dry-run` to preview it.
+
+Prepare or validate release metadata with `go run ./cmd/fqp release prepare --base-version VERSION`, `go run ./cmd/fqp release validate-notes --version VERSION`, `go run ./cmd/fqp release validate ...`, or `go run ./cmd/fqp release validate-tag ...`. The automated workflows use the validation commands when deciding whether a reviewed patch release is valid.
+
+Regenerate fallback textures with `go run ./cmd/fqp generate-icon`. Repair local account settings with `go run ./cmd/fqp repair-settings --addon /path/to/ForeverQuestPins --saved /path/to/SavedVariables/ForeverQuestPins.lua`; add `--apply` only after closing WoW completely. The tool previews by default and never modifies the saved settings file.
 
 ## Releases
 
@@ -105,7 +108,7 @@ Use `python3 tools/compile_addon.py --dry-run` to list the files without changin
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
-`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `tools/`, `.github/`, or `build_report.json`.
+`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `cmd/`, `internal/`, `.github/`, or `build_report.json`.
 
 The packager uploads `RELEASE_NOTES.md` as the release changelog instead of generating notes from Git commits. This prevents commit metadata from appearing on CurseForge and avoids publishing the full release history. Automated database and Forever Interface PRs replace this file with only their prepared release entry. CI requires that entry to match `VERSION` and rejects email addresses.
 

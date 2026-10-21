@@ -27,7 +27,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
 
-Quest coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, converted by `tools/build_quest_db.py`. Quests without a usable spawn in ATT stay in the database for tooltips and prerequisites but may not get a map pin.
+Quest coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, converted by the Go tool `go run ./cmd/fqp build-db`. Quests without a usable spawn in ATT stay in the database for tooltips and prerequisites but may not get a map pin.
 
 ## Install
 
@@ -118,7 +118,7 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 
 ## Support
 
-For settings that reset despite being saved to disk, close WoW completely and run `tools/repair_local_settings.py` from the GitHub source checkout with `--addon` pointing to your installed `ForeverQuestPins` folder and `--saved` pointing to that account's `SavedVariables/ForeverQuestPins.lua`. It previews by default; add `--apply` to create a TOC backup and link the live account settings into the addon loader. It never edits the saved settings. Reapply after addon updates replace the TOC. This is account-specific: do not share the patched addon across accounts. To undo, restore `ForeverQuestPins.toc.before-settings-repair` and remove only the `LocalSavedVariables` link, leaving its target directory intact. The repair tool is available in the source repository, not the CurseForge addon package.
+For settings that reset despite being saved to disk, close WoW completely and run `go run ./cmd/fqp repair-settings` from the GitHub source checkout using Go 1.27 or later. Pass `--addon` pointing to your installed `ForeverQuestPins` folder and `--saved` pointing to that account's `SavedVariables/ForeverQuestPins.lua`. It previews by default; add `--apply` to create a TOC backup and link the live account settings into the addon loader. It never edits the saved settings. Reapply after addon updates replace the TOC. This is account-specific: do not share the patched addon across accounts. To undo, restore `ForeverQuestPins.toc.before-settings-repair` and remove only the `LocalSavedVariables` link, leaving its target directory intact. The repair tool is available in the source repository, not the CurseForge addon package.
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
