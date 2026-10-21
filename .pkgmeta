@@ -14,7 +14,10 @@ ignore:
   - VERSION
   - docs
   - tests
-  - tools
+  - cmd
+  - internal
+  - go.mod
+  - go.sum
   - Database/build_report.json
   - "**/.DS_Store"
   - "**/Thumbs.db"
