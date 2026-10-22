@@ -57,6 +57,10 @@ local function IsGamepadUIEnabled()
     return InputUtil and InputUtil.IsGamepadUIEnabled and InputUtil.IsGamepadUIEnabled() or false
 end
 
+local function IsGamepadCursorVisible()
+    return IsGamepadUIEnabled() and SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown() or false
+end
+
 local function ReturnNoPinCenter()
     return nil
 end
@@ -1101,25 +1105,17 @@ function ForeverQuestPinsMapPinMixin:OnClick(button)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
-    if IsGamepadUIEnabled() then
-        hoveredPin = self
-        local pin = self
-        if C_Timer and C_Timer.After then
-            C_Timer.After(0, function()
-                if IsGamepadUIEnabled() and hoveredPin == pin and pin.IsShown and pin:IsShown() then
-                    ShowTooltip(pin, GetGamepadTooltip())
-                end
-            end)
-        else
-            ShowTooltip(pin, GetGamepadTooltip())
-        end
+    if IsGamepadCursorVisible() then
+        -- Gamepad hover is resolved by the cursor poll. MapCanvas can dispatch
+        -- this event before its cursor position settles, so showing here lets
+        -- the next poll immediately clear the tooltip.
         return
     end
     ShowTooltip(self)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseLeave()
-    if IsGamepadUIEnabled() then
+    if IsGamepadCursorVisible() then
         return
     end
     if hoveredPin == self then
