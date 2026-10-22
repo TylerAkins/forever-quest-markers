@@ -1,8 +1,8 @@
 {
   "artifact": {
-    "version": "1.0.6-dev.f844007",
-    "commit": "f844007b329b72f18cf2bda3d87540012294732a",
-    "sha256": "703ef7939b642fd8b6213475a976fd81751e87bdb5609ce1168722b5476c25d9",
+    "version": "1.0.6-dev.1f53833",
+    "commit": "1f538335cfbb240c14a97c340f48c555fdc8a52b",
+    "sha256": "e38709c87c0f216dbf4fefea20927b812abe0481ecfb02fc05cf6cafb2539a22",
     "ref": "preview",
     "flavor": "Forever",
     "contract_version": 4,
@@ -19,9 +19,9 @@
   },
   "counts": {
     "quests": 5232,
-    "quests_with_coords": 4775,
-    "coord_pins": 7260,
-    "quests_with_turn_ins": 4936,
+    "quests_with_coords": 4778,
+    "coord_pins": 6721,
+    "quests_with_turn_ins": 4937,
     "turn_in_npcs": 1682,
     "turn_in_objects": 197,
     "instance_quests": 678,
@@ -36,10 +36,10 @@
     "quests_with_alt_quests": 446
   },
   "start_gaps": {
-    "no_starter": 183,
+    "no_starter": 181,
     "item_no_drop_source": 249,
     "item_drop_no_spawn": 14,
-    "starter_no_spawn": 11,
+    "starter_no_spawn": 10,
     "unmapped_zone": 0,
     "no_dungeon_entrance": 0,
     "missing_entity": 0,
@@ -115,16 +115,15 @@
       92812,
       95682,
       96784,
-      97328,
       98093,
       98903
     ]
   },
   "turn_ins": {
-    "quests_with_turn_ins": 4936,
+    "quests_with_turn_ins": 4937,
     "npcs": 1682,
     "objects": 197,
-    "npc_quests": 4706,
+    "npc_quests": 4707,
     "object_only_quests": 230
   },
   "policy_coverage": {

@@ -153,7 +153,7 @@ func (builder *recordBuilder) build(quest *questiedb.Quest) (Record, error) {
 	record := Record{
 		QuestID:    quest.ID,
 		Title:      quest.Name,
-		MinLevel:   quest.QuestLevel,
+		MinLevel:   quest.RequiredLevel,
 		Races:      nil,
 		Classes:    nil,
 		IsYearly:   builder.policy.HolidayQuestIDs[quest.ID],
