@@ -800,18 +800,22 @@ local function ShowTooltip(pin, tooltip)
 end
 
 function MapPins:FindGamepadCursorPin()
-    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
     if not (SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown()
-        and scroll and scroll.GetGamepadCursorPosition) then
+        and GetCursorPosition) then
         return nil
     end
     if GetCVarBool and GetCVarBool("GamepadDisableTooltips") then
         return nil
     end
-    local cursorX, cursorY = scroll:GetGamepadCursorPosition()
+    local cursorX, cursorY = GetCursorPosition()
     if not cursorX or not cursorY then
         return nil
     end
+    local uiScale = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    if not uiScale or uiScale <= 0 then
+        uiScale = 1
+    end
+    cursorX, cursorY = cursorX / uiScale, cursorY / uiScale
     local closestPin, closestDistance
     for i = 1, #active do
         local pin = active[i]
