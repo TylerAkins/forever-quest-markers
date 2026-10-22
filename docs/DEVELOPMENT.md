@@ -17,7 +17,8 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
-| `Database/Metadata.lua` | Pinned ATT commit |
+| `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
+| `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
 | `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
@@ -25,7 +26,9 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
 | `cmd/fqp` | Go command-line entry point for repository tools |
-| `internal/attdsl/` | ATT Lua parser, quest extractor, and database emitter |
+| `internal/questiedb/` | QuestieDB TOC, CBOR, entity, zone, and dungeon readers |
+| `internal/questiepolicy/` | Questie holiday and instance-tag policy parser |
+| `internal/questdb/` | Merge, start resolution, schema mapping, emitter, and report |
 | `internal/release/` | Prepares database releases and validates automated patch releases |
 | `internal/foreverupdate/` | Blizzard build feed → TOC compatibility release |
 | `internal/addontools/` | Addon compiler, settings repair, and fallback TGA generation |
@@ -33,22 +36,39 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 
 ## Database
 
-Coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data (`.contrib/.db/forever`).
+Quest coordinates, starters, turn-in targets, and restrictions come from the [QuestieDB](https://github.com/Questie/QuestieDB) Forever preview artifact. Holiday membership and instance-tag corrections come from [Questie](https://github.com/Questie/Questie).
 
 ```bash
-go run ./cmd/fqp build-db --att /path/to/AllTheThings --out Database
+go run ./cmd/fqp build-db \
+  --questiedb /path/to/QuestieDB-Forever.zip \
+  --questiedb-sha 703ef7939b642fd8b6213475a976fd81751e87bdb5609ce1168722b5476c25d9 \
+  --questiedb-ref preview \
+  --questie /path/to/Questie \
+  --questie-sha d0b0e89ac228e380e139f1c524408507e6d4fe1b \
+  --out Database
 ```
 
-A second run on the same ATT commit produces the same bytes. NPC turn-in ids are compiled into the database but are not shown on map pins or NPC tooltips.
+`--questiedb` accepts the release zip or an extracted directory. A second run on the same artifact and policy commit produces the same bytes. `Database/Metadata.lua` records the artifact SHA-256, build commit, policy commit, contract version, and counts. `Database/QuestTagCorrections.lua` is loaded before `Eligibility.lua` and gives the runtime a static instance hint when `C_QuestLog.GetQuestTagInfo` is missing or slow.
+
+The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete.
+
+Optional parity review against an older database:
+
+```bash
+go run ./cmd/fqp build-db ... --out Database --baseline /path/to/old/ForeverQuests.lua
+```
+
+This adds recovered/lost starts, coordinate changes, flag changes, and conflicts to `Database/build_report.json`. The committed build report omits the baseline so CI can reproduce it exactly from the pinned inputs.
 
 ### Automated updates
 
-Workflow **Update ATT database** (`.github/workflows/update-att-db.yml`):
+Workflow **Update QuestieDB database** (`.github/workflows/update-questie-db.yml`):
 
 - Daily at 06:00 UTC and on manual **Run workflow**
-- Checks out ATT `main` (sparse: Forever DB + parser constants)
-- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; ATT SHA-only updates with no quest diff are ignored
-- Closes its existing `att-db-update` PR if regenerated quest records return to the version already on `main`
+- Downloads the mutable QuestieDB `preview` artifact and records its SHA-256 in the PR
+- Checks out Questie at the policy commit already pinned in `Database/Metadata.lua`
+- Opens a versioned PR only when `Database/ForeverQuests.lua` changed; artifact SHA-only updates with no quest diff are ignored
+- Closes its existing `questie-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
 - Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
@@ -77,7 +97,7 @@ go vet ./...
 
 The Go Lua-runtime tests require LuaJIT on `PATH`. On macOS with Homebrew, install it with `brew install luajit`; CI installs the Ubuntu `luajit` package.
 
-CI (`validate`) also regenerates the database at the pinned ATT commit and fails on drift, then dry-runs the packager.
+CI (`validate`) downloads the artifact checksum pinned in `Database/Metadata.lua`, regenerates the database from that artifact and the pinned Questie policy commit, fails on drift, and dry-runs the packager.
 
 ## Local builds
 
@@ -135,16 +155,17 @@ The payload URL contains the API token. Never commit it, add it as an Actions se
 
 The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
-License on CurseForge: **GPLv3**. Credit All The Things for the quest data. See [ATTRIBUTION.md](../ATTRIBUTION.md).
+License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data and Questie for policy corrections. See [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## Pin textures
 
-Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance/attunement, class, profession, repeatable, then normal; mixed stacks stay yellow. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
+Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, repeatable, then normal; mixed stacks stay yellow. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
 ## Support split
 
-- Pin / eligibility / auto-quest bugs → this repo’s issues
-- Wrong coordinates or missing Forever quests in the converted DB → [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, unless our converter dropped a spawn ATT has
+- Pin / eligibility / auto-quest / NPC tooltip bugs → this repo’s issues
+- Wrong coordinates or missing Forever quests in the converted DB → [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, unless our converter dropped a spawn QuestieDB has
+- Wrong holiday membership or instance tags → [Questie](https://github.com/Questie/Questie) corrections, unless our parser dropped an entry
 
 ## Waypoint providers
 

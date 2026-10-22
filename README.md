@@ -17,9 +17,10 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
-- Map pin tooltips with `[level] quest name` (Forever tracker level when available; ATT inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
-- NPC mouseover tooltips listing quests you can accept (on by default)
+- Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
+- NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
+- Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
 - Overlapping starts on the same spot stack into one pin
 - **Shift-click** a pin to hide it (every quest on a stacked pin) for the current character; restore with **Reset hidden quest pins** in settings or `/fqp unhide`
 - Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
@@ -27,7 +28,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Seasonal / holiday starts (Lunar Festival elders, Darkmoon Faire, …) off by default
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge on by default (turn off in settings if the stack is too noisy)
 
-Quest coordinates and restrictions come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, converted by the Go tool `go run ./cmd/fqp build-db`. Quests without a usable spawn in ATT stay in the database for tooltips and prerequisites but may not get a map pin.
+Quest coordinates, quest-giver IDs, turn-in targets, and restrictions come from [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, with holiday and instance-tag policy from [Questie](https://github.com/Questie/Questie). The Go tool `go run ./cmd/fqp build-db` generates the addon database. Quests without a usable spawn stay in the database for tooltips and prerequisites but may not get a map pin.
 
 ## Install
 
@@ -50,6 +51,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Show trivial / low-level pins | Off (hides pins for quests too far below your character) |
 | Low-level range slider | 9 (hide quests 9+ levels below you; adjustable from 3 to 15, inactive while low-level pins are shown) |
 | Show repeatable quest pins | On |
+| Show spawn clusters | On (group nearby spawns into one pin; off shows one pin per quest) |
 | Show seasonal / holiday quest pins | Off |
 | Show normal quest start pins | On |
 | Show class quest pins | On |
@@ -61,13 +63,13 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Icon Scale | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
-| Show quests on NPC tooltips | On (available accepts only) |
+| Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Debug tooltips | Off |
 | Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |
 
 Shift-click a quest-start marker to hide it. On a stacked marker every quest is hidden, so the marker disappears. Hidden quests also drop out of NPC mouseover tooltips, and `/fqp why <id>` reports them as `user-hidden`. The list is per character but saved in the account SavedVariables file (not the CVar mirror), so the settings repair below covers it. Use **Reset hidden quest pins** in settings, or `/fqp hidden` and `/fqp unhide <id|all>`, to restore them.
 
-Click a quest-start marker to set a waypoint at its zone coordinates. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
+Click a quest-start marker to set a waypoint at the nearest actual spawn in its cluster. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
 
 Blizzard supports one user waypoint at a time. Clicking a start replaces that waypoint. Manually changing the Blizzard pin or tracking another quest stops the pending handoff. The addon only clears a matching pin that it created. Forever builds may differ in API support; an unavailable API is reported in chat. Enable **Show in-world destination marker** under Navigation to display Blizzard’s floating marker and distance. This controls the shared `showInGameNavigation` game setting and reflects its current value, including changes made by other addons.
 
@@ -84,11 +86,12 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp hidden` | List quest pins hidden with Shift-click on this character |
 | `/fqp unhide <id\|all>` | Restore one or all hidden quest pins |
 | `/fqp repeatable` | Toggle repeatable quest pins |
+| `/fqp spawns` | Toggle grouped spawn pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
-| `/fqp npctooltip` | Toggle NPC quest accept tooltips |
+| `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
@@ -106,7 +109,7 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 
 - **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
 - **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
-- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips list available accepts only (including session gossip offers); they do not list in-log turn-ins.
+- **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips list available accepts (including session gossip offers) and active quests that are ready to turn in at that NPC. Incomplete turn-ins are not listed.
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** missing from the export will not pin until the export (or a gossip offer we already saw this session) knows them
 - **Item-started** and **object-started** quests stay in the database. They get a start pin only when the export has a usable spawn (drop NPC, chest, or world object). Pure item starts with no spawn stay tooltip-only.
@@ -122,11 +125,12 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
-- Quest **database** mistakes usually belong in [All The Things](https://github.com/ATTWoWAddon/AllTheThings) Forever data, or in this repo’s ATT converter if ATT has the quest but we dropped a spawn
+- Quest **database** mistakes usually belong in [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, or in this repo’s QuestieDB converter if QuestieDB has the quest but we dropped a spawn
+- Quest **policy** mistakes (holiday membership or instance tags) belong in [Questie](https://github.com/Questie/Questie) corrections, or in the matching parser here
 - If you ran a **0.1.10–0.1.16** beta and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
 ## License
 
-Addon code is **GPLv3** ([LICENSE](LICENSE)). Quest records come from [All The Things](https://github.com/ATTWoWAddon/AllTheThings). See [ATTRIBUTION.md](ATTRIBUTION.md).
+Addon code is **GPL-3.0-or-later** ([LICENSE](LICENSE)). Quest records come from [QuestieDB](https://github.com/Questie/QuestieDB), with policy data from [Questie](https://github.com/Questie/Questie). See [ATTRIBUTION.md](ATTRIBUTION.md).
 
 Maintainers: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

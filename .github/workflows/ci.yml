@@ -38,6 +38,7 @@ jobs:
           test -f Media/QuestAvailable.tga
           test -f Database/ForeverQuests.lua
           test -f Database/Metadata.lua
+          test -f Database/QuestTagCorrections.lua
           test -f LICENSE
           test -f ATTRIBUTION.md
           test -f README.md
@@ -78,30 +79,54 @@ jobs:
             --release-content-changed
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
-      - name: Read pinned ATT SHA
-        id: att
+      - name: Read pinned inputs
+        id: pins
         run: |
           set -euo pipefail
-          SHA="$(sed -n 's/^[[:space:]]*attCommit = "\([0-9a-f][0-9a-f]*\)".*/\1/p' Database/Metadata.lua)"
-          test -n "$SHA"
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          ARTIFACT_SHA="$(sed -n 's/^[[:space:]]*artifactSHA256 = "\([0-9a-f][0-9a-f]*\)".*/\1/p' Database/Metadata.lua)"
+          POLICY_SHA="$(sed -n 's/^[[:space:]]*policyCommit = "\([0-9a-f][0-9a-f]*\)".*/\1/p' Database/Metadata.lua)"
+          test -n "$ARTIFACT_SHA"
+          test -n "$POLICY_SHA"
+          {
+            echo "artifact=$ARTIFACT_SHA"
+            echo "policy=$POLICY_SHA"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Checkout ATT at pinned SHA
+      - name: Download pinned QuestieDB artifact
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          curl --fail --silent --show-error --location \
+            "https://github.com/Questie/QuestieDB/releases/download/preview/QuestieDB-Forever.zip" \
+            --output .cache/QuestieDB-Forever.zip
+          printf '%s  %s\n' "${{ steps.pins.outputs.artifact }}" ".cache/QuestieDB-Forever.zip" | sha256sum --check --strict
+
+      - name: Checkout Questie policy at pinned commit
         uses: actions/checkout@v7
         with:
-          repository: ATTWoWAddon/AllTheThings
-          ref: ${{ steps.att.outputs.sha }}
-          path: .cache/AllTheThings
+          repository: Questie/Questie
+          ref: ${{ steps.pins.outputs.policy }}
+          path: .cache/Questie
           sparse-checkout: |
-            .contrib/.db/forever
-            .contrib/Parser/lib/Constants
+            Database/Corrections/Holidays/quests
+            Database/Corrections/questTagInfoCorrections.lua
           sparse-checkout-cone-mode: false
 
       - name: Regenerate database and fail on drift
         run: |
           set -euo pipefail
-          go run ./cmd/fqp build-db --att .cache/AllTheThings --out Database
-          git diff --exit-code -- Database/ForeverQuests.lua Database/Metadata.lua Database/build_report.json
+          go run ./cmd/fqp build-db \
+            --questiedb .cache/QuestieDB-Forever.zip \
+            --questiedb-sha "${{ steps.pins.outputs.artifact }}" \
+            --questiedb-ref preview \
+            --questie .cache/Questie \
+            --questie-sha "${{ steps.pins.outputs.policy }}" \
+            --out Database
+          git diff --exit-code -- \
+            Database/ForeverQuests.lua \
+            Database/Metadata.lua \
+            Database/QuestTagCorrections.lua \
+            Database/build_report.json
 
       - name: Dry-run package
         uses: BigWigsMods/packager@v2

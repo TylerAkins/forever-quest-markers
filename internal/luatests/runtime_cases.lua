@@ -336,7 +336,6 @@ end
                 { "showClass", { classes = { 1 } } },
                 { "showProfession", { requireSkill = 164 } },
                 { "showDungeon", { isInstanceQuest = true } },
-                { "showDungeon", { isAttunement = true } },
             }
             for _, example in ipairs(examples) do
                 assert(ns.IsQuestAvailable(101, example[2]))
@@ -345,6 +344,22 @@ end
                 assert(not available and reason == "category-hidden")
                 ns.SetOption(example[1], true)
             end
+            ns.QuestTagCorrections = { [102] = 81 }
+            assert(ns.IsQuestAvailable(102, {}))
+            ns.SetOption("showDungeon", false)
+            local available, reason = ns.IsQuestAvailable(102, {})
+            assert(not available and reason == "category-hidden")
+            ns.SetOption("showDungeon", true)
+            ns.QuestTagCorrections = nil
+            ns.InvalidateInstanceQuestCache()
+            C_QuestLog.GetQuestTagInfo = function(questID)
+                if questID == 103 then
+                    return { tagID = 81, tagName = "Dungeon" }
+                end
+            end
+            assert(ns.IsInstanceQuest(103, {}))
+            C_QuestLog.GetQuestTagInfo = nil
+            ns.InvalidateInstanceQuestCache()
             ns.SetOption("showNormal", false)
             for _, data in ipairs({ { repeatable = true }, { event = 1 },
                 { isYearly = true }, { classes = { 1 } }, { requireSkill = 164 },
@@ -1395,6 +1410,127 @@ assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
             assert(ns.ByMap[1][1]==5 and ns.Quests[5].qg==nil)
 
 end
+cases["quest_info_runtime.test_offered_quests_fill_coordless_records"] = function()
+dofile("tests/fixtures/quest_info.lua")
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+            ns.Quests[7]={turnIns={100}}
+            ns.SetLastOfferNPC(200,2521,42,23)
+            ns.NoteOfferedQuest(7)
+            assert(ns.Quests[7].qg==200)
+            assert(ns.Quests[7].mapID==2521 and ns.Quests[7].x==42 and ns.Quests[7].y==23)
+            assert(#ns.ByMap[2521]==1 and ns.ByMap[2521][1]==7)
+            ns.NoteOfferedQuest(7)
+            assert(#ns.ByMap[2521]==1)
+
+end
+cases["quest_info_runtime.test_npc_tooltip_deduplicates_accept_and_turn_in"] = function()
+dofile("tests/fixtures/quest_info.lua")
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.options={showNPCTooltips=true}
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+            function ns.GetQuestDifficultyRGB() return 1,1,1 end
+            UnitGUID=function() return 'Creature-0-0-0-0-100-0000000000' end
+            ns.NPCTooltips.GetAcceptRows=function()
+                return { { id=20, text='[5] Quest 20', level=5, marker='!' } }
+            end
+            ns.NPCTooltips.GetTurnInRows=function()
+                return { { id=20, text='[5] Quest 20', level=5, marker='?' } }
+            end
+            local lines={}
+            GameTooltip={ AddLine=function(_, text) lines[#lines+1]=text end, Show=function() end }
+            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
+            assert(#lines==1 and lines[1]=='! [5] Quest 20')
+
+end
+cases["quest_info_runtime.test_npc_tooltip_coordless_turn_in"] = function()
+dofile("tests/fixtures/quest_info.lua")
+
+            ns.options={showNPCTooltips=true}
+            ns.Quests={ [20]={ turnIns={100}, title='Coordless' } }
+            ns.active={ [20]=true }
+            ns.complete={ [20]=true }
+            function ns.GetOption(key) return ns.options[key] end
+            function GetQuestsCompleted() return {} end
+            C_QuestLog={
+                IsOnQuest=function(id) return ns.active[id] and true or false end,
+                IsQuestFlaggedCompleted=function() return false end,
+                IsComplete=function(id) return ns.complete[id] and true or false end,
+            }
+            UnitLevel=function() return 20 end
+            function ns.GetQuestTitle(id) return 'Quest '..id end
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.NPCTooltips:InvalidateStarterIndex()
+            assert(#ns.NPCTooltips:GetTurnInRows(100)==1)
+
+end
+cases["quest_info_runtime.test_npc_tooltip_skips_instances"] = function()
+dofile("tests/fixtures/quest_info.lua")
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.options={showNPCTooltips=true}
+            function ns.GetOption(key) return ns.options[key] end
+            UnitGUID=function() return 'Creature-0-0-0-0-100-0000000000' end
+            IsInInstance=function() return true, 'party' end
+            local lines={}
+            GameTooltip={ AddLine=function(_, text) lines[#lines+1]=text end, Show=function() end }
+            ns.NPCTooltips.GetAcceptRows=function() error('accept lookup must not run in an instance') end
+            ns.NPCTooltips.GetTurnInRows=function() error('turn-in lookup must not run in an instance') end
+            ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
+            assert(#lines==0)
+
+end
+cases["quest_info_runtime.test_npc_tooltip_multiple_turn_in_npcs"] = function()
+dofile("tests/fixtures/quest_info.lua")
+
+            ns.options={showNPCTooltips=true}
+            ns.Quests={ [20]={ turnIns={100,101} } }
+            ns.active={ [20]=true }
+            ns.complete={ [20]=true }
+            function ns.GetOption(key) return ns.options[key] end
+            function GetQuestsCompleted() return {} end
+            C_QuestLog={
+                IsOnQuest=function(id) return ns.active[id] and true or false end,
+                IsQuestFlaggedCompleted=function() return false end,
+                IsComplete=function(id) return ns.complete[id] and true or false end,
+            }
+            UnitLevel=function() return 20 end
+            function ns.GetQuestTitle(id) return 'Quest '..id end
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.NPCTooltips:InvalidateStarterIndex()
+            assert(#ns.NPCTooltips:GetTurnInRows(100)==1)
+            assert(#ns.NPCTooltips:GetTurnInRows(101)==1)
+
+end
+cases["quest_info_runtime.test_instance_classification_prefers_runtime_tag"] = function()
+dofile("tests/fixtures/quest_info.lua")
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+            ns.QuestTagCorrections={ [104]=81 }
+            assert(ns.IsInstanceQuest(104, {}))
+            C_QuestLog.GetQuestTagInfo=function()
+                return { tagID=0, tagName="None" }
+            end
+            assert(ns.IsInstanceQuest(104, {}))
+            ns.InvalidateInstanceQuestCache()
+            C_QuestLog.GetQuestTagInfo=function()
+                return { tagID=0, tagName="None" }
+            end
+            assert(ns.IsInstanceQuest(105, { isInstanceQuest=true }))
+            assert(not ns.IsInstanceQuest(106, {}))
+
+end
 cases["quest_info_runtime.test_new_offered_quest_hides_when_accepted"] = function()
 dofile("tests/fixtures/quest_info.lua")
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
@@ -1409,21 +1545,21 @@ assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
             assert(available == false and reason == 'in-log')
 
 end
-cases["quest_info_runtime.test_att_title_fallback_when_client_has_no_title"] = function()
+cases["quest_info_runtime.test_data_title_fallback_when_client_has_no_title"] = function()
 dofile("tests/fixtures/quest_info.lua")
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
 
             ns.Quests = {
-                [8171] = { attTitle = "The Battle for Arathi Basin!" },
+                [8171] = { title = "The Battle for Arathi Basin!" },
             }
             assert(ns.GetQuestTitle(8171) == "The Battle for Arathi Basin!")
 
 end
-cases["quest_info_runtime.test_client_title_wins_over_att_fallback"] = function()
+cases["quest_info_runtime.test_client_title_wins_over_data_fallback"] = function()
 dofile("tests/fixtures/quest_info.lua")
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
 
-            ns.Quests = { [1] = { attTitle = "ATT name" } }
+            ns.Quests = { [1] = { title = "Questie name" } }
             C_QuestLog.GetTitleForQuestID = function() return "Client name" end
             assert(ns.GetQuestTitle(1) == "Client name")
 
@@ -1585,14 +1721,45 @@ assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
             ns.NPCTooltips:InvalidateStarterIndex()
             ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
             assert(lines[1]=='! [5] Quest 10')
-            assert(#lines==1)
+            assert(lines[2]=='? [5] Quest 20')
+            assert(#lines==2)
 
             lines={}
             GameTooltip.fqpQuestRows=nil
             ns.Quests[10]=nil
+            ns.active[20]=true
+            ns.complete[20]=true
             ns.NPCTooltips:InvalidateStarterIndex()
             ns.NPCTooltips:AppendAcceptRows(GameTooltip, 'target')
-            assert(#lines==0)
+            assert(#lines==1 and lines[1]=='? [5] Quest 20')
+
+end
+cases["quest_info_runtime.test_npc_tooltip_turn_ins_need_ready_state"] = function()
+dofile("tests/fixtures/quest_info.lua")
+
+            ns.options={showNPCTooltips=true,showRepeatable=true,showSeasonal=true,showWarEffort=true,showTrivial=true}
+            ns.Quests={ [20]={ turnIns={100} } }
+            ns.active={ [20]=true }
+            ns.complete={ [20]=false }
+            function ns.GetOption(key) return ns.options[key] end
+            function GetQuestsCompleted() return {} end
+            C_QuestLog={
+                IsOnQuest=function(id) return ns.active[id] and true or false end,
+                IsQuestFlaggedCompleted=function() return false end,
+                IsComplete=function(id) return ns.complete[id] and true or false end,
+            }
+            UnitLevel=function() return 20 end
+            function ns.GetQuestTitle(id) return 'Quest '..id end
+            function ns.GetQuestDifficultyLevel(id) return 5 end
+
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.NPCTooltips:InvalidateStarterIndex()
+            assert(#ns.NPCTooltips:GetTurnInRows(100)==0)
+            ns.complete[20]=true
+            local rows=ns.NPCTooltips:GetTurnInRows(100)
+            assert(#rows==1 and rows[1].marker=='?')
 
 end
 cases["quest_info_runtime.test_yearly_quests_stay_hidden_until_seasonal_pins_are_on"] = function()
@@ -2397,39 +2564,85 @@ assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
             assert(#messages==1)
 
 end
+local function tooltipHas(text)
+    for _, line in ipairs(tooltipLines or {}) do
+        if line == text then
+            return true
+        end
+    end
+    return false
+end
+
 local function setupPinRendering()
     options = { enabled = true, showWorldMapPins = true, showRepeatable = true,
         showNormal = true, showClass = true, showProfession = true, showDungeon = true,
-        showSeasonal = true, showWarEffort = true, showTrivial = true, iconScale = 100 }
+        showSeasonal = true, showWarEffort = true, showTrivial = true, showSpawnClusters = true,
+        iconScale = 100 }
     local function texture()
         return {
-            SetAllPoints = function() end, Hide = function() end, Show = function() end,
+            SetAllPoints = function() end, Hide = function(self) self.shown = false end,
+            Show = function(self) self.shown = true end,
+            IsShown = function(self) return self.shown == true end,
+            ClearAllPoints = function() end,
+            SetPoint = function(self, ...) self.point = { ... } end,
+            SetSize = function(self, width, height) self.width, self.height = width, height end,
             SetAtlas = function(self, name) self.atlas = name end,
             SetTexture = function(self, name) self.file = name end,
+            SetColorTexture = function(self, r, g, b, a) self.colorTexture = { r, g, b, a } end,
             SetDesaturated = function(self, value) self.desaturated = value end,
             SetVertexColor = function(self, r, g, b, a) self.color = { r, g, b, a } end,
             SetDrawLayer = function() end, SetBlendMode = function() end,
-            SetAlpha = function() end, SetTexCoord = function() end,
+            SetAlpha = function(self, value) self.alpha = value end, SetTexCoord = function() end,
+        }
+    end
+    local function fontString()
+        return {
+            SetPoint = function() end, SetJustifyH = function() end,
+            SetShadowColor = function() end, SetShadowOffset = function() end,
+            SetTextColor = function() end, SetDrawLayer = function() end,
+            SetScale = function() end, SetAlpha = function() end,
+            SetText = function(self, text) self.text = text end,
+            GetText = function(self) return self.text end,
+            Show = function(self) self.shown = true end,
+            Hide = function(self) self.shown = false end,
+            IsShown = function(self) return self.shown == true end,
         }
     end
     local function frame()
         return {
-            SetScript = function() end, RegisterForClicks = function() end,
+            SetScript = function(self, event, fn) self.scripts = self.scripts or {}; self.scripts[event] = fn end,
+            RegisterForClicks = function() end,
             EnableMouse = function() end, SetParent = function(self, parent) self.parent = parent end,
-            CreateTexture = function() return texture() end,
+            CreateTexture = function(self)
+                local created = texture()
+                self.textures = self.textures or {}
+                self.textures[#self.textures + 1] = created
+                return created
+            end,
+            CreateFontString = function() return fontString() end,
             SetSize = function(self, width, height) self.width, self.height = width, height end,
             SetScale = function(self, scale) self.scale = scale end,
             GetScale = function(self) return self.scale or 1 end,
+            GetEffectiveScale = function(self) return self.scale or 1 end,
+            GetCenter = function(self) return self.centerX, self.centerY end,
+            GetLeft = function(self) return self.left or 0 end,
+            GetTop = function(self) return self.top or 0 end,
             SetIgnoreParentScale = function() end, SetFrameLevel = function() end,
-            SetFrameStrata = function() end, SetAlpha = function() end,
-            Show = function() end, Hide = function() end, ClearAllPoints = function() end,
-            SetPoint = function() end, GetParent = function(self) return self.parent end,
+            SetFrameStrata = function(self, strata) self.strata = strata end, SetAlpha = function() end,
+            Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end,
+            IsShown = function(self) return self.shown == true end,
+            ClearAllPoints = function() end,
+            SetPoint = function(self, ...) self.point = { ... } end, GetParent = function(self) return self.parent end,
             GetFrameLevel = function() return 1 end, GetFrameStrata = function() return "LOW" end,
         }
     end
     local canvas = frame()
     canvas.GetWidth = function() return 1000 end
     canvas.GetHeight = function() return 800 end
+    UIParent = frame()
+    UIParent.GetEffectiveScale = function() return 1 end
+    cloudFrames = {}
+    mapCanvas = canvas
     local map = frame()
     map.GetCanvas = function() return canvas end
     map.GetMapID = function() return 1 end
@@ -2439,15 +2652,34 @@ local function setupPinRendering()
     CreateFrame = function(_, _, parent)
         local created = frame()
         created.parent = parent
-        if parent then pin = created end
+        if parent == UIParent then
+            cloudFrames[#cloudFrames + 1] = created
+        elseif parent then
+            pin = created
+            created.centerX, created.centerY = 500, 400
+        end
         return created
     end
     C_QuestLog = {
         GetAllCompletedQuestIDs = function() return {} end,
         IsOnQuest = function() return false end,
     }
+    C_Map = {
+        GetPlayerMapPosition = function()
+            return { GetXY = function() return 0.5, 0.5 end }
+        end,
+    }
+    tooltipLines = {}
+    GameTooltip = {
+        SetOwner = function() end,
+        SetText = function(_, text) tooltipLines = { text } end,
+        AddLine = function(_, text) tooltipLines[#tooltipLines + 1] = text end,
+        Show = function() end, Hide = function() end,
+    }
     UnitLevel = function() return 60 end
     wipe = function(value) for key in pairs(value) do value[key] = nil end end
+    trackedQuestID = nil
+    trackedData = nil
     ns = {
         Quests = { [101] = { mapID = 1, x = 50, y = 50, repeatable = true } },
         ByMap = { [1] = { 101 } },
@@ -2456,6 +2688,7 @@ local function setupPinRendering()
         PrefetchQuestInfo = function() end,
         RequestRefresh = function() end,
         IsQuestHidden = function() return false end,
+        TrackQuest = function(questID, data) trackedQuestID, trackedData = questID, data end,
     }
     assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
     assert(loadfile("MapPins.lua"))("ForeverQuestPins", ns)
@@ -2488,6 +2721,141 @@ cases["map_pins_runtime.repeatable_pin_is_blue_and_hidden_when_opted_out"] = fun
     ns.MapPins:Refresh("test-filter")
     assert(ns.MapPins:GetStatus().count == 0)
     assert(ns.MapPins:GetStatus().paintedIDs[101] == nil)
+end
+
+cases["map_pins_runtime.nearby_spawn_points_share_one_counted_pin_and_hover_cloud"] = function()
+    setupPinRendering()
+    ns.Quests = {
+        [101] = {
+            mapID = 1, x = 50, y = 50, title = "Spawn test",
+            coords = { { 50, 50, 1 }, { 50.4, 50.1, 1 }, { 50.8, 50.2, 1 } },
+        },
+    }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = true
+
+    ns.MapPins:Refresh("spawn-cluster")
+    local status = ns.MapPins:GetStatus()
+    assert(status.count == 1, "cluster pins " .. tostring(status.count))
+    assert(pin.spawnCount == 3, "spawn count " .. tostring(pin.spawnCount))
+    assert(pin.Badge == nil, "count badge should not be drawn")
+    assert(status.cloudCount == 0, "cloud before hover " .. tostring(status.cloudCount))
+
+    pin.scripts.OnEnter(pin)
+    assert(status.cloudCount == 3, "cloud after hover " .. tostring(status.cloudCount))
+    assert(tooltipHas("3 possible spawn locations"), "tooltip count line")
+    pin.scripts.OnLeave(pin)
+    assert(status.cloudCount == 0, "cloud after leave " .. tostring(status.cloudCount))
+end
+
+cases["pin_filters_runtime.spawn_cluster_option_defaults_on_and_persists_off"] = function()
+    ns = {}
+    C_CVar = nil
+    ForeverQuestPinsDB = nil
+    ForeverQuestPinsCharDB = nil
+    ForeverQuestPinsDB_Settings = nil
+    ForeverQuestPinsCharacterSettings = nil
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    ns.InitSettings()
+    assert(ns.GetOption("showSpawnClusters") == true)
+    ns.SetOption("showSpawnClusters", false)
+    ns.db = nil
+    ns.InitSettings()
+    assert(ns.GetOption("showSpawnClusters") == false)
+end
+
+cases["map_pins_runtime.spawn_cloud_dots_use_map_pixels"] = function()
+    setupPinRendering()
+    -- Zoomed canvas: the map scales the canvas, so cloud dots must keep using
+    -- plain map pixels instead of the pin's counter-scale.
+    mapCanvas.scale = 2
+    ns.Quests = {
+        [101] = {
+            mapID = 1, x = 50, y = 50, title = "Spawn test",
+            coords = { { 50, 50, 1 }, { 50.4, 50, 1 } },
+        },
+    }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = true
+
+    ns.MapPins:Refresh("spawn-cloud")
+    -- The hovered pin sits at the canvas point for (0.5, 0.5) at zoom 2.
+    pin.centerX, pin.centerY = 1000, 0
+    pin.scripts.OnEnter(pin)
+    assert(#cloudFrames == 2, "cloud dots " .. tostring(#cloudFrames))
+    assert(cloudFrames[1].strata == "FULLSCREEN_DIALOG", "dot strata " .. tostring(cloudFrames[1].strata))
+    local anchor = cloudFrames[1]
+    local second = cloudFrames[2]
+    assert(anchor.point[2] == UIParent and anchor.point[3] == "BOTTOMLEFT")
+    assert(math.abs(anchor.point[4] - 1000) < 0.001, "anchor dot x " .. tostring(anchor.point[4]))
+    assert(math.abs(anchor.point[5] - 0) < 0.001, "anchor dot y " .. tostring(anchor.point[5]))
+    assert(math.abs(second.point[4] - 1008) < 0.001, "second dot x " .. tostring(second.point[4]))
+    assert(math.abs(second.point[5] - 0) < 0.001, "second dot y " .. tostring(second.point[5]))
+end
+
+cases["map_pins_runtime.stacked_quests_keep_separate_spawn_counts"] = function()
+    setupPinRendering()
+    local coords = { { 50, 50, 1 }, { 50.4, 50.1, 1 }, { 50.8, 50.2, 1 } }
+    ns.Quests = {
+        [101] = { mapID = 1, x = 50, y = 50, title = "First quest", coords = coords },
+        [102] = { mapID = 1, x = 50, y = 50, title = "Second quest", coords = coords },
+    }
+    ns.ByMap = { [1] = { 101, 102 } }
+    options.showSpawnClusters = true
+
+    ns.MapPins:Refresh("spawn-stack")
+    local status = ns.MapPins:GetStatus()
+    assert(status.count == 1, "stacked pins " .. tostring(status.count))
+    assert(status.paintedIDs[101] and status.paintedIDs[102])
+    assert(pin.spawnCount == 3, "stacked spawn count " .. tostring(pin.spawnCount))
+    assert(pin.Badge == nil, "count badge should not be drawn")
+end
+
+cases["map_pins_runtime.spawn_cluster_count_is_capped_per_quest"] = function()
+    setupPinRendering()
+    local coords = {}
+    for i = 1, 10 do
+        coords[i] = { 5 + (i * 10), 50, 1 }
+    end
+    ns.Quests = {
+        [101] = { mapID = 1, x = 5, y = 50, title = "Spawn test", coords = coords },
+    }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = true
+
+    ns.MapPins:Refresh("spawn-cap")
+    assert(ns.MapPins:GetStatus().count == 6, "capped cluster pins " .. tostring(ns.MapPins:GetStatus().count))
+end
+
+cases["map_pins_runtime.distant_spawn_points_cluster_or_collapse_to_one_pin"] = function()
+    setupPinRendering()
+    ns.Quests = {
+        [101] = {
+            mapID = 1, x = 20, y = 50, title = "Spawn test",
+            coords = { { 20, 50, 1 }, { 50, 50, 1 }, { 80, 50, 1 } },
+        },
+    }
+    ns.ByMap = { [1] = { 101 } }
+
+    options.showSpawnClusters = true
+    ns.MapPins:Refresh("spawn-clusters")
+    assert(ns.MapPins:GetStatus().count == 3, "distant cluster pins " .. tostring(ns.MapPins:GetStatus().count))
+    assert(pin.spawnCount == 1)
+    assert(pin.Badge == nil)
+
+    options.showSpawnClusters = false
+    ns.MapPins:Refresh("spawn-single")
+    assert(ns.MapPins:GetStatus().count == 1, "single pin count " .. tostring(ns.MapPins:GetStatus().count))
+    assert(pin.spawnCount == 3, "single pin spawn count " .. tostring(pin.spawnCount))
+    assert(pin.Badge == nil)
+    assert(pin.nx == 0.5 and pin.ny == 0.5, "anchor " .. tostring(pin.nx) .. "," .. tostring(pin.ny))
+
+    pin.scripts.OnEnter(pin)
+    assert(ns.MapPins:GetStatus().cloudCount == 0)
+    assert(tooltipHas("3 possible spawn locations"), "single pin tooltip count line")
+    pin.scripts.OnClick(pin)
+    assert(trackedQuestID == 101)
+    assert(trackedData.mapID == 1 and trackedData.x == 50 and trackedData.y == 50)
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

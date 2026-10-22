@@ -11,9 +11,15 @@ local NORMAL_ICON_ATLAS = "QuestNormal"
 local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local REPEATABLE_ICON_ATLAS = "QuestDaily"
 local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
-local ATTUNEMENT_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
+local INSTANCE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
 local PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B = 1.00, 0.65, 0.20
 local PIN_SIZE = 24
+-- Keep dense spawn loops together without merging separate camps. Six pins per
+-- quest cap a zone view while the hover cloud still shows every point.
+local SPAWN_CLUSTER_RADIUS_PX = 48
+local SPAWN_CLUSTER_LIMIT = 6
+local SPAWN_DOT_SIZE = 8
+local SPAWN_RING_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\SpawnRing"
 local LIVE_SNAP_GAP = 0.5
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
 local LIVE_NEAR = 0.20
@@ -41,6 +47,8 @@ local lastStatus = {
     icon = nil,
     parent = nil,
     paintedIDs = {},
+    cloudCount = 0,
+    managed = 0,
 }
 
 local function IsGamepadUIEnabled()
@@ -290,18 +298,18 @@ local function IsRepeatableOnly(pin)
     return pin.data and pin.data.repeatable or false
 end
 
-local function IsAttunementOnly(pin)
+local function IsInstanceOnly(pin)
     local quests = pin.quests
     if quests and #quests > 0 then
         for i = 1, #quests do
-            local data = quests[i].data
-            if not data or not (data.isAttunement or data.isInstanceQuest) then
+            local quest = quests[i]
+            if not ns.IsInstanceQuest(quest.id, quest.data) then
                 return false
             end
         end
         return true
     end
-    return pin.data and (pin.data.isAttunement or pin.data.isInstanceQuest) or false
+    return ns.IsInstanceQuest(pin.questID, pin.data)
 end
 
 local function HasClassRestriction(data)
@@ -398,6 +406,78 @@ local function EnsurePinTextures(pin)
     return pin.Fill, pin.Texture
 end
 
+local cloudDots = {}
+local cloudOwner
+
+local function HideSpawnCloud()
+    for i = 1, #cloudDots do
+        cloudDots[i]:Hide()
+    end
+    cloudOwner = nil
+    lastStatus.cloudCount = 0
+end
+
+-- Dots live on UIParent above the map but below tooltips, and they are placed
+-- in screen units.
+local function SpawnCloudDot(index)
+    local dot = cloudDots[index]
+    if dot then
+        return dot
+    end
+    dot = CreateFrame("Frame", nil, UIParent)
+    dot:SetFrameStrata("FULLSCREEN_DIALOG")
+    dot:SetSize(SPAWN_DOT_SIZE, SPAWN_DOT_SIZE)
+    local tex = dot:CreateTexture(nil, "OVERLAY")
+    tex:SetAllPoints(dot)
+    tex:SetTexture(SPAWN_RING_FILE)
+    cloudDots[index] = dot
+    return dot
+end
+
+local function ShowSpawnCloud(pin)
+    HideSpawnCloud()
+    if not pin or not ns.GetOption("showSpawnClusters") then
+        return
+    end
+    local points = pin.spawnPoints
+    if not points or #points < 2 or not pin.nx or not pin.ny then
+        return
+    end
+    local canvas = GetCanvas()
+    if not canvas or not canvas.GetWidth or not canvas.GetHeight or not pin.GetCenter then
+        return
+    end
+    local width, height = canvas:GetWidth(), canvas:GetHeight()
+    local centerX, centerY = pin:GetCenter()
+    if not width or not height or width < 1 or height < 1 or not centerX or not centerY then
+        return
+    end
+    -- Canvas pixels to UIParent units: the canvas and UIParent may each carry
+    -- their own scale.
+    local uiScale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    local canvasScale = canvas.GetEffectiveScale and canvas:GetEffectiveScale() or 1
+    if not uiScale or uiScale <= 0 or not canvasScale or canvasScale <= 0 then
+        return
+    end
+    local unitsPerCanvasPixel = canvasScale / uiScale
+    local shown = 0
+    for i = 1, #points do
+        local point = points[i]
+        if point.nx and point.ny then
+            -- Map y grows downward; screen y grows upward.
+            local x = centerX + (point.nx - pin.nx) * width * unitsPerCanvasPixel
+            local y = centerY - (point.ny - pin.ny) * height * unitsPerCanvasPixel
+            local dot = SpawnCloudDot(i)
+            dot:ClearAllPoints()
+            dot:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+            dot:Show()
+            shown = shown + 1
+        end
+    end
+    cloudOwner = pin
+    lastStatus.cloudCount = shown
+end
+
 local function SetPinTexture(pin)
     local fill, tex = EnsurePinTextures(pin)
     if not tex then
@@ -416,16 +496,16 @@ local function SetPinTexture(pin)
     if tex.Hide then
         tex:Hide()
     end
-    -- Priority: instance/attunement > class > profession > repeatable > normal.
+    -- Priority: instance > class > profession > repeatable > normal.
     -- Mixed stacks stay on the first matching uniform type, else yellow.
-    local attunement = IsAttunementOnly(pin)
-    local classQuest = not attunement and IsClassOnly(pin)
-    local profession = not attunement and not classQuest and IsProfessionOnly(pin)
-    local repeatable = not attunement and not classQuest and not profession and IsRepeatableOnly(pin)
+    local instanceQuest = IsInstanceOnly(pin)
+    local classQuest = not instanceQuest and IsClassOnly(pin)
+    local profession = not instanceQuest and not classQuest and IsProfessionOnly(pin)
+    local repeatable = not instanceQuest and not classQuest and not profession and IsRepeatableOnly(pin)
     local fallbackFile = NORMAL_ICON_FILE
     local fallbackName = "QuestAvailable.tga"
-    if attunement then
-        fallbackFile = ATTUNEMENT_ICON_FILE
+    if instanceQuest then
+        fallbackFile = INSTANCE_ICON_FILE
         fallbackName = "QuestAttunement.tga"
     elseif repeatable then
         fallbackFile = REPEATABLE_ICON_FILE
@@ -433,7 +513,7 @@ local function SetPinTexture(pin)
     end
 
     local hasFallback = false
-    if attunement then
+    if instanceQuest then
         if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, 1.00, 0.32, 0.08) then
             pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":orange" .. (hasFallback and "+fallback" or "")
             lastStatus.icon = pin.icon
@@ -518,6 +598,9 @@ local function SetPinTexture(pin)
 end
 
 local function ReleasePin(pin)
+    if cloudOwner == pin then
+        HideSpawnCloud()
+    end
     if pin.managed then
         local map = pin.GetMap and pin:GetMap()
         if map and map.RemovePin then
@@ -528,6 +611,7 @@ local function ReleasePin(pin)
             pin:Hide()
         end
         pin.quests, pin.questID, pin.data = nil, nil, nil
+        pin.spawnPoints, pin.spawnCount, pin.anchor = nil, nil, nil
         return
     end
     pin:Hide()
@@ -543,6 +627,9 @@ local function ReleasePin(pin)
     pin.titleReady = nil
     pin.quests = nil
     pin.icon = nil
+    pin.spawnPoints = nil
+    pin.spawnCount = nil
+    pin.anchor = nil
     pool[#pool + 1] = pin
 end
 
@@ -550,6 +637,7 @@ function MapPins:Clear()
     if InCombatLockdown and InCombatLockdown() then
         return false
     end
+    HideSpawnCloud()
     if hoveredPin then
         hoveredPin = nil
     end
@@ -596,6 +684,7 @@ local function ShowTooltip(pin)
         return
     end
     hoveredPin = pin
+    ShowSpawnCloud(pin)
     local quests = pin.quests
     if not quests or #quests == 0 then
         quests = { { id = pin.questID, data = pin.data, reason = pin.reason } }
@@ -630,6 +719,9 @@ local function ShowTooltip(pin)
     elseif debugOn and qg then
         GameTooltip:AddLine("Quest giver NPC " .. tostring(qg), 0.8, 0.8, 0.8)
     end
+    if pin.spawnCount and pin.spawnCount > 1 then
+        GameTooltip:AddLine(("%d possible spawn locations"):format(pin.spawnCount), 0.8, 0.8, 0.8)
+    end
     if debugOn then
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Debug", 0.4, 0.8, 1)
@@ -642,17 +734,25 @@ local function ShowTooltip(pin)
         GameTooltip:AddLine("reason: " .. tostring(pin.reason or "?"), 0.6, 0.8, 1)
         GameTooltip:AddLine("parent: " .. tostring(lastStatus.parent or "?"), 0.6, 0.8, 1)
         GameTooltip:AddLine("icon: " .. tostring(pin.icon or "?"), 0.6, 0.8, 1)
+        GameTooltip:AddLine("spawn points: " .. tostring(pin.spawnCount or 0), 0.6, 0.8, 1)
         if pin.live then
             GameTooltip:AddLine("position: live NPC", 0.6, 0.8, 1)
         end
         local data = pin.data
         if data then
-            if data.sourceQuests then
-                local parts = {}
-                for i = 1, #data.sourceQuests do
-                    parts[i] = tostring(data.sourceQuests[i])
+            for _, entry in ipairs({
+                { "sourceQuestGroup", data.sourceQuestGroup },
+                { "sourceQuestSingle", data.sourceQuestSingle },
+                { "sourceQuests", data.sourceQuests },
+            }) do
+                local list = entry[2]
+                if list and #list > 0 then
+                    local parts = {}
+                    for i = 1, #list do
+                        parts[i] = tostring(list[i])
+                    end
+                    GameTooltip:AddLine(entry[1] .. ": " .. table.concat(parts, ", "), 0.6, 0.8, 1)
                 end
-                GameTooltip:AddLine("sourceQuests: " .. table.concat(parts, ", "), 0.6, 0.8, 1)
             end
             if data.faction then
                 GameTooltip:AddLine("faction: " .. tostring(data.faction), 0.6, 0.8, 1)
@@ -712,6 +812,7 @@ local function HidePinQuests(pin)
     if hoveredPin == pin then
         hoveredPin = nil
     end
+    HideSpawnCloud()
     GameTooltip:Hide()
     if count > 0 then
         -- Refresh is deferred in combat; hide now so the marker cannot be clicked again.
@@ -728,7 +829,17 @@ local function OnPinClick(pin, shiftDown)
         HidePinQuests(pin)
         return
     end
-    ns.TrackQuest(pin.questID, pin.data)
+    local data = pin.data
+    if pin.anchor and data then
+        data = {}
+        for key, value in pairs(pin.data) do
+            data[key] = value
+        end
+        data.mapID = pin.anchor.mapID
+        data.x = pin.anchor.x
+        data.y = pin.anchor.y
+    end
+    ns.TrackQuest(pin.questID, data)
 end
 
 function MapPins:OnTitleLoaded(questID)
@@ -880,6 +991,7 @@ local function AcquirePin(parent)
             if hoveredPin == self then
                 hoveredPin = nil
             end
+            HideSpawnCloud()
             GameTooltip:Hide()
         end)
     end
@@ -945,6 +1057,7 @@ function ForeverQuestPinsMapPinMixin:OnMouseLeave()
     if hoveredPin == self then
         hoveredPin = nil
     end
+    HideSpawnCloud()
     if IsGamepadUIEnabled() and ScheduleGamepadTooltipUpdate() then
         return
     end
@@ -972,13 +1085,35 @@ local function PinAlreadyListsQuest(pin, questID)
     return pin.questID == questID
 end
 
-local function PlacePin(parent, nx, ny, questID, data, reason, live)
+local function AppendSpawnPoints(pin, spawnPoints)
+    pin.spawnPoints = pin.spawnPoints or {}
+    for i = 1, #spawnPoints do
+        pin.spawnPoints[#pin.spawnPoints + 1] = spawnPoints[i]
+    end
+    pin.spawnCount = #pin.spawnPoints
+end
+
+local function PlacePin(parent, nx, ny, questID, data, reason, live, spawnPoints, anchor)
+    if not spawnPoints then
+        spawnPoints = { {
+            nx = nx,
+            ny = ny,
+            mapID = data and data.mapID,
+            x = data and data.x,
+            y = data and data.y,
+        } }
+    end
     for i = 1, #active do
         local existing = active[i]
         if SameSpot(existing.nx, existing.ny, nx, ny) then
             existing.quests = existing.quests or { { id = existing.questID, data = existing.data, reason = existing.reason } }
-            if not PinAlreadyListsQuest(existing, questID) then
+            local alreadyListed = PinAlreadyListsQuest(existing, questID)
+            if not alreadyListed then
                 existing.quests[#existing.quests + 1] = { id = questID, data = data, reason = reason }
+            else
+                -- A stacked pin keeps the first quest's count and cloud. Summing
+                -- another quest's points would misreport both quests.
+                AppendSpawnPoints(existing, spawnPoints)
             end
             SetPinTexture(existing)
             ns.PrefetchQuestInfo(questID, data)
@@ -996,6 +1131,8 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live)
     pin.live = live and true or nil
     pin.quests = { { id = questID, data = data, reason = reason } }
     pin.titleReady = ns.GetQuestTitle(questID) and true or nil
+    pin.anchor = anchor or spawnPoints[1]
+    AppendSpawnPoints(pin, spawnPoints)
     SetPinTexture(pin)
     ApplyPinPoint(pin, parent)
     pin:Show()
@@ -1134,6 +1271,117 @@ local function UnitMapPosition(unit, mapID)
         end
     end
     return nil, nil
+end
+
+local function CollectSpawnPoints(data, viewedMapID)
+    local points = {}
+    EachCoord(data, function(questMapID, x, y)
+        local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
+        if nx and ny then
+            points[#points + 1] = {
+                nx = nx,
+                ny = ny,
+                mapID = questMapID,
+                x = x,
+                y = y,
+            }
+        end
+    end)
+    return points
+end
+
+local function ClusterSpawnPoints(parent, points)
+    if #points <= 1 or not ns.GetOption("showSpawnClusters") then
+        return { points }
+    end
+    local width = parent and parent.GetWidth and parent:GetWidth() or nil
+    local height = parent and parent.GetHeight and parent:GetHeight() or nil
+    if not width or not height or width < 1 or height < 1 then
+        return { points }
+    end
+    local radius2 = SPAWN_CLUSTER_RADIUS_PX * SPAWN_CLUSTER_RADIUS_PX
+    local roots = {}
+    for i = 1, #points do
+        roots[i] = i
+    end
+    local function find(index)
+        while roots[index] ~= index do
+            roots[index] = roots[roots[index]]
+            index = roots[index]
+        end
+        return index
+    end
+    local function union(left, right)
+        local leftRoot, rightRoot = find(left), find(right)
+        if leftRoot ~= rightRoot then
+            roots[rightRoot] = leftRoot
+        end
+    end
+    for i = 1, #points do
+        for j = i + 1, #points do
+            local dx = (points[i].nx - points[j].nx) * width
+            local dy = (points[i].ny - points[j].ny) * height
+            if (dx * dx) + (dy * dy) <= radius2 then
+                union(i, j)
+            end
+        end
+    end
+    local clusters = {}
+    local byRoot = {}
+    for i = 1, #points do
+        local root = find(i)
+        local cluster = byRoot[root]
+        if not cluster then
+            cluster = {}
+            byRoot[root] = cluster
+            clusters[#clusters + 1] = cluster
+        end
+        cluster[#cluster + 1] = points[i]
+    end
+    while #clusters > SPAWN_CLUSTER_LIMIT do
+        local bestLeft, bestRight, bestDistance
+        for i = 1, #clusters - 1 do
+            local left = clusters[i][1]
+            for j = i + 1, #clusters do
+                local right = clusters[j][1]
+                local dx = (left.nx - right.nx) * width
+                local dy = (left.ny - right.ny) * height
+                local distance = (dx * dx) + (dy * dy)
+                if not bestDistance or distance < bestDistance then
+                    bestLeft, bestRight, bestDistance = i, j, distance
+                end
+            end
+        end
+        if not bestLeft then
+            break
+        end
+        local left, right = clusters[bestLeft], clusters[bestRight]
+        for i = 1, #right do
+            left[#left + 1] = right[i]
+        end
+        table.remove(clusters, bestRight)
+    end
+    return clusters
+end
+
+local function ChooseSpawnAnchor(points, viewedMapID)
+    if #points == 0 then
+        return nil
+    end
+    local px, py = UnitMapPosition("player", viewedMapID)
+    if not px or not py then
+        px, py = 0.5, 0.5
+    end
+    local best = points[1]
+    local bestDistance = ((best.nx - px) * (best.nx - px)) + ((best.ny - py) * (best.ny - py))
+    for i = 2, #points do
+        local point = points[i]
+        local distance = ((point.nx - px) * (point.nx - px)) + ((point.ny - py) * (point.ny - py))
+        if distance < bestDistance then
+            best, bestDistance = point, distance
+        end
+    end
+    return best
 end
 
 local function UnitMatchesNpc(unit, npcID)
@@ -1338,15 +1586,21 @@ function MapPins:Refresh(reason)
         if not available then
             return
         end
-        EachCoord(data, function(questMapID, x, y)
-            local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
-            if nx and ny then
-                if PlacePin(canvas, nx, ny, questID, data, why, false) then
+        local points = CollectSpawnPoints(data, viewedMapID)
+        if #points == 0 then
+            return
+        end
+        local clusters = ClusterSpawnPoints(canvas, points)
+        for i = 1, #clusters do
+            local anchor = ChooseSpawnAnchor(clusters[i], viewedMapID)
+            local before = #active
+            if anchor and PlacePin(canvas, anchor.nx, anchor.ny, questID, data, why, false, clusters[i], anchor) then
+                if #active > before then
                     painted = painted + 1
-                    lastStatus.paintedIDs[questID] = true
                 end
+                lastStatus.paintedIDs[questID] = true
             end
-        end)
+        end
     end
 
     for mapIndex = 1, #maps do
@@ -1366,6 +1620,13 @@ function MapPins:Refresh(reason)
 
     lastStatus.count = painted
     lastStatus.mode = "canvas"
+    local managed = 0
+    for i = 1, #active do
+        if active[i].managed then
+            managed = managed + 1
+        end
+    end
+    lastStatus.managed = managed
     if ns.GetOption("debug") and reason then
         -- Keep this cheap; stats are available via /fqp stats.
     end
@@ -1439,6 +1700,7 @@ mapWatch:SetScript("OnUpdate", function(_, elapsed)
     local sizeChanged = MapSizeChanged()
     if sizeChanged then
         InvalidateCanvas()
+        HideSpawnCloud()
     end
     if #active > 0 then
         MapPins:RepositionAll()
@@ -1489,6 +1751,7 @@ function MapPins:HookMap()
     if WorldMapFrame.OnCanvasScaleChanged then
         hooksecurefunc(WorldMapFrame, "OnCanvasScaleChanged", function()
             InvalidateCanvas()
+            HideSpawnCloud()
             MapPins:RepositionAll()
         end)
     end

@@ -44,6 +44,28 @@ func ParseVersion(value string) (Version, error) {
 
 func (v Version) NextPatch() Version { return Version{v.Major, v.Minor, v.Patch + 1} }
 
+func (v Version) Compare(other Version) int {
+	if v.Major != other.Major {
+		if v.Major < other.Major {
+			return -1
+		}
+		return 1
+	}
+	if v.Minor != other.Minor {
+		if v.Minor < other.Minor {
+			return -1
+		}
+		return 1
+	}
+	if v.Patch != other.Patch {
+		if v.Patch < other.Patch {
+			return -1
+		}
+		return 1
+	}
+	return 0
+}
+
 func (v Version) String() string { return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch) }
 
 func PlanAutomatedRelease(previousText, currentText string, changed bool) (string, error) {
@@ -58,9 +80,16 @@ func PlanAutomatedRelease(previousText, currentText string, changed bool) (strin
 	if err != nil {
 		return "", err
 	}
-	expected := previous.NextPatch()
-	if current != expected {
-		return "", fmt.Errorf("release content changed, but VERSION must advance from %s to %s; found %s", previous, expected, current)
+	if current.Compare(previous) <= 0 {
+		return "", fmt.Errorf("release content changed, but VERSION must advance from %s; found %s", previous, current)
+	}
+	// Automated database and interface PRs bump the patch. A maintainer may
+	// prepare a minor or major release manually.
+	if current.Major == previous.Major && current.Minor == previous.Minor {
+		expected := previous.NextPatch()
+		if current != expected {
+			return "", fmt.Errorf("release content changed, but VERSION must advance from %s to %s; found %s", previous, expected, current)
+		}
 	}
 	return "v" + current.String(), nil
 }
@@ -139,27 +168,41 @@ func Prepare(root, baseText, releaseDate string, dryRun bool) (Version, error) {
 	if err != nil {
 		return Version{}, err
 	}
-	var report map[string]json.RawMessage
+	var report struct {
+		Artifact struct {
+			Commit string `json:"commit"`
+			SHA256 string `json:"sha256"`
+		} `json:"artifact"`
+		Counts struct {
+			Quests         int `json:"quests"`
+			CoordPins      int `json:"coord_pins"`
+			InstanceQuests int `json:"instance_quests"`
+			YearlyQuests   int `json:"yearly_quests"`
+		} `json:"counts"`
+	}
 	if err := json.Unmarshal(reportBytes, &report); err != nil {
 		return Version{}, err
 	}
-	var attCommit string
-	if err := json.Unmarshal(report["att_sha"], &attCommit); err != nil || attCommit == "" {
-		return Version{}, errors.New("Database/build_report.json is missing string field 'att_sha'")
+	if report.Artifact.SHA256 == "" {
+		return Version{}, errors.New("Database/build_report.json is missing string field 'artifact.sha256'")
 	}
-	quests, err := requiredReportInt(report, "quests_emitted")
-	if err != nil {
-		return Version{}, err
+	if report.Artifact.Commit == "" {
+		return Version{}, errors.New("Database/build_report.json is missing string field 'artifact.commit'")
 	}
-	coordinates, err := requiredReportInt(report, "coord_pins")
-	if err != nil {
-		return Version{}, err
+	if report.Counts.Quests <= 0 {
+		return Version{}, errors.New("Database/build_report.json is missing integer field 'counts.quests'")
 	}
-	attunement, err := requiredReportInt(report, "attunement_quests")
-	if err != nil {
-		return Version{}, err
+	if report.Counts.CoordPins < 0 {
+		return Version{}, errors.New("Database/build_report.json is missing integer field 'counts.coord_pins'")
 	}
-	entry := fmt.Sprintf("## %s - %s\n\n- Update the ATT Forever quest database to `%s`.\n- Ship %d quests with %d coordinate pins (%d attunement quests).\n", target, releaseDate, attCommit, quests, coordinates, attunement)
+	if report.Counts.InstanceQuests < 0 {
+		return Version{}, errors.New("Database/build_report.json is missing integer field 'counts.instance_quests'")
+	}
+	entry := fmt.Sprintf(
+		"## %s - %s\n\n- Update the QuestieDB Forever artifact to `%s` (build `%s`).\n- Ship %d quests with %d coordinate pins (%d static instance quests, %d yearly quests).\n",
+		target, releaseDate, report.Artifact.SHA256, report.Artifact.Commit,
+		report.Counts.Quests, report.Counts.CoordPins, report.Counts.InstanceQuests, report.Counts.YearlyQuests,
+	)
 	changelogPath := filepath.Join(root, "CHANGELOG.md")
 	changelogBytes, err := os.ReadFile(changelogPath)
 	if err != nil {
@@ -186,22 +229,6 @@ func Prepare(root, baseText, releaseDate string, dryRun bool) (Version, error) {
 		return Version{}, err
 	}
 	return target, nil
-}
-
-func requiredReportInt(report map[string]json.RawMessage, key string) (int, error) {
-	value, ok := report[key]
-	if !ok {
-		return 0, fmt.Errorf("Database/build_report.json is missing integer field %q", key)
-	}
-	var number json.Number
-	if err := json.Unmarshal(value, &number); err != nil {
-		return 0, fmt.Errorf("Database/build_report.json is missing integer field %q", key)
-	}
-	parsed, err := strconv.Atoi(number.String())
-	if err != nil {
-		return 0, fmt.Errorf("Database/build_report.json is missing integer field %q", key)
-	}
-	return parsed, nil
 }
 
 func Run(args []string, stdout io.Writer) error {

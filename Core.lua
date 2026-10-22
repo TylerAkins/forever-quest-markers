@@ -145,6 +145,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "QUEST_DATA_LOAD" or event == "QUEST_DATA_LOAD_RESULT" then
         local questID, success = ...
+        if ns.InvalidateInstanceQuestCache then
+            ns.InvalidateInstanceQuestCache(questID)
+        end
         if success == false then
             if ns.OnQuestDataLoadFailed then ns.OnQuestDataLoadFailed(questID) end
             return
@@ -182,11 +185,17 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "QUEST_ACCEPTED" then
         local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.InvalidateInstanceQuestCache then
+            ns.InvalidateInstanceQuestCache(questID)
+        end
         if questID and ns.NoteQuestAccepted then
             ns.NoteQuestAccepted(questID)
         end
     elseif event == "QUEST_TURNED_IN" then
         local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.InvalidateInstanceQuestCache then
+            ns.InvalidateInstanceQuestCache(questID)
+        end
         if questID and ns.NoteQuestCompleted then
             ns.NoteQuestCompleted(questID)
         end
@@ -195,6 +204,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         end
     elseif event == "QUEST_REMOVED" then
         local questID = QuestIDFromEvent(event, ...)
+        if questID and ns.InvalidateInstanceQuestCache then
+            ns.InvalidateInstanceQuestCache(questID)
+        end
         if questID and ns.NoteQuestRemoved then
             ns.NoteQuestRemoved(questID)
         end
