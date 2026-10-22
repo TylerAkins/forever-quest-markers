@@ -58,6 +58,17 @@ local function IsGamepadUIEnabled()
     return InputUtil and InputUtil.IsGamepadUIEnabled and InputUtil.IsGamepadUIEnabled() or false
 end
 
+local function ReturnNoPinCenter()
+    return nil
+end
+
+local function HidePinFromGamepadCursor(pin)
+    if not pin._fqpGetCenter then
+        pin._fqpGetCenter = pin.GetCenter
+    end
+    pin.GetCenter = ReturnNoPinCenter
+end
+
 local BLIZZARD_PIN_TEMPLATES = {
     "GroupMembersPinTemplate",
     "WorldMapUnitPinTemplate",
@@ -1077,10 +1088,7 @@ ForeverQuestPinsMapPinMixin = {}
 
 function ForeverQuestPinsMapPinMixin:OnLoad()
     self.managed = true
-    if self.GetCenter then
-        self._fqpGetCenter = self.GetCenter
-        self.GetCenter = function() return nil end
-    end
+    HidePinFromGamepadCursor(self)
     self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI")
     self:SetScalingLimits(1, 1, 1)
     self:SetSize(PIN_SIZE, PIN_SIZE)
@@ -1089,6 +1097,7 @@ function ForeverQuestPinsMapPinMixin:OnLoad()
 end
 
 function ForeverQuestPinsMapPinMixin:OnAcquired()
+    HidePinFromGamepadCursor(self)
     local pinSize = GetPinSize()
     self:SetSize(pinSize, pinSize)
     self:SetAlpha(1)

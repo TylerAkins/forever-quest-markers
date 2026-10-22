@@ -2769,6 +2769,18 @@ cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = functio
     assert(acquiredPin._fqpGetCenter(acquiredPin) == 320)
 end
 
+cases["map_pins_runtime.pin_center_is_hidden_when_map_canvas_acquires_a_pin"] = function()
+    setupPinRendering()
+    local acquiredPin = {
+        GetCenter = function() return 320, 240 end,
+        SetSize = function() end,
+        SetAlpha = function() end,
+    }
+    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
+    assert(acquiredPin:GetCenter() == nil, "the gamepad cursor must not discover an acquired addon pin")
+    assert(acquiredPin._fqpGetCenter(acquiredPin) == 320, "addon hover detection must retain the real center")
+end
+
 cases["map_pins_runtime.repeatable_pin_is_blue_and_hidden_when_opted_out"] = function()
     setupPinRendering()
     ns.MapPins:Refresh("test")
