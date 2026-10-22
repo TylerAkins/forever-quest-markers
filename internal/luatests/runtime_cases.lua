@@ -691,7 +691,7 @@ end
             assert(gamepadTooltipHidden == nil)
             timerQueue[1]()
             table.remove(timerQueue, 1)
-            assert(gamepadTooltipOwners == 1 and gamepadTooltipShown == 1)
+            assert(gamepadTooltipOwners == nil and gamepadTooltipShown == 1)
             assert(gamepadTooltipHidden == nil, "pin leave must not immediately hide the polled tooltip")
 
             ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
@@ -2718,8 +2718,7 @@ cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = functio
     setupPinRendering()
     ns.MapPins:Refresh("gamepad-test")
     pin._fqpGetCenter = function() return 320, 240 end
-    UIParent.GetEffectiveScale = function() return 2 end
-    GetCursorPosition = function() return 650, 480 end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 325, 240 end
     SoftCursor = { IsShown = function() return true end }
     assert(ns.MapPins:FindGamepadCursorPin() == pin, "addon hover lookup must still find the pin")
     local gamepadTooltipShown, gamepadTooltipHidden = 0, 0
@@ -2738,11 +2737,11 @@ cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = functio
     InputUtil = { IsGamepadUIEnabled = function() return true end }
     ns.MapPins:UpdateGamepadHover()
     assert(gamepadTooltipShown == 1, "gamepad hover must display the private quest tooltip")
-    GetCursorPosition = function() return 800, 480 end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 400, 240 end
     assert(ns.MapPins:FindGamepadCursorPin() == nil, "cursor lookup must ignore pins outside Blizzard's hover radius")
     ns.MapPins:UpdateGamepadHover()
     assert(gamepadTooltipHidden == 1, "leaving the pin must hide the private quest tooltip")
-    GetCursorPosition = function() return 640, 480 end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 320, 240 end
     SoftCursor.IsShown = function() return false end
     assert(ns.MapPins:FindGamepadCursorPin() == nil, "cursor lookup must stop when the soft cursor is hidden")
     SoftCursor.IsShown = function() return true end
@@ -2777,11 +2776,12 @@ end
 cases["map_pins_runtime.gamepad_pin_leave_does_not_hide_polled_tooltip"] = function()
     setupPinRendering()
     ns.MapPins:Refresh("gamepad-test")
-    local tooltipShown, tooltipHidden = 0, 0
+    local tooltipShown, tooltipHidden, tooltipOwners, tooltipAnchor = 0, 0, 0, nil
     CreateFrame = function(frameType)
         if frameType == "GameTooltip" then
             return {
-                SetOwner = function() end,
+                SetOwner = function() tooltipOwners = tooltipOwners + 1 end,
+                SetAnchorType = function(_, anchor) tooltipAnchor = anchor end,
                 SetText = function() end,
                 AddLine = function() end,
                 Show = function() tooltipShown = tooltipShown + 1 end,
@@ -2795,16 +2795,17 @@ cases["map_pins_runtime.gamepad_pin_leave_does_not_hide_polled_tooltip"] = funct
     InputUtil = { IsGamepadUIEnabled = function() return true end }
     SoftCursor = { IsShown = function() return true end }
     local pinX, pinY = pin._fqpGetCenter(pin)
-    GetCursorPosition = function() return pinX, pinY end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return pinX, pinY end
     ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
     assert(#timerQueue == 1, "gamepad pin enter must defer tooltip changes until map input handling returns")
     timerQueue[1]()
     assert(tooltipShown == 1, "gamepad pin enter must show the quest tooltip")
+    assert(tooltipOwners == 0 and tooltipAnchor == "ANCHOR_RIGHT", "the private tooltip must use anchor type without an owner")
     ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
     assert(tooltipHidden == 0, "pin leave must not immediately hide the gamepad tooltip")
     ns.MapPins:UpdateGamepadHover()
     assert(tooltipShown == 1, "the cursor poll must not duplicate the active pin tooltip")
-    GetCursorPosition = function() return 300, 300 end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 300, 300 end
     ns.MapPins:UpdateGamepadHover()
     assert(tooltipHidden == 1, "moving the gamepad cursor off the pin must hide the tooltip")
 end

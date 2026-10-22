@@ -720,7 +720,10 @@ local function ShowTooltip(pin, tooltip)
     for i = 1, #quests do
         ns.PrefetchQuestInfo(quests[i].id, quests[i].data)
     end
-    tooltip:SetOwner(pin, "ANCHOR_RIGHT")
+    local isGamepadTooltip = tooltip == gamepadTooltip
+    if not isGamepadTooltip then
+        tooltip:SetOwner(pin, "ANCHOR_RIGHT")
+    end
     local debugOn = ns.GetOption("debug")
     local primaryText, primaryLevel = QuestLineText(quests[1].id)
     local pr, pg, pb = QuestLineColor(primaryLevel)
@@ -796,26 +799,25 @@ local function ShowTooltip(pin, tooltip)
     end
     tooltip:AddLine("Click to track this quest start.", 1, 1, 1)
     tooltip:AddLine("Shift-click to hide this marker.", 0.7, 0.7, 0.7)
+    if isGamepadTooltip and tooltip.SetAnchorType then
+        tooltip:SetAnchorType("ANCHOR_RIGHT")
+    end
     tooltip:Show()
 end
 
 function MapPins:FindGamepadCursorPin()
+    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
     if not (SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown()
-        and GetCursorPosition) then
+        and scroll and scroll.GetGamepadCursorPosition) then
         return nil
     end
     if GetCVarBool and GetCVarBool("GamepadDisableTooltips") then
         return nil
     end
-    local cursorX, cursorY = GetCursorPosition()
+    local cursorX, cursorY = scroll:GetGamepadCursorPosition()
     if not cursorX or not cursorY then
         return nil
     end
-    local uiScale = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
-    if not uiScale or uiScale <= 0 then
-        uiScale = 1
-    end
-    cursorX, cursorY = cursorX / uiScale, cursorY / uiScale
     local closestPin, closestDistance
     for i = 1, #active do
         local pin = active[i]
