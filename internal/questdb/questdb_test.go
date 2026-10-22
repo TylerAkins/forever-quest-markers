@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/TylerAkins/forever-quest-markers/internal/questiedb"
+	"github.com/TylerAkins/forever-quest-markers/internal/questiepolicy"
 )
 
 func TestRaceMaskToRacesAndFaction(t *testing.T) {
@@ -41,6 +42,28 @@ func TestRaceMaskToRacesAndFaction(t *testing.T) {
 				t.Fatalf("faction = %q, want %q", faction, test.faction)
 			}
 		})
+	}
+}
+
+func TestBuildUsesRequiredLevelForMinimum(t *testing.T) {
+	builder := &recordBuilder{
+		policy: &questiepolicy.Policy{
+			HolidayQuestIDs:  map[int]bool{},
+			InstanceQuestIDs: map[int]bool{},
+		},
+		gaps:      map[int]string{},
+		conflicts: map[string]bool{},
+	}
+	record, err := builder.build(&questiedb.Quest{
+		ID:            1145,
+		RequiredLevel: 30,
+		QuestLevel:    33,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if record.MinLevel != 30 {
+		t.Fatalf("MinLevel = %d, want required level 30 (QuestLevel is 33)", record.MinLevel)
 	}
 }
 
