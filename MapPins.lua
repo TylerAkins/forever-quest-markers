@@ -1096,6 +1096,17 @@ end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
     if IsGamepadUIEnabled() then
+        hoveredPin = self
+        local pin = self
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0, function()
+                if IsGamepadUIEnabled() and hoveredPin == pin and pin.IsShown and pin:IsShown() then
+                    ShowTooltip(pin, GetGamepadTooltip())
+                end
+            end)
+        else
+            ShowTooltip(pin, GetGamepadTooltip())
+        end
         return
     end
     ShowTooltip(self)

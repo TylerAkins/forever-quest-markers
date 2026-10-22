@@ -652,7 +652,7 @@ cases["pin_filters_runtime.test_gamepad_pin_callbacks_run_after_map_input_handli
                         SetOwner = function() gamepadTooltipOwners = (gamepadTooltipOwners or 0) + 1 end,
                         SetText = function() end,
                         AddLine = function() end,
-                        Show = function() end,
+                        Show = function() gamepadTooltipShown = (gamepadTooltipShown or 0) + 1 end,
                     }
                 end
                 return { SetScript = function() end }
@@ -684,16 +684,15 @@ end
 
             ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
             assert((tooltipOwners or 0) == 0)
+            assert(type(timerQueue[1]) == "function")
             ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
-            assert(#timerQueue == 0)
+            assert(#timerQueue == 1)
             assert(tooltipOwners == nil and tooltipHidden == nil)
             assert(gamepadTooltipHidden == nil)
-
-            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
-            assert((tooltipOwners or 0) == 0)
-            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
-            assert(#timerQueue == 0)
-            assert(tooltipHidden == nil and gamepadTooltipHidden == nil)
+            timerQueue[1]()
+            table.remove(timerQueue, 1)
+            assert(gamepadTooltipOwners == 1 and gamepadTooltipShown == 1)
+            assert(gamepadTooltipHidden == nil, "pin leave must not immediately hide the polled tooltip")
 
             ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
             assert(tracked == nil)
@@ -2777,14 +2776,14 @@ end
 cases["map_pins_runtime.gamepad_pin_leave_does_not_hide_polled_tooltip"] = function()
     setupPinRendering()
     ns.MapPins:Refresh("gamepad-test")
-    local tooltipHidden = 0
+    local tooltipShown, tooltipHidden = 0, 0
     CreateFrame = function(frameType)
         if frameType == "GameTooltip" then
             return {
                 SetOwner = function() end,
                 SetText = function() end,
                 AddLine = function() end,
-                Show = function() end,
+                Show = function() tooltipShown = tooltipShown + 1 end,
                 Hide = function() tooltipHidden = tooltipHidden + 1 end,
             }
         end
@@ -2794,11 +2793,19 @@ cases["map_pins_runtime.gamepad_pin_leave_does_not_hide_polled_tooltip"] = funct
     C_Timer = { After = function(_, callback) timerQueue[#timerQueue + 1] = callback end }
     InputUtil = { IsGamepadUIEnabled = function() return true end }
     SoftCursor = { IsShown = function() return true end }
-    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 500, 400 end
-    ns.MapPins:UpdateGamepadHover()
+    local pinX, pinY = pin._fqpGetCenter(pin)
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return pinX, pinY end
+    ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+    assert(#timerQueue == 1, "gamepad pin enter must defer tooltip changes until map input handling returns")
+    timerQueue[1]()
+    assert(tooltipShown == 1, "gamepad pin enter must show the quest tooltip")
     ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
-    for i = 1, #timerQueue do timerQueue[i]() end
-    assert(tooltipHidden == 0, "pin leave callbacks must not hide the independently polled gamepad tooltip")
+    assert(tooltipHidden == 0, "pin leave must not immediately hide the gamepad tooltip")
+    ns.MapPins:UpdateGamepadHover()
+    assert(tooltipShown == 1, "the cursor poll must not duplicate the active pin tooltip")
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 300, 300 end
+    ns.MapPins:UpdateGamepadHover()
+    assert(tooltipHidden == 1, "moving the gamepad cursor off the pin must hide the tooltip")
 end
 
 cases["map_pins_runtime.repeatable_pin_is_blue_and_hidden_when_opted_out"] = function()
