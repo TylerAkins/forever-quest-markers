@@ -37,7 +37,6 @@ local pool = {}
 local active = {}
 local hoveredPin
 local gamepadTooltip
-local gamepadTooltipUpdatePending = false
 local gamepadHoverAccum = 0
 local liveAccum = 0
 local canvasCache
@@ -847,33 +846,6 @@ function MapPins:UpdateGamepadHover()
     end
 end
 
--- MapCanvas invokes pin hover handlers from its gamepad cursor update. Run
--- tooltip changes after that update returns and combine rapid hover changes.
-local function ScheduleGamepadTooltipUpdate()
-    if not (C_Timer and C_Timer.After) then
-        return false
-    end
-    if gamepadTooltipUpdatePending then
-        return true
-    end
-    gamepadTooltipUpdatePending = true
-    C_Timer.After(0, function()
-        gamepadTooltipUpdatePending = false
-        local pin = hoveredPin
-        if pin and pin.IsShown and pin:IsShown() then
-            ShowTooltip(pin, IsGamepadUIEnabled() and GetGamepadTooltip() or GameTooltip)
-        else
-            hoveredPin = nil
-            if IsGamepadUIEnabled() then
-                HideGamepadTooltip()
-            else
-                GameTooltip:Hide()
-            end
-        end
-    end)
-    return true
-end
-
 local function PinQuestIDs(pin)
     local ids = {}
     local quests = pin.quests
@@ -927,14 +899,14 @@ function MapPins:OnTitleLoaded(questID)
         return
     end
     if hoveredPin.questID == questID then
-        ShowTooltip(hoveredPin)
+        ShowTooltip(hoveredPin, IsGamepadUIEnabled() and GetGamepadTooltip() or GameTooltip)
         return
     end
     local quests = hoveredPin.quests
     if quests then
         for i = 1, #quests do
             if quests[i].id == questID then
-                ShowTooltip(hoveredPin)
+                ShowTooltip(hoveredPin, IsGamepadUIEnabled() and GetGamepadTooltip() or GameTooltip)
                 return
             end
         end
@@ -1124,29 +1096,20 @@ end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
     if IsGamepadUIEnabled() then
-        hoveredPin = self
-        if ScheduleGamepadTooltipUpdate() then
-            return
-        end
-        ShowTooltip(self, GetGamepadTooltip())
         return
     end
     ShowTooltip(self)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseLeave()
+    if IsGamepadUIEnabled() then
+        return
+    end
     if hoveredPin == self then
         hoveredPin = nil
     end
     HideSpawnCloud()
-    if IsGamepadUIEnabled() and ScheduleGamepadTooltipUpdate() then
-        return
-    end
-    if IsGamepadUIEnabled() then
-        HideGamepadTooltip()
-    else
-        GameTooltip:Hide()
-    end
+    GameTooltip:Hide()
 end
 
 local function SameSpot(ax, ay, bx, by)
