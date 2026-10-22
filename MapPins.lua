@@ -21,6 +21,7 @@ local SPAWN_CLUSTER_LIMIT = 6
 local SPAWN_DOT_SIZE = 8
 local SPAWN_RING_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\SpawnRing"
 local LIVE_SNAP_GAP = 0.5
+local GAMEPAD_PIN_DISTANCE_SQUARED = 12 * 12
 -- Normalized map units. Morin Cloudstalker's patrol is ~0.12 from village to crate.
 local LIVE_NEAR = 0.20
 
@@ -35,7 +36,9 @@ local PATROL_EXTRA = {
 local pool = {}
 local active = {}
 local hoveredPin
+local gamepadTooltip
 local gamepadTooltipUpdatePending = false
+local gamepadHoverAccum = 0
 local liveAccum = 0
 local canvasCache
 local canvasCacheName
@@ -417,6 +420,19 @@ local function HideSpawnCloud()
     lastStatus.cloudCount = 0
 end
 
+local function GetGamepadTooltip()
+    if not gamepadTooltip then
+        gamepadTooltip = CreateFrame("GameTooltip", nil, UIParent, "GameTooltipTemplate")
+    end
+    return gamepadTooltip
+end
+
+local function HideGamepadTooltip()
+    if gamepadTooltip then
+        gamepadTooltip:Hide()
+    end
+end
+
 -- Dots live on UIParent above the map but below tooltips, and they are placed
 -- in screen units.
 local function SpawnCloudDot(index)
@@ -444,11 +460,11 @@ local function ShowSpawnCloud(pin)
         return
     end
     local canvas = GetCanvas()
-    if not canvas or not canvas.GetWidth or not canvas.GetHeight or not pin.GetCenter then
+    if not canvas or not canvas.GetWidth or not canvas.GetHeight or not pin._fqpGetCenter then
         return
     end
     local width, height = canvas:GetWidth(), canvas:GetHeight()
-    local centerX, centerY = pin:GetCenter()
+    local centerX, centerY = pin._fqpGetCenter(pin)
     if not width or not height or width < 1 or height < 1 or not centerX or not centerY then
         return
     end
@@ -641,6 +657,7 @@ function MapPins:Clear()
     if hoveredPin then
         hoveredPin = nil
     end
+    HideGamepadTooltip()
     for i = 1, #active do
         ReleasePin(active[i])
     end
@@ -679,10 +696,11 @@ local function QuestLineColor(level)
     return 1, 0.82, 0
 end
 
-local function ShowTooltip(pin)
+local function ShowTooltip(pin, tooltip)
     if not pin.questID and not (pin.quests and pin.quests[1]) then
         return
     end
+    tooltip = tooltip or GameTooltip
     hoveredPin = pin
     ShowSpawnCloud(pin)
     local quests = pin.quests
@@ -692,51 +710,51 @@ local function ShowTooltip(pin)
     for i = 1, #quests do
         ns.PrefetchQuestInfo(quests[i].id, quests[i].data)
     end
-    GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
+    tooltip:SetOwner(pin, "ANCHOR_RIGHT")
     local debugOn = ns.GetOption("debug")
     local primaryText, primaryLevel = QuestLineText(quests[1].id)
     local pr, pg, pb = QuestLineColor(primaryLevel)
     if primaryText then
-        GameTooltip:SetText(primaryText, pr, pg, pb)
+        tooltip:SetText(primaryText, pr, pg, pb)
     elseif debugOn then
-        GameTooltip:SetText("Quest " .. tostring(quests[1].id), 1, 0.82, 0)
+        tooltip:SetText("Quest " .. tostring(quests[1].id), 1, 0.82, 0)
     else
-        GameTooltip:SetText("Quest", 1, 0.82, 0)
+        tooltip:SetText("Quest", 1, 0.82, 0)
     end
     for i = 2, #quests do
         local extraText, extraLevel = QuestLineText(quests[i].id)
         if extraText then
             local r, g, b = QuestLineColor(extraLevel)
-            GameTooltip:AddLine(extraText, r, g, b)
+            tooltip:AddLine(extraText, r, g, b)
         elseif debugOn then
-            GameTooltip:AddLine("Quest " .. tostring(quests[i].id), 1, 0.82, 0)
+            tooltip:AddLine("Quest " .. tostring(quests[i].id), 1, 0.82, 0)
         end
     end
     local qg = QuestGiverID(quests[1].data or pin.data)
     local npcName = qg and ns.GetNPCName(qg) or nil
     if npcName then
-        GameTooltip:AddLine(npcName, 1, 1, 1)
+        tooltip:AddLine(npcName, 1, 1, 1)
     elseif debugOn and qg then
-        GameTooltip:AddLine("Quest giver NPC " .. tostring(qg), 0.8, 0.8, 0.8)
+        tooltip:AddLine("Quest giver NPC " .. tostring(qg), 0.8, 0.8, 0.8)
     end
     if pin.spawnCount and pin.spawnCount > 1 then
-        GameTooltip:AddLine(("%d possible spawn locations"):format(pin.spawnCount), 0.8, 0.8, 0.8)
+        tooltip:AddLine(("%d possible spawn locations"):format(pin.spawnCount), 0.8, 0.8, 0.8)
     end
     if debugOn then
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Debug", 0.4, 0.8, 1)
+        tooltip:AddLine(" ")
+        tooltip:AddLine("Debug", 0.4, 0.8, 1)
         for i = 1, #quests do
-            GameTooltip:AddLine("Quest ID: " .. tostring(quests[i].id), 0.6, 0.8, 1)
+            tooltip:AddLine("Quest ID: " .. tostring(quests[i].id), 0.6, 0.8, 1)
         end
         if qg then
-            GameTooltip:AddLine("NPC ID: " .. tostring(qg), 0.6, 0.8, 1)
+            tooltip:AddLine("NPC ID: " .. tostring(qg), 0.6, 0.8, 1)
         end
-        GameTooltip:AddLine("reason: " .. tostring(pin.reason or "?"), 0.6, 0.8, 1)
-        GameTooltip:AddLine("parent: " .. tostring(lastStatus.parent or "?"), 0.6, 0.8, 1)
-        GameTooltip:AddLine("icon: " .. tostring(pin.icon or "?"), 0.6, 0.8, 1)
-        GameTooltip:AddLine("spawn points: " .. tostring(pin.spawnCount or 0), 0.6, 0.8, 1)
+        tooltip:AddLine("reason: " .. tostring(pin.reason or "?"), 0.6, 0.8, 1)
+        tooltip:AddLine("parent: " .. tostring(lastStatus.parent or "?"), 0.6, 0.8, 1)
+        tooltip:AddLine("icon: " .. tostring(pin.icon or "?"), 0.6, 0.8, 1)
+        tooltip:AddLine("spawn points: " .. tostring(pin.spawnCount or 0), 0.6, 0.8, 1)
         if pin.live then
-            GameTooltip:AddLine("position: live NPC", 0.6, 0.8, 1)
+            tooltip:AddLine("position: live NPC", 0.6, 0.8, 1)
         end
         local data = pin.data
         if data then
@@ -751,24 +769,71 @@ local function ShowTooltip(pin)
                     for i = 1, #list do
                         parts[i] = tostring(list[i])
                     end
-                    GameTooltip:AddLine(entry[1] .. ": " .. table.concat(parts, ", "), 0.6, 0.8, 1)
+                    tooltip:AddLine(entry[1] .. ": " .. table.concat(parts, ", "), 0.6, 0.8, 1)
                 end
             end
             if data.faction then
-                GameTooltip:AddLine("faction: " .. tostring(data.faction), 0.6, 0.8, 1)
+                tooltip:AddLine("faction: " .. tostring(data.faction), 0.6, 0.8, 1)
             end
             if data.minLevel then
-                GameTooltip:AddLine("minLevel: " .. tostring(data.minLevel), 0.6, 0.8, 1)
+                tooltip:AddLine("minLevel: " .. tostring(data.minLevel), 0.6, 0.8, 1)
             end
-            GameTooltip:AddLine(("map %s @ %.1f, %.1f"):format(tostring(data.mapID), data.x or 0, data.y or 0), 0.6, 0.8, 1)
+            tooltip:AddLine(("map %s @ %.1f, %.1f"):format(tostring(data.mapID), data.x or 0, data.y or 0), 0.6, 0.8, 1)
         end
         if pin.nx and pin.ny then
-            GameTooltip:AddLine(("normalized %.3f, %.3f"):format(pin.nx, pin.ny), 0.6, 0.8, 1)
+            tooltip:AddLine(("normalized %.3f, %.3f"):format(pin.nx, pin.ny), 0.6, 0.8, 1)
         end
     end
-    GameTooltip:AddLine("Click to track this quest start.", 1, 1, 1)
-    GameTooltip:AddLine("Shift-click to hide this marker.", 0.7, 0.7, 0.7)
-    GameTooltip:Show()
+    tooltip:AddLine("Click to track this quest start.", 1, 1, 1)
+    tooltip:AddLine("Shift-click to hide this marker.", 0.7, 0.7, 0.7)
+    tooltip:Show()
+end
+
+function MapPins:FindGamepadCursorPin()
+    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
+    if not (SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown()
+        and scroll and scroll.GetGamepadCursorPosition) then
+        return nil
+    end
+    if GetCVarBool and GetCVarBool("GamepadDisableTooltips") then
+        return nil
+    end
+    local cursorX, cursorY = scroll:GetGamepadCursorPosition()
+    if not cursorX or not cursorY then
+        return nil
+    end
+    local closestPin, closestDistance
+    for i = 1, #active do
+        local pin = active[i]
+        local getCenter = pin._fqpGetCenter
+        if getCenter and pin.IsShown and pin:IsShown() and pin.questID then
+            local pinX, pinY = getCenter(pin)
+            if pinX and pinY then
+                local dx, dy = pinX - cursorX, pinY - cursorY
+                local distance = dx * dx + dy * dy
+                if distance <= GAMEPAD_PIN_DISTANCE_SQUARED
+                    and (not closestDistance or distance < closestDistance) then
+                    closestPin, closestDistance = pin, distance
+                end
+            end
+        end
+    end
+    return closestPin
+end
+
+function MapPins:UpdateGamepadHover()
+    local pin = MapPins:FindGamepadCursorPin()
+    if pin == hoveredPin then
+        return
+    end
+    HideSpawnCloud()
+    if hoveredPin then
+        HideGamepadTooltip()
+    end
+    hoveredPin = pin
+    if pin then
+        ShowTooltip(pin, GetGamepadTooltip())
+    end
 end
 
 -- MapCanvas invokes pin hover handlers from its gamepad cursor update. Run
@@ -785,10 +850,14 @@ local function ScheduleGamepadTooltipUpdate()
         gamepadTooltipUpdatePending = false
         local pin = hoveredPin
         if pin and pin.IsShown and pin:IsShown() then
-            ShowTooltip(pin)
+            ShowTooltip(pin, IsGamepadUIEnabled() and GetGamepadTooltip() or GameTooltip)
         else
             hoveredPin = nil
-            GameTooltip:Hide()
+            if IsGamepadUIEnabled() then
+                HideGamepadTooltip()
+            else
+                GameTooltip:Hide()
+            end
         end
     end)
     return true
@@ -986,14 +1055,11 @@ local function AcquirePin(parent)
         end
         EnsurePinTextures(pin)
         pin:SetScript("OnClick", OnPinClick)
-        pin:SetScript("OnEnter", ShowTooltip)
-        pin:SetScript("OnLeave", function(self)
-            if hoveredPin == self then
-                hoveredPin = nil
-            end
-            HideSpawnCloud()
-            GameTooltip:Hide()
-        end)
+        pin:SetScript("OnEnter", ForeverQuestPinsMapPinMixin.OnMouseEnter)
+        pin:SetScript("OnLeave", ForeverQuestPinsMapPinMixin.OnMouseLeave)
+    end
+    if not pin._fqpGetCenter then
+        pin._fqpGetCenter = pin.GetCenter
     end
     pin:SetParent(parent)
     pin.placedParent = nil
@@ -1011,6 +1077,10 @@ ForeverQuestPinsMapPinMixin = {}
 
 function ForeverQuestPinsMapPinMixin:OnLoad()
     self.managed = true
+    if self.GetCenter then
+        self._fqpGetCenter = self.GetCenter
+        self.GetCenter = function() return nil end
+    end
     self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI")
     self:SetScalingLimits(1, 1, 1)
     self:SetSize(PIN_SIZE, PIN_SIZE)
@@ -1049,6 +1119,8 @@ function ForeverQuestPinsMapPinMixin:OnMouseEnter()
         if ScheduleGamepadTooltipUpdate() then
             return
         end
+        ShowTooltip(self, GetGamepadTooltip())
+        return
     end
     ShowTooltip(self)
 end
@@ -1061,7 +1133,11 @@ function ForeverQuestPinsMapPinMixin:OnMouseLeave()
     if IsGamepadUIEnabled() and ScheduleGamepadTooltipUpdate() then
         return
     end
-    GameTooltip:Hide()
+    if IsGamepadUIEnabled() then
+        HideGamepadTooltip()
+    else
+        GameTooltip:Hide()
+    end
 end
 
 local function SameSpot(ax, ay, bx, by)
@@ -1689,6 +1765,9 @@ local function OnMapClose()
     sizeSnapshot = {}
     sizeWatchFrames = {}
     liveAccum = 0
+    gamepadHoverAccum = 0
+    hoveredPin = nil
+    HideGamepadTooltip()
     InvalidateCanvas()
     MapPins:Clear()
 end
@@ -1704,6 +1783,15 @@ mapWatch:SetScript("OnUpdate", function(_, elapsed)
     end
     if #active > 0 then
         MapPins:RepositionAll()
+        if IsGamepadUIEnabled() then
+            gamepadHoverAccum = gamepadHoverAccum + elapsed
+            if gamepadHoverAccum >= 0.05 then
+                gamepadHoverAccum = 0
+                MapPins:UpdateGamepadHover()
+            end
+        else
+            gamepadHoverAccum = 0
+        end
         liveAccum = liveAccum + elapsed
         if liveAccum >= LIVE_SNAP_GAP then
             liveAccum = 0
