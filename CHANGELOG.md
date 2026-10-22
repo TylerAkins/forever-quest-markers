@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.3.2 - 2026-10-22
+
+- Prevent the native gamepad cursor from reading addon pin centers and tainting Blizzard's protected map interaction update.
+- Preserve controller hover tooltips with a private tooltip.
+
 ## 0.3.1 - 2026-10-22
 
 - Update the QuestieDB Forever artifact to `e38709c87c0f216dbf4fefea20927b812abe0481ecfb02fc05cf6cafb2539a22` (build `1f538335cfbb240c14a97c340f48c555fdc8a52b`).
