@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/TylerAkins/forever-quest-markers/internal/addontools"
-	"github.com/TylerAkins/forever-quest-markers/internal/attdsl"
 	"github.com/TylerAkins/forever-quest-markers/internal/foreverupdate"
+	"github.com/TylerAkins/forever-quest-markers/internal/questdb"
 	"github.com/TylerAkins/forever-quest-markers/internal/release"
 )
 
@@ -18,7 +18,7 @@ func main() {
 	var err error
 	switch os.Args[1] {
 	case "build-db":
-		err = attdsl.RunBuild(os.Args[2:], os.Stdout, os.Stderr)
+		err = questdb.RunBuild(os.Args[2:], os.Stdout, os.Stderr)
 	case "release":
 		err = release.Run(os.Args[2:], os.Stdout)
 	case "update-interface":

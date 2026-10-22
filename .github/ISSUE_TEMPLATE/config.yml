@@ -1,8 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: All The Things (quest database source)
-    url: https://github.com/ATTWoWAddon/AllTheThings
-    about: Report wrong coordinates or missing Forever quests in ATT. This addon converts ATT Forever data.
+  - name: QuestieDB (quest database source)
+    url: https://github.com/Questie/QuestieDB
+    about: Report wrong coordinates or missing Forever quests in QuestieDB. This addon converts QuestieDB Forever data.
+  - name: Questie (holiday and instance-tag policy)
+    url: https://github.com/Questie/Questie
+    about: Report wrong holiday membership or dungeon/raid tags in Questie corrections.
   - name: Releases (installable zips)
     url: https://github.com/TylerAkins/forever-quest-markers/releases
     about: Packager zips only. Do not install GitHub’s “Source code” archives.

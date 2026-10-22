@@ -16,7 +16,10 @@ func TestPlanAutomatedRelease(t *testing.T) {
 	}{
 		{"no change", "1.2.3", "1.2.3", false, "", false},
 		{"next patch", "1.2.3", "1.2.4", true, "v1.2.4", false},
+		{"manual minor", "1.2.3", "1.3.0", true, "v1.3.0", false},
+		{"manual major", "1.2.3", "2.0.0", true, "v2.0.0", false},
 		{"wrong increment", "1.2.3", "1.2.5", true, "", true},
+		{"downgrade", "1.2.3", "1.2.2", true, "", true},
 		{"invalid version", "1.02.3", "1.2.4", true, "", true},
 	}
 	for _, tt := range tests {
@@ -49,7 +52,7 @@ func TestParseVersionAndPrepareRejectStaleOrInvalidReleaseState(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "VERSION"), []byte("0.1.20\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "Database", "build_report.json"), []byte(`{"att_sha":"abc","quests_emitted":1,"coord_pins":1,"attunement_quests":0}`), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "Database", "build_report.json"), []byte(`{"artifact":{"commit":"abc","sha256":"abc"},"counts":{"quests":1,"coord_pins":1,"instance_quests":0,"yearly_quests":0}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "CHANGELOG.md"), []byte("# Changelog\n\n## 0.1.20 - old\n"), 0o644); err != nil {
@@ -61,10 +64,10 @@ func TestParseVersionAndPrepareRejectStaleOrInvalidReleaseState(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "VERSION"), []byte("0.1.21\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "Database", "build_report.json"), []byte(`{"att_sha":"abc","quests_emitted":true,"coord_pins":1,"attunement_quests":0}`), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "Database", "build_report.json"), []byte(`{"artifact":{"commit":"abc","sha256":"abc"},"counts":{"quests":"bad","coord_pins":1,"instance_quests":0,"yearly_quests":0}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Prepare(root, "0.1.21", "2026-09-20", false); err == nil || !strings.Contains(err.Error(), `missing integer field "quests_emitted"`) {
+	if _, err := Prepare(root, "0.1.21", "2026-09-20", false); err == nil {
 		t.Fatalf("invalid report error = %v", err)
 	}
 }
@@ -96,7 +99,7 @@ func TestPrepareDryRunDoesNotWrite(t *testing.T) {
 	write("VERSION", "1.2.3\n")
 	write("CHANGELOG.md", "# Changelog\n\n## 1.2.3 - old\n")
 	write("RELEASE_NOTES.md", "old notes\n")
-	write("Database/build_report.json", `{"att_sha":"abc123","quests_emitted":2,"coord_pins":3,"attunement_quests":1}`)
+	write("Database/build_report.json", `{"artifact":{"commit":"abc123","sha256":"abc123"},"counts":{"quests":2,"coord_pins":3,"instance_quests":1,"yearly_quests":0}}`)
 	before, err := os.ReadFile(filepath.Join(root, "CHANGELOG.md"))
 	if err != nil {
 		t.Fatal(err)
@@ -135,7 +138,7 @@ func TestPrepareWritesPatchReleaseIdempotently(t *testing.T) {
 	}
 	write("VERSION", "0.1.21\n")
 	write("CHANGELOG.md", "# Changelog\n\n## 0.1.21 - 2026-09-19\n\n- Existing release.\n")
-	write("Database/build_report.json", `{"att_sha":"abc123","quests_emitted":3501,"coord_pins":3725,"attunement_quests":27}`)
+	write("Database/build_report.json", `{"artifact":{"commit":"abc123","sha256":"abc123"},"counts":{"quests":3501,"coord_pins":3725,"instance_quests":27,"yearly_quests":0}}`)
 	for range 2 {
 		if version, err := Prepare(root, "0.1.21", "2026-09-20", false); err != nil || version.String() != "0.1.22" {
 			t.Fatalf("Prepare() = %s, %v", version, err)

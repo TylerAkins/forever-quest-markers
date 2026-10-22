@@ -12,6 +12,7 @@ ns.defaults = {
     showProfession = true,
     showDungeon = true,
     showRepeatable = true,
+    showSpawnClusters = true,
     showSeasonal = false,
     showWarEffort = false,
     autoAccept = false,
@@ -401,11 +402,12 @@ function ns.SlashCommand(msg)
         print(("  /fqp trivial <%d-%d> Hide quests this many levels below you (default %d)"):format(
             TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX, ns.defaults.trivialLevelGap))
         print("  /fqp repeatable Toggle repeatable quest pins (on by default)")
+        print("  /fqp spawns   Toggle grouped spawn pins (on by default)")
         print("  /fqp seasonal Toggle holiday/seasonal pins (off by default)")
         print("  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)")
         print("  /fqp accept   Toggle auto-accept quests")
         print("  /fqp turnin   Toggle auto-turn in quests")
-        print("  /fqp npctooltip Toggle quest accept lines on NPC mouseover")
+        print("  /fqp npctooltip Toggle quest accept and ready turn-in lines on NPC mouseover")
         print("  /fqp hidden   List quest pins hidden with Shift-click on this character")
         print("  /fqp unhide <id|all> Restore one or all hidden quest pins")
         print("  /fqp debug    Toggle debug tooltips and chat diagnostics")
@@ -477,6 +479,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "repeatable" then
         ToggleFlag("showRepeatable", "Show repeatable quests")
+        return
+    end
+    if msg == "spawns" or msg == "spawnclusters" then
+        ToggleFlag("showSpawnClusters", "Show spawn clusters")
         return
     end
     if msg == "seasonal" then
@@ -552,8 +558,8 @@ function ns.PrintStats()
     for _ in pairs(byMap) do
         maps = maps + 1
     end
-    Print(("Database %s | %d quests | %d maps"):format(
-        tostring(meta.attCommit or "?"),
+    Print(("QuestieDB %s | %d quests | %d maps"):format(
+        tostring(meta.artifactCommit or "?"),
         count,
         maps
     ))
@@ -567,11 +573,13 @@ function ns.PrintStats()
     end
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
-        print(("  viewed map %s | painted %s | mode %s | parent %s"):format(
+        print(("  viewed map %s | painted %s | mode %s | parent %s | managed %s | hover dots %s"):format(
             tostring(status.viewedMap),
             tostring(status.count),
             tostring(status.mode),
-            tostring(status.parent or "?")
+            tostring(status.parent or "?"),
+            tostring(status.managed or 0),
+            tostring(status.cloudCount or 0)
         ))
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
@@ -606,6 +614,7 @@ function ns.PrintSettingsDebug()
         "showTrivial",
         "trivialLevelGap",
         "showRepeatable",
+        "showSpawnClusters",
         "showSeasonal",
         "showWarEffort",
         "autoAccept",
@@ -680,9 +689,23 @@ function ns.PrintQuestWhy(questID)
         print("  painted last refresh: " .. (painted and "yes" or "no"))
         print("  map mode " .. tostring(status.mode) .. " parent " .. tostring(status.parent or "?") .. " icon " .. tostring(status.icon or "?"))
     end
-    local sources = data.sourceQuests
-    if not sources or #sources == 0 then
-        print("  sourceQuests: none")
+    local sourceLists = {
+        { "sourceQuestGroup", data.sourceQuestGroup },
+        { "sourceQuestSingle", data.sourceQuestSingle },
+        { "sourceQuests", data.sourceQuests },
+    }
+    local sources = {}
+    for _, entry in ipairs(sourceLists) do
+        local list = entry[2]
+        if list and #list > 0 then
+            print(("  %s: %s"):format(entry[1], table.concat(list, ", ")))
+            for i = 1, #list do
+                sources[#sources + 1] = list[i]
+            end
+        end
+    end
+    if #sources == 0 then
+        print("  prerequisites: none")
         return
     end
     for i = 1, #sources do
@@ -976,13 +999,21 @@ function ns.TryRegisterSettings()
             )
             repeatable:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, 0)
 
+            local spawnClusters = CreateOptionCheckbox(
+                self,
+                "showSpawnClusters",
+                "Show spawn clusters",
+                "Group nearby spawn points into one pin. Hovering shows the spawn count and every location on the map. When off, show one pin per quest."
+            )
+            spawnClusters:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, -12)
+
             local trivial = CreateOptionCheckbox(
                 self,
                 "showTrivial",
                 "Show low-level quests",
                 "When off, hides pins for quests too far below your level. Set how far with the slider below."
             )
-            trivial:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, -12)
+            trivial:SetPoint("TOPLEFT", spawnClusters, "BOTTOMLEFT", 0, -12)
 
             local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
             trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -24)
@@ -1039,7 +1070,7 @@ function ns.TryRegisterSettings()
                 self,
                 "showNPCTooltips",
                 "Show quests on NPC tooltips",
-                "List quests you can accept from this NPC (same eligibility as start pins)."
+                "List quests you can accept or turn in from this NPC (accept eligibility matches start pins; turn-ins require an active, complete quest)."
             )
             npcTooltips:SetPoint("TOPLEFT", iconScale, "BOTTOMLEFT", -4, -24)
 

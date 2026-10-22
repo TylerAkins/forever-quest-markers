@@ -267,7 +267,25 @@ func shapeSDF(px, py float64) float64 {
 	return math.Min(sdfCapsule(px, py, .5, .16, .5, .58, .105), sdfCircle(px, py, .5, .8, .105))
 }
 
+func spawnRingPixel(px, py float64) pixel {
+	distance := math.Abs(math.Hypot(px-.5, py-.5)-.33) - .1
+	if distance > .01 {
+		return pixel{}
+	}
+	if distance > -.01 {
+		alpha := byte(math.Max(0, math.Min(1, 1-(distance+.01)/.02)) * 255)
+		return pixel{8, 16, 24, alpha}
+	}
+	if distance > -.035 {
+		return pixel{8, 16, 24, 255}
+	}
+	return pixel{64, 210, 255, 255}
+}
+
 func samplePixel(px, py float64, variant string) pixel {
+	if variant == "spawn" {
+		return spawnRingPixel(px, py)
+	}
 	distance, outline := shapeSDF(px, py), .055
 	if distance > outline {
 		return pixel{}
@@ -295,7 +313,7 @@ func samplePixel(px, py float64, variant string) pixel {
 }
 
 func WriteTGA(path, variant string) error {
-	if variant != "normal" && variant != "repeatable" && variant != "attunement" {
+	if variant != "normal" && variant != "repeatable" && variant != "attunement" && variant != "spawn" {
 		return fmt.Errorf("unknown quest icon variant: %s", variant)
 	}
 	pixels := make([]pixel, iconSize*iconSize)

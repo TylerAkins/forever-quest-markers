@@ -207,9 +207,9 @@ local function RememberTitle(questID, title)
     return nil
 end
 
-local function AttQuestTitle(questID)
+local function QuestTitleFromData(questID)
     local data = ns.Quests and ns.Quests[questID]
-    local title = data and data.attTitle
+    local title = data and data.title
     if type(title) == "string" and title ~= "" then
         return title
     end
@@ -251,7 +251,7 @@ function ns.GetQuestTitle(questID)
         return title
     end
     ns.RequestQuestTitle(questID)
-    return AttQuestTitle(questID)
+    return QuestTitleFromData(questID)
 end
 
 -- Suggested quest level (tracker [9]), not the database required level. Forever exposes this
@@ -459,9 +459,8 @@ function ns.IsEventActive(eventID)
     return false
 end
 
--- sourceQuests is AND unless sourceQuestNumRequired is set.
--- sourceQuestNumRequired = 1 means any one prerequisite (OR).
--- sourceQuestNumRequired = 0 means no prerequisite is required.
+-- sourceQuestGroup is AND; sourceQuestSingle is OR with sourceQuestNumRequired
+-- (default 1). sourceQuests remains as a legacy fallback for saved/custom data.
 --
 -- Object-started prereqs (no quest-giver NPC) often never flag completed on
 -- Forever. The Ravaged Caravan crate (751) is the gate for Morin Cloudstalker's
@@ -495,12 +494,16 @@ SourceSatisfied = function(questID)
     if ns.IsOnQuest(questID) then
         return false
     end
-    local sources = data.sourceQuests
-    if not sources or #sources == 0 then
+    local group = data.sourceQuestGroup
+    local single = data.sourceQuestSingle
+    local legacy = data.sourceQuests
+    local hasGroup = group and #group > 0
+    local hasSingle = single and #single > 0
+    local hasLegacy = legacy and #legacy > 0
+    if not (hasGroup or hasSingle or hasLegacy) then
         return false
     end
-    local ok = SourceQuestsMet(data)
-    return ok
+    return SourceQuestsMet(data)
 end
 
 local function PrereqListMet(questIDs, required)
@@ -596,6 +599,62 @@ function ns.SetLastOfferNPC(qg, mapID, x, y)
     ns.lastOffer = { qg = qg, mapID = mapID, x = x, y = y }
 end
 
+local function AddQuestToMap(questID, mapID)
+    if not mapID then
+        return false
+    end
+    ns.ByMap = ns.ByMap or {}
+    local list = ns.ByMap[mapID]
+    if not list then
+        list = {}
+        ns.ByMap[mapID] = list
+    end
+    for index = 1, #list do
+        if list[index] == questID then
+            return false
+        end
+    end
+    list[#list + 1] = questID
+    return true
+end
+
+local function AddQuestStarter(data, qg)
+    if not data or not qg then
+        return false
+    end
+    if data.qg == qg then
+        return false
+    end
+    for _, npcID in ipairs(data.qgs or {}) do
+        if npcID == qg then
+            return false
+        end
+    end
+    if not data.qg then
+        data.qg = qg
+    else
+        data.qgs = data.qgs or {}
+        data.qgs[#data.qgs + 1] = qg
+    end
+    return true
+end
+
+local function FillOfferCoord(data, offer)
+    if not data or not offer then
+        return false
+    end
+    if data.mapID and data.x and data.y then
+        return false
+    end
+    if offer.mapID and offer.x and offer.y then
+        data.mapID = offer.mapID
+        data.x = offer.x
+        data.y = offer.y
+        return true
+    end
+    return false
+end
+
 function ns.NoteOfferedQuest(questID)
     questID = tonumber(questID)
     if not questID then
@@ -605,17 +664,13 @@ function ns.NoteOfferedQuest(questID)
     local offer = ns.lastOffer
     local data = ns.Quests and ns.Quests[questID]
     if data then
-        if offer and offer.qg and data.qg ~= offer.qg then
-            for _, npcID in ipairs(data.qgs or {}) do
-                if npcID == offer.qg then
-                    return
-                end
-            end
-            data.qgs = data.qgs or {}
-            data.qgs[#data.qgs + 1] = offer.qg
-            if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
-                ns.NPCTooltips:InvalidateStarterIndex()
-            end
+        local changed = AddQuestStarter(data, offer and offer.qg)
+        if FillOfferCoord(data, offer) then
+            AddQuestToMap(questID, data.mapID)
+            changed = true
+        end
+        if changed and ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
+            ns.NPCTooltips:InvalidateStarterIndex()
         end
         return
     end
@@ -630,14 +685,7 @@ function ns.NoteOfferedQuest(questID)
         y = offer.y,
         qg = offer.qg,
     }
-    if offer.mapID and offer.x and offer.y then
-        local list = ns.ByMap[offer.mapID]
-        if not list then
-            list = {}
-            ns.ByMap[offer.mapID] = list
-        end
-        list[#list + 1] = questID
-    end
+    AddQuestToMap(questID, offer.mapID)
     if ns.NPCTooltips and ns.NPCTooltips.InvalidateStarterIndex then
         ns.NPCTooltips:InvalidateStarterIndex()
     end
@@ -698,6 +746,107 @@ local function QuestLevelForTrivial(questID, data)
     return nil, false
 end
 
+local INSTANCE_QUEST_TAGS = {
+    [81] = true, -- Dungeon
+    [62] = true, -- Raid
+    [85] = true, -- Heroic
+    [88] = true, -- Raid (10)
+    [89] = true, -- Raid (25)
+    [98] = true, -- Scenario
+}
+
+local instanceQuestCache = {}
+
+local function QuestTagInfo(questID)
+    local info
+    if C_QuestLog and type(C_QuestLog.GetQuestTagInfo) == "function" then
+        local ok, result = pcall(C_QuestLog.GetQuestTagInfo, questID)
+        if ok then
+            info = result
+        end
+    end
+    if info == nil and type(GetQuestTagInfo) == "function" then
+        local ok, result = pcall(GetQuestTagInfo, questID)
+        if ok then
+            info = result
+        end
+    end
+    if type(info) == "table" then
+        local tagID = info.tagID or info.tagId or info.TagID
+        local tagName = info.tagName or info.TagName
+        if tagID == 0 then
+            tagID = nil
+        end
+        if tagName == "" or tagName == "None" then
+            tagName = nil
+        end
+        return tagID, tagName
+    end
+    if type(info) == "number" then
+        return info
+    end
+    if type(info) == "string" then
+        return nil, info
+    end
+    return nil
+end
+
+local function IsInstanceTag(tagID, tagName)
+    if type(tagID) == "number" and INSTANCE_QUEST_TAGS[tagID] then
+        return true
+    end
+    if type(tagName) == "string" then
+        local name = tagName:lower()
+        return name == "dungeon"
+            or name == "raid"
+            or name == "heroic"
+            or name == "scenario"
+            or name:match("^raid %(") ~= nil
+    end
+    return false
+end
+
+--- Whether the client or Questie's static corrections classify a quest as instanced.
+-- The client API wins when it has a definite tag. The generated corrections
+-- rescue known-wrong client tags. A nil API result falls back to static data
+-- and is not cached, so a later quest load can retry.
+function ns.IsInstanceQuest(questID, data)
+    questID = tonumber(questID)
+    if not questID then
+        return false
+    end
+    local cached = instanceQuestCache[questID]
+    if cached ~= nil then
+        return cached
+    end
+    local tagID, tagName = QuestTagInfo(questID)
+    local correction = ns.QuestTagCorrections and ns.QuestTagCorrections[questID]
+    local result
+    if IsInstanceTag(tagID, tagName) then
+        result = true
+    elseif IsInstanceTag(correction, nil) then
+        result = true
+    elseif tagID ~= nil or tagName ~= nil then
+        result = false
+    else
+        data = data or (ns.Quests and ns.Quests[questID])
+        result = data ~= nil and data.isInstanceQuest == true
+    end
+    if tagID ~= nil or tagName ~= nil or correction ~= nil then
+        instanceQuestCache[questID] = result
+    end
+    return result
+end
+
+function ns.InvalidateInstanceQuestCache(questID)
+    questID = tonumber(questID)
+    if questID then
+        instanceQuestCache[questID] = nil
+    else
+        instanceQuestCache = {}
+    end
+end
+
 local function IsTrivial(questID, data)
     local questLevel, reliable = QuestLevelForTrivial(questID, data)
     if not reliable or not questLevel then
@@ -727,7 +876,7 @@ function ns.IsQuestAvailable(questID, data)
         return false, "user-hidden"
     end
     local category
-    if data.isAttunement or data.isInstanceQuest then
+    if ns.IsInstanceQuest(questID, data) then
         category = "showDungeon"
     elseif data.classes and #data.classes > 0 then
         category = "showClass"

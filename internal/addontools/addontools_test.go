@@ -181,3 +181,21 @@ func TestGeneratedIconsMatchCheckedInTextures(t *testing.T) {
 		}
 	}
 }
+
+func TestSpawnRingMatchesCommittedTexture(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "SpawnRing.tga")
+	if err := WriteTGA(path, "spawn"); err != nil {
+		t.Fatal(err)
+	}
+	generated, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	committed, err := os.ReadFile(filepath.Join("..", "..", "Media", "SpawnRing.tga"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(generated, committed) {
+		t.Fatal("Media/SpawnRing.tga is out of date with WriteTGA(\"spawn\")")
+	}
+}
