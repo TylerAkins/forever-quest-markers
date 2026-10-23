@@ -636,6 +636,7 @@ cases["pin_filters_runtime.test_gamepad_pin_callbacks_run_after_map_input_handli
             timerQueue = {}
             C_Timer = { After = function(_, callback) table.insert(timerQueue, callback) end }
             InputUtil = { IsGamepadUIEnabled = function() return gamepadEnabled end }
+            SoftCursor = { IsShown = function() return true end }
             shift = false
             IsShiftKeyDown = function() return shift end
             GameTooltip = {
@@ -645,7 +646,18 @@ cases["pin_filters_runtime.test_gamepad_pin_callbacks_run_after_map_input_handli
                 AddLine = function() end,
                 Show = function() end,
             }
-            CreateFrame = function() return { SetScript = function() end } end
+            CreateFrame = function(frameType)
+                if frameType == "GameTooltip" then
+                    return {
+                        Hide = function() gamepadTooltipHidden = (gamepadTooltipHidden or 0) + 1 end,
+                        SetOwner = function() gamepadTooltipOwners = (gamepadTooltipOwners or 0) + 1 end,
+                        SetText = function() end,
+                        AddLine = function() end,
+                        Show = function() gamepadTooltipShown = (gamepadTooltipShown or 0) + 1 end,
+                    }
+                end
+                return { SetScript = function() end }
+            end
 
 assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
 assert(loadfile("HiddenQuests.lua"))("ForeverQuestPins", ns)
@@ -672,27 +684,12 @@ end
             gamepadEnabled = true
 
             ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
-            assert((tooltipOwners or 0) == 0)
-            assert(type(timerQueue[1]) == "function")
+            assert(#timerQueue == 0 and gamepadTooltipShown == nil,
+                "gamepad tooltip display must wait for the cursor poll")
             ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
-            assert(#timerQueue == 1)
-            timerQueue[1]()
-            table.remove(timerQueue, 1)
-            assert(tooltipOwners == nil and tooltipHidden == 1)
-
-            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
-            assert((tooltipOwners or 0) == 0)
-            assert(type(timerQueue[1]) == "function")
-            timerQueue[1]()
-            table.remove(timerQueue, 1)
-            assert(tooltipOwners == 1)
-
-            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
-            assert(tooltipHidden == 1)
-            assert(type(timerQueue[1]) == "function")
-            timerQueue[1]()
-            table.remove(timerQueue, 1)
-            assert(tooltipHidden == 2)
+            assert(#timerQueue == 0)
+            assert(tooltipOwners == nil and tooltipHidden == nil)
+            assert(gamepadTooltipHidden == nil)
 
             ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
             assert(tracked == nil)
@@ -709,8 +706,20 @@ end
             table.remove(timerQueue, 1)
             assert(tracked == 41)
 
+            gamepadEnabled = true
+            SoftCursor.IsShown = function() return false end
+            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+            assert(tooltipOwners == 1, "mouse hover must retain native tooltips when gamepad mode has no soft cursor")
+            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
+            assert(tooltipHidden == 1, "mouse leave must hide the native tooltip when gamepad mode has no soft cursor")
+
             gamepadEnabled = false
+            SoftCursor = nil
             tracked = nil
+            ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+            assert(tooltipOwners == 2, "mouse hover must continue to use the native GameTooltip")
+            ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
+            assert(tooltipHidden == 2, "mouse leave must continue to hide the native GameTooltip")
             ForeverQuestPinsMapPinMixin.OnClick(pin, "LeftButton")
             assert(tracked == 41 and #timerQueue == 0)
 
@@ -2710,6 +2719,134 @@ cases["map_pins_runtime.icon_scale_changes_rendered_pin_size"] = function()
     assert(acquiredPin.width == 36 and acquiredPin.height == 36)
 end
 
+cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = function()
+    setupPinRendering()
+    ns.MapPins:Refresh("gamepad-test")
+    pin._fqpGetCenter = function() return 320, 240 end
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 325, 240 end
+    SoftCursor = { IsShown = function() return true end }
+    assert(ns.MapPins:FindGamepadCursorPin() == pin, "addon hover lookup must still find the pin")
+    local gamepadTooltipShown, gamepadTooltipHidden = 0, 0
+    CreateFrame = function(frameType)
+        if frameType == "GameTooltip" then
+            return {
+                SetOwner = function() end,
+                SetText = function() end,
+                AddLine = function() end,
+                Show = function() gamepadTooltipShown = gamepadTooltipShown + 1 end,
+                Hide = function() gamepadTooltipHidden = gamepadTooltipHidden + 1 end,
+            }
+        end
+        return { SetScript = function() end }
+    end
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+    ns.MapPins:UpdateGamepadHover()
+    assert(gamepadTooltipShown == 1, "gamepad hover must display the private quest tooltip")
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 400, 240 end
+    assert(ns.MapPins:FindGamepadCursorPin() == nil, "cursor lookup must ignore pins outside Blizzard's hover radius")
+    ns.MapPins:UpdateGamepadHover()
+    assert(gamepadTooltipHidden == 1, "leaving the pin must hide the private quest tooltip")
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 320, 240 end
+    SoftCursor.IsShown = function() return false end
+    assert(ns.MapPins:FindGamepadCursorPin() == nil, "cursor lookup must stop when the soft cursor is hidden")
+    SoftCursor.IsShown = function() return true end
+    GetCVarBool = function() return true end
+    assert(ns.MapPins:FindGamepadCursorPin() == nil, "cursor lookup must honor Blizzard's tooltip toggle")
+    GetCVarBool = nil
+    local acquiredPin = {
+        GetCenter = function() return 320, 240 end,
+        UseFrameLevelType = function() end,
+        SetScalingLimits = function() end,
+        SetSize = function() end,
+        SetAlpha = function() end,
+        Texture = { ClearAllPoints = function() end, SetAllPoints = function() end },
+    }
+    ForeverQuestPinsMapPinMixin.OnLoad(acquiredPin)
+    assert(acquiredPin:GetCenter() == nil, "gamepad cursor must not discover addon pin")
+    assert(acquiredPin._fqpGetCenter(acquiredPin) == 320)
+end
+
+cases["map_pins_runtime.gamepad_mode_keeps_pins_out_of_blizzard_pin_pool"] = function()
+    setupPinRendering()
+    local previousMixin = MapCanvasPinMixin
+    local previousAcquirePin = WorldMapFrame.AcquirePin
+    local previousRemovePin = WorldMapFrame.RemovePin
+    local previousInputUtil = InputUtil
+    local acquireCalls, removeCalls = 0, 0
+    MapCanvasPinMixin = { GetCenter = function(self) return self.centerX, self.centerY end }
+    WorldMapFrame.AcquirePin = function()
+        acquireCalls = acquireCalls + 1
+        error("gamepad pins must not use WorldMapFrame:AcquirePin")
+    end
+    WorldMapFrame.RemovePin = function() removeCalls = removeCalls + 1 end
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+
+    ns.MapPins:Refresh("gamepad-test")
+    assert(acquireCalls == 0, "gamepad pins must bypass Blizzard's MapCanvas pin pool")
+    assert(pin and pin.parent == mapCanvas and not pin.managed,
+        "gamepad pins must be ordinary frames parented to the map canvas")
+    assert(pin.scripts.OnClick == ForeverQuestPinsMapPinMixin.OnClick,
+        "ordinary gamepad-mode pins must keep the addon's click handler")
+
+    ns.MapPins:Clear()
+    assert(removeCalls == 0, "ordinary gamepad-mode pins must not call WorldMapFrame:RemovePin")
+
+    MapCanvasPinMixin = previousMixin
+    WorldMapFrame.AcquirePin = previousAcquirePin
+    WorldMapFrame.RemovePin = previousRemovePin
+    InputUtil = previousInputUtil
+end
+
+cases["map_pins_runtime.pin_center_is_hidden_when_map_canvas_acquires_a_pin"] = function()
+    setupPinRendering()
+    local acquiredPin = {
+        GetCenter = function() return 320, 240 end,
+        SetSize = function() end,
+        SetAlpha = function() end,
+    }
+    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
+    assert(acquiredPin:GetCenter() == nil, "the gamepad cursor must not discover an acquired addon pin")
+    assert(acquiredPin._fqpGetCenter(acquiredPin) == 320, "addon hover detection must retain the real center")
+end
+
+cases["map_pins_runtime.gamepad_cursor_poll_owns_tooltip_lifecycle"] = function()
+    setupPinRendering()
+    ns.MapPins:Refresh("gamepad-test")
+    local tooltipShown, tooltipHidden, tooltipOwners, tooltipAnchor = 0, 0, 0, nil
+    CreateFrame = function(frameType)
+        if frameType == "GameTooltip" then
+            return {
+                SetOwner = function() tooltipOwners = tooltipOwners + 1 end,
+                SetAnchorType = function(_, anchor) tooltipAnchor = anchor end,
+                SetText = function() end,
+                AddLine = function() end,
+                Show = function() tooltipShown = tooltipShown + 1 end,
+                Hide = function() tooltipHidden = tooltipHidden + 1 end,
+            }
+        end
+        return { SetScript = function() end }
+    end
+    local timerQueue = {}
+    C_Timer = { After = function(_, callback) timerQueue[#timerQueue + 1] = callback end }
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+    SoftCursor = { IsShown = function() return true end }
+    local pinX, pinY = pin._fqpGetCenter(pin)
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return pinX, pinY end
+    ForeverQuestPinsMapPinMixin.OnMouseEnter(pin)
+    assert(#timerQueue == 0 and tooltipShown == 0,
+        "gamepad pin enter must leave tooltip ownership to the cursor poll")
+    ns.MapPins:UpdateGamepadHover()
+    assert(tooltipShown == 1, "the cursor poll must show the quest tooltip for the pin under the cursor")
+    assert(tooltipOwners == 0 and tooltipAnchor == "ANCHOR_RIGHT", "the private tooltip must use anchor type without an owner")
+    ForeverQuestPinsMapPinMixin.OnMouseLeave(pin)
+    assert(tooltipHidden == 0, "pin leave must not immediately hide the gamepad tooltip")
+    ns.MapPins:UpdateGamepadHover()
+    assert(tooltipShown == 1, "the cursor poll must not duplicate the active pin tooltip")
+    WorldMapFrame.ScrollContainer.GetGamepadCursorPosition = function() return 300, 300 end
+    ns.MapPins:UpdateGamepadHover()
+    assert(tooltipHidden == 1, "moving the gamepad cursor off the pin must hide the tooltip")
+end
+
 cases["map_pins_runtime.repeatable_pin_is_blue_and_hidden_when_opted_out"] = function()
     setupPinRendering()
     ns.MapPins:Refresh("test")
@@ -2853,7 +2990,7 @@ cases["map_pins_runtime.distant_spawn_points_cluster_or_collapse_to_one_pin"] = 
     pin.scripts.OnEnter(pin)
     assert(ns.MapPins:GetStatus().cloudCount == 0)
     assert(tooltipHas("3 possible spawn locations"), "single pin tooltip count line")
-    pin.scripts.OnClick(pin)
+    pin.scripts.OnClick(pin, "LeftButton")
     assert(trackedQuestID == 101)
     assert(trackedData.mapID == 1 and trackedData.x == 50 and trackedData.y == 50)
 end
