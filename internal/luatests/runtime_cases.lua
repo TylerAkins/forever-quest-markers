@@ -2766,6 +2766,37 @@ cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = functio
     assert(acquiredPin._fqpGetCenter(acquiredPin) == 320)
 end
 
+cases["map_pins_runtime.gamepad_mode_keeps_pins_out_of_blizzard_pin_pool"] = function()
+    setupPinRendering()
+    local previousMixin = MapCanvasPinMixin
+    local previousAcquirePin = WorldMapFrame.AcquirePin
+    local previousRemovePin = WorldMapFrame.RemovePin
+    local previousInputUtil = InputUtil
+    local acquireCalls, removeCalls = 0, 0
+    MapCanvasPinMixin = { GetCenter = function(self) return self.centerX, self.centerY end }
+    WorldMapFrame.AcquirePin = function()
+        acquireCalls = acquireCalls + 1
+        error("gamepad pins must not use WorldMapFrame:AcquirePin")
+    end
+    WorldMapFrame.RemovePin = function() removeCalls = removeCalls + 1 end
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+
+    ns.MapPins:Refresh("gamepad-test")
+    assert(acquireCalls == 0, "gamepad pins must bypass Blizzard's MapCanvas pin pool")
+    assert(pin and pin.parent == mapCanvas and not pin.managed,
+        "gamepad pins must be ordinary frames parented to the map canvas")
+    assert(pin.scripts.OnClick == ForeverQuestPinsMapPinMixin.OnClick,
+        "ordinary gamepad-mode pins must keep the addon's click handler")
+
+    ns.MapPins:Clear()
+    assert(removeCalls == 0, "ordinary gamepad-mode pins must not call WorldMapFrame:RemovePin")
+
+    MapCanvasPinMixin = previousMixin
+    WorldMapFrame.AcquirePin = previousAcquirePin
+    WorldMapFrame.RemovePin = previousRemovePin
+    InputUtil = previousInputUtil
+end
+
 cases["map_pins_runtime.pin_center_is_hidden_when_map_canvas_acquires_a_pin"] = function()
     setupPinRendering()
     local acquiredPin = {
@@ -2959,7 +2990,7 @@ cases["map_pins_runtime.distant_spawn_points_cluster_or_collapse_to_one_pin"] = 
     pin.scripts.OnEnter(pin)
     assert(ns.MapPins:GetStatus().cloudCount == 0)
     assert(tooltipHas("3 possible spawn locations"), "single pin tooltip count line")
-    pin.scripts.OnClick(pin)
+    pin.scripts.OnClick(pin, "LeftButton")
     assert(trackedQuestID == 101)
     assert(trackedData.mapID == 1 and trackedData.x == 50 and trackedData.y == 50)
 end

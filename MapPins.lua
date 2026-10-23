@@ -1030,7 +1030,9 @@ function MapPins:RepositionAll()
 end
 
 local function AcquirePin(parent)
-    if MapCanvasPinMixin and WorldMapFrame and WorldMapFrame.AcquirePin then
+    -- The native gamepad cursor scans MapCanvas pins outside secure code. Use
+    -- ordinary canvas children in gamepad mode and resolve hover privately.
+    if not IsGamepadUIEnabled() and MapCanvasPinMixin and WorldMapFrame and WorldMapFrame.AcquirePin then
         -- Populate the mixin lazily in case Blizzard_MapCanvas loaded after us.
         for key, value in pairs(MapCanvasPinMixin) do
             if ForeverQuestPinsMapPinMixin[key] == nil then
@@ -1047,7 +1049,7 @@ local function AcquirePin(parent)
             pin:EnableMouse(true)
         end
         EnsurePinTextures(pin)
-        pin:SetScript("OnClick", OnPinClick)
+        pin:SetScript("OnClick", ForeverQuestPinsMapPinMixin.OnClick)
         pin:SetScript("OnEnter", ForeverQuestPinsMapPinMixin.OnMouseEnter)
         pin:SetScript("OnLeave", ForeverQuestPinsMapPinMixin.OnMouseLeave)
     end
