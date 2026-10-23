@@ -1,4 +1,4 @@
-## 0.3.2 - 2026-10-22
+## 0.3.3 - 2026-10-23
 
-- Prevent the native gamepad cursor from reading addon pin centers and tainting Blizzard's protected map interaction update.
-- Preserve controller hover tooltips with a private tooltip.
+- Resolve map-pin hover from normalized mouse and gamepad cursor positions while Gamepad UI is enabled.
+- Show quest text using a named private tooltip, including when Blizzard suppresses the shared tooltip.

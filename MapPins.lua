@@ -37,7 +37,10 @@ local pool = {}
 local active = {}
 local hoveredPin
 local gamepadTooltip
+local gamepadTooltipPin
 local gamepadHoverAccum = 0
+local activeCursorInput = "mouse"
+local lastMouseX, lastMouseY
 local liveAccum = 0
 local canvasCache
 local canvasCacheName
@@ -436,7 +439,13 @@ end
 
 local function GetGamepadTooltip()
     if not gamepadTooltip then
-        gamepadTooltip = CreateFrame("GameTooltip", nil, UIParent, "GameTooltipTemplate")
+        gamepadTooltip = CreateFrame("GameTooltip", "ForeverQuestPinsGamepadTooltip", UIParent, "GameTooltipTemplate")
+        if gamepadTooltip.SetFrameStrata then
+            gamepadTooltip:SetFrameStrata("TOOLTIP")
+        end
+    end
+    if gamepadTooltip.SetScale and GameTooltip and GameTooltip.GetScale then
+        gamepadTooltip:SetScale(GameTooltip:GetScale())
     end
     return gamepadTooltip
 end
@@ -445,6 +454,7 @@ local function HideGamepadTooltip()
     if gamepadTooltip then
         gamepadTooltip:Hide()
     end
+    gamepadTooltipPin = nil
 end
 
 -- Dots live on UIParent above the map but below tooltips, and they are placed
@@ -715,6 +725,9 @@ local function ShowTooltip(pin, tooltip)
         return
     end
     tooltip = tooltip or GameTooltip
+    if tooltip == gamepadTooltip then
+        gamepadTooltipPin = pin
+    end
     hoveredPin = pin
     ShowSpawnCloud(pin)
     local quests = pin.quests
@@ -724,10 +737,7 @@ local function ShowTooltip(pin, tooltip)
     for i = 1, #quests do
         ns.PrefetchQuestInfo(quests[i].id, quests[i].data)
     end
-    local isGamepadTooltip = tooltip == gamepadTooltip
-    if not isGamepadTooltip then
-        tooltip:SetOwner(pin, "ANCHOR_RIGHT")
-    end
+    tooltip:SetOwner(pin, "ANCHOR_RIGHT")
     local debugOn = ns.GetOption("debug")
     local primaryText, primaryLevel = QuestLineText(quests[1].id)
     local pr, pg, pb = QuestLineColor(primaryLevel)
@@ -803,23 +813,15 @@ local function ShowTooltip(pin, tooltip)
     end
     tooltip:AddLine("Click to track this quest start.", 1, 1, 1)
     tooltip:AddLine("Shift-click to hide this marker.", 0.7, 0.7, 0.7)
-    if isGamepadTooltip and tooltip.SetAnchorType then
-        tooltip:SetAnchorType("ANCHOR_RIGHT")
-    end
     tooltip:Show()
 end
 
-function MapPins:FindGamepadCursorPin()
-    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
-    if not (SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown()
-        and scroll and scroll.GetGamepadCursorPosition) then
-        return nil
-    end
-    if GetCVarBool and GetCVarBool("GamepadDisableTooltips") then
-        return nil
-    end
-    local cursorX, cursorY = scroll:GetGamepadCursorPosition()
+local function FindPinAtCursor(cursorX, cursorY, normalized)
     if not cursorX or not cursorY then
+        return nil
+    end
+    local canvas = normalized and GetCanvas() or nil
+    if normalized and (not canvas or not canvas.GetWidth or not canvas.GetHeight) then
         return nil
     end
     local closestPin, closestDistance
@@ -827,11 +829,22 @@ function MapPins:FindGamepadCursorPin()
         local pin = active[i]
         local getCenter = pin._fqpGetCenter
         if getCenter and pin.IsShown and pin:IsShown() and pin.questID then
-            local pinX, pinY = getCenter(pin)
-            if pinX and pinY then
-                local dx, dy = pinX - cursorX, pinY - cursorY
-                local distance = dx * dx + dy * dy
-                if distance <= GAMEPAD_PIN_DISTANCE_SQUARED
+            local pinX, pinY
+            local radiusX, radiusY
+            if normalized and pin.nx and pin.ny then
+                pinX = (pin.nx - cursorX) * canvas:GetWidth()
+                pinY = (pin.ny - cursorY) * canvas:GetHeight()
+                local scale = pin.GetScale and pin:GetScale() or 1
+                radiusX = (pin.GetWidth and pin:GetWidth() or PIN_SIZE) * scale * 0.5
+                radiusY = (pin.GetHeight and pin:GetHeight() or PIN_SIZE) * scale * 0.5
+            else
+                local centerX, centerY = getCenter(pin)
+                pinX, pinY = centerX and centerX - cursorX, centerY and centerY - cursorY
+                radiusX, radiusY = math.sqrt(GAMEPAD_PIN_DISTANCE_SQUARED), math.sqrt(GAMEPAD_PIN_DISTANCE_SQUARED)
+            end
+            if pinX and pinY and radiusX and radiusY then
+                local distance = pinX * pinX + pinY * pinY
+                if math.abs(pinX) <= radiusX and math.abs(pinY) <= radiusY
                     and (not closestDistance or distance < closestDistance) then
                     closestPin, closestDistance = pin, distance
                 end
@@ -841,9 +854,80 @@ function MapPins:FindGamepadCursorPin()
     return closestPin
 end
 
+local function UpdateActiveCursorInput()
+    if not IsGamepadUIEnabled() then
+        activeCursorInput = "mouse"
+        return
+    end
+    local mouseX, mouseY
+    if GetCursorPosition then
+        mouseX, mouseY = GetCursorPosition()
+    end
+    local mouseMoved = mouseX and mouseY and (mouseX ~= lastMouseX or mouseY ~= lastMouseY)
+    local buttonDown = IsMouseButtonDown and (IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton"))
+    lastMouseX, lastMouseY = mouseX, mouseY
+    if SoftCursor and SoftCursor.IsMoving and SoftCursor:IsMoving() then
+        activeCursorInput = "gamepad"
+    elseif mouseMoved and buttonDown then
+        activeCursorInput = "gamepad"
+    elseif mouseMoved then
+        activeCursorInput = "mouse"
+    end
+end
+
+function MapPins:FindGamepadCursorPin()
+    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
+    -- This is the same map-relative cursor used by Blizzard and Leatrix Maps.
+    if WorldMapFrame and WorldMapFrame.GetNormalizedGamepadCursorPosition then
+        local cursorX, cursorY = WorldMapFrame:GetNormalizedGamepadCursorPosition()
+        if cursorX ~= nil and cursorY ~= nil then
+            return FindPinAtCursor(cursorX, cursorY, true)
+        end
+    end
+    if scroll and scroll.GetNormalizedGamepadCursorPosition then
+        local cursorX, cursorY = scroll:GetNormalizedGamepadCursorPosition()
+        if cursorX ~= nil and cursorY ~= nil then
+            return FindPinAtCursor(cursorX, cursorY, true)
+        end
+    end
+    -- Older clients may expose only screen coordinates through SoftCursor.
+    if not (SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown()) then
+        return nil
+    end
+    local cursorX, cursorY
+    if SoftCursor.GetCenter then
+        cursorX, cursorY = SoftCursor:GetCenter()
+    end
+    if (not cursorX or not cursorY) and scroll and scroll.GetGamepadCursorPosition then
+        cursorX, cursorY = scroll:GetGamepadCursorPosition()
+    end
+    return FindPinAtCursor(cursorX, cursorY, false)
+end
+
+function MapPins:FindMouseCursorPin()
+    local scroll = WorldMapFrame and WorldMapFrame.ScrollContainer
+    if not (WorldMapFrame and WorldMapFrame.GetNormalizedCursorPosition
+        and scroll and scroll.IsMouseOver and scroll:IsMouseOver()) then
+        return nil
+    end
+    local cursorX, cursorY = WorldMapFrame:GetNormalizedCursorPosition()
+    return FindPinAtCursor(cursorX, cursorY, true)
+end
+
 function MapPins:UpdateGamepadHover()
-    local pin = MapPins:FindGamepadCursorPin()
+    UpdateActiveCursorInput()
+    local gamepadPin = MapPins:FindGamepadCursorPin()
+    local mousePin = MapPins:FindMouseCursorPin()
+    local pin
+    if activeCursorInput == "gamepad" then
+        pin = gamepadPin
+    else
+        pin = mousePin or gamepadPin
+    end
     if pin == hoveredPin then
+        if pin and IsGamepadUIEnabled() and gamepadTooltipPin ~= pin then
+            ShowTooltip(pin, GetGamepadTooltip())
+        end
         return
     end
     HideSpawnCloud()
@@ -1107,17 +1191,17 @@ function ForeverQuestPinsMapPinMixin:OnClick(button)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
-    if IsGamepadCursorVisible() then
+    if IsGamepadUIEnabled() then
         -- Gamepad hover is resolved by the cursor poll. MapCanvas can dispatch
-        -- this event before its cursor position settles, so showing here lets
-        -- the next poll immediately clear the tooltip.
+        -- this event while the soft cursor is hidden, and Blizzard can suppress
+        -- its shared tooltip in Gamepad UI. Defer all hover to our private tooltip.
         return
     end
     ShowTooltip(self)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseLeave()
-    if IsGamepadCursorVisible() then
+    if IsGamepadUIEnabled() then
         return
     end
     if hoveredPin == self then
@@ -1753,6 +1837,8 @@ local function OnMapClose()
     sizeWatchFrames = {}
     liveAccum = 0
     gamepadHoverAccum = 0
+    activeCursorInput = "mouse"
+    lastMouseX, lastMouseY = nil, nil
     hoveredPin = nil
     HideGamepadTooltip()
     InvalidateCanvas()
