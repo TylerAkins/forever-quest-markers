@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 0.3.4 - 2026-10-24
+
+- Update the QuestieDB Forever artifact to `243a2ef21a9c3ce6280b2388d40d811fdd5e022c135c0e387652c2dc7c601638` (build `cb187dffa957157d3c93a4696000b62ea4539dd9`).
+- Ship 5232 quests with 6721 coordinate pins (678 static instance quests, 215 yearly quests).
+
 ## 0.3.3 - 2026-10-23
 
 - Resolve map-pin hover from normalized mouse and gamepad cursor positions while Gamepad UI is enabled.
