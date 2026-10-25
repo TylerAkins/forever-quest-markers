@@ -1,8 +1,8 @@
 {
   "artifact": {
-    "version": "1.0.7-dev.cb187df",
-    "commit": "cb187dffa957157d3c93a4696000b62ea4539dd9",
-    "sha256": "243a2ef21a9c3ce6280b2388d40d811fdd5e022c135c0e387652c2dc7c601638",
+    "version": "1.0.7-dev.5c094f6",
+    "commit": "5c094f6e9a264f0dc54e2fde9731a37a97ed197c",
+    "sha256": "623db936a21e55919c2c3951a2557abba99ac93c60bc76b98771fdb55e6c54e1",
     "ref": "preview",
     "flavor": "Forever",
     "contract_version": 4,
@@ -33,7 +33,7 @@
     "quests_with_classes": 989,
     "quests_with_skill": 229,
     "quests_with_prereqs": 2712,
-    "quests_with_alt_quests": 446
+    "quests_with_alt_quests": 447
   },
   "start_gaps": {
     "no_starter": 181,
