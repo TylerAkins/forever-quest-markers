@@ -56,6 +56,24 @@ jobs:
       - name: Go tests
         run: go test ./...
 
+      - name: Detect Questie data or generator changes
+        id: questie_changes
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            BASE_SHA="$PR_BASE_SHA"
+          else
+            BASE_SHA="$PUSH_BASE_SHA"
+          fi
+          if [[ ! "$BASE_SHA" =~ ^0{40}$ ]] && git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- Database/ cmd/fqp/ internal/questdb/ internal/questiedb/ internal/questiepolicy/; then
+            echo "required=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "required=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate automated release intent
         if: github.event_name == 'pull_request'
         env:
@@ -80,6 +98,7 @@ jobs:
           grep -qF "## ${CURRENT_VERSION} " CHANGELOG.md
 
       - name: Read pinned inputs
+        if: steps.questie_changes.outputs.required == 'true'
         id: pins
         run: |
           set -euo pipefail
@@ -92,16 +111,22 @@ jobs:
             echo "policy=$POLICY_SHA"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Download pinned QuestieDB artifact
+      - name: Validate pinned QuestieDB artifact
+        if: steps.questie_changes.outputs.required == 'true'
         run: |
           set -euo pipefail
           mkdir -p .cache
           curl --fail --silent --show-error --location \
             "https://github.com/Questie/QuestieDB/releases/download/preview/QuestieDB-Forever.zip" \
             --output .cache/QuestieDB-Forever.zip
-          printf '%s  %s\n' "${{ steps.pins.outputs.artifact }}" ".cache/QuestieDB-Forever.zip" | sha256sum --check --strict
+          ACTUAL_SHA="$(sha256sum .cache/QuestieDB-Forever.zip | cut -d' ' -f1)"
+          if [[ "$ACTUAL_SHA" != "${{ steps.pins.outputs.artifact }}" ]]; then
+            echo "QuestieDB preview has moved since this database was generated (expected ${{ steps.pins.outputs.artifact }}, found $ACTUAL_SHA). Run the Update QuestieDB database workflow manually to regenerate the data before merging this PR." >&2
+            exit 1
+          fi
 
       - name: Checkout Questie policy at pinned commit
+        if: steps.questie_changes.outputs.required == 'true'
         uses: actions/checkout@v7
         with:
           repository: Questie/Questie
@@ -113,6 +138,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Regenerate database and fail on drift
+        if: steps.questie_changes.outputs.required == 'true'
         run: |
           set -euo pipefail
           go run ./cmd/fqp build-db \
