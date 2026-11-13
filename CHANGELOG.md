@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.3 - 2026-11-13
+
+- Update the QuestieDB Forever artifact to `833c8302bd1dcd11582068bce68ab637bc5d8e730bed7147e9bf4a5d5e44374e` (build `f0ad90875a6531368883904b0f157e7423c14f0b`).
+- Ship 5893 quests with 10208 coordinate pins (678 static instance quests, 220 yearly quests).
+
 ## 1.0.2 - 2026-11-12
 
 - Keep quest pins visible across zones when moving OpenMap's stitched world map.
