@@ -1851,6 +1851,53 @@ assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
             assert(ns.NpcIDFromGUID('secret-guid')==nil)
 
 end
+cases["quest_info_runtime.data_load_refreshes_only_when_level_filter_flips"] = function()
+    ns = { Quests = {
+        [1] = { minLevel = 50 },
+        [2] = { minLevel = 20 },
+        [3] = { minLevel = 55 },
+    } }
+    local options = { showTrivial = false, trivialLevelGap = 9, highLevelGap = 15 }
+    ns.GetOption = function(key) return options[key] end
+    UnitLevel = function() return 60 end
+    local difficulty
+    C_QuestLog = {
+        GetTitleForQuestID = function() return nil end,
+        GetQuestDifficultyLevel = function() return difficulty end,
+        RequestLoadQuestByID = function() end,
+    }
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    local refreshes = {}
+    ns.RequestRefresh = function(reason) refreshes[#refreshes + 1] = reason end
+
+    -- The database minimum level made quest 1 trivial, but the loaded level
+    -- does not, so the pin set changes.
+    difficulty = 55
+    ns.OnQuestDataLoad(1)
+    assert(#refreshes == 1 and refreshes[1] == "quest-level")
+
+    -- Both levels are trivial; the pin set does not change.
+    difficulty = 48
+    ns.OnQuestDataLoad(1)
+    assert(#refreshes == 1)
+
+    -- Neither level is trivial.
+    difficulty = 59
+    ns.OnQuestDataLoad(3)
+    assert(#refreshes == 1)
+
+    -- The high-level filter starts applying once the level loads.
+    options.showTrivial = true
+    options.highLevelGap = 3
+    difficulty = 70
+    ns.OnQuestDataLoad(2)
+    assert(#refreshes == 2 and refreshes[2] == "quest-level")
+
+    difficulty = 62
+    ns.OnQuestDataLoad(2)
+    assert(#refreshes == 2)
+end
+
 cases["quest_info_runtime.test_failed_data_event_does_not_trigger_success_handler"] = function()
 dofile("tests/fixtures/quest_info.lua")
 
@@ -2741,6 +2788,7 @@ local function setupPinRendering()
         Show = function() end, Hide = function() end,
     }
     UnitLevel = function() return 60 end
+    UnitFactionGroup = function() return "Alliance" end
     wipe = function(value) for key in pairs(value) do value[key] = nil end end
     trackedQuestID = nil
     trackedData = nil
@@ -3198,6 +3246,58 @@ cases["map_pins_runtime.stacked_quests_keep_separate_spawn_counts"] = function()
     assert(status.paintedIDs[101] and status.paintedIDs[102])
     assert(pin.spawnCount == 3, "stacked spawn count " .. tostring(pin.spawnCount))
     assert(pin.Badge == nil, "count badge should not be drawn")
+end
+
+cases["map_pins_runtime.spawn_points_include_primary_coord"] = function()
+    setupPinRendering()
+    -- The database stores the first spawn as mapID/x/y and only the remaining
+    -- spawns in coords. All of them belong in the pin's spawn list.
+    ns.Quests = {
+        [101] = {
+            mapID = 1, x = 20, y = 50, title = "Spawn test",
+            coords = { { 50, 50, 1 }, { 80, 50, 1 } },
+        },
+    }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = false
+
+    ns.MapPins:Refresh("spawn-primary")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(pin.spawnCount == 3, "primary spawn missing: " .. tostring(pin.spawnCount))
+end
+
+cases["map_pins_runtime.enemy_capital_spawns_hidden_for_player_faction"] = function()
+    setupPinRendering()
+    -- One quest offered in both capitals; each faction should see only its
+    -- own city spawn.
+    ns.Quests = {
+        [101] = { mapID = 1454, x = 20, y = 50, coords = { { 80, 50, 1453 } } },
+    }
+    ns.ByMap = { [1454] = { 101 }, [1453] = { 101 } }
+    ns.ProjectToViewedMap = function(_, x, y) return x / 100, y / 100 end
+    options.showSpawnClusters = false
+
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.MapPins:Refresh("enemy-city")
+    assert(ns.MapPins:GetStatus().count == 1 and pin.spawnCount == 1)
+    assert(pin.nx == 0.2)
+
+    ns.GetPlayerFaction = function() return "Alliance" end
+    ns.MapPins:Refresh("enemy-city")
+    assert(ns.MapPins:GetStatus().count == 1 and pin.spawnCount == 1)
+    assert(pin.nx == 0.8)
+
+    ns.GetPlayerFaction = nil
+    ns.MapPins:Refresh("enemy-city")
+    assert(ns.MapPins:GetStatus().count == 1 and pin.spawnCount == 2)
+
+    -- A single spawn on the other faction's city map is kept; dungeon and
+    -- neutral starts use that shape.
+    ns.Quests = { [102] = { mapID = 1455, x = 60, y = 50 } }
+    ns.ByMap = { [1455] = { 102 } }
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.MapPins:Refresh("enemy-city")
+    assert(ns.MapPins:GetStatus().count == 1 and ns.MapPins:GetStatus().paintedIDs[102])
 end
 
 cases["map_pins_runtime.spawn_cluster_count_is_capped_per_quest"] = function()
@@ -3876,6 +3976,85 @@ cases["map_pins_runtime.openmap_keeps_pins_across_host_changes"] = function()
     mapID = 1
     ns.MapPins:Refresh("map-changed")
     assert(ns.MapPins:GetStatus().count == 1)
+end
+
+cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = function()
+    setupPinRendering()
+    local timerQueue = {}
+    C_Timer = { After = function(_, callback) timerQueue[#timerQueue + 1] = callback end }
+    local function runTimers()
+        local queued = timerQueue
+        timerQueue = {}
+        for i = 1, #queued do queued[i]() end
+    end
+    local hooks = {}
+    hooksecurefunc = function(_, name, callback) hooks[name] = callback end
+    local mapID = 1
+    OpenMapAPI = {
+        IsStitched = function() return true end,
+        WorldFromMap = function(id, x, y) return x / 2 + (id - 1) / 2, y end,
+        MapFromWorld = function(id, u, v) return (u - (id - 1) / 2) * 2, v end,
+    }
+    WorldMapFrame.GetMapID = function() return mapID end
+    WorldMapFrame.OnMapChanged = function() end
+    WorldMapFrame.SynchronizeDisplayState = function() end
+    ns.ProjectToViewedMap = function(_, x, y) return x / 100, y / 100 end
+    local refreshes = {}
+    ns.RequestRefresh = function(reason) refreshes[#refreshes + 1] = reason end
+    for i = 1, 80 do
+        local questID = 1000 + i
+        ns.Quests[questID] = { mapID = 1, x = (i % 10) * 8 + 3, y = math.floor(i / 10) * 8 + 3 }
+        ns.ByMap[1][#ns.ByMap[1] + 1] = questID
+    end
+    ns.MapPins:HookMap()
+    runTimers()
+    refreshes = {}
+
+    -- 81 candidates: the first batch stops at the 60-item cap when the
+    -- profiler is unavailable, leaving a pending batch.
+    ns.MapPins:Refresh("initial")
+    assert(ns.MapPins:GetStatus().count == 60 and ns.MapPins:GetStatus().mode == "painting")
+    assert(#timerQueue == 1)
+
+    mapID = 2
+    hooks.OnMapChanged()
+    assert(ns.MapPins:GetStatus().count == 0 and ns.MapPins:GetStatus().mode == "map-changing")
+    assert(refreshes[#refreshes] == "map-changed", "map change must request a repaint")
+    runTimers()
+    assert(ns.MapPins:GetStatus().mode == "map-changing", "cancelled batch must not run")
+
+    ns.MapPins:Refresh("map-changed")
+    assert(ns.MapPins:GetStatus().mode == "painting", "follow-up refresh must paint the new map")
+    runTimers()
+    assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
+
+    -- The display-state hook needs the same handling: clear the partial pin set
+    -- and let the follow-up refresh paint instead of reprojecting it.
+    ns.MapPins:Refresh("initial")
+    assert(ns.MapPins:GetStatus().count == 60 and #timerQueue == 1)
+    mapID = 3
+    hooks.SynchronizeDisplayState()
+    assert(ns.MapPins:GetStatus().count == 0 and ns.MapPins:GetStatus().mode == "map-changing")
+    assert(refreshes[#refreshes] == "map-display", "display state change must request a repaint")
+    runTimers()
+    ns.MapPins:Refresh("map-display")
+    assert(ns.MapPins:GetStatus().mode == "painting")
+    runTimers()
+    assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
+
+    -- A quest-level refresh during an active paint must not restart it.
+    ns.MapPins:Refresh("initial")
+    assert(ns.MapPins:GetStatus().count == 60 and #timerQueue == 1)
+    refreshes = {}
+    ns.MapPins:Refresh("quest-level")
+    assert(ns.MapPins:GetStatus().count == 60 and ns.MapPins:GetStatus().mode == "painting")
+    runTimers()
+    assert(ns.MapPins:GetStatus().count == 81 and ns.MapPins:GetStatus().mode == "canvas")
+    assert(refreshes[#refreshes] == "quest-level", "paint completion must request the deferred refresh")
+    ns.MapPins:Refresh("quest-level")
+    assert(ns.MapPins:GetStatus().mode == "painting")
+    runTimers()
+    assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
