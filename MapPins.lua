@@ -47,8 +47,6 @@ local refreshJob
 local MAX_REFRESH_ITEMS_PER_FRAME = 150
 local REFRESH_BUDGET_FRACTION = 0.30
 local MAX_REFRESH_BUDGET_MS = 5.0
-local PIN_FADE_ENABLED = true
-local PIN_FADE_DURATION = 0.18
 local hoveredPin
 local gamepadTooltip
 local gamepadTooltipPin
@@ -774,7 +772,6 @@ local function ReleasePin(pin)
     pin.attNy = nil
     pin.live = nil
     pin.titleReady = nil
-    pin._fqpFadeElapsed = nil
     pin.quests = nil
     pin.icon = nil
     pin.spawnPoints = nil
@@ -786,6 +783,12 @@ end
 function MapPins:CancelPendingRefresh()
     refreshGeneration = refreshGeneration + 1
     refreshJob = nil
+end
+
+-- A sliced paint owns the map it started on. A reprojection cannot finish it,
+-- so callers cancel it and repaint instead.
+function MapPins:IsRefreshingOtherMap(mapID)
+    return refreshJob ~= nil and refreshJob.mapID ~= mapID
 end
 
 function MapPins:Clear()
@@ -1249,6 +1252,8 @@ ReprojectStitchedPins = function(mapID)
     local oldMap = lastStatus.viewedMap
     if not oldMap or not mapID then return false end
     if oldMap == mapID then return true end
+    -- Nothing to reproject; let the caller paint the new map instead.
+    if #active == 0 then return false end
     local u, v = OpenMapAPI.WorldFromMap(oldMap, 0.5, 0.5)
     if not u or not v or not OpenMapAPI.MapFromWorld(mapID, u, v) then return false end
     local function project(x, y)
@@ -1418,31 +1423,6 @@ local function GetRefreshBudgetMS()
     return MAX_REFRESH_BUDGET_MS
 end
 
-local function StartPinFade(pin)
-    if not PIN_FADE_ENABLED then
-        pin._fqpFadeElapsed = nil
-        pin:SetAlpha(1)
-        return
-    end
-    pin._fqpFadeElapsed = 0
-    pin:SetAlpha(0)
-end
-
-local function UpdatePinFades(elapsed)
-    for i = 1, #active do
-        local pin = active[i]
-        if pin._fqpFadeElapsed then
-            pin._fqpFadeElapsed = pin._fqpFadeElapsed + elapsed
-            local alpha = pin._fqpFadeElapsed / PIN_FADE_DURATION
-            if alpha >= 1 then
-                pin._fqpFadeElapsed = nil
-                alpha = 1
-            end
-            pin:SetAlpha(alpha)
-        end
-    end
-end
-
 local function PlacePin(parent, nx, ny, questID, data, reason, live, spawnPoints, anchor)
     if not spawnPoints then
         spawnPoints = { {
@@ -1487,7 +1467,6 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live, spawnPoints
     SetPinTexture(pin)
     ApplyPinPoint(pin, parent)
     pin:Show()
-    StartPinFade(pin)
     active[#active + 1] = pin
     ns.PrefetchQuestInfo(questID, data)
     return true
@@ -1536,13 +1515,12 @@ local function EachCoord(data, fn)
         seen[key] = true
         fn(mapID, x, y)
     end
+    emit(data.mapID, data.x, data.y)
     if data.coords then
         for i = 1, #data.coords do
             local coord = data.coords[i]
             emit(coord[3] or data.mapID, coord[1], coord[2])
         end
-    else
-        emit(data.mapID, data.x, data.y)
     end
     local qg = QuestGiverID(data)
     local extras = qg and PATROL_EXTRA[qg]
@@ -1625,9 +1603,38 @@ local function UnitMapPosition(unit, mapID)
     return nil, nil
 end
 
+-- Capital city maps are separate zone maps. When a quest is offered in both
+-- factions' capitals, skip the other faction's city coordinates. Maps are UI
+-- map IDs; keep single-city quests so neutral and dungeon starts still show.
+local ALLIANCE_CITY_MAPS = { [1453] = true, [1455] = true, [1457] = true } -- Stormwind, Ironforge, Darnassus
+local HORDE_CITY_MAPS = { [1454] = true, [1456] = true, [1458] = true } -- Orgrimmar, Thunder Bluff, Undercity
+
+local function EnemyCapitalMaps(data)
+    local faction = ns.GetPlayerFaction and ns.GetPlayerFaction()
+    if faction ~= "Alliance" and faction ~= "Horde" then
+        return nil
+    end
+    local hasAlliance, hasHorde = false, false
+    EachCoord(data, function(questMapID)
+        if ALLIANCE_CITY_MAPS[questMapID] then
+            hasAlliance = true
+        elseif HORDE_CITY_MAPS[questMapID] then
+            hasHorde = true
+        end
+    end)
+    if not (hasAlliance and hasHorde) then
+        return nil
+    end
+    return faction == "Horde" and ALLIANCE_CITY_MAPS or HORDE_CITY_MAPS
+end
+
 local function CollectSpawnPoints(data, viewedMapID)
     local points = {}
+    local enemyMaps = EnemyCapitalMaps(data)
     EachCoord(data, function(questMapID, x, y)
+        if enemyMaps and enemyMaps[questMapID] then
+            return
+        end
         local nx, ny = ns.ProjectToViewedMap(questMapID, x, y, viewedMapID)
         if nx and ny then
             points[#points + 1] = {
@@ -1869,6 +1876,12 @@ function MapPins:Refresh(reason)
         lastStatus.mode = "combat-deferred"
         return
     end
+    if reason == "quest-level" and refreshJob and refreshJob.mapID == ns.GetViewedMapID() then
+        -- Let the paint pick up loaded levels when it finishes instead of
+        -- restarting it for every quest data load.
+        refreshJob.refreshAfter = true
+        return
+    end
     self:CancelPendingRefresh()
     local stitched = IsOpenMapStitched()
     if stitched and stitchedPins and (reason == "map-changed" or reason == "map-display") then
@@ -2029,6 +2042,9 @@ function MapPins:Refresh(reason)
             end
         end
         lastStatus.managed = managed
+        if job.refreshAfter then
+            ns.RequestRefresh("quest-level")
+        end
     end
 
     processBatch()
@@ -2123,7 +2139,6 @@ mapWatch:SetScript("OnUpdate", function(_, elapsed)
     end
     if #active > 0 then
         MapPins:RepositionAll()
-        UpdatePinFades(elapsed)
         if IsGamepadUIEnabled() then
             gamepadHoverAccum = gamepadHoverAccum + elapsed
             if gamepadHoverAccum >= 0.05 then
@@ -2174,15 +2189,17 @@ function MapPins:HookMap()
     if WorldMapFrame.OnMapChanged then
         hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
             InvalidateCanvas()
-            if stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(ns.GetViewedMapID()) then
+            local viewedMapID = ns.GetViewedMapID()
+            if MapPins:IsRefreshingOtherMap(viewedMapID) then
+                -- Let the debounced refresh paint this map from scratch.
+                MapPins:CancelPendingRefresh()
+            elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
                 return
             end
             local previousMapID = lastStatus.viewedMap
-            local viewedMapID = ns.GetViewedMapID()
             if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
                 -- Remove the previous zone's pins now; the debounced, sliced
                 -- refresh will paint the new zone over the next few frames.
-                MapPins:CancelPendingRefresh()
                 MapPins:Clear()
                 lastStatus.mode = "map-changing"
             end
@@ -2199,9 +2216,17 @@ function MapPins:HookMap()
     if WorldMapFrame.SynchronizeDisplayState then
         hooksecurefunc(WorldMapFrame, "SynchronizeDisplayState", function()
             InvalidateCanvas()
-            if stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(ns.GetViewedMapID()) then
+            local viewedMapID = ns.GetViewedMapID()
+            if MapPins:IsRefreshingOtherMap(viewedMapID) then
+                MapPins:CancelPendingRefresh()
+            elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
                 MapPins:RepositionAll()
                 return
+            end
+            local previousMapID = lastStatus.viewedMap
+            if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
+                MapPins:Clear()
+                lastStatus.mode = "map-changing"
             end
             ns.RequestRefresh("map-display")
         end)

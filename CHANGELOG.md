@@ -2,6 +2,14 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.4 - 2026-11-13
+
+- Load map pins across frames so opening a large map no longer causes a brief hitch.
+- Stop pins from flashing while quest data loads.
+- Keep pins visible when changing zones while pins are still loading.
+- Show all spawn points for quests offered at multiple locations.
+- Hide opposite-faction capital city pins for quests offered in both capitals.
+
 ## 1.0.3 - 2026-11-13
 
 - Update the QuestieDB Forever artifact to `833c8302bd1dcd11582068bce68ab637bc5d8e730bed7147e9bf4a5d5e44374e` (build `f0ad90875a6531368883904b0f157e7423c14f0b`).

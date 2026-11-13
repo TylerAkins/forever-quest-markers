@@ -290,6 +290,26 @@ function ns.GetQuestDifficultyRGB(level)
     return 1, 0.82, 0
 end
 
+-- The pin feasibility filters compare the player level with the quest level.
+-- A freshly loaded difficulty only changes pin visibility when it flips that
+-- comparison; rebuilding the map for every title load restarts the sliced
+-- paint and makes the pins flash.
+local function LevelFiltered(questLevel, data, playerLevel)
+    if not ns.GetOption("showTrivial") then
+        local level = questLevel or (data and data.minLevel)
+        if level and (playerLevel - level) >= (ns.GetOption("trivialLevelGap") or 9) then
+            return true
+        end
+    end
+    local highLevelGap = ns.GetOption("highLevelGap")
+    if type(highLevelGap) == "number" and highLevelGap < HIGH_LEVEL_GAP_MAX then
+        if questLevel and (questLevel - playerLevel) >= highLevelGap then
+            return true
+        end
+    end
+    return false
+end
+
 function ns.OnQuestDataLoad(questID)
     if not questID then
         return
@@ -300,9 +320,18 @@ function ns.OnQuestDataLoad(questID)
     if ns.MapPins and ns.MapPins.OnTitleLoaded then
         ns.MapPins:OnTitleLoaded(questID)
     end
-    local highLevelGap = ns.GetOption("highLevelGap")
-    local highLevelLimitEnabled = type(highLevelGap) == "number" and highLevelGap < HIGH_LEVEL_GAP_MAX
-    if ns.RequestRefresh and (not ns.GetOption("showTrivial") or highLevelLimitEnabled) then
+    local data = ns.Quests and ns.Quests[questID]
+    if not data or not ns.RequestRefresh then
+        return
+    end
+    -- Before the load, the trivial filter uses the database minimum level and
+    -- the high-level filter cannot apply. Compare that with the loaded level.
+    local playerLevel = UnitLevel("player") or 1
+    local level = Call(C_QuestLog, "GetQuestDifficultyLevel", questID)
+    if type(level) ~= "number" or level <= 0 then
+        level = nil
+    end
+    if LevelFiltered(nil, data, playerLevel) ~= LevelFiltered(level, data, playerLevel) then
         ns.RequestRefresh("quest-level")
     end
 end
