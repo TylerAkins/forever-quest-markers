@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.5 - 2026-11-14
+
+- Keep quest pins visible in Gamepad UI after discovering a map region.
+
 ## 1.0.4 - 2026-11-13
 
 - Load map pins across frames so opening a large map no longer causes a brief hitch.
