@@ -1177,9 +1177,25 @@ local function CanvasOffsets(parent, nx, ny)
     return width * nx, -height * ny
 end
 
+local function MapPinLevel()
+    if not (WorldMapFrame and WorldMapFrame.GetPinFrameLevelsManager) then
+        return nil
+    end
+    local manager = WorldMapFrame:GetPinFrameLevelsManager()
+    if not (manager and manager.GetValidFrameLevel) then
+        return nil
+    end
+    local ok, level = pcall(manager.GetValidFrameLevel, manager, "PIN_FRAME_LEVEL_AREA_POI")
+    if ok and type(level) == "number" then
+        return level
+    end
+    return nil
+end
+
 local function RaisePin(pin, parent)
     parent = parent or pin:GetParent()
-    if pin.UseFrameLevelType then
+    local mapPin = pin.UseFrameLevelType ~= nil
+    if mapPin then
         pcall(pin.UseFrameLevelType, pin, "PIN_FRAME_LEVEL_AREA_POI")
     end
     local base = 0
@@ -1189,7 +1205,15 @@ local function RaisePin(pin, parent)
     -- Map detail layers sit well above the canvas default; +20 was under the art
     -- so some bangs disappeared depending on zoom/layer order.
     local artLevel = IsOpenMapStitched() and OpenMapAPI.ArtTopLevel and OpenMapAPI.ArtTopLevel() or 0
-    pin:SetFrameLevel(math.max(base + 400, (artLevel or 0) + 1))
+    local level = math.max(base + 400, (artLevel or 0) + 1)
+    if not mapPin then
+        -- The map's overlays are pins at frame levels from 2000, and the
+        -- discovered-area terrain is PIN_FRAME_LEVEL_MAP_EXPLORATION. Acquired
+        -- pins get that level from ApplyFrameLevel; frames we create need it to
+        -- stay above the art.
+        level = math.max(level, MapPinLevel() or 0)
+    end
+    pin:SetFrameLevel(level)
     -- Keep the pin on the canvas strata. HIGH pulled pins out of the map child
     -- and they stopped compositing on Forever's world map.
     if pin.SetFrameStrata and parent and parent.GetFrameStrata then

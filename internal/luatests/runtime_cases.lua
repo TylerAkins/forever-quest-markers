@@ -2737,13 +2737,13 @@ local function setupPinRendering()
             GetCenter = function(self) return self.centerX, self.centerY end,
             GetLeft = function(self) return self.left or 0 end,
             GetTop = function(self) return self.top or 0 end,
-            SetIgnoreParentScale = function() end, SetFrameLevel = function() end,
+            SetIgnoreParentScale = function() end, SetFrameLevel = function(self, level) self.frameLevel = level end,
             SetFrameStrata = function(self, strata) self.strata = strata end, SetAlpha = function() end,
             Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end,
             IsShown = function(self) return self.shown == true end,
             ClearAllPoints = function() end,
             SetPoint = function(self, ...) self.point = { ... } end, GetParent = function(self) return self.parent end,
-            GetFrameLevel = function() return 1 end, GetFrameStrata = function() return "LOW" end,
+            GetFrameLevel = function(self) return self.frameLevel or 1 end, GetFrameStrata = function() return "LOW" end,
         }
     end
     local canvas = frame()
@@ -3062,6 +3062,40 @@ cases["map_pins_runtime.gamepad_mode_keeps_pins_out_of_blizzard_pin_pool"] = fun
     WorldMapFrame.AcquirePin = previousAcquirePin
     WorldMapFrame.RemovePin = previousRemovePin
     InputUtil = previousInputUtil
+end
+
+cases["map_pins_runtime.gamepad_pins_clear_discovered_map_art"] = function()
+    setupPinRendering()
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+    WorldMapFrame.GetPinFrameLevelsManager = function()
+        return {
+            GetValidFrameLevel = function(_, frameLevelType)
+                if frameLevelType == "PIN_FRAME_LEVEL_AREA_POI" then return 2023 end
+                return 2000
+            end,
+        }
+    end
+
+    ns.MapPins:Refresh("gamepad-test")
+    assert(pin and not pin.managed, "gamepad pins must stay ordinary frames")
+    assert(pin.frameLevel == 2023,
+        "gamepad pins must use the map's pin level so discovered-area art cannot cover them")
+
+    WorldMapFrame.GetPinFrameLevelsManager = nil
+    InputUtil = nil
+    ns.MapPins:Refresh("gamepad-test")
+    assert(pin.frameLevel == 401,
+        "a client without the pin level table must keep the canvas offset")
+
+    OpenMapAPI = {
+        IsStitched = function() return true end,
+        WorldFromMap = function(_, x, y) return x, y end,
+        MapFromWorld = function(_, u, v) return u, v end,
+        ArtTopLevel = function() return 9900 end,
+    }
+    ns.MapPins:Refresh("gamepad-test")
+    assert(pin.frameLevel == 9901,
+        "stitched map art levels must stay above the pin floor")
 end
 
 cases["map_pins_runtime.pin_center_is_hidden_when_map_canvas_acquires_a_pin"] = function()
