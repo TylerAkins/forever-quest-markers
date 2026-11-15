@@ -11,6 +11,7 @@ ignore:
   - .cursor
   - .gitignore
   - .pkgmeta
+  - CURSEFORGE_DESCRIPTION.md
   - VERSION
   - docs
   - tests

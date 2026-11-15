@@ -18,7 +18,9 @@ World of Warcraft, its quests, and related names are trademarks and copyrights o
 
 ## Addon code
 
-Forever Quest Pins is original GPL-3.0-or-later code: a native-map overlay and a Go converter that turns QuestieDB Forever data into addon database files. Tracker UI and HereBeDragons usage from other addons were not copied.
+Forever Quest Pins is original GPL-3.0-or-later code: a native-map overlay, nameplate quest icons, and a Go converter that turns QuestieDB Forever data into addon database files. Tracker UI and HereBeDragons usage from other addons were not copied.
+
+Nameplate objective icons read the client's unit tooltip. No third-party tooltip library is used.
 
 Map pins use Blizzard’s `QuestNormal` atlas. The generated yellow, blue, and red-orange textures under `Media/` are original fallback art used only when the preferred atlas rendering fails.
 
