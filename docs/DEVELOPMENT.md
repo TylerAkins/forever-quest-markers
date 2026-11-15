@@ -14,6 +14,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `Events.lua` | Holiday windows and AQ war effort phase state from generated policy |
 | `MapPins.lua` | World-map start pins |
+| `Nameplates.lua` | Quest start, turn-in, and objective icons on NPC nameplates |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
@@ -54,7 +55,7 @@ go run ./cmd/fqp build-db \
 
 `Database/EventPolicy.lua` is generated from Questie's Era event data. It carries year-less `{ month, day, hour, minute }` windows, per-quest overrides such as the Winter Veil presents, Questie's Lunar Festival year table, and the `AQWarEffortQuests` IDs. The build fails if a yearly quest has no event name or a referenced event has neither a window nor a disabled marker. Darkmoon Faire is emitted as disabled: Questie skips it on Forever, it has no importable faire window, and most of its records mix Mulgore and Elwynn coordinates. Lunar Festival windows end at Questie's pinned year; later years hide with `lunar-year-unknown` instead of failing the build.
 
-The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete.
+The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
 
 Optional parity review against an older database:
 

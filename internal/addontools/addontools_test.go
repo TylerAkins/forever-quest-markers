@@ -38,7 +38,7 @@ func TestCompileCopiesOnlyPackageFilesAndDryRunPreservesOutput(t *testing.T) {
 	if _, err := os.Stat(stale); !os.IsNotExist(err) {
 		t.Fatalf("stale file remains: %v", err)
 	}
-	for _, path := range []string{"MapPins.xml", "Waypoints.lua", "Database/ForeverQuests.lua", "Media/QuestAvailable.tga", "Media/QuestRepeatable.tga", "Media/QuestAttunement.tga", "RELEASE_NOTES.md"} {
+	for _, path := range []string{"MapPins.xml", "Nameplates.lua", "Waypoints.lua", "Database/ForeverQuests.lua", "Media/QuestAvailable.tga", "Media/QuestRepeatable.tga", "Media/QuestAttunement.tga", "RELEASE_NOTES.md"} {
 		if _, err := os.Stat(filepath.Join(output, path)); err != nil {
 			t.Errorf("missing shipped file %s: %v", path, err)
 		}

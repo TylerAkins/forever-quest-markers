@@ -47,6 +47,78 @@ local function BuildStarterIndex()
     end
 end
 
+local QUEST_OBJECTIVE_LINE = (Enum and Enum.TooltipDataLineType
+    and Enum.TooltipDataLineType.QuestObjective) or 8
+
+local function IsSecret(value)
+    return issecretvalue ~= nil and issecretvalue(value)
+end
+
+-- Prefer the native completion fields. Fall back to x/y text and the gray
+-- completion color. Secret values are treated as unknown so pattern matching
+-- and comparisons cannot throw in restricted tooltip contexts.
+local function IsObjectiveLineIncomplete(line)
+    local ok, incomplete = pcall(function()
+        if line.completed ~= nil and not IsSecret(line.completed) then
+            return not line.completed
+        end
+        local fulfilled, required = line.numFulfilled, line.numRequired
+        if fulfilled ~= nil and required ~= nil
+            and not IsSecret(fulfilled) and not IsSecret(required) then
+            return fulfilled < required
+        end
+        if IsSecret(line.leftText) or IsSecret(line.rightText) then
+            return false
+        end
+        local text = ((line.leftText or "") .. " " .. (line.rightText or "")):gsub(",", "")
+        local current, total = text:match("(%d+)%s*/%s*(%d+)")
+        if current and total then
+            return tonumber(current) < tonumber(total)
+        end
+        local color = line.leftColor
+        if color and not IsSecret(color) then
+            local r, g, b
+            if color.GetRGB then
+                r, g, b = color:GetRGB()
+            else
+                r, g, b = color.r, color.g, color.b
+            end
+            if IsSecret(r) or IsSecret(g) or IsSecret(b) then
+                return false
+            end
+            if r and g and b and r < 0.6 and g < 0.6 and b < 0.6 then
+                return false
+            end
+        end
+        return true
+    end)
+    return ok and incomplete
+end
+
+-- The client already marks quest objective units in their unit tooltip. Use
+-- that instead of shipping objective NPC data in the quest database. Completed
+-- objectives are gray or show full progress, so they do not keep the icon up.
+local function HasQuestObjectiveLine(unit)
+    if not unit or not C_TooltipInfo or type(C_TooltipInfo.GetUnit) ~= "function" then
+        return false
+    end
+    local ok, data = pcall(C_TooltipInfo.GetUnit, unit)
+    if not ok or type(data) ~= "table" then
+        return false
+    end
+    local lines = data.lines
+    if type(lines) ~= "table" then
+        return false
+    end
+    for i = 1, #lines do
+        local line = lines[i]
+        if line and line.type == QUEST_OBJECTIVE_LINE and IsObjectiveLineIncomplete(line) then
+            return true
+        end
+    end
+    return false
+end
+
 local function QuestLine(questID)
     local title = ns.GetQuestTitle(questID) or (L["Quest %d (title unavailable)"]):format(questID)
     local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
@@ -90,6 +162,13 @@ function Tooltips:GetAcceptRows(npcID)
     return rows
 end
 
+local function IsTurnInReady(questID)
+    return ns.IsOnQuest(questID)
+        and ns.IsQuestReadyForTurnIn(questID)
+        and not ns.IsQuestFlaggedCompleted(questID)
+        and not (ns.IsQuestHidden and ns.IsQuestHidden(questID))
+end
+
 function Tooltips:GetTurnInRows(npcID)
     BuildStarterIndex()
     local bucket = turnIns[npcID]
@@ -98,10 +177,7 @@ function Tooltips:GetTurnInRows(npcID)
     end
     local rows = {}
     for questID in pairs(bucket) do
-        if ns.IsOnQuest(questID)
-            and ns.IsQuestReadyForTurnIn(questID)
-            and not ns.IsQuestFlaggedCompleted(questID)
-            and not (ns.IsQuestHidden and ns.IsQuestHidden(questID)) then
+        if IsTurnInReady(questID) then
             local data = ns.Quests and ns.Quests[questID]
             if ns.PrefetchQuestInfo then
                 ns.PrefetchQuestInfo(questID, data)
@@ -122,6 +198,39 @@ function Tooltips:GetTurnInRows(npcID)
         return a.id < b.id
     end)
     return rows
+end
+
+--- Lightweight state for nameplate icons. Accept and turn-in reuse the tooltip
+--- predicates; objective state comes from the client's unit tooltip.
+--- In-log states win over a new quest offer, matching the reference addon.
+--- @return string|nil "accept", "turnin", "objective", or nil
+function Tooltips:GetNpcQuestState(npcID, unit)
+    if not npcID then
+        return nil
+    end
+    BuildStarterIndex()
+    local bucket = turnIns[npcID]
+    if bucket then
+        for questID in pairs(bucket) do
+            if IsTurnInReady(questID) then
+                return "turnin"
+            end
+        end
+    end
+    if HasQuestObjectiveLine(unit) then
+        return "objective"
+    end
+    bucket = starters[npcID]
+    if bucket then
+        for questID in pairs(bucket) do
+            local data = ns.Quests and ns.Quests[questID]
+            if ns.NpcOffersQuestAccept(npcID, questID, data)
+                and ns.IsQuestAvailable(questID, data) then
+                return "accept"
+            end
+        end
+    end
+    return nil
 end
 
 local function AddQuestLine(tooltip, row)
