@@ -19,6 +19,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
+- Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
 - Overlapping starts on the same spot stack into one pin
@@ -70,6 +71,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
+| Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
 | Debug tooltips | Off |
 | Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |
 
@@ -100,6 +102,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
 | `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
+| `/fqp nameplates` | Toggle quest icons on nameplates |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |

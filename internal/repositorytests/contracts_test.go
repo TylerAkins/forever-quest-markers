@@ -57,6 +57,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"WarEffort.lua":                     "Events.lua",
 		"Events.lua":                        "Eligibility.lua",
 		"Eligibility.lua":                   "Waypoints.lua",
+		"NPCTooltips.lua":                   "Nameplates.lua",
+		"Nameplates.lua":                    "Waypoints.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -485,7 +487,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		}
 	}
 	config := read(t, base, "Config.lua")
-	for _, contract := range []string{"showNPCTooltips = true", "showWarEffortAlways = false", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
+	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showWarEffortAlways = false", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
 		if !strings.Contains(config, contract) {
 			t.Errorf("Config.lua missing %q", contract)
 		}

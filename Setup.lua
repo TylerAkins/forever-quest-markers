@@ -21,6 +21,7 @@ local pages = {
         { "enablePinTracking", "Click pins to track quest starts" },
         { "trackOnWorldMaps", "Track from world and continent maps" },
         { "showNPCTooltips", "Show quests on NPC tooltips" },
+        { "showNameplateIcons", "Show quest icons on nameplates" },
         { "showSpawnClusters", "Show spawn clusters" },
         { "highlightNewQuests", "Show tint for quests new in WoW Forever" },
     } },

@@ -28,6 +28,7 @@ ns.defaults = {
     autoTurnIn = false,
     hideQuestTrackerInCombat = false,
     showNPCTooltips = true,
+    showNameplateIcons = true,
     debug = false,
 }
 
@@ -387,6 +388,9 @@ function ns.SetOption(key, value)
     if key == "enabled" and not value and ns.MapPins then
         ns.MapPins:Clear()
     end
+    if key == "showNameplateIcons" and not value and ns.Nameplates then
+        ns.Nameplates:Clear()
+    end
     if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
     if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
         ns.SyncQuestTrackerCombatVisibility()
@@ -477,6 +481,8 @@ function ns.SlashCommand(msg)
         print(L["  /fqp accept   Toggle auto-accept quests"])
         print(L["  /fqp turnin   Toggle auto-turn in quests"])
         print(L["  /fqp npctooltip Toggle quest accept and ready turn-in lines on NPC mouseover"])
+        print(L["  /fqp nameplates Toggle quest icons on nameplates (on by default)"])
+        print(L["  /fqp nameplatedebug Print visible nameplate icon state"])
         print(L["  /fqp hidden   List quest pins hidden with Shift-click on this character"])
         print(L["  /fqp unhide <id|all> Restore one or all hidden quest pins"])
         print(L["  /fqp debug    Toggle debug tooltips and chat diagnostics"])
@@ -527,6 +533,18 @@ function ns.SlashCommand(msg)
     end
     if msg == "npctooltip" or msg == "npctooltips" then
         ToggleFlag("showNPCTooltips", L["NPC quest tooltips"])
+        return
+    end
+    if msg == "nameplates" or msg == "nameplate" then
+        ToggleFlag("showNameplateIcons", L["Nameplate quest icons"])
+        return
+    end
+    if msg == "nameplatedebug" then
+        if ns.Nameplates and ns.Nameplates.Debug then
+            ns.Nameplates:Debug()
+        else
+            Print(L["Nameplates module not loaded."])
+        end
         return
     end
     if msg == "debug" then
@@ -709,6 +727,7 @@ function ns.PrintSettingsDebug()
         "autoTurnIn",
         "hideQuestTrackerInCombat",
         "showNPCTooltips",
+        "showNameplateIcons",
         "debug",
     }) do
         local raw = account and account[key]
@@ -929,6 +948,8 @@ function ns.PrintAPIProbe()
     print("  C_QuestLog.IsOnQuest: " .. has(C_QuestLog and C_QuestLog.IsOnQuest))
     print("  C_QuestLog.GetTitleForQuestID: " .. has(C_QuestLog and C_QuestLog.GetTitleForQuestID))
     print("  C_QuestLog.GetQuestDifficultyLevel: " .. has(C_QuestLog and C_QuestLog.GetQuestDifficultyLevel))
+    print("  C_TooltipInfo.GetUnit: " .. has(C_TooltipInfo and C_TooltipInfo.GetUnit))
+    print("  Enum.TooltipDataLineType.QuestObjective: " .. has(Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective))
     print("  C_QuestLog.RequestLoadQuestByID: " .. has(C_QuestLog and C_QuestLog.RequestLoadQuestByID))
     print("  C_TooltipInfo.GetHyperlink: " .. has(C_TooltipInfo and C_TooltipInfo.GetHyperlink))
     print("  C_Map.SetUserWaypoint: " .. has(C_Map and C_Map.SetUserWaypoint))
@@ -956,6 +977,8 @@ function ns.PrintAPIProbe()
     print("  QuestNormal atlas: " .. has(atlas))
     local repeatableAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestDaily")
     print("  QuestDaily atlas: " .. has(repeatableAtlas))
+    local turninAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestTurnin")
+    print("  QuestTurnin atlas: " .. has(turninAtlas))
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
         print("  pin icon: " .. tostring(status.icon or "not painted yet"))
@@ -1249,6 +1272,12 @@ function ns.TryRegisterSettings()
                 L["Show quests on NPC tooltips"],
                 L["List quests you can accept or turn in from this NPC (accept eligibility matches start pins; turn-ins require an active, complete quest)."]
             )
+            local nameplateIcons = CreateOptionCheckbox(
+                self,
+                "showNameplateIcons",
+                L["Show quest icons on nameplates"],
+                L["Show a quest start, turn-in, or objective icon beside NPC nameplates."]
+            )
 
             local navigationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
             navigationHeading:SetText(L["Navigation"])
@@ -1282,6 +1311,7 @@ function ns.TryRegisterSettings()
                 L["Allow clicks on quest start pins to track them on world and continent maps. When off, tooltips remain available, but Shift-click hiding is unavailable on those maps."])
             worldTracking:SetPoint("TOPLEFT", tracking, "BOTTOMLEFT", 0, 0)
             npcTooltips:SetPoint("TOPLEFT", worldTracking, "BOTTOMLEFT", 0, 0)
+            nameplateIcons:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 0, 0)
 
             local automationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
             automationHeading:SetPoint("TOPLEFT", mapHeading, "TOPLEFT", 300, 0)
@@ -1383,7 +1413,7 @@ function ns.TryRegisterSettings()
             navigationHeading:SetPoint("TOPLEFT", resetHiddenCaption, "BOTTOMLEFT", 0, -8)
 
             local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            slash:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 4, -12)
+            slash:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 4, -12)
             slash:SetText(L["Type /fqp for commands and troubleshooting."])
         end
         ns.SyncSettingsCheckboxes()

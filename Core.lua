@@ -48,6 +48,8 @@ local WATCHED_EVENTS = {
     "PLAYER_LEVEL_UP",
     "SKILL_LINES_CHANGED",
     "ZONE_CHANGED_NEW_AREA",
+    "NAME_PLATE_UNIT_ADDED",
+    "NAME_PLATE_UNIT_REMOVED",
 }
 
 function ns.RequestRefresh(reason)
@@ -93,6 +95,10 @@ function ns.RefreshNow(reason)
     if ns.UpdateWaypoint then ns.UpdateWaypoint() end
     if ns.MapPins then
         ns.MapPins:Refresh(reason)
+    end
+    -- Hiding a quest changes nameplate eligibility without invalidating caches.
+    if ns.Nameplates and (ShouldInvalidateQuestState(reason) or reason == "quest-hidden") then
+        ns.Nameplates:RefreshAll()
     end
     -- NPC starter/finisher indexes are rebuilt lazily and already invalidated
     -- when NoteOfferedQuest mutates ns.Quests. Do not drop them on map refresh.
@@ -214,6 +220,20 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if ns.OnWaypointQuestEnded then
             ns.OnWaypointQuestEnded(questID)
         end
+    end
+    if event == "NAME_PLATE_UNIT_ADDED" then
+        local unit = ...
+        if ns.Nameplates then
+            ns.Nameplates:UpdateUnit(unit)
+        end
+        return
+    end
+    if event == "NAME_PLATE_UNIT_REMOVED" then
+        local unit = ...
+        if ns.Nameplates then
+            ns.Nameplates:ReleaseUnit(unit)
+        end
+        return
     end
     if event == "PLAYER_LOGOUT" then
         if ns.FlushSettings then

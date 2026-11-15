@@ -2084,6 +2084,31 @@ assert(loadfile("Core.lua"))("ForeverQuestPins", ns)
             assert(tracker.alpha == 0.65 and tracker.collapsed == false)
 
 end
+cases["quest_info_runtime.test_nameplate_events_update_icons_without_requesting_map_refresh"] = function()
+
+            ns = {}
+            function CreateFrame()
+                frame = {}
+                function frame:SetScript(name, fn) self[name] = fn end
+                function frame:RegisterEvent() end
+                return frame
+            end
+            added, removed = nil, nil
+            ns.Nameplates = {
+                UpdateUnit = function(_, unit) added = unit end,
+                ReleaseUnit = function(_, unit) removed = unit end,
+            }
+
+assert(loadfile("Core.lua"))("ForeverQuestPins", ns)
+
+            refreshes = 0
+            ns.RequestRefresh = function() refreshes = refreshes + 1 end
+            frame.OnEvent(frame, 'NAME_PLATE_UNIT_ADDED', 'nameplate1')
+            frame.OnEvent(frame, 'NAME_PLATE_UNIT_REMOVED', 'nameplate1')
+            assert(added == 'nameplate1' and removed == 'nameplate1')
+            assert(refreshes == 0)
+
+end
 cases["quest_info_runtime.test_map_refresh_skips_quest_state_cache_invalidation"] = function()
 
             ns = {hideTracker=true}
@@ -2111,14 +2136,20 @@ assert(loadfile("Core.lua"))("ForeverQuestPins", ns)
             starter = 0
             ns.InvalidateCompletionCache = function() completion = completion + 1 end
             ns.InvalidateProfessionCache = function() profession = profession + 1 end
-            ns.NPCTooltips = {InvalidateStarterIndex=function() starter = starter + 1 end}
+            ns.NPCTooltips = {
+                InvalidateStarterIndex=function() starter = starter + 1 end,
+            }
             ns.MapPins = {Refresh=function() end}
+            nameplates = 0
+            ns.Nameplates = {RefreshAll=function() nameplates = nameplates + 1 end}
             ns.RefreshNow('map-show')
             ns.RefreshNow('map-changed')
             ns.RefreshNow('canvas-zero')
-            assert(completion == 0 and profession == 0 and starter == 0)
+            assert(completion == 0 and profession == 0 and starter == 0 and nameplates == 0)
+            ns.RefreshNow('quest-hidden')
+            assert(completion == 0 and profession == 0 and starter == 0 and nameplates == 1)
             ns.RefreshNow('QUEST_TURNED_IN')
-            assert(completion == 1 and profession == 1 and starter == 0)
+            assert(completion == 1 and profession == 1 and starter == 0 and nameplates == 2)
 
 end
 cases["quest_links_runtime.test_url_selection_and_validation"] = function()
@@ -4091,6 +4122,153 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
     assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
 end
 
+cases["quest_info_runtime.test_npc_nameplate_state_prefers_in_log_states"] = function()
+ns = {}
+local objectiveLines = {}
+C_TooltipInfo = {
+    GetUnit = function()
+        return { lines = objectiveLines }
+    end,
+}
+assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
+
+            ns.Quests = { [20] = { qg = 100, turnIns = { 100 } } }
+            ns.NpcOffersQuestAccept = function() return true end
+            ns.IsQuestAvailable = function() return true end
+            ns.IsOnQuest = function() return true end
+            ns.IsQuestReadyForTurnIn = function() return true end
+            ns.IsQuestFlaggedCompleted = function() return false end
+            ns.IsQuestHidden = function() return false end
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "turnin")
+
+            ns.IsQuestReadyForTurnIn = function() return false end
+            objectiveLines = { { type = 8, leftText = "Hillsbrad Miner slain", rightText = "3/10" } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "objective")
+
+            objectiveLines = { { type = 8, leftText = "Hillsbrad Miner slain", rightText = "10/10" } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "accept")
+
+            ns.NpcOffersQuestAccept = function() return false end
+            ns.IsQuestAvailable = function() return false end
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, leftText = "Hillsbrad Miner slain", leftColor = { r = 0.5, g = 0.5, b = 0.5 } } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, leftColor = { GetRGB = function() return 0.5, 0.5, 0.5 end } } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, completed = true } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, completed = false } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "objective")
+
+            objectiveLines = { { type = 8, numFulfilled = 10, numRequired = 10 } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, numFulfilled = 3, numRequired = 10 } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "objective")
+
+            issecretvalue = function(value) return value == "secret" end
+            objectiveLines = { { type = 8, leftText = "secret" } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+
+            objectiveLines = { { type = 8, leftColor = { r = "secret", g = 0.5, b = 0.5 } } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == nil)
+            issecretvalue = nil
+
+            objectiveLines = { { type = 8, rightText = "10/10" }, { type = 8, rightText = "1/2" } }
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "objective")
+
+            objectiveLines = {}
+            ns.NpcOffersQuestAccept = function() return true end
+            ns.IsQuestAvailable = function() return true end
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "accept")
+            assert(ns.NPCTooltips:GetNpcQuestState(101, "nameplate1") == nil)
+
+end
+cases["quest_info_runtime.test_nameplate_icons_follow_option_and_quest_state"] = function()
+ns = {}
+local options = { showNameplateIcons = true }
+local created = {}
+local nameRegion = {}
+local healthBar = {}
+local plate = { namePlateUnitToken = "nameplate1", UnitFrame = { name = nameRegion, healthBar = healthBar } }
+local plates = { ["nameplate1"] = plate }
+
+local function NewTexture()
+    local texture = {}
+    function texture:SetAllPoints() end
+    function texture:SetAtlas(atlas) self.atlas = atlas end
+    function texture:SetTexture(path) self.path = path end
+    function texture:SetTexCoord() end
+    function texture:SetDesaturated() end
+    function texture:SetVertexColor() end
+    function texture:SetAlpha() end
+    function texture:Show() self.shown = true end
+    function texture:Hide() self.shown = false end
+    return texture
+end
+local function NewFrame()
+    local frame = {}
+    created[#created + 1] = frame
+    function frame:SetSize(width, height) self.width, self.height = width, height end
+    function frame:CreateTexture() self.icon = NewTexture(); return self.icon end
+    function frame:SetParent(parent) self.parent = parent end
+    function frame:ClearAllPoints() self.point = nil end
+    function frame:SetPoint(...) self.point = { ... } end
+    function frame:Show() self.shown = true end
+    function frame:Hide() self.shown = false end
+    return frame
+end
+
+CreateFrame = function() return NewFrame() end
+C_Texture = { GetAtlasInfo = function(atlas) return atlas == "QuestNormal" and {} or nil end }
+C_NamePlate = {
+    GetNamePlateForUnit = function(unit) return plates[unit] end,
+    GetNamePlates = function()
+        local list = {}
+        for _, current in pairs(plates) do list[#list + 1] = current end
+        return list
+    end,
+}
+UnitGUID = function() return "Creature-0-0-0-0-100-0000000000" end
+ns.GetOption = function(key) return options[key] end
+ns.NpcIDFromGUID = function() return 100 end
+ns.NPCTooltips = {
+    GetNpcQuestState = function(_, npcID) return npcID == 100 and "accept" or nil end,
+}
+assert(loadfile("Nameplates.lua"))("ForeverQuestPins", ns)
+
+            ns.Nameplates:UpdateUnit("nameplate1")
+            assert(#created == 1)
+            local frame = created[1]
+            assert(frame.parent == plate and frame.shown)
+            assert(frame.point[1] == "RIGHT" and frame.point[2] == healthBar)
+            assert(frame.point[3] == "LEFT" and frame.point[4] == -2)
+            assert(frame.icon.atlas == "QuestNormal")
+
+            options.showNameplateIcons = false
+            ns.Nameplates:UpdateUnit("nameplate1")
+            assert(not frame.shown and frame.parent == nil)
+
+            options.showNameplateIcons = true
+            ns.NPCTooltips.GetNpcQuestState = function() return "turnin" end
+            ns.Nameplates:UpdateUnit("nameplate1")
+            assert(frame.shown and frame.icon.path == "Interface\\GossipFrame\\ActiveQuestIcon")
+
+            ns.NPCTooltips.GetNpcQuestState = function() return "objective" end
+            ns.Nameplates:UpdateUnit("nameplate1")
+            assert(frame.shown and frame.icon.path == "Interface\\QuestFrame\\UI-Quest-BulletPoint")
+
+            ns.Nameplates:RefreshAll()
+            assert(frame.shown)
+            plates["nameplate1"] = nil
+            ns.Nameplates:RefreshAll()
+            assert(not frame.shown and frame.parent == nil)
+
+end
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

@@ -29,6 +29,7 @@ WarEffort.lua
 Events.lua
 Eligibility.lua
 NPCTooltips.lua
+Nameplates.lua
 Waypoints.lua
 MapPins.lua
 MapPins.xml
