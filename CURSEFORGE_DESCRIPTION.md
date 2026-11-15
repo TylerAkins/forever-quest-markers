@@ -29,15 +29,17 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 
 `/fqp` shows the full command list. The ones you will use most:
 
-- `/fqp on` and `/fqp off` toggle quest-start markers.
-- `/fqp nameplates` toggles nameplate icons.
-- `/fqp npctooltip` toggles NPC quest lines.
-- `/fqp spawns` toggles grouped spawn markers.
-- `/fqp seasonal` toggles holiday markers.
-- `/fqp wareffort` toggles AQ war effort markers.
-- `/fqp hidden` lists hidden markers.
-- `/fqp unhide <id|all>` restores them.
-- `/fqp why <id>` explains why a quest is shown or hidden.
+| Command | Action |
+|---------|--------|
+| `/fqp on` / `/fqp off` | Toggle quest-start markers |
+| `/fqp nameplates` | Toggle nameplate icons |
+| `/fqp npctooltip` | Toggle NPC quest lines |
+| `/fqp spawns` | Toggle grouped spawn markers |
+| `/fqp seasonal` | Toggle holiday markers |
+| `/fqp wareffort` | Toggle AQ war effort markers |
+| `/fqp hidden` | List hidden markers |
+| `/fqp unhide <id\|all>` | Restore hidden markers |
+| `/fqp why <id>` | Explain why a quest is shown or hidden |
 
 ## Notes
 
