@@ -238,7 +238,7 @@ function ns.InitSettings()
         return ns.db
     end
 
-    -- Keep the older beta stores declared so existing installs migrate without
+    -- Keep the older stores declared so existing installs migrate without
     -- loss. Renaming stores does not fix Forever's SavedVariables loader bug.
     if type(ForeverQuestPinsDB) ~= "table" then
         ForeverQuestPinsDB = {}
@@ -489,7 +489,7 @@ function ns.SlashCommand(msg)
         print(L["  /fqp refresh  Rebuild pins on the current map"])
         print(L["  /fqp stats    Print database and pin counts"])
         print(L["  /fqp settings Print saved option values (debug)"])
-        print(L["  /fqp wipe     Reset options (only needed after an older broken beta)"])
+        print(L["  /fqp wipe     Reset options (only needed after an older broken build)"])
         print(L["  /fqp apis     Print which Forever map/quest APIs are present"])
         print(L["  /fqp why <id> Show why a quest is pinned or hidden"])
         print(L["  /fqp available List quests that should pin on this map"])
@@ -618,7 +618,7 @@ function ns.SlashCommand(msg)
     if msg == "wipe" then
         ns.WipeSettings()
         Print(L["In-memory options reset to defaults."])
-        Print(L["Only needed if you used a 0.1.10–0.1.16 beta that left empty SavedVariables."])
+        Print(L["Only needed if you used a 0.1.10–0.1.16 build that left empty SavedVariables."])
         Print(L["Close the game completely, then delete:"])
         print("  WTF\\Account\\<account>\\SavedVariables\\ForeverQuestPins.lua")
         print("  WTF\\Account\\<account>\\<realm>\\<char>\\SavedVariables\\ForeverQuestPins.lua")

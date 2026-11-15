@@ -1,16 +1,16 @@
 # Forever Quest Pins
 
-**Beta** for World of Warcraft Forever (Interface 16001).
+Quest-start pins and nameplate quest icons for World of Warcraft Forever (Interface 16001).
 
 Yellow **!** start markers for normal quests, blue **!** for repeatable, red-orange **!** for dungeon and raid, class-colored **!** for class quests, and copper **!** for profession quests on Blizzard’s native world map.
 
-Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests.
+Forever already has a modern quest tracker and objective pins for quests **in your log**. This addon does not replace that. It adds start locations for **unaccepted** quests and quest icons on NPC nameplates.
 
 ## Requirements
 
 - World of Warcraft **Forever** only (not Retail, Classic Era, or Cataclysm Classic)
 - Folder name must be exactly `ForeverQuestPins`
-- No other addons required (not TomTom or HereBeDragons)
+- No other addons required
 
 TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
@@ -20,6 +20,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
+- Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
 - Overlapping starts on the same spot stack into one pin
@@ -27,10 +28,10 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
 - Adjustable high-level range: choose how many levels above you quests must be before their pins are hidden (default shows all levels)
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
-- Seasonal / holiday starts (Lunar Festival elders, …) off by default; when on, pins appear only while the event is live
+- Seasonal / holiday starts (such as Lunar Festival elders) off by default; when on, pins appear only while the event is live
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge off by default; when on, they appear after a war effort quest is offered or in your log, or with the always-show override
 
-Quest coordinates, quest-giver IDs, turn-in targets, and restrictions come from [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, with holiday, event, and instance-tag policy from [Questie](https://github.com/Questie/Questie). The Go tool `go run ./cmd/fqp build-db` generates the addon database. Quests without a usable spawn stay in the database for tooltips and prerequisites but may not get a map pin.
+Quest coordinates, quest-giver IDs, turn-in targets, and restrictions come from [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, with holiday, event, and instance-tag policy from [Questie](https://github.com/Questie/Questie). The Go tool `go run ./cmd/fqp build-db` generates the addon database. Quests without a usable spawn stay in the database for tooltips and prerequisites but may not get a map pin. Nameplate objective icons use the client’s unit tooltip, not extra database data.
 
 ## Install
 
@@ -44,7 +45,7 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 
 The optional **Limit auto-accept quest level** checkbox defaults off. Its **Auto Accept quest Range** slider runs from -5 to +5 and defaults to +1. This is a maximum recommended quest level relative to your current level: at level 15, +1 allows level 16 and below. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
 
-Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
+Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -67,7 +68,7 @@ Escape → Options → AddOns → **Forever Quest Pins**, use the world map's **
 | Always show AQ war effort pins | Off (skip the phase confirmation check) |
 | Show in-world destination marker | Uses Blizzard’s current shared navigation setting |
 | Waypoint provider | Blizzard Map Pins (TomTom optional) |
-| Icon Scale | 100% (adjustable from 50% to 150%) |
+| Map pin size | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
@@ -103,6 +104,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp turnin` | Toggle auto-turn-in |
 | `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
 | `/fqp nameplates` | Toggle quest icons on nameplates |
+| `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
@@ -114,12 +116,12 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp wipe` | Reset options (recovery; see Support) |
 | `/fqp apis` | Which Forever map/quest APIs this client exposes |
 
-## Beta limitations
+## Known limitations
 
 Forever’s quest data is still moving. Missing pins are often a gap in the published export: most quest givers have no coordinates, so those quests cannot be pinned.
 
-- **Saved settings:** Forever Beta 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
-- **Not a tracker.** No objectives, no turn-in map pins, no quest-log UI
+- **Saved settings:** Forever client 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
+- **Not a quest tracker.** It does not add a quest-log UI, tracker objectives, or turn-in map pins.
 - **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips list available accepts (including session gossip offers) and active quests that are ready to turn in at that NPC. Incomplete turn-ins are not listed.
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** missing from the export will not pin until the export (or a gossip offer we already saw this session) knows them
@@ -136,10 +138,10 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 For settings that reset despite being saved to disk, close WoW completely and run `go run ./cmd/fqp repair-settings` from the GitHub source checkout using Go 1.27 or later. Pass `--addon` pointing to your installed `ForeverQuestPins` folder and `--saved` pointing to that account's `SavedVariables/ForeverQuestPins.lua`. It previews by default; add `--apply` to create a TOC backup and link the live account settings into the addon loader. It never edits the saved settings. Reapply after addon updates replace the TOC. This is account-specific: do not share the patched addon across accounts. To undo, restore `ForeverQuestPins.toc.before-settings-repair` and remove only the `LocalSavedVariables` link, leaving its target directory intact. The repair tool is available in the source repository, not the CurseForge addon package.
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
-- Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong)
+- Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong). For nameplate icon issues, include `/fqp nameplatedebug`.
 - Quest **database** mistakes usually belong in [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, or in this repo’s QuestieDB converter if QuestieDB has the quest but we dropped a spawn
 - Quest **policy** mistakes (holiday membership or instance tags) belong in [Questie](https://github.com/Questie/Questie) corrections, or in the matching parser here
-- If you ran a **0.1.10–0.1.16** beta and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
+- If you ran a **0.1.10–0.1.16** build and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
 ## License
 

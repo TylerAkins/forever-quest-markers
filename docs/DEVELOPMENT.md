@@ -33,7 +33,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `internal/questiepolicy/` | Questie holiday and instance-tag policy parser |
 | `internal/questdb/` | Merge, start resolution, schema mapping, emitter, and report |
 | `internal/release/` | Prepares database releases and validates automated patch releases |
-| `internal/foreverupdate/` | Blizzard build feed → TOC compatibility release |
+| `internal/foreverupdate/` | Blizzard build feed to TOC compatibility release |
 | `internal/addontools/` | Addon compiler, settings repair, and fallback TGA generation |
 | `.pkgmeta` | [BigWigs packager](https://github.com/BigWigsMods/packager) rules |
 
@@ -76,7 +76,7 @@ Workflow **Update QuestieDB database** (`.github/workflows/update-questie-db.yml
 - Closes its existing `questie-db-update` PR if regenerated quest records return to the version already on `main`
 - Bumps the patch version and updates `CHANGELOG.md` and the current `RELEASE_NOTES.md`
 - Publishes the prepared GitHub and CurseForge release after a human reviews and merges the PR
-- Needs **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**
+- Needs **Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests**
 
 It never pushes generated data straight to `main` or merges its own PR.
 
@@ -135,7 +135,7 @@ Regenerate fallback textures with `go run ./cmd/fqp generate-icon`. Repair local
 
 Only stable tags are distributed to players. Preview builds are for testing and do not push or move a Git tag. Do not point players at GitHub's “Source code” archives; the packager zip is the installable addon.
 
-`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `tests/`, `cmd/`, `internal/`, `.github/`, or `build_report.json`.
+`.pkgmeta` ships addon Lua, `Database/*.lua`, `Media/`, `LICENSE`, `README.md`, `ATTRIBUTION.md`, `CHANGELOG.md`, and `RELEASE_NOTES.md`. It does **not** ship `VERSION`, `CURSEFORGE_DESCRIPTION.md`, `tests/`, `cmd/`, `internal/`, `.github/`, or `build_report.json`.
 
 The packager uploads `RELEASE_NOTES.md` as the release changelog instead of generating notes from Git commits. This prevents commit metadata from appearing on CurseForge and avoids publishing the full release history. Automated database and Forever Interface PRs replace this file with only their prepared release entry. CI requires that entry to match `VERSION` and rejects email addresses.
 
@@ -162,6 +162,8 @@ The payload URL contains the API token. Never commit it, add it as an Actions se
 
 The native packager reads `.pkgmeta` and replaces `@project-version@` with the pushed tag. A normal tag such as `v0.1.22` is a Release; tags containing `beta` or `alpha` receive the corresponding CurseForge status. Do not add `X-Curse-Project-ID` solely for native packaging.
 
+The project long description is maintained in `CURSEFORGE_DESCRIPTION.md`. Paste the section below its separator into the CurseForge project page when it changes.
+
 License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data and Questie for policy corrections. See [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## Pin textures
@@ -172,9 +174,9 @@ MapCanvas pins return no center to Forever's native gamepad cursor so closing th
 
 ## Support split
 
-- Pin / eligibility / auto-quest / NPC tooltip bugs → this repo’s issues
-- Wrong coordinates or missing Forever quests in the converted DB → [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, unless our converter dropped a spawn QuestieDB has
-- Wrong holiday membership, event dates, AQ war effort membership, or instance tags → [Questie](https://github.com/Questie/Questie) corrections, unless our parser dropped an entry
+- Pin / eligibility / auto-quest / NPC tooltip bugs belong in this repo’s issues
+- Wrong coordinates or missing Forever quests in the converted DB belong in [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, unless our converter dropped a spawn QuestieDB has
+- Wrong holiday membership, event dates, AQ war effort membership, or instance tags belong in [Questie](https://github.com/Questie/Questie) corrections, unless our parser dropped an entry
 
 ## Waypoint providers
 
