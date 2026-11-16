@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.8 - 2026-11-16
+
+- Update the QuestieDB Forever artifact to `e3c32068ad197b6e415b3520937179fe927e3de9eff0412c1c47121846a243b0` (build `4588c4426bf7a3faaf6a9e0033a67d33887341c9`).
+- Ship 5922 quests with 9539 coordinate pins (678 static instance quests, 220 yearly quests).
+
 ## 1.0.7 - 2026-11-15
 
 - Show a quest icon beside the nameplate of NPCs with a quest you can accept, turn in, or are working on. On by default; toggle it in options or with `/fqp nameplates`.
