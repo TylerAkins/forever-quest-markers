@@ -22,6 +22,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
 | `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
+| `Database/ExcludedQuests.lua` | Hand-maintained quest IDs that should never show map pins |
 | `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |

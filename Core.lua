@@ -154,6 +154,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if ns.InvalidateInstanceQuestCache then
             ns.InvalidateInstanceQuestCache(questID)
         end
+        if ns.InvalidatePvPQuestCache then
+            ns.InvalidatePvPQuestCache(questID)
+        end
         if success == false then
             if ns.OnQuestDataLoadFailed then ns.OnQuestDataLoadFailed(questID) end
             return
@@ -195,6 +198,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if questID and ns.InvalidateInstanceQuestCache then
             ns.InvalidateInstanceQuestCache(questID)
         end
+        if questID and ns.InvalidatePvPQuestCache then
+            ns.InvalidatePvPQuestCache(questID)
+        end
         if questID and ns.NoteQuestAccepted then
             ns.NoteQuestAccepted(questID)
         end
@@ -202,6 +208,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         local questID = QuestIDFromEvent(event, ...)
         if questID and ns.InvalidateInstanceQuestCache then
             ns.InvalidateInstanceQuestCache(questID)
+        end
+        if questID and ns.InvalidatePvPQuestCache then
+            ns.InvalidatePvPQuestCache(questID)
         end
         if questID and ns.NoteQuestCompleted then
             ns.NoteQuestCompleted(questID)
@@ -213,6 +222,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         local questID = QuestIDFromEvent(event, ...)
         if questID and ns.InvalidateInstanceQuestCache then
             ns.InvalidateInstanceQuestCache(questID)
+        end
+        if questID and ns.InvalidatePvPQuestCache then
+            ns.InvalidatePvPQuestCache(questID)
         end
         if questID and ns.NoteQuestRemoved then
             ns.NoteQuestRemoved(questID)

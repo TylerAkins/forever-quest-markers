@@ -338,8 +338,12 @@ end
                 { "showClass", { classes = { 1 } } },
                 { "showProfession", { requireSkill = 164 } },
                 { "showDungeon", { isInstanceQuest = true } },
+                { "showPvP", { isPvPQuest = true } },
             }
             for _, example in ipairs(examples) do
+                if example[1] == "showPvP" then
+                    ns.SetOption("showPvP", true)
+                end
                 assert(ns.IsQuestAvailable(101, example[2]))
                 ns.SetOption(example[1], false)
                 local available, reason = ns.IsQuestAvailable(101, example[2])
@@ -362,6 +366,26 @@ end
             assert(ns.IsInstanceQuest(103, {}))
             C_QuestLog.GetQuestTagInfo = nil
             ns.InvalidateInstanceQuestCache()
+            ns.QuestTagCorrections = { [104] = 41 }
+            ns.SetOption("showPvP", false)
+            assert(not ns.IsQuestAvailable(104, {}))
+            ns.SetOption("showPvP", true)
+            assert(ns.IsQuestAvailable(104, {}))
+            ns.SetOption("showPvP", false)
+            ns.QuestTagCorrections = nil
+            ns.InvalidatePvPQuestCache()
+            ns.ExcludedQuests = { [105] = true }
+            local excludedAvailable, excludedReason = ns.IsQuestAvailable(105, {})
+            assert(not excludedAvailable and excludedReason == "excluded")
+            ns.ExcludedQuests = nil
+            C_QuestLog.GetQuestTagInfo = function(questID)
+                if questID == 106 then
+                    return { tagID = 41, tagName = "PvP" }
+                end
+            end
+            assert(ns.IsPvPQuest(106, {}))
+            C_QuestLog.GetQuestTagInfo = nil
+            ns.InvalidatePvPQuestCache()
             ns.SetOption("showNormal", false)
             for _, data in ipairs({ { repeatable = true }, { event = 1 },
                 { isYearly = true }, { classes = { 1 } }, { requireSkill = 164 },
@@ -439,18 +463,18 @@ end
             local buttons = {}
             modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
                 Insert = function(_, button) table.insert(buttons, button) end })
-            assert(#buttons == 11)
+            assert(#buttons == 12)
             assert(buttons[1].enabled == nil)
-            assert(buttons[11].label == "Click pins to track quest starts")
-            assert(buttons[11].enabled == nil)
-            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 10 }
+            assert(buttons[12].label == "Click pins to track quest starts")
+            assert(buttons[12].enabled == nil)
+            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 9, 11 }
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
             ns.SetOption("enabled", false)
             for _, i in ipairs(categoryButtons) do assert(not buttons[i].enabled()) end
             ns.SetOption("enabled", true)
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
             local keys = { "enabled", "showWorldMapPins", "showNormal", "showClass", "showDungeon",
-                "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
+                "showPvP", "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
             for i, button in ipairs(buttons) do
                 assert(not button.label:find("Show", 1, true))
                 local before = ns.GetOption(keys[i])
@@ -551,7 +575,7 @@ end
             end
             ns.MapPins.Clear = function() end
             local categories = { showWorldMapPins = true, showNormal = true, showClass = true, showDungeon = true,
-                showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
+                showPvP = true, showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
             ns.SetOption("showClass", false)
             ns.SetOption("enabled", false)
             local count = 0
@@ -562,7 +586,7 @@ end
                     assert(control.checked == ns.GetOption(control.optionKey))
                 end
             end
-            assert(count == 8)
+            assert(count == 9)
             ns.SetOption("enabled", true)
             for _, control in ipairs(controls) do
                 if categories[control.optionKey] then
@@ -4268,6 +4292,49 @@ assert(loadfile("Nameplates.lua"))("ForeverQuestPins", ns)
             ns.Nameplates:RefreshAll()
             assert(not frame.shown and frame.parent == nil)
 
+end
+cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Database/ExcludedQuests.lua"))("ForeverQuestPins", ns)
+    assert(ns.ExcludedQuests[60860])
+    assert(ns.ExcludedQuests[60870])
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+    C_QuestLog.IsOnQuest = function() return false end
+    UnitLevel = function() return 60 end
+    ns.GetOption = function() return true end
+    local available, reason = ns.IsQuestAvailable(60860, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(60870, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(60861, { minLevel = 1 })
+    assert(available == true)
+end
+cases["eligibility_runtime.test_pvp_quest_tag_and_option"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+    C_QuestLog.IsOnQuest = function() return false end
+    UnitLevel = function() return 60 end
+    local options = { showPvP = false, showNormal = true, showTrivial = true, trivialLevelGap = 9 }
+    ns.GetOption = function(key) return options[key] end
+    local available, reason = ns.IsQuestAvailable(200, { isPvPQuest = true, minLevel = 1 })
+    assert(available == false and reason == "category-hidden")
+    options.showPvP = true
+    available, reason = ns.IsQuestAvailable(200, { isPvPQuest = true, minLevel = 1 })
+    assert(available == true)
+    options.showPvP = false
+    C_QuestLog.GetQuestTagInfo = function(questID)
+        if questID == 201 then
+            return { tagID = 41, tagName = "PvP" }
+        end
+    end
+    assert(ns.IsPvPQuest(201, {}))
+    available, reason = ns.IsQuestAvailable(201, { minLevel = 1 })
+    assert(available == false and reason == "category-hidden")
+    options.showPvP = true
+    available, reason = ns.IsQuestAvailable(201, { minLevel = 1 })
+    assert(available == true)
 end
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()

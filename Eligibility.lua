@@ -776,7 +776,12 @@ local INSTANCE_QUEST_TAGS = {
     [98] = true, -- Scenario
 }
 
+local PVP_QUEST_TAGS = {
+    [41] = true, -- PvP
+}
+
 local instanceQuestCache = {}
+local pvpQuestCache = {}
 
 local function QuestTagInfo(questID)
     local info
@@ -868,6 +873,58 @@ function ns.InvalidateInstanceQuestCache(questID)
     end
 end
 
+local function IsPvPTag(tagID, tagName)
+    if type(tagID) == "number" and PVP_QUEST_TAGS[tagID] then
+        return true
+    end
+    if type(tagName) == "string" then
+        local name = tagName:lower()
+        return name == "pvp"
+    end
+    return false
+end
+
+--- Whether the client or static data classifies a quest as PvP.
+-- The client API wins when it has a definite tag. A nil API result falls back
+-- to static data and is not cached, so a later quest load can retry.
+function ns.IsPvPQuest(questID, data)
+    questID = tonumber(questID)
+    if not questID then
+        return false
+    end
+    local cached = pvpQuestCache[questID]
+    if cached ~= nil then
+        return cached
+    end
+    local tagID, tagName = QuestTagInfo(questID)
+    local correction = ns.QuestTagCorrections and ns.QuestTagCorrections[questID]
+    local englishName = tagName ~= nil
+        and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")
+    local result
+    local definite = tagID ~= nil or correction ~= nil or englishName
+    if IsPvPTag(tagID, tagName) or IsPvPTag(correction, nil) then
+        result = true
+    elseif definite then
+        result = false
+    else
+        data = data or (ns.Quests and ns.Quests[questID])
+        result = data ~= nil and data.isPvPQuest == true
+    end
+    if definite then
+        pvpQuestCache[questID] = result
+    end
+    return result
+end
+
+function ns.InvalidatePvPQuestCache(questID)
+    questID = tonumber(questID)
+    if questID then
+        pvpQuestCache[questID] = nil
+    else
+        pvpQuestCache = {}
+    end
+end
+
 local function IsTrivial(questID, data)
     local questLevel, reliable = QuestLevelForTrivial(questID, data)
     if not reliable or not questLevel then
@@ -896,9 +953,14 @@ function ns.IsQuestAvailable(questID, data)
     if ns.IsQuestHidden and ns.IsQuestHidden(questID) then
         return false, "user-hidden"
     end
+    if ns.ExcludedQuests and ns.ExcludedQuests[questID] then
+        return false, "excluded"
+    end
     local category
     if ns.IsInstanceQuest(questID, data) then
         category = "showDungeon"
+    elseif ns.IsPvPQuest(questID, data) then
+        category = "showPvP"
     elseif data.classes and #data.classes > 0 then
         category = "showClass"
     elseif data.requireSkill then

@@ -15,6 +15,7 @@ ns.defaults = {
     showClass = true,
     showProfession = true,
     showDungeon = true,
+    showPvP = false,
     showRepeatable = true,
     showSpawnClusters = true,
     highlightNewQuests = true,
@@ -38,6 +39,7 @@ local pinCategoryOptions = {
     showNormal = true,
     showClass = true,
     showDungeon = true,
+    showPvP = true,
     showProfession = true,
     showSeasonal = true,
     showWarEffort = true,
@@ -417,6 +419,7 @@ function ns.TryRegisterWorldMapDropdown()
         { "showNormal", L["Normal quest start"] },
         { "showClass", L["Class quest"] },
         { "showDungeon", L["Dungeon / raid quest"] },
+        { "showPvP", L["PvP quest"] },
         { "showProfession", L["Profession quest"] },
         { "showSeasonal", L["Seasonal / holiday quest"] },
         { "showWarEffort", L["AQ war effort"] },
@@ -476,6 +479,7 @@ function ns.SlashCommand(msg)
         print(L["  /fqp repeatable Toggle repeatable quest pins (on by default)"])
         print(L["  /fqp spawns   Toggle grouped spawn pins (on by default)"])
         print(L["  /fqp seasonal Toggle holiday/seasonal pins (off by default)"])
+        print(L["  /fqp pvp      Toggle PvP quest pins (off by default)"])
         print(L["  /fqp wareffort Toggle AQ war effort pins in capitals (off by default)"])
         print(L["  /fqp wareffort always Always show AQ war effort pins"])
         print(L["  /fqp accept   Toggle auto-accept quests"])
@@ -582,6 +586,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "seasonal" then
         ToggleFlag("showSeasonal", L["Show seasonal/holiday pins"])
+        return
+    end
+    if msg == "pvp" then
+        ToggleFlag("showPvP", L["Show PvP quest pins"])
         return
     end
     if msg == "wareffort always" or msg == "war always" then
@@ -717,6 +725,7 @@ function ns.PrintSettingsDebug()
         "showSpawnClusters",
         "highlightNewQuests",
         "showSeasonal",
+        "showPvP",
         "showWarEffort",
         "showWarEffortAlways",
         "autoAccept",
@@ -1129,9 +1138,13 @@ function ns.TryRegisterSettings()
                 L["Dungeon, raid, and attunement quest starts."])
             dungeon:SetPoint("TOPLEFT", class, "BOTTOMLEFT", 0, 0)
 
+            local pvp = CreateOptionCheckbox(self, "showPvP", L["Show PvP quest pins"],
+                L["Player versus player quest starts, such as battleground call to arms."])
+            pvp:SetPoint("TOPLEFT", dungeon, "BOTTOMLEFT", 0, 0)
+
             local profession = CreateOptionCheckbox(self, "showProfession", L["Show profession quest pins"],
                 L["Profession-restricted quest starts, except class and dungeon / raid quests."])
-            profession:SetPoint("TOPLEFT", dungeon, "BOTTOMLEFT", 0, 0)
+            profession:SetPoint("TOPLEFT", pvp, "BOTTOMLEFT", 0, 0)
             local seasonal = CreateOptionCheckbox(
                 self,
                 "showSeasonal",

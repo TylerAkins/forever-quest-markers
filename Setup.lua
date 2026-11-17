@@ -14,6 +14,7 @@ local pages = {
         { "showNormal", "Show normal quest start pins" },
         { "showClass", "Show class quest pins" },
         { "showDungeon", "Show dungeon / raid quest pins" },
+        { "showPvP", "Show PvP quest pins" },
         { "showProfession", "Show profession quest pins" },
         { "showWarEffortAlways", "Always show AQ war effort pins" },
     } },
