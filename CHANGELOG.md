@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.9 - 2026-11-17
+
+- Hide "Your Reward has Arrived!" and "A Special Gift" quest pins.
+- Add a PvP quest category, off by default. Toggle it in options or with `/fqp pvp`.
+- Add an option to hide quest pins in unexplored areas. Pins stay visible by default; toggle it in options or with `/fqp unexplored`.
+
 ## 1.0.8 - 2026-11-16
 
 - Update the QuestieDB Forever artifact to `e3c32068ad197b6e415b3520937179fe927e3de9eff0412c1c47121846a243b0` (build `4588c4426bf7a3faaf6a9e0033a67d33887341c9`).

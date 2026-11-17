@@ -338,8 +338,12 @@ end
                 { "showClass", { classes = { 1 } } },
                 { "showProfession", { requireSkill = 164 } },
                 { "showDungeon", { isInstanceQuest = true } },
+                { "showPvP", { isPvPQuest = true } },
             }
             for _, example in ipairs(examples) do
+                if example[1] == "showPvP" then
+                    ns.SetOption("showPvP", true)
+                end
                 assert(ns.IsQuestAvailable(101, example[2]))
                 ns.SetOption(example[1], false)
                 local available, reason = ns.IsQuestAvailable(101, example[2])
@@ -362,6 +366,26 @@ end
             assert(ns.IsInstanceQuest(103, {}))
             C_QuestLog.GetQuestTagInfo = nil
             ns.InvalidateInstanceQuestCache()
+            ns.QuestTagCorrections = { [104] = 41 }
+            ns.SetOption("showPvP", false)
+            assert(not ns.IsQuestAvailable(104, {}))
+            ns.SetOption("showPvP", true)
+            assert(ns.IsQuestAvailable(104, {}))
+            ns.SetOption("showPvP", false)
+            ns.QuestTagCorrections = nil
+            ns.InvalidatePvPQuestCache()
+            ns.ExcludedQuests = { [105] = true }
+            local excludedAvailable, excludedReason = ns.IsQuestAvailable(105, {})
+            assert(not excludedAvailable and excludedReason == "excluded")
+            ns.ExcludedQuests = nil
+            C_QuestLog.GetQuestTagInfo = function(questID)
+                if questID == 106 then
+                    return { tagID = 41, tagName = "PvP" }
+                end
+            end
+            assert(ns.IsPvPQuest(106, {}))
+            C_QuestLog.GetQuestTagInfo = nil
+            ns.InvalidatePvPQuestCache()
             ns.SetOption("showNormal", false)
             for _, data in ipairs({ { repeatable = true }, { event = 1 },
                 { isYearly = true }, { classes = { 1 } }, { requireSkill = 164 },
@@ -439,18 +463,18 @@ end
             local buttons = {}
             modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
                 Insert = function(_, button) table.insert(buttons, button) end })
-            assert(#buttons == 11)
+            assert(#buttons == 13)
             assert(buttons[1].enabled == nil)
-            assert(buttons[11].label == "Click pins to track quest starts")
-            assert(buttons[11].enabled == nil)
-            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 10 }
+            assert(buttons[13].label == "Click pins to track quest starts")
+            assert(buttons[13].enabled == nil)
+            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 12 }
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
             ns.SetOption("enabled", false)
             for _, i in ipairs(categoryButtons) do assert(not buttons[i].enabled()) end
             ns.SetOption("enabled", true)
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
-            local keys = { "enabled", "showWorldMapPins", "showNormal", "showClass", "showDungeon",
-                "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
+            local keys = { "enabled", "showWorldMapPins", "showUnexplored", "showNormal", "showClass", "showDungeon",
+                "showPvP", "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
             for i, button in ipairs(buttons) do
                 assert(not button.label:find("Show", 1, true))
                 local before = ns.GetOption(keys[i])
@@ -551,7 +575,7 @@ end
             end
             ns.MapPins.Clear = function() end
             local categories = { showWorldMapPins = true, showNormal = true, showClass = true, showDungeon = true,
-                showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
+                showPvP = true, showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
             ns.SetOption("showClass", false)
             ns.SetOption("enabled", false)
             local count = 0
@@ -562,7 +586,7 @@ end
                     assert(control.checked == ns.GetOption(control.optionKey))
                 end
             end
-            assert(count == 8)
+            assert(count == 9)
             ns.SetOption("enabled", true)
             for _, control in ipairs(controls) do
                 if categories[control.optionKey] then
@@ -2714,10 +2738,10 @@ local function tooltipHas(text)
 end
 
 local function setupPinRendering()
-    options = { enabled = true, showWorldMapPins = true, showRepeatable = true,
-        showNormal = true, showClass = true, showProfession = true, showDungeon = true,
-        showSeasonal = true, showWarEffort = true, showTrivial = true, showSpawnClusters = true,
-        iconScale = 100 }
+    options = { enabled = true, showWorldMapPins = true, showUnexplored = true,
+        showRepeatable = true, showNormal = true, showClass = true, showProfession = true,
+        showDungeon = true, showSeasonal = true, showWarEffort = true, showTrivial = true,
+        showSpawnClusters = true, iconScale = 100 }
     local function texture()
         return {
             SetAllPoints = function() end, Hide = function(self) self.shown = false end,
@@ -3329,6 +3353,29 @@ cases["map_pins_runtime.spawn_points_include_primary_coord"] = function()
     ns.MapPins:Refresh("spawn-primary")
     assert(ns.MapPins:GetStatus().count == 1)
     assert(pin.spawnCount == 3, "primary spawn missing: " .. tostring(pin.spawnCount))
+end
+
+cases["map_pins_runtime.unexplored_pins_follow_option"] = function()
+    setupPinRendering()
+    ns.Quests = { [101] = { mapID = 1, x = 50, y = 50, title = "Unexplored test" } }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = false
+    CreateVector2D = function(x, y) return { x = x, y = y } end
+    C_MapExplorationInfo = {
+        GetExploredAreaIDsAtPosition = function() return nil end,
+    }
+
+    options.showUnexplored = true
+    ns.MapPins:Refresh("unexplored-shown")
+    assert(ns.MapPins:GetStatus().count == 1)
+
+    options.showUnexplored = false
+    ns.MapPins:Refresh("unexplored-hidden")
+    assert(ns.MapPins:GetStatus().count == 0)
+
+    C_MapExplorationInfo.GetExploredAreaIDsAtPosition = function() return { 1 } end
+    ns.MapPins:Refresh("explored-shown")
+    assert(ns.MapPins:GetStatus().count == 1)
 end
 
 cases["map_pins_runtime.enemy_capital_spawns_hidden_for_player_faction"] = function()
@@ -4268,6 +4315,78 @@ assert(loadfile("Nameplates.lua"))("ForeverQuestPins", ns)
             ns.Nameplates:RefreshAll()
             assert(not frame.shown and frame.parent == nil)
 
+end
+cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Database/ExcludedQuests.lua"))("ForeverQuestPins", ns)
+    assert(ns.ExcludedQuests[60860])
+    assert(ns.ExcludedQuests[60870])
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+    C_QuestLog.IsOnQuest = function() return false end
+    UnitLevel = function() return 60 end
+    ns.GetOption = function() return true end
+    local available, reason = ns.IsQuestAvailable(60860, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(60870, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(60861, { minLevel = 1 })
+    assert(available == true)
+end
+cases["eligibility_runtime.test_pvp_quest_tag_and_option"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+    C_QuestLog.IsOnQuest = function() return false end
+    UnitLevel = function() return 60 end
+    local options = { showPvP = false, showNormal = true, showTrivial = true, trivialLevelGap = 9 }
+    ns.GetOption = function(key) return options[key] end
+    local available, reason = ns.IsQuestAvailable(200, { isPvPQuest = true, minLevel = 1 })
+    assert(available == false and reason == "category-hidden")
+    options.showPvP = true
+    available, reason = ns.IsQuestAvailable(200, { isPvPQuest = true, minLevel = 1 })
+    assert(available == true)
+    options.showPvP = false
+    C_QuestLog.GetQuestTagInfo = function(questID)
+        if questID == 201 then
+            return { tagID = 41, tagName = "PvP" }
+        end
+    end
+    assert(ns.IsPvPQuest(201, {}))
+    available, reason = ns.IsQuestAvailable(201, { minLevel = 1 })
+    assert(available == false and reason == "category-hidden")
+    options.showPvP = true
+    available, reason = ns.IsQuestAvailable(201, { minLevel = 1 })
+    assert(available == true)
+end
+cases["map_pins_runtime.test_unexplored_map_position_and_option"] = function()
+    ns = {}
+    CreateFrame = function() return { SetScript = function() end } end
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("MapPins.lua"))("ForeverQuestPins", ns)
+
+    assert(ns.GetOption("showUnexplored") == true, "default shows unexplored areas")
+
+    assert(ns.IsMapPositionExplored(1453, 50, 50) == true, "city maps are always explored")
+    assert(ns.IsMapPositionExplored(nil, 50, 50) == true, "missing map ID defaults to explored")
+    assert(ns.IsMapPositionExplored(1, nil, 50) == true, "missing coordinates default to explored")
+
+    C_MapExplorationInfo = nil
+    CreateVector2D = nil
+    assert(ns.IsMapPositionExplored(1, 50, 50) == true, "missing API defaults to explored")
+
+    C_MapExplorationInfo = {
+        GetExploredAreaIDsAtPosition = function(mapID, position)
+            if mapID == 1 and position.x == 0.5 and position.y == 0.5 then
+                return { 123 }
+            end
+            return nil
+        end
+    }
+    CreateVector2D = function(x, y) return { x = x, y = y } end
+
+    assert(ns.IsMapPositionExplored(1, 50, 50) == true, "explored position")
+    assert(ns.IsMapPositionExplored(1, 20, 20) == false, "unexplored position")
 end
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
