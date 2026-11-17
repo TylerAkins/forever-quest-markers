@@ -5,6 +5,7 @@ ns.name = ADDON_NAME
 ns.defaults = {
     enabled = true,
     showWorldMapPins = true,
+    showUnexplored = true,
     enablePinTracking = true,
     trackOnWorldMaps = false,
     waypointProvider = "blizzard",
@@ -36,6 +37,7 @@ ns.defaults = {
 local optionChecks = {}
 local pinCategoryOptions = {
     showWorldMapPins = true,
+    showUnexplored = true,
     showNormal = true,
     showClass = true,
     showDungeon = true,
@@ -416,6 +418,7 @@ function ns.TryRegisterWorldMapDropdown()
     local filters = {
         { "enabled", L["Quest start"] },
         { "showWorldMapPins", L["World and continent quest pins"] },
+        { "showUnexplored", L["Quests in unexplored areas"] },
         { "showNormal", L["Normal quest start"] },
         { "showClass", L["Class quest"] },
         { "showDungeon", L["Dungeon / raid quest"] },
@@ -592,6 +595,10 @@ function ns.SlashCommand(msg)
         ToggleFlag("showPvP", L["Show PvP quest pins"])
         return
     end
+    if msg == "unexplored" then
+        ToggleFlag("showUnexplored", L["Show quests in unexplored areas"])
+        return
+    end
     if msg == "wareffort always" or msg == "war always" then
         ToggleFlag("showWarEffortAlways", L["Always show AQ war effort pins"])
         return
@@ -718,6 +725,7 @@ function ns.PrintSettingsDebug()
     for _, key in ipairs({
         "enabled",
         "showWorldMapPins",
+        "showUnexplored",
         "showTrivial",
         "trivialLevelGap",
         "highLevelGap",
@@ -1128,9 +1136,14 @@ function ns.TryRegisterSettings()
                 L["When off, quest starts remain visible on zone, city, and dungeon maps."])
             worldPins:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
 
+            local unexplored = CreateOptionCheckbox(self, "showUnexplored",
+                L["Show quests in unexplored areas"],
+                L["When off, quest start pins in areas you have not discovered are hidden."])
+            unexplored:SetPoint("TOPLEFT", worldPins, "BOTTOMLEFT", 0, 0)
+
             local normal = CreateOptionCheckbox(self, "showNormal", L["Show normal quest start pins"],
                 L["Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories."])
-            normal:SetPoint("TOPLEFT", worldPins, "BOTTOMLEFT", 0, 0)
+            normal:SetPoint("TOPLEFT", unexplored, "BOTTOMLEFT", 0, 0)
             local class = CreateOptionCheckbox(self, "showClass", L["Show class quest pins"],
                 L["Class-restricted quest starts, except dungeon / raid quests."])
             class:SetPoint("TOPLEFT", normal, "BOTTOMLEFT", 0, 0)

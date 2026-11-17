@@ -463,17 +463,17 @@ end
             local buttons = {}
             modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
                 Insert = function(_, button) table.insert(buttons, button) end })
-            assert(#buttons == 12)
+            assert(#buttons == 13)
             assert(buttons[1].enabled == nil)
-            assert(buttons[12].label == "Click pins to track quest starts")
-            assert(buttons[12].enabled == nil)
-            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 9, 11 }
+            assert(buttons[13].label == "Click pins to track quest starts")
+            assert(buttons[13].enabled == nil)
+            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 12 }
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
             ns.SetOption("enabled", false)
             for _, i in ipairs(categoryButtons) do assert(not buttons[i].enabled()) end
             ns.SetOption("enabled", true)
             for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
-            local keys = { "enabled", "showWorldMapPins", "showNormal", "showClass", "showDungeon",
+            local keys = { "enabled", "showWorldMapPins", "showUnexplored", "showNormal", "showClass", "showDungeon",
                 "showPvP", "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
             for i, button in ipairs(buttons) do
                 assert(not button.label:find("Show", 1, true))
@@ -2738,10 +2738,10 @@ local function tooltipHas(text)
 end
 
 local function setupPinRendering()
-    options = { enabled = true, showWorldMapPins = true, showRepeatable = true,
-        showNormal = true, showClass = true, showProfession = true, showDungeon = true,
-        showSeasonal = true, showWarEffort = true, showTrivial = true, showSpawnClusters = true,
-        iconScale = 100 }
+    options = { enabled = true, showWorldMapPins = true, showUnexplored = true,
+        showRepeatable = true, showNormal = true, showClass = true, showProfession = true,
+        showDungeon = true, showSeasonal = true, showWarEffort = true, showTrivial = true,
+        showSpawnClusters = true, iconScale = 100 }
     local function texture()
         return {
             SetAllPoints = function() end, Hide = function(self) self.shown = false end,
@@ -3353,6 +3353,29 @@ cases["map_pins_runtime.spawn_points_include_primary_coord"] = function()
     ns.MapPins:Refresh("spawn-primary")
     assert(ns.MapPins:GetStatus().count == 1)
     assert(pin.spawnCount == 3, "primary spawn missing: " .. tostring(pin.spawnCount))
+end
+
+cases["map_pins_runtime.unexplored_pins_follow_option"] = function()
+    setupPinRendering()
+    ns.Quests = { [101] = { mapID = 1, x = 50, y = 50, title = "Unexplored test" } }
+    ns.ByMap = { [1] = { 101 } }
+    options.showSpawnClusters = false
+    CreateVector2D = function(x, y) return { x = x, y = y } end
+    C_MapExplorationInfo = {
+        GetExploredAreaIDsAtPosition = function() return nil end,
+    }
+
+    options.showUnexplored = true
+    ns.MapPins:Refresh("unexplored-shown")
+    assert(ns.MapPins:GetStatus().count == 1)
+
+    options.showUnexplored = false
+    ns.MapPins:Refresh("unexplored-hidden")
+    assert(ns.MapPins:GetStatus().count == 0)
+
+    C_MapExplorationInfo.GetExploredAreaIDsAtPosition = function() return { 1 } end
+    ns.MapPins:Refresh("explored-shown")
+    assert(ns.MapPins:GetStatus().count == 1)
 end
 
 cases["map_pins_runtime.enemy_capital_spawns_hidden_for_player_faction"] = function()
@@ -4335,6 +4358,35 @@ cases["eligibility_runtime.test_pvp_quest_tag_and_option"] = function()
     options.showPvP = true
     available, reason = ns.IsQuestAvailable(201, { minLevel = 1 })
     assert(available == true)
+end
+cases["map_pins_runtime.test_unexplored_map_position_and_option"] = function()
+    ns = {}
+    CreateFrame = function() return { SetScript = function() end } end
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("MapPins.lua"))("ForeverQuestPins", ns)
+
+    assert(ns.GetOption("showUnexplored") == true, "default shows unexplored areas")
+
+    assert(ns.IsMapPositionExplored(1453, 50, 50) == true, "city maps are always explored")
+    assert(ns.IsMapPositionExplored(nil, 50, 50) == true, "missing map ID defaults to explored")
+    assert(ns.IsMapPositionExplored(1, nil, 50) == true, "missing coordinates default to explored")
+
+    C_MapExplorationInfo = nil
+    CreateVector2D = nil
+    assert(ns.IsMapPositionExplored(1, 50, 50) == true, "missing API defaults to explored")
+
+    C_MapExplorationInfo = {
+        GetExploredAreaIDsAtPosition = function(mapID, position)
+            if mapID == 1 and position.x == 0.5 and position.y == 0.5 then
+                return { 123 }
+            end
+            return nil
+        end
+    }
+    CreateVector2D = function(x, y) return { x = x, y = y } end
+
+    assert(ns.IsMapPositionExplored(1, 50, 50) == true, "explored position")
+    assert(ns.IsMapPositionExplored(1, 20, 20) == false, "unexplored position")
 end
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()

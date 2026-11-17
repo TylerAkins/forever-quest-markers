@@ -1632,6 +1632,33 @@ end
 -- map IDs; keep single-city quests so neutral and dungeon starts still show.
 local ALLIANCE_CITY_MAPS = { [1453] = true, [1455] = true, [1457] = true } -- Stormwind, Ironforge, Darnassus
 local HORDE_CITY_MAPS = { [1454] = true, [1456] = true, [1458] = true } -- Orgrimmar, Thunder Bluff, Undercity
+local ALWAYS_EXPLORED_MAPS = {
+    [1453] = true, -- Stormwind
+    [1454] = true, -- Orgrimmar
+    [1455] = true, -- Ironforge
+    [1456] = true, -- Thunder Bluff
+    [1457] = true, -- Darnassus
+    [1458] = true, -- Undercity
+}
+
+function ns.IsMapPositionExplored(mapID, x, y)
+    if not mapID or not x or not y then
+        return true
+    end
+    if ALWAYS_EXPLORED_MAPS[mapID] then
+        return true
+    end
+    local exploration = C_MapExplorationInfo
+    if not (exploration and type(exploration.GetExploredAreaIDsAtPosition) == "function")
+        or type(CreateVector2D) ~= "function" then
+        return true
+    end
+    local ok, explored = pcall(exploration.GetExploredAreaIDsAtPosition, mapID, CreateVector2D(x / 100, y / 100))
+    if not ok then
+        return true
+    end
+    return explored ~= nil
+end
 
 local function EnemyCapitalMaps(data)
     local faction = ns.GetPlayerFaction and ns.GetPlayerFaction()
@@ -1671,6 +1698,20 @@ local function CollectSpawnPoints(data, viewedMapID)
         end
     end)
     return points
+end
+
+local function FilterUnexploredPoints(points)
+    if ns.GetOption("showUnexplored") then
+        return points
+    end
+    local explored = {}
+    for i = 1, #points do
+        local point = points[i]
+        if ns.IsMapPositionExplored(point.mapID, point.x, point.y) then
+            explored[#explored + 1] = point
+        end
+    end
+    return explored
 end
 
 local function ClusterSpawnPoints(parent, points)
@@ -1982,7 +2023,7 @@ function MapPins:Refresh(reason)
         if not available then
             return
         end
-        local points = CollectSpawnPoints(data, viewedMapID)
+        local points = FilterUnexploredPoints(CollectSpawnPoints(data, viewedMapID))
         if #points == 0 then
             return
         end

@@ -6,6 +6,7 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 
 - Hide "Your Reward has Arrived!" and "A Special Gift" quest pins.
 - Add a PvP quest category, off by default. Toggle it in options or with `/fqp pvp`.
+- Add an option to hide quest pins in unexplored areas. Pins stay visible by default; toggle it in options or with `/fqp unexplored`.
 
 ## 1.0.8 - 2026-11-16
 

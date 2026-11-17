@@ -5,6 +5,7 @@ local pages = {
     { title = "Map pins", options = {
         { "enabled", "Show quest start pins" },
         { "showWorldMapPins", "Show quest pins on world and continent maps" },
+        { "showUnexplored", "Show quests in unexplored areas" },
         { "showRepeatable", "Show repeatable quest pins" },
         { "showSeasonal", "Show seasonal / holiday quest pins" },
         { "showWarEffort", "Show AQ war effort pins" },
