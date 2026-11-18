@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.10 - 2026-11-17
+
+- Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning. Toggle it in options or with `/fqp breadcrumb`.
+
 ## 1.0.9 - 2026-11-17
 
 - Hide "Your Reward has Arrived!" and "A Special Gift" quest pins.
