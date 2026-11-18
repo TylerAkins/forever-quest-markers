@@ -86,7 +86,7 @@ local function CreateSetup()
     local function UpdateOffsetEnabled()
         levelRange:SetActive(panel.pending.autoAccept and panel.pending.autoAcceptRangeEnabled)
         for _, box in ipairs(checks) do
-            if box.key == "autoAcceptSkipGrey" then
+            if box.key == "autoAcceptSkipGrey" or box.key == "autoAcceptRangeEnabled" then
                 local enabled = panel.pending.autoAccept and true or false
                 box:SetEnabled(enabled)
                 box.Text:SetAlpha(enabled and 1 or 0.5)

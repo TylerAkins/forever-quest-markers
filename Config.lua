@@ -1552,6 +1552,18 @@ function ns.TryRegisterSettings()
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 L["Limit auto-accept quest level"], L["Only auto-accept quests within the level range around your level. Unknown quest levels are left for manual acceptance."])
             range:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", 0, 0)
+            -- Auto-accept filters do nothing while auto-accept is off, so dim them.
+            local function DimWithoutAutoAccept(box)
+                local applySaved = box.ApplySaved
+                box.ApplySaved = function(control)
+                    applySaved(control)
+                    local enabled = ns.GetOption("autoAccept") and true or false
+                    control:SetEnabled(enabled)
+                    control.Text:SetAlpha(enabled and 1 or 0.5)
+                end
+                box:ApplySaved()
+            end
+            DimWithoutAutoAccept(range)
             local levelRange = ns.CreateLevelRangeSlider(self, function()
                 return ns.GetAutoAcceptLevelRange()
             end, function(lowValue, highValue)
@@ -1571,14 +1583,7 @@ function ns.TryRegisterSettings()
                 L["Don't auto-accept grey quests"],
                 L["Skip quests the game shows as grey (trivial) for your level. You can still accept them manually."])
             skipGrey:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
-            local applySkipGrey = skipGrey.ApplySaved
-            skipGrey.ApplySaved = function(control)
-                applySkipGrey(control)
-                local enabled = ns.GetOption("autoAccept") and true or false
-                control:SetEnabled(enabled)
-                control.Text:SetAlpha(enabled and 1 or 0.5)
-            end
-            skipGrey:ApplySaved()
+            DimWithoutAutoAccept(skipGrey)
 
             local turnin = CreateOptionCheckbox(
                 self,
