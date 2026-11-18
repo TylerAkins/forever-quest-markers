@@ -44,7 +44,9 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 
 ## Settings
 
-The optional **Limit auto-accept quest level** checkbox defaults off. Its **Auto Accept quest Range** slider runs from -5 to +5 and defaults to +1. This is a maximum recommended quest level relative to your current level: at level 15, +1 allows level 16 and below. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
+The optional **Limit auto-accept quest level** checkbox defaults off. It turns on a level range relative to your current level, set with one slider that has two handles. Both ends run from -10 to +5; the defaults are -10 and +1. At level 15 with -5 and +5, quests from level 10 to 20 are auto-accepted. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
+
+The optional **Don't auto-accept grey quests** checkbox defaults off. It skips quests the game shows as grey (trivial) for your level, using the game's own grey flag where it is available. Quests with an unknown level are not treated as grey.
 
 **Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload.
 
