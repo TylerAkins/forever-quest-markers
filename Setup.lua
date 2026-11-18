@@ -33,6 +33,7 @@ local pages = {
         { "autoAcceptSkipGrey", "Don't auto-accept grey quests" },
         { "autoTurnIn", "Auto-turn in quests" },
         { "hideQuestTrackerInCombat", "Hide quest tracker in combat" },
+        { "warnSkippedBreadcrumb", "Warn on skipped breadcrumbs" },
     } },
 }
 
@@ -84,6 +85,13 @@ local function CreateSetup()
     local levelRange
     local function UpdateOffsetEnabled()
         levelRange:SetActive(panel.pending.autoAccept and panel.pending.autoAcceptRangeEnabled)
+        for _, box in ipairs(checks) do
+            if box.key == "autoAcceptSkipGrey" then
+                local enabled = panel.pending.autoAccept and true or false
+                box:SetEnabled(enabled)
+                box.Text:SetAlpha(enabled and 1 or 0.5)
+            end
+        end
     end
     for i = 1, 6 do
         local box = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
@@ -115,7 +123,7 @@ local function CreateSetup()
     local function Render()
         local page = panel.page
         local guided = page > 0
-        panel:SetHeight(guided and (page == #pages and 440 or 400) or 200)
+        panel:SetHeight(guided and (page == #pages and 450 or 400) or 200)
         progress:SetText(guided and (page .. " / " .. #pages) or "")
         heading:SetText(guided and L[pages[page].title] or L["Choose your options"])
         help:SetText(guided and L["Choose what works for you. You can change these later in the addon options."]
@@ -124,9 +132,14 @@ local function CreateSetup()
             local option = guided and pages[page].options[i]
             if option then
                 box:ClearAllPoints()
-                local extra = page == #pages and i >= 3 and 80 or 0
-                box:SetPoint("TOPLEFT", 28, -135 - (i - 1) * 31 - extra)
+                local lastPage = page == #pages
+                local firstY = lastPage and -120 or -135
+                local spacing = lastPage and 30 or 31
+                local extra = lastPage and i >= 3 and 92 or 0
+                box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]
+                box:SetEnabled(true)
+                box.Text:SetAlpha(1)
                 box.Text:SetText(L[option[2]])
                 box:SetChecked(panel.pending[box.key])
                 box:Show()

@@ -28,6 +28,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
 - Adjustable high-level range: choose how many levels above you quests must be before their pins are hidden (default shows all levels)
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
+- Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning (on by default)
 - Seasonal / holiday starts (such as Lunar Festival elders) off by default; when on, pins appear only while the event is live
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge off by default; when on, they appear after a war effort quest is offered or in your log, or with the always-show override
 
@@ -46,6 +47,8 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 The optional **Limit auto-accept quest level** checkbox defaults off. It turns on a level range relative to your current level, set with one slider that has two handles. Both ends run from -10 to +5; the defaults are -10 and +1. At level 15 with -5 and +5, quests from level 10 to 20 are auto-accepted. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
 
 The optional **Don't auto-accept grey quests** checkbox defaults off. It skips quests the game shows as grey (trivial) for your level, using the game's own grey flag where it is available. Quests with an unknown level are not treated as grey.
+
+**Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload.
 
 Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
@@ -72,6 +75,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show**
 | Waypoint provider | Blizzard Map Pins (TomTom optional) |
 | Map pin size | 100% (adjustable from 50% to 150%) |
 | Auto-accept quests | Off |
+| Warn on skipped breadcrumbs | On (dialog offers Set Waypoint, Abandon Quest, and Ignore) |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
@@ -104,6 +108,8 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp wareffort always` | Always show AQ war effort pins, skipping the phase confirmation |
 | `/fqp accept` | Toggle auto-accept |
 | `/fqp turnin` | Toggle auto-turn-in |
+| `/fqp breadcrumb` | Toggle skipped-breadcrumb warnings |
+| `/fqp breadcrumbtest` | Preview the skipped-breadcrumb dialog |
 | `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
 | `/fqp nameplates` | Toggle quest icons on nameplates |
 | `/fqp nameplatedebug` | Print visible nameplate icon state |

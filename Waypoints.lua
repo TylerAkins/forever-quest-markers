@@ -72,24 +72,23 @@ local function SetTomTomPoint(questID, mapID, x, y)
     return true
 end
 
-function ns.TrackQuest(questID, data)
+-- Resolves everything TrackQuest needs without touching the current waypoint.
+-- Callers can validate a target first and leave existing navigation alone when
+-- the target cannot be tracked.
+local function ResolveTrackTarget(questID, data)
     if type(questID) ~= "number" or questID <= 0 then
-        return false
+        return nil
     end
-    ns.ClearWaypoint()
+    local provider = ns.GetOption("waypointProvider")
     local onQuest = ns.IsOnQuest(questID)
+    if onQuest and provider == "blizzard" then
+        if not C_SuperTrack or type(C_SuperTrack.SetSuperTrackedQuestID) ~= "function" then
+            return nil, L["Blizzard quest tracking is unavailable on this client."]
+        end
+        return { questID = questID, native = true }
+    end
     local mapID, x, y
     if onQuest then
-        if ns.GetOption("waypointProvider") == "blizzard" then
-            if not C_SuperTrack or type(C_SuperTrack.SetSuperTrackedQuestID) ~= "function" then
-                Report(L["Blizzard quest tracking is unavailable on this client."])
-                return false
-            end
-            C_SuperTrack.SetSuperTrackedQuestID(questID)
-            nativeQuestID = questID
-            selectedQuestID = questID
-            return true
-        end
         if C_QuestLog and C_QuestLog.GetNextWaypoint then
             mapID, x, y = C_QuestLog.GetNextWaypoint(questID)
         end
@@ -100,26 +99,58 @@ function ns.TrackQuest(questID, data)
         end
     end
     if not ValidPoint(mapID, x, y) then
-        Report(L["No quest location is available yet."])
-        return false
+        return nil, L["No quest location is available yet."]
     end
-    if ns.GetOption("waypointProvider") == "tomtom" then
-        local ok, message = SetTomTomPoint(questID, mapID, x, y)
-        if not ok then Report(message) return false end
+    if provider == "tomtom" then
+        if not TomTom or type(TomTom.AddWaypoint) ~= "function"
+            or type(TomTom.RemoveWaypoint) ~= "function" then
+            return nil, L["TomTom is not loaded. Choose Blizzard Map Pins or enable TomTom."]
+        end
     else
         if not C_Map or type(C_Map.SetUserWaypoint) ~= "function"
             or type(C_Map.GetUserWaypoint) ~= "function"
             or type(C_Map.ClearUserWaypoint) ~= "function"
             or type(C_Map.CanSetUserWaypointOnMap) ~= "function"
             or not UiMapPoint or type(UiMapPoint.CreateFromCoordinates) ~= "function" then
-            Report(L["Blizzard Map Pins are unavailable on this client. TomTom can be selected in options."])
-            return false
+            return nil, L["Blizzard Map Pins are unavailable on this client. TomTom can be selected in options."]
         end
         if not C_Map.CanSetUserWaypointOnMap(mapID) then
-            Report(L["Blizzard does not allow a map pin in this zone."])
-            return false
+            return nil, L["Blizzard does not allow a map pin in this zone."]
         end
-        startPoint = UiMapPoint.CreateFromCoordinates(mapID, x, y)
+    end
+    return { questID = questID, mapID = mapID, x = x, y = y }
+end
+
+--- Whether TrackQuest can set a waypoint for this quest right now.
+function ns.CanTrackQuest(questID, data)
+    local target, message = ResolveTrackTarget(questID, data)
+    if not target then
+        return false, message
+    end
+    return true
+end
+
+function ns.TrackQuest(questID, data, quiet)
+    local target, message = ResolveTrackTarget(questID, data)
+    if not target then
+        if message and not quiet then Report(message) end
+        return false, message
+    end
+    ns.ClearWaypoint()
+    if target.native then
+        C_SuperTrack.SetSuperTrackedQuestID(questID)
+        nativeQuestID = questID
+        selectedQuestID = questID
+        return true
+    end
+    if ns.GetOption("waypointProvider") == "tomtom" then
+        local ok, tomtomMessage = SetTomTomPoint(questID, target.mapID, target.x, target.y)
+        if not ok then
+            if not quiet then Report(tomtomMessage) end
+            return false, tomtomMessage
+        end
+    else
+        startPoint = UiMapPoint.CreateFromCoordinates(target.mapID, target.x, target.y)
         C_Map.SetUserWaypoint(startPoint)
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)

@@ -14,7 +14,7 @@ import (
 )
 
 var rootFiles = []string{
-	"ATTRIBUTION.md", "AutoQuests.lua", "CHANGELOG.md", "Config.lua", "Core.lua",
+	"ATTRIBUTION.md", "AutoQuests.lua", "Breadcrumbs.lua", "CHANGELOG.md", "Config.lua", "Core.lua",
 	"Eligibility.lua", "Events.lua", "HiddenQuests.lua", "NPCTooltips.lua", "Nameplates.lua", "QuestLinks.lua",
 	"ForeverQuestPins.toc", "LICENSE", "Localization.lua", "MapPins.lua", "MapPins.xml", "README.md",
 	"RELEASE_NOTES.md", "Setup.lua", "WarEffort.lua", "WhatsNew.lua", "Waypoints.lua",

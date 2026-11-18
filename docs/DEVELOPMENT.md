@@ -16,6 +16,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `MapPins.lua` | World-map start pins |
 | `Nameplates.lua` | Quest start, turn-in, and objective icons on NPC nameplates |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
+| `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |

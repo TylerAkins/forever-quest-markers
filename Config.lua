@@ -30,6 +30,7 @@ ns.defaults = {
     autoAcceptSkipGrey = false,
     iconScale = 100,
     autoTurnIn = false,
+    warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
@@ -648,6 +649,8 @@ function ns.SlashCommand(msg)
         print(L["  /fqp wareffort always Always show AQ war effort pins"])
         print(L["  /fqp accept   Toggle auto-accept quests"])
         print(L["  /fqp turnin   Toggle auto-turn in quests"])
+        print(L["  /fqp breadcrumb Toggle skipped-breadcrumb warnings"])
+        print(L["  /fqp breadcrumbtest Preview the skipped-breadcrumb dialog"])
         print(L["  /fqp npctooltip Toggle quest accept and ready turn-in lines on NPC mouseover"])
         print(L["  /fqp nameplates Toggle quest icons on nameplates (on by default)"])
         print(L["  /fqp nameplatedebug Print visible nameplate icon state"])
@@ -776,6 +779,18 @@ function ns.SlashCommand(msg)
         ToggleFlag("autoTurnIn", L["Auto-turn in quests"])
         return
     end
+    if msg == "breadcrumb" then
+        ToggleFlag("warnSkippedBreadcrumb", L["Skipped breadcrumb warnings"])
+        return
+    end
+    if msg == "breadcrumbtest" then
+        if ns.Breadcrumbs and ns.Breadcrumbs.ShowPreview then
+            ns.Breadcrumbs.ShowPreview()
+        else
+            Print(L["Breadcrumb warnings are not loaded."])
+        end
+        return
+    end
     if msg == "refresh" then
         if ns.RefreshNow then
             ns.RefreshNow("slash")
@@ -856,6 +871,12 @@ function ns.PrintStats()
             tostring(status.managed or 0),
             tostring(status.cloudCount or 0)
         ))
+        print(("  refreshes %s (last %s) | display skips %s | pin moves %s"):format(
+            tostring(status.refreshes or 0),
+            tostring(status.lastRefreshReason or "none"),
+            tostring(status.displaySkips or 0),
+            tostring(status.pinMoves or 0)
+        ))
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
         end
@@ -904,6 +925,7 @@ function ns.PrintSettingsDebug()
         "autoAcceptSkipGrey",
         "iconScale",
         "waypointProvider",
+        "warnSkippedBreadcrumb",
         "autoTurnIn",
         "hideQuestTrackerInCombat",
         "showNPCTooltips",
@@ -1519,9 +1541,17 @@ function ns.TryRegisterSettings()
             )
             accept:SetPoint("TOPLEFT", automationHelp, "BOTTOMLEFT", -4, -4)
 
+            local breadcrumb = CreateOptionCheckbox(
+                self,
+                "warnSkippedBreadcrumb",
+                L["Warn on skipped breadcrumbs"],
+                L["Show a dialog when you accept a quest before you complete or pick up its breadcrumb quest."]
+            )
+            breadcrumb:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
+
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 L["Limit auto-accept quest level"], L["Only auto-accept quests within the level range around your level. Unknown quest levels are left for manual acceptance."])
-            range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
+            range:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", 0, 0)
             local levelRange = ns.CreateLevelRangeSlider(self, function()
                 return ns.GetAutoAcceptLevelRange()
             end, function(lowValue, highValue)
@@ -1541,6 +1571,14 @@ function ns.TryRegisterSettings()
                 L["Don't auto-accept grey quests"],
                 L["Skip quests the game shows as grey (trivial) for your level. You can still accept them manually."])
             skipGrey:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
+            local applySkipGrey = skipGrey.ApplySaved
+            skipGrey.ApplySaved = function(control)
+                applySkipGrey(control)
+                local enabled = ns.GetOption("autoAccept") and true or false
+                control:SetEnabled(enabled)
+                control.Text:SetAlpha(enabled and 1 or 0.5)
+            end
+            skipGrey:ApplySaved()
 
             local turnin = CreateOptionCheckbox(
                 self,
