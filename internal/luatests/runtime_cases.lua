@@ -4720,9 +4720,22 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(HasWidgetText(created,"fontstring","You accepted"))
             assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
             assert(HasWidgetText(created,"fontstring","Follow-up A"))
-            assert(HasWidgetText(created,"fontstring","The breadcrumb starts in Durotar."))
+            assert(HasWidgetText(created,"fontstring","(Durotar)"))
+            assert(not HasWidgetText(created,"fontstring","The breadcrumb starts in"))
             assert(HasWidgetText(created,"fontstring","Breadcrumb Quest Skipped"))
             assert(#UISpecialFrames==1 and UISpecialFrames[1]=="ForeverQuestPinsBreadcrumb")
+
+            local waypoint=FindWidget(created,"Button","Set Waypoint")
+            local ignore=FindWidget(created,"Button","Ignore")
+            local abandon=FindWidget(created,"Button","Abandon Quest")
+            assert(waypoint.width==ignore.width and ignore.width==abandon.width,
+                "the actions share one width")
+            assert(ignore.points[2]==waypoint and abandon.points[2]==ignore,
+                "the actions share one row")
+            assert(panel.height and panel.height<220,
+                "an empty status line must not pad the dialog")
+            assert(panel.height==-waypoint.points[3]+24+16,
+                "the frame ends one button pad below the action row")
 
             ns.Breadcrumbs.HandleAccepted(801)
             assert(panel.shown)
@@ -4788,6 +4801,15 @@ cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
             ns.TrackQuest=function(questID) tracked=questID; return true end
             UnitLevel=function() return 40 end
             InstallDialogStubs(ns, created)
+            local function RunTimers()
+                local guard=0
+                while #timers>0 and guard<12 do
+                    local queued=timers
+                    timers={}
+                    for i=1,#queued do queued[i]() end
+                    guard=guard+1
+                end
+            end
 
 assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
 
@@ -4819,6 +4841,8 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(abandon.disabledReason=="This quest is no longer in your log.")
             abandon:GetScript("OnClick")()
             assert(HasWidgetText(created,"fontstring","This quest is no longer in your log."))
+            assert(panel.status.points[3]>panel.divider.points[3],
+                "the failure message sits above the divider")
             ns.Breadcrumbs.OnQuestEnded(800)
 
             onQuest=true
@@ -4834,8 +4858,7 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             ns.Breadcrumbs.HandleAccepted(800)
             assert(abandon.enabled==true)
             abandon:GetScript("OnClick")()
-            assert(timers[1]~=nil, "a failed abandon retries once")
-            timers[1]()
+            assert(#timers==0, "a missing abandon API fails without waiting")
             assert(panel.shown)
             assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
 
@@ -4851,11 +4874,12 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             }
             ns.Breadcrumbs.HandleAccepted(800)
             abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and timers[1]~=nil)
-            timers[1]()
-            assert(abandonCalls==2, "a client that still reports the quest triggers one retry")
+            assert(abandonCalls==1 and #timers==1)
+            RunTimers()
+            assert(abandonCalls==1, "the dialog must not abandon a second time")
             assert(panel.shown)
-            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
+            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."),
+                "the failure appears only after the client has had time to catch up")
 
             ns.Breadcrumbs.OnQuestEnded(800)
             abandonCalls=0
@@ -4864,13 +4888,31 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             timers={}
             ns.Breadcrumbs.HandleAccepted(800)
             abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and timers[1]~=nil)
+            assert(abandonCalls==1 and #timers==1)
             clientInLog=false
             ns.Breadcrumbs.OnQuestEnded(800)
             assert(not panel.shown)
-            timers[1]()
+            RunTimers()
             assert(HasMessage(messages,"Abandoned Follow-up."),
-                "the retry confirms an abandon after QUEST_REMOVED closes the dialog")
+                "QUEST_REMOVED confirms the abandon after the dialog closes")
+            local reports=0
+            for i=1,#messages do
+                if messages[i]:find("Abandoned Follow-up.",1,true) then reports=reports+1 end
+            end
+            assert(reports==1, "success is reported once")
+
+            ns.Breadcrumbs.OnQuestEnded(800)
+            abandonCalls=0
+            clientInLog=true
+            messages={}
+            timers={}
+            ns.Breadcrumbs.HandleAccepted(800)
+            abandon:GetScript("OnClick")()
+            assert(abandonCalls==1 and #timers==1)
+            clientInLog=false
+            RunTimers()
+            assert(not panel.shown and HasMessage(messages,"Abandoned Follow-up."),
+                "the poll confirms an abandon that arrives without QUEST_REMOVED")
 
             clientInLog=true
             abandonCalls=0

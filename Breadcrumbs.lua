@@ -2,13 +2,19 @@ local ADDON_NAME, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local MAX_QUEUE = 5
+-- The client can keep reporting an abandoned quest for about a second before
+-- QUEST_REMOVED catches up, so confirm over a short window rather than
+-- flashing a failure.
+local ABANDON_CONFIRM_DELAYS = { 0.3, 0.7, 1.0 }
 local PADDING = 28
 local BUTTON_HEIGHT = 24
 local BUTTON_GAP = 8
+local DESTRUCTIVE_GAP = 16
 local BUTTON_MIN_WIDTH = 120
 local BUTTON_MAX_WIDTH = 240
 local MIN_FRAME_WIDTH = 440
-local MIN_FRAME_HEIGHT = 220
+local MIN_FRAME_HEIGHT = 150
+local BOTTOM_PADDING = 16
 
 ns.Breadcrumbs = {}
 
@@ -17,6 +23,7 @@ local queue = {}
 local visible
 local panel
 local dismissing = false
+local pendingAbandon
 
 local ShowNext, Dismiss, HandleAbandon, HandleWaypoint
 
@@ -26,6 +33,10 @@ end
 
 local function Gold(text)
     return "|cffffd100" .. tostring(text) .. "|r"
+end
+
+local function Dim(text)
+    return "|cff9d9d9d" .. tostring(text) .. "|r"
 end
 
 local function QuestTitle(questID, data)
@@ -214,17 +225,21 @@ local function Layout()
     if not panel then
         return
     end
-    local waypointWidth = MeasureButton(panel.waypointButton)
-    local ignoreWidth = MeasureButton(panel.ignoreButton)
-    local abandonWidth = MeasureButton(panel.abandonButton)
-    panel.waypointButton:SetWidth(waypointWidth)
-    panel.ignoreButton:SetWidth(ignoreWidth)
-    panel.abandonButton:SetWidth(abandonWidth)
+    -- One equal-width row: destructive action on the left, primary on the
+    -- right. Equal widths keep the group symmetrical.
+    local buttonWidth = math.max(
+        MeasureButton(panel.waypointButton),
+        MeasureButton(panel.ignoreButton),
+        MeasureButton(panel.abandonButton)
+    )
+    panel.waypointButton:SetWidth(buttonWidth)
+    panel.ignoreButton:SetWidth(buttonWidth)
+    panel.abandonButton:SetWidth(buttonWidth)
 
-    local width = math.max(MIN_FRAME_WIDTH, waypointWidth + BUTTON_GAP + ignoreWidth + PADDING * 2)
+    local width = math.max(MIN_FRAME_WIDTH,
+        buttonWidth * 3 + BUTTON_GAP + DESTRUCTIVE_GAP + PADDING * 2)
     panel:SetWidth(width)
     panel.body:SetWidth(width - PADDING * 2)
-    panel.zone:SetWidth(width - PADDING * 2)
     panel.status:SetWidth(width - PADDING * 2)
 
     local y = -24
@@ -234,32 +249,32 @@ local function Layout()
     panel.body:ClearAllPoints()
     panel.body:SetPoint("TOPLEFT", PADDING, y)
     y = y - (panel.body:GetStringHeight() or 32)
-    if panel.zone:IsShown() then
-        y = y - 6
-        panel.zone:ClearAllPoints()
-        panel.zone:SetPoint("TOPLEFT", PADDING, y)
-        y = y - (panel.zone:GetStringHeight() or 12)
-    end
-    y = y - 8
+
+    -- An empty status line must not leave a gap above the divider. It only
+    -- takes space once an action reports a failure.
+    local statusText = panel.status:GetText()
     panel.status:ClearAllPoints()
-    panel.status:SetPoint("TOPLEFT", PADDING, y)
-    y = y - math.max(14, panel.status:GetStringHeight() or 0)
+    panel.status:SetPoint("TOPLEFT", PADDING, y - 8)
+    if type(statusText) == "string" and statusText ~= "" then
+        y = y - 8 - math.max(14, panel.status:GetStringHeight() or 0)
+    end
 
     local dividerY = y - 14
     panel.divider:ClearAllPoints()
     panel.divider:SetPoint("TOPLEFT", PADDING, dividerY)
     panel.divider:SetPoint("TOPRIGHT", -PADDING, dividerY)
 
-    local abandonTop = dividerY - 12
-    panel.abandonButton:ClearAllPoints()
-    panel.abandonButton:SetPoint("TOPLEFT", PADDING, abandonTop)
-    local bottomTop = abandonTop - BUTTON_HEIGHT - 10
-    panel.ignoreButton:ClearAllPoints()
-    panel.ignoreButton:SetPoint("TOPRIGHT", -(PADDING + waypointWidth + BUTTON_GAP), bottomTop)
+    local rowTop = dividerY - 12
     panel.waypointButton:ClearAllPoints()
-    panel.waypointButton:SetPoint("TOPRIGHT", -PADDING, bottomTop)
+    panel.waypointButton:SetPoint("TOPRIGHT", -PADDING, rowTop)
+    panel.ignoreButton:ClearAllPoints()
+    panel.ignoreButton:SetPoint("TOPRIGHT", panel.waypointButton, "TOPLEFT", -BUTTON_GAP, 0)
+    panel.abandonButton:ClearAllPoints()
+    panel.abandonButton:SetPoint("TOPRIGHT", panel.ignoreButton, "TOPLEFT", -DESTRUCTIVE_GAP, 0)
 
-    panel:SetHeight(math.max(MIN_FRAME_HEIGHT, -bottomTop + BUTTON_HEIGHT + 24))
+    -- Height follows the content. A floor larger than the content would show up
+    -- as dead space under the buttons.
+    panel:SetHeight(-rowTop + BUTTON_HEIGHT + BOTTOM_PADDING)
 end
 
 local function SetStatus(message)
@@ -306,20 +321,17 @@ local function RenderNotice(entry)
     local breadcrumbData = entry.data or (ns.Quests and ns.Quests[entry.breadcrumb])
     local followUpTitle = QuestTitle(entry.followUp, ns.Quests and ns.Quests[entry.followUp])
     local breadcrumbTitle = QuestTitle(entry.breadcrumb, breadcrumbData)
-    panel.body:SetText((L["You accepted %s without completing its breadcrumb quest %s."]):format(
-        Gold(followUpTitle),
-        Gold(breadcrumbTitle)
-    ))
-
     local mapID = breadcrumbData and breadcrumbData.mapID
     local mapInfo = mapID and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
     if mapInfo and type(mapInfo.name) == "string" and mapInfo.name ~= "" then
-        panel.zone:SetText((L["The breadcrumb starts in %s."]):format(mapInfo.name))
-        panel.zone:Show()
+        breadcrumbTitle = Gold(breadcrumbTitle) .. " " .. Dim("(" .. mapInfo.name .. ")")
     else
-        panel.zone:SetText("")
-        panel.zone:Hide()
+        breadcrumbTitle = Gold(breadcrumbTitle)
     end
+    panel.body:SetText((L["You accepted %s without completing its breadcrumb quest %s."]):format(
+        Gold(followUpTitle),
+        breadcrumbTitle
+    ))
 
     panel.status:SetText("")
     UpdateActions(entry)
@@ -358,10 +370,6 @@ local function EnsurePanel()
     panel.body = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     panel.body:SetJustifyH("LEFT")
     panel.body:SetSpacing(3)
-
-    panel.zone = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    panel.zone:SetJustifyH("LEFT")
-    panel.zone:Hide()
 
     panel.status = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     panel.status:SetJustifyH("LEFT")
@@ -576,6 +584,14 @@ function ns.Breadcrumbs.OnQuestEnded(questID)
     if not questID then
         return
     end
+    if pendingAbandon and pendingAbandon.questID == questID then
+        -- QUEST_REMOVED is the authoritative confirmation; the poll below may
+        -- never see the log clear before the dialog closes.
+        pendingAbandon = nil
+        Report((L["Abandoned %s."]):format(
+            QuestTitle(questID, ns.Quests and ns.Quests[questID])
+        ))
+    end
     local kept = {}
     for i = 1, #queue do
         local entry = queue[i]
@@ -666,14 +682,16 @@ end
 --- Abandons one quest and verifies with the client quest log.
 -- The session log overrides in Eligibility.lua report a fresh accept before the
 -- client updates, so this check reads the client API directly.
+-- Returns ok plus whether the abandon call was actually issued. A issued call
+-- with the quest still in the log means the client may simply be behind.
 function ns.Breadcrumbs.AbandonQuest(questID)
     if not TryAbandonOnce(questID) then
-        return false
+        return false, false
     end
     local inLog = ClientQuestInLog(questID)
     -- A client without any quest-log query still reports an abandon error when
     -- it fails, so a clean call is the only available evidence there.
-    return inLog ~= true
+    return inLog ~= true, true
 end
 
 HandleWaypoint = function()
@@ -696,7 +714,7 @@ end
 
 HandleAbandon = function()
     local entry = visible
-    if not entry or entry.preview then
+    if not entry or entry.preview or pendingAbandon then
         return
     end
     if not ns.IsOnQuest(entry.followUp) then
@@ -712,6 +730,7 @@ HandleAbandon = function()
     panel.abandonButton:SetEnabled(false)
 
     local function Finish()
+        pendingAbandon = nil
         DropFollowUp(entry.followUp)
         local title = QuestTitle(entry.followUp, ns.Quests and ns.Quests[entry.followUp])
         if visible == entry then
@@ -720,32 +739,44 @@ HandleAbandon = function()
         Report((L["Abandoned %s."]):format(title))
     end
 
-    local ok = ns.Breadcrumbs.AbandonQuest(entry.followUp)
+    local function Fail()
+        pendingAbandon = nil
+        if visible == entry then
+            SetStatus(L["Could not abandon this quest."])
+            UpdateActions(entry)
+        end
+    end
+
+    local ok, attempted = ns.Breadcrumbs.AbandonQuest(entry.followUp)
     if ok then
         Finish()
         return
     end
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0, function()
-            if visible ~= entry then
-                -- QUEST_REMOVED may already have closed the notice after a
-                -- successful abandon the client did not report in time.
-                if ClientQuestInLog(entry.followUp) == false then
-                    Report((L["Abandoned %s."]):format(
-                        QuestTitle(entry.followUp, ns.Quests and ns.Quests[entry.followUp])
-                    ))
-                end
-                return
-            end
-            if ns.Breadcrumbs.AbandonQuest(entry.followUp) then
-                Finish()
-            else
-                SetStatus(L["Could not abandon this quest."])
-                UpdateActions(entry)
-            end
-        end)
+    if not attempted or not (C_Timer and C_Timer.After) then
+        Fail()
         return
     end
-    SetStatus(L["Could not abandon this quest."])
-    UpdateActions(entry)
+
+    -- The abandon call went out but the client still lists the quest. Wait for
+    -- QUEST_REMOVED or for the log to catch up before reporting a failure.
+    pendingAbandon = { entry = entry, questID = entry.followUp }
+    local function Confirm(step)
+        if not pendingAbandon then
+            return
+        end
+        if ClientQuestInLog(entry.followUp) == false then
+            Finish()
+            return
+        end
+        if step >= #ABANDON_CONFIRM_DELAYS then
+            Fail()
+            return
+        end
+        C_Timer.After(ABANDON_CONFIRM_DELAYS[step + 1], function()
+            Confirm(step + 1)
+        end)
+    end
+    C_Timer.After(ABANDON_CONFIRM_DELAYS[1], function()
+        Confirm(1)
+    end)
 end
