@@ -27,6 +27,7 @@ ns.defaults = {
     autoAcceptRangeEnabled = false,
     autoAcceptLevelOffset = 1,
     autoAcceptMinLevelOffset = -10,
+    autoAcceptSkipGrey = false,
     iconScale = 100,
     autoTurnIn = false,
     hideQuestTrackerInCombat = false,
@@ -900,6 +901,7 @@ function ns.PrintSettingsDebug()
         "autoAcceptRangeEnabled",
         "autoAcceptLevelOffset",
         "autoAcceptMinLevelOffset",
+        "autoAcceptSkipGrey",
         "iconScale",
         "waypointProvider",
         "autoTurnIn",
@@ -1535,13 +1537,18 @@ function ns.TryRegisterSettings()
             levelRange:ApplySaved()
             optionChecks[#optionChecks + 1] = levelRange
 
+            local skipGrey = CreateOptionCheckbox(self, "autoAcceptSkipGrey",
+                L["Don't auto-accept grey quests"],
+                L["Skip quests the game shows as grey (trivial) for your level. You can still accept them manually."])
+            skipGrey:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
+
             local turnin = CreateOptionCheckbox(
                 self,
                 "autoTurnIn",
                 L["Auto-turn in quests"],
                 L["Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."]
             )
-            turnin:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
+            turnin:SetPoint("TOPLEFT", skipGrey, "BOTTOMLEFT", 0, 0)
 
             local hideTracker = CreateOptionCheckbox(
                 self,

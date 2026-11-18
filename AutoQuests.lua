@@ -33,6 +33,37 @@ function AutoQuests:AllowsLevel(questID, offeredLevel)
     return level >= playerLevel + minOffset and level <= playerLevel + maxOffset
 end
 
+local function ResolveLevel(questID, offeredLevel)
+    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+    if type(level) ~= "number" or level <= 0 then level = offeredLevel end
+    if type(level) ~= "number" or level <= 0 then return nil end
+    return level
+end
+
+-- Grey means the game considers the quest trivial. Prefer the game's own flag;
+-- fall back to its green-range rule when only a level is known.
+function AutoQuests:IsGrey(questID, offeredLevel, trivialFlag)
+    if trivialFlag ~= nil then return trivialFlag and true or false end
+    if questID and C_QuestLog and type(C_QuestLog.IsQuestTrivial) == "function" then
+        local ok, trivial = pcall(C_QuestLog.IsQuestTrivial, questID)
+        if ok and type(trivial) == "boolean" then return trivial end
+    end
+    local level = ResolveLevel(questID, offeredLevel)
+    local playerLevel = UnitLevel and UnitLevel("player")
+    local greenRange = GetQuestGreenRange and GetQuestGreenRange()
+    if level and type(playerLevel) == "number" and type(greenRange) == "number" then
+        return playerLevel - level > greenRange
+    end
+    return false
+end
+
+function AutoQuests:AllowsQuest(questID, offeredLevel, trivialFlag)
+    if ns.GetOption("autoAcceptSkipGrey") and self:IsGrey(questID, offeredLevel, trivialFlag) then
+        return false
+    end
+    return self:AllowsLevel(questID, offeredLevel)
+end
+
 local function GossipSelectAvailable(info, index)
     local questID = info and (info.questID or info.questId)
     if C_GossipInfo and C_GossipInfo.SelectAvailableQuest then
@@ -154,7 +185,8 @@ local function TryAcceptGossip()
     if list then
         for i = 1, #list do
             local info = list[i]
-            if not IsIgnoredInfo(info) and AutoQuests:AllowsLevel(info.questID or info.questId, info.questLevel) then
+            if not IsIgnoredInfo(info)
+                and AutoQuests:AllowsQuest(info.questID or info.questId, info.questLevel, info.isTrivial) then
                 Debug("gossip accept " .. tostring(info.questID or info.title or i))
                 return GossipSelectAvailable(info, i)
             end
@@ -162,7 +194,8 @@ local function TryAcceptGossip()
         return false
     end
     local count = GetNumGossipAvailableQuests and GetNumGossipAvailableQuests() or 0
-    if count > 0 and SelectGossipAvailableQuest and not ns.GetOption("autoAcceptRangeEnabled") then
+    if count > 0 and SelectGossipAvailableQuest and not ns.GetOption("autoAcceptRangeEnabled")
+        and not ns.GetOption("autoAcceptSkipGrey") then
         Debug("gossip accept #1")
         return PCall(SelectGossipAvailableQuest, 1)
     end
@@ -194,7 +227,12 @@ local function TryAcceptGreeting()
     if SelectAvailableQuest then
         for i = 1, count do
             local level = GetAvailableLevel and GetAvailableLevel(i)
-            if AutoQuests:AllowsLevel(nil, level) then
+            local trivial, questID
+            if GetAvailableQuestInfo then
+                local ok, isTrivial, _, _, _, id = pcall(GetAvailableQuestInfo, i)
+                if ok then trivial, questID = isTrivial, id end
+            end
+            if AutoQuests:AllowsQuest(questID, level, trivial) then
                 return PCall(SelectAvailableQuest, i)
             end
         end
@@ -209,7 +247,7 @@ local function TryAcceptDetail()
     if QuestGetAutoAccept and QuestGetAutoAccept() then
         return false
     end
-    if not AutoQuests:AllowsLevel(GetQuestID and GetQuestID()) then return false end
+    if not AutoQuests:AllowsQuest(GetQuestID and GetQuestID()) then return false end
     if AcceptQuest then
         Debug("AcceptQuest")
         return PCall(AcceptQuest)

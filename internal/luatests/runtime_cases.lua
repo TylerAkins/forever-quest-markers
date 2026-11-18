@@ -4065,6 +4065,33 @@ cases["auto_quests_runtime.level_range_limits_both_ends"] = function()
     assert(allows(1) and allows(60))
 end
 
+cases["auto_quests_runtime.skip_grey_uses_game_flag_then_green_range"] = function()
+    local options = { autoAcceptSkipGrey = true, autoAcceptRangeEnabled = false }
+    ns = {}
+    ns.GetOption = function(key) return options[key] end
+    UnitLevel = function() return 20 end
+    GetQuestGreenRange = function() return 7 end
+    C_QuestLog = { IsQuestTrivial = function(questID) return questID == 99 end }
+    CreateFrame = function()
+        return setmetatable({}, { __index = function() return function() end end })
+    end
+    assert(loadfile("AutoQuests.lua"))("ForeverQuestPins", ns)
+    local auto = ns.AutoQuests
+    -- The gossip list's own flag wins over everything else.
+    assert(not auto:AllowsQuest(nil, 20, true))
+    assert(auto:AllowsQuest(99, 5, false))
+    -- Then the game's per-quest check.
+    assert(not auto:AllowsQuest(99, 20))
+    assert(auto:AllowsQuest(98, 20))
+    -- Then the green range when only a level is known.
+    C_QuestLog = nil
+    assert(auto:AllowsQuest(nil, 13) and not auto:AllowsQuest(nil, 12))
+    -- Unknown levels are not treated as grey.
+    assert(auto:AllowsQuest(nil, nil))
+    options.autoAcceptSkipGrey = false
+    assert(auto:AllowsQuest(nil, 1, true))
+end
+
 cases["auto_quests_runtime.min_level_offset_mirrors_and_clamps"] = function()
     local mirror = "revision=3;waypointProvider=blizzard;autoAcceptMinLevelOffset=-4;enabled=1"
     C_CVar = {

@@ -30,6 +30,7 @@ local pages = {
     { title = "Quest automation", options = {
         { "autoAccept", "Auto-accept quests" },
         { "autoAcceptRangeEnabled", "Limit auto-accept quest level" },
+        { "autoAcceptSkipGrey", "Don't auto-accept grey quests" },
         { "autoTurnIn", "Auto-turn in quests" },
         { "hideQuestTrackerInCombat", "Hide quest tracker in combat" },
     } },
@@ -114,7 +115,7 @@ local function CreateSetup()
     local function Render()
         local page = panel.page
         local guided = page > 0
-        panel:SetHeight(guided and 400 or 200)
+        panel:SetHeight(guided and (page == #pages and 440 or 400) or 200)
         progress:SetText(guided and (page .. " / " .. #pages) or "")
         heading:SetText(guided and L[pages[page].title] or L["Choose your options"])
         help:SetText(guided and L["Choose what works for you. You can change these later in the addon options."]
