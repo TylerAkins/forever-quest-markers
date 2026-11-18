@@ -70,6 +70,13 @@ local lastStatus = {
     managed = 0,
 }
 
+-- Counters for /fqp stats. A repaint hides and rebuilds every pin, so a
+-- growing refresh count while the map sits open points at event churn.
+local refreshCount = 0
+local lastRefreshReason
+local displaySkips = 0
+local pinMoves = 0
+
 local function IsGamepadUIEnabled()
     return InputUtil and InputUtil.IsGamepadUIEnabled and InputUtil.IsGamepadUIEnabled() or false
 end
@@ -759,6 +766,7 @@ local function ReleasePin(pin)
         end
         pin.quests, pin.questID, pin.data = nil, nil, nil
         pin.spawnPoints, pin.spawnCount, pin.anchor = nil, nil, nil
+        pin.placedNx, pin.placedNy, pin.placedSize = nil, nil, nil
         return
     end
     pin:Hide()
@@ -885,6 +893,18 @@ local function ShowTooltip(pin, tooltip)
         elseif debugOn then
             tooltip:AddLine(L["Quest "] .. tostring(quests[i].id), 1, 0.82, 0)
         end
+    end
+    local breadcrumbs = 0
+    for i = 1, #quests do
+        local data = quests[i].data or (ns.Quests and ns.Quests[quests[i].id])
+        if data and data.isBreadcrumb then
+            breadcrumbs = breadcrumbs + 1
+        end
+    end
+    if breadcrumbs > 0 then
+        local note = breadcrumbs == #quests and L["Breadcrumb quest"]
+            or L["Includes a breadcrumb quest"]
+        tooltip:AddLine(note, 0.62, 0.62, 0.62)
     end
     local qg = QuestGiverID(quests[1].data or pin.data)
     local npcName = qg and ns.GetNPCName(qg) or nil
@@ -1227,8 +1247,18 @@ end
 local function ApplyPinPoint(pin, parent)
     if pin.managed then
         local pinSize = GetPinSize()
-        pin:SetSize(pinSize, pinSize)
-        pin:SetPosition(pin.nx, pin.ny)
+        -- RepositionAll runs every frame while the map is open. Repeating the
+        -- same SetSize and SetPosition on a MapCanvas pin is wasted work and
+        -- can restart its layout, so only apply real changes.
+        if pin.placedSize ~= pinSize then
+            pin.placedSize = pinSize
+            pin:SetSize(pinSize, pinSize)
+        end
+        if pin.placedNx ~= pin.nx or pin.placedNy ~= pin.ny then
+            pin.placedNx, pin.placedNy = pin.nx, pin.ny
+            pin:SetPosition(pin.nx, pin.ny)
+            pinMoves = pinMoves + 1
+        end
         return true
     end
     parent = parent or pin:GetParent() or GetCanvas()
@@ -1262,6 +1292,7 @@ local function ApplyPinPoint(pin, parent)
     pin:Show()
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", parent, "TOPLEFT", ox / pinScale, oy / pinScale)
+    pinMoves = pinMoves + 1
     return true
 end
 
@@ -1365,6 +1396,8 @@ function ForeverQuestPinsMapPinMixin:OnAcquired()
     local pinSize = GetPinSize()
     self:SetSize(pinSize, pinSize)
     self:SetAlpha(1)
+    self.placedSize = pinSize
+    self.placedNx, self.placedNy = nil, nil
 end
 
 function ForeverQuestPinsMapPinMixin:OnClick(button)
@@ -1930,6 +1963,10 @@ function MapPins:SnapToQuestGivers()
 end
 
 function MapPins:GetStatus()
+    lastStatus.refreshes = refreshCount
+    lastStatus.lastRefreshReason = lastRefreshReason
+    lastStatus.displaySkips = displaySkips
+    lastStatus.pinMoves = pinMoves
     return lastStatus
 end
 
@@ -1947,6 +1984,21 @@ function MapPins:Refresh(reason)
         refreshJob.refreshAfter = true
         return
     end
+    local viewedMapID = ns.GetViewedMapID()
+    -- Forever's map reports display-only updates (zoom, layer order, cursor)
+    -- through SynchronizeDisplayState. Clearing and repainting each time hides
+    -- every pin for a few frames, which reads as constant flicker. Pins are
+    -- stored in normalized map space, so the existing set only needs
+    -- repositioning while the viewed map and OpenMap mode stay the same.
+    if (reason == "map-display" or reason == "map-changed")
+        and not refreshJob
+        and lastStatus.mode == "canvas"
+        and lastStatus.viewedMap == viewedMapID
+        and lastStatus.stitched == IsOpenMapStitched() then
+        displaySkips = displaySkips + 1
+        MapPins:RepositionAll()
+        return
+    end
     self:CancelPendingRefresh()
     local stitched = IsOpenMapStitched()
     if stitched and stitchedPins and (reason == "map-changed" or reason == "map-display") then
@@ -1954,6 +2006,8 @@ function MapPins:Refresh(reason)
     end
     self:Clear()
     stitchedPins = false
+    refreshCount = refreshCount + 1
+    lastRefreshReason = reason or "manual"
     lastStatus.lastError = nil
     lastStatus.mode = "canvas"
 
@@ -1966,7 +2020,6 @@ function MapPins:Refresh(reason)
         return
     end
 
-    local viewedMapID = ns.GetViewedMapID()
     lastStatus.viewedMap = viewedMapID
     if not viewedMapID then
         lastStatus.lastError = "no-map-id"
@@ -2002,6 +2055,7 @@ function MapPins:Refresh(reason)
     end
     lastStatus.zeroRetries = 0
     stitchedPins = stitched
+    lastStatus.stitched = stitched
     lastStatus.paintedIDs = {}
 
     local byMap = ns.ByMap or {}

@@ -32,6 +32,7 @@ local pages = {
         { "autoAcceptRangeEnabled", "Limit auto-accept quest level" },
         { "autoTurnIn", "Auto-turn in quests" },
         { "hideQuestTrackerInCombat", "Hide quest tracker in combat" },
+        { "warnSkippedBreadcrumb", "Warn on skipped breadcrumbs" },
     } },
 }
 
@@ -132,8 +133,11 @@ local function CreateSetup()
             local option = guided and pages[page].options[i]
             if option then
                 box:ClearAllPoints()
-                local extra = page == #pages and i >= 3 and 64 or 0
-                box:SetPoint("TOPLEFT", 28, -135 - (i - 1) * 31 - extra)
+                local lastPage = page == #pages
+                local firstY = lastPage and -120 or -135
+                local spacing = lastPage and 30 or 31
+                local extra = lastPage and i >= 3 and 64 or 0
+                box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]
                 box.Text:SetText(L[option[2]])
                 box:SetChecked(panel.pending[box.key])

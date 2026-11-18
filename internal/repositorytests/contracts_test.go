@@ -59,6 +59,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"Eligibility.lua":                   "Waypoints.lua",
 		"NPCTooltips.lua":                   "Nameplates.lua",
 		"Nameplates.lua":                    "Waypoints.lua",
+		"Waypoints.lua":                     "Breadcrumbs.lua",
+		"Breadcrumbs.lua":                   "MapPins.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -475,10 +477,28 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	if strings.Contains(waypoints, "HereBeDragons") || strings.Contains(waypoints, "LibStub") {
 		t.Fatal("waypoint implementation gained a HereBeDragons dependency")
 	}
-	for _, contract := range []string{"C_Map.SetUserWaypoint", "C_SuperTrack.SetSuperTrackedQuestID", "TomTom.AddWaypoint"} {
+	for _, contract := range []string{"C_Map.SetUserWaypoint", "C_SuperTrack.SetSuperTrackedQuestID", "TomTom.AddWaypoint", "function ns.CanTrackQuest(questID, data)"} {
 		if !strings.Contains(waypoints, contract) {
 			t.Errorf("Waypoints.lua missing %q", contract)
 		}
+	}
+	breadcrumbs := read(t, base, "Breadcrumbs.lua")
+	for _, contract := range []string{
+		"function ns.Breadcrumbs.OnQuestAccepted",
+		"function ns.Breadcrumbs.OnQuestEnded",
+		"function ns.Breadcrumbs.ShowPreview",
+		"isBreadcrumb",
+		"altQuests",
+		"C_QuestLog.AbandonQuest",
+		"ns.CanTrackQuest",
+		"ns.TrackQuest",
+	} {
+		if !strings.Contains(breadcrumbs, contract) {
+			t.Errorf("Breadcrumbs.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(breadcrumbs, "C_Map.SetUserWaypoint") {
+		t.Fatal("Breadcrumbs.lua must create waypoints through ns.TrackQuest")
 	}
 	tooltips := read(t, base, "NPCTooltips.lua")
 	for _, contract := range []string{"function Tooltips:GetTurnInRows(npcID)", "turnIns", "marker = \"?\"", "fqpQuestRows"} {
@@ -487,7 +507,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		}
 	}
 	config := read(t, base, "Config.lua")
-	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showWarEffortAlways = false", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
+	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showWarEffortAlways = false", "warnSkippedBreadcrumb = true", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
 		if !strings.Contains(config, contract) {
 			t.Errorf("Config.lua missing %q", contract)
 		}
@@ -495,5 +515,8 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	core := read(t, base, "Core.lua")
 	if !strings.Contains(core, `"SKILL_LINES_CHANGED"`) || !strings.Contains(core, "NPCTooltips:Initialize") || !strings.Contains(core, "InvalidateInstanceQuestCache") {
 		t.Fatal("Core.lua is missing a required refresh, tooltip, or instance-cache hook")
+	}
+	if !strings.Contains(core, "ns.Breadcrumbs.OnQuestAccepted") || !strings.Contains(core, "ns.Breadcrumbs.OnQuestEnded") {
+		t.Fatal("Core.lua does not route quest lifecycle events to breadcrumb warnings")
 	}
 }

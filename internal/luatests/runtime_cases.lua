@@ -4388,6 +4388,758 @@ cases["map_pins_runtime.test_unexplored_map_position_and_option"] = function()
     assert(ns.IsMapPositionExplored(1, 50, 50) == true, "explored position")
     assert(ns.IsMapPositionExplored(1, 20, 20) == false, "unexplored position")
 end
+cases["waypoints_runtime.test_can_track_quest_reports_failures_without_side_effects"] = function()
+
+            ns={Quests={[1]={mapID=1412,x=54.4,y=60.4}}}
+            provider="blizzard"
+            messages={}
+            print=function(message) table.insert(messages,message) end
+            ns.GetOption=function() return provider end
+            ns.IsOnQuest=function() return false end
+            UiMapPoint={CreateFromCoordinates=function(map,x,y)
+                return {uiMapID=map,position={x=x,y=y}}
+            end}
+            C_Map={
+                CanSetUserWaypointOnMap=function() return true end,
+                SetUserWaypoint=function(point) waypoint=point end,
+                GetUserWaypoint=function() return waypoint end,
+                ClearUserWaypoint=function() waypoint=nil end,
+            }
+
+assert(loadfile("Waypoints.lua"))("ForeverQuestPins", ns)
+
+            local ok, message = ns.CanTrackQuest(1)
+            assert(ok == true and message == nil)
+            assert(waypoint == nil, "validation must not set a waypoint")
+
+            provider="tomtom"; TomTom=nil
+            ok, message = ns.CanTrackQuest(1)
+            assert(ok == false and message:find("TomTom", 1, true))
+
+            provider="blizzard"; C_Map.CanSetUserWaypointOnMap=function() return false end
+            ok, message = ns.CanTrackQuest(1)
+            assert(ok == false and message:find("does not allow", 1, true))
+
+            C_Map.CanSetUserWaypointOnMap=function() return true end
+            C_Map.SetUserWaypoint=nil
+            ok, message = ns.CanTrackQuest(1)
+            assert(ok == false and message:find("unavailable", 1, true))
+
+            C_Map.SetUserWaypoint=function(point) waypoint=point end
+            ns.Quests[2]={mapID=1412,x=101,y=50}
+            ok, message = ns.CanTrackQuest(2)
+            assert(ok == false and message:find("location", 1, true))
+
+            ok, message = ns.CanTrackQuest(nil)
+            assert(ok == false and message == nil)
+            assert(#messages == 0, "validation must not print")
+
+end
+cases["waypoints_runtime.test_track_quest_quiet_failure_preserves_existing_waypoint"] = function()
+
+            ns={Quests={[1]={mapID=1412,x=54.4,y=60.4},[2]={mapID=1412,x=101,y=50}}}
+            provider="blizzard"
+            messages={}
+            print=function(message) table.insert(messages,message) end
+            ns.GetOption=function() return provider end
+            ns.IsOnQuest=function() return false end
+            UiMapPoint={CreateFromCoordinates=function(map,x,y)
+                return {uiMapID=map,position={x=x,y=y}}
+            end}
+            C_Map={
+                CanSetUserWaypointOnMap=function() return true end,
+                SetUserWaypoint=function(point) waypoint=point end,
+                GetUserWaypoint=function() return waypoint end,
+                ClearUserWaypoint=function() waypoint=nil end,
+            }
+            C_SuperTrack={
+                SetSuperTrackedUserWaypoint=function(value) userTracked=value end,
+                IsSuperTrackingUserWaypoint=function() return userTracked end,
+            }
+
+assert(loadfile("Waypoints.lua"))("ForeverQuestPins", ns)
+
+            assert(ns.TrackQuest(1))
+            local existing = waypoint
+            assert(existing and existing.uiMapID == 1412 and userTracked)
+
+            local ok, message = ns.TrackQuest(2, nil, true)
+            assert(ok == false and message ~= nil)
+            assert(#messages == 0, "quiet failures must not print")
+            assert(waypoint == existing, "a failed track must keep the current waypoint")
+            assert(userTracked == true)
+
+            ok, message = ns.TrackQuest(2)
+            assert(ok == false and message ~= nil)
+            assert(#messages == 1, "loud failures still report once")
+            assert(waypoint == existing)
+
+            ns.OnWaypointQuestEnded(1)
+            assert(waypoint == nil, "the previous selection is still owned")
+
+end
+cases["breadcrumbs_runtime.test_candidate_rules_ignore_display_filters"] = function()
+
+            ns={Quests={
+                [500]={sourceQuestSingle={10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}},
+                [10]={isBreadcrumb=true,mapID=1411,minLevel=1},
+                [11]={isBreadcrumb=true,mapID=1411},
+                [12]={isBreadcrumb=true,mapID=1411},
+                [13]={isBreadcrumb=true,mapID=1411},
+                [14]={isBreadcrumb=true,mapID=1411},
+                [15]={isBreadcrumb=true,mapID=1411,altQuests={31}},
+                [16]={isBreadcrumb=true,mapID=1411,altQuests={32}},
+                [17]={isBreadcrumb=true,mapID=1411,races={1}},
+                [18]={isBreadcrumb=true,mapID=1411,classes={1}},
+                [19]={isBreadcrumb=true,mapID=1411,faction="Alliance"},
+                [20]={isBreadcrumb=true,mapID=1411,minLevel=99},
+                [21]={isBreadcrumb=true,mapID=1411,requireSkill=197},
+                [22]={mapID=1411},
+                [23]={isBreadcrumb=true,mapID=1456},
+                [24]={isBreadcrumb=true,mapID=1411,minLevel=3,isPvPQuest=true},
+                [600]={sourceQuestSingle={25,26}},
+                [25]={isBreadcrumb=true,mapID=1411},
+                [26]={mapID=1411},
+            }}
+            completed={[11]=true,[31]=true}
+            inLog={[12]=true,[32]=true}
+            playerMap=1456
+            options={showTrivial=false,showPvP=false,showNormal=false,showSeasonal=false}
+            ns.IsQuestFlaggedCompleted=function(questID) return completed[questID] or false end
+            ns.IsOnQuest=function(questID) return inLog[questID] or false end
+            ns.IsQuestHidden=function(questID) return questID==13 end
+            ns.ExcludedQuests={[14]=true}
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 2 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return false end
+            ns.GetOption=function(key) return options[key] end
+            UnitLevel=function() return 40 end
+            C_Map={GetBestMapForUnit=function() return playerMap end}
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            local candidates=ns.Breadcrumbs.CollectCandidates(500)
+            assert(#candidates==3)
+            assert(candidates[1]==10 and candidates[2]==23 and candidates[3]==24)
+
+            local best=ns.Breadcrumbs.FindSkippedBreadcrumb(500)
+            assert(best==23, "the current map wins over data order")
+            playerMap=1411
+            best=ns.Breadcrumbs.FindSkippedBreadcrumb(500)
+            assert(best==10)
+            playerMap=999
+            best=ns.Breadcrumbs.FindSkippedBreadcrumb(500)
+            assert(best==10, "fallback keeps data order")
+
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(999)==nil)
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(nil)==nil)
+
+            assert(#ns.Breadcrumbs.CollectCandidates(600)==1)
+            completed[26]=true
+            assert(#ns.Breadcrumbs.CollectCandidates(600)==0,
+                "a completed non-breadcrumb route means the breadcrumb did not gate the quest")
+
+end
+cases["breadcrumbs_runtime.test_alternate_routes_and_multi_breadcrumb_lists"] = function()
+
+            ns={Quests={
+                [6383]={sourceQuestSingle={235,742},title="The Ashenvale Hunt"},
+                [235]={isBreadcrumb=true,altQuests={742,6382},mapID=1454,title="The Ashenvale Hunt"},
+                [742]={isBreadcrumb=true,altQuests={235,6382},mapID=1456,title="The Ashenvale Hunt"},
+                [788]={sourceQuestSingle={4641},title="Cutting Teeth"},
+                [4641]={isBreadcrumb=true,mapID=1411,title="Your Place In The World"},
+            }}
+            completed={}
+            inLog={}
+            playerMap=1456
+            ns.IsQuestFlaggedCompleted=function(questID) return completed[questID] or false end
+            ns.IsOnQuest=function(questID) return inLog[questID] or false end
+            ns.IsQuestHidden=function() return false end
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 2 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return true end
+            ns.GetOption=function() return true end
+            UnitLevel=function() return 40 end
+            C_Map={GetBestMapForUnit=function() return playerMap end}
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            local candidates=ns.Breadcrumbs.CollectCandidates(6383)
+            assert(#candidates==2 and candidates[1]==235 and candidates[2]==742)
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(6383)==742)
+            playerMap=1454
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(6383)==235)
+
+            completed[742]=true
+            assert(#ns.Breadcrumbs.CollectCandidates(6383)==0)
+            completed[742]=nil
+            inLog[742]=true
+            assert(#ns.Breadcrumbs.CollectCandidates(6383)==0)
+
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(788)==4641)
+            completed[4641]=true
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(788)==nil)
+
+end
+local function InstallDialogStubs(nsState, created)
+    local function NewWidget(kind, name)
+        local widget={kind=kind,scripts={},shown=true,text=""}
+        if name then _G[name]=widget end
+        function widget:SetSize(width,height) self.width,self.height=width,height end
+        function widget:SetWidth(width) self.width=width end
+        function widget:SetHeight(height) self.height=height end
+        function widget:GetWidth() return self.width or 0 end
+        function widget:GetHeight() return self.height or 0 end
+        function widget:SetPoint(...) self.points={...} end
+        function widget:ClearAllPoints() self.points=nil end
+        function widget:SetBackdrop() end
+        function widget:SetBackdropBorderColor() end
+        function widget:SetFrameStrata() end
+        function widget:SetClampedToScreen() end
+        function widget:EnableMouse() end
+        function widget:SetScript(script,handler) self.scripts[script]=handler end
+        function widget:GetScript(script) return self.scripts[script] end
+        function widget:Show()
+            self.shown=true
+            if self.scripts.OnShow then self.scripts.OnShow(self) end
+        end
+        function widget:Hide()
+            if not self.shown then return end
+            self.shown=false
+            if self.scripts.OnHide then self.scripts.OnHide(self) end
+        end
+        function widget:IsShown() return self.shown end
+        function widget:SetShown(value) if value then self:Show() else self:Hide() end end
+        function widget:SetText(text) self.text=text end
+        function widget:GetText() return self.text end
+        function widget:GetTextWidth() return #self.text*6 end
+        function widget:SetEnabled(value) self.enabled=value end
+        function widget:IsEnabled() return self.enabled~=false end
+        function widget:SetJustifyH() end
+        function widget:SetSpacing() end
+        function widget:SetColorTexture() end
+        function widget:Raise() end
+        function widget:CreateTexture()
+            local texture=NewWidget("texture")
+            created[#created+1]=texture
+            return texture
+        end
+        function widget:CreateFontString()
+            local text=NewWidget("fontstring")
+            function text:GetStringWidth() return #self.text*6 end
+            function text:GetStringHeight() return self.text~="" and 16 or 0 end
+            created[#created+1]=text
+            return text
+        end
+        if kind=="Button" then widget.enabled=true end
+        return widget
+    end
+
+    UIParent=NewWidget("frame")
+    UISpecialFrames={}
+    GameTooltip={
+        SetOwner=function() end,
+        SetText=function() end,
+        AddLine=function() end,
+        Show=function() end,
+        Hide=function() end,
+    }
+    CreateFrame=function(kind,name,parent,template)
+        local widget=NewWidget(kind,name)
+        widget.parent=parent
+        created[#created+1]=widget
+        return widget
+    end
+    timers={}
+    C_Timer={After=function(_,callback) timers[#timers+1]=callback end}
+    C_Map={
+        GetBestMapForUnit=function() return 1411 end,
+        GetMapInfo=function(mapID)
+            if mapID==1411 then return {name="Durotar"} end
+            if mapID==1455 then return {name="The Barrens"} end
+        end,
+    }
+end
+local function FindWidget(created, kind, text)
+    for i=1,#created do
+        local widget=created[i]
+        if widget.kind==kind and widget.text==text then return widget end
+    end
+end
+local function HasWidgetText(created, kind, fragment)
+    for i=1,#created do
+        local widget=created[i]
+        if widget.kind==kind and widget.text:find(fragment,1,true) then return true end
+    end
+    return false
+end
+local function HasMessage(messages, fragment)
+    for i=1,#messages do
+        if messages[i]:find(fragment,1,true) then return true end
+    end
+    return false
+end
+
+cases["breadcrumbs_runtime.test_dialog_queue_ignore_escape_and_option"] = function()
+
+            created={}
+            ns={Quests={
+                [800]={sourceQuestSingle={400},title="Follow-up A"},
+                [400]={isBreadcrumb=true,mapID=1411,title="Breadcrumb A"},
+                [801]={sourceQuestSingle={401},title="Follow-up B"},
+                [401]={isBreadcrumb=true,mapID=1411,title="Breadcrumb B"},
+                [1796]={title="Components for the Enchanted Gold Bloodrobe",mapID=1413},
+                [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
+            }}
+            options={warnSkippedBreadcrumb=true,debug=false}
+            ns.GetOption=function(key) return options[key] end
+            ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
+            ns.IsQuestFlaggedCompleted=function() return false end
+            ns.IsOnQuest=function() return false end
+            ns.IsQuestHidden=function() return false end
+            ns.IsQuestReadyForTurnIn=function() return false end
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 2 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return true end
+            ns.CanTrackQuest=function() return true end
+            ns.TrackQuest=function(questID) tracked=questID; return true end
+            UnitLevel=function() return 40 end
+            InstallDialogStubs(ns, created)
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            ns.Breadcrumbs.HandleAccepted(800)
+            local panel=_G.ForeverQuestPinsBreadcrumb
+            assert(panel and panel.shown)
+            assert(FindWidget(created,"Button","Set Waypoint"))
+            assert(FindWidget(created,"Button","Abandon Quest"))
+            assert(FindWidget(created,"Button","Ignore"))
+            assert(HasWidgetText(created,"fontstring","You accepted"))
+            assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
+            assert(HasWidgetText(created,"fontstring","Follow-up A"))
+            assert(HasWidgetText(created,"fontstring","The breadcrumb starts in Durotar."))
+            assert(HasWidgetText(created,"fontstring","Breadcrumb Quest Skipped"))
+            assert(#UISpecialFrames==1 and UISpecialFrames[1]=="ForeverQuestPinsBreadcrumb")
+
+            ns.Breadcrumbs.HandleAccepted(801)
+            assert(panel.shown)
+            assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
+            local panels=0
+            for i=1,#created do
+                if created[i]==panel then panels=panels+1 end
+            end
+            assert(panels==1, "rapid accepts reuse one dialog")
+
+            FindWidget(created,"Button","Ignore"):GetScript("OnClick")()
+            assert(panel.shown, "the queued notice replaces the ignored one")
+            assert(HasWidgetText(created,"fontstring","Breadcrumb B"))
+            assert(not HasWidgetText(created,"fontstring","Breadcrumb A"))
+
+            FindWidget(created,"Button","Ignore"):GetScript("OnClick")()
+            assert(not panel.shown)
+            ns.Breadcrumbs.HandleAccepted(800)
+            assert(not panel.shown, "ignore suppresses the follow-up for the session")
+
+            ns.Breadcrumbs.ShowPreview()
+            assert(panel.shown)
+            assert(HasWidgetText(created,"fontstring","In Search of Menara Voidrender"))
+            panel:Hide()
+            assert(not panel.shown, "Escape hides without reopening the preview")
+            assert(FindWidget(created,"Button","Set Waypoint"))
+
+            options.warnSkippedBreadcrumb=false
+            ns.Breadcrumbs.HandleAccepted(801)
+            assert(not panel.shown, "the option suppresses new notices")
+            ns.Breadcrumbs.ShowPreview()
+            assert(panel.shown, "the preview ignores the option")
+            panel:Hide()
+
+            assert(#UISpecialFrames==1, "the dialog name is registered once")
+
+end
+cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
+
+            created={}
+            ns={Quests={
+                [800]={sourceQuestSingle={4736},title="Follow-up"},
+                [1796]={title="Components for the Enchanted Gold Bloodrobe",mapID=1413},
+                [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
+            }}
+            onQuest=true
+            readyForTurnIn=false
+            canTrack=true
+            trackMessage=nil
+            messages={}
+            print=function(message) table.insert(messages,message) end
+            ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
+            ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
+            ns.IsQuestFlaggedCompleted=function() return false end
+            ns.IsQuestHidden=function() return false end
+            ns.IsOnQuest=function(questID) return onQuest and questID==800 end
+            ns.IsQuestReadyForTurnIn=function() return readyForTurnIn end
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 9 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return true end
+            ns.CanTrackQuest=function() return canTrack,trackMessage end
+            ns.TrackQuest=function(questID) tracked=questID; return true end
+            UnitLevel=function() return 40 end
+            InstallDialogStubs(ns, created)
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            ns.Breadcrumbs.HandleAccepted(800)
+            local panel=_G.ForeverQuestPinsBreadcrumb
+            local waypoint=FindWidget(created,"Button","Set Waypoint")
+            local abandon=FindWidget(created,"Button","Abandon Quest")
+            assert(panel.shown and waypoint and abandon)
+            assert(waypoint.enabled==true)
+            assert(waypoint.disabledReason==nil,
+                "an enabled waypoint must not carry a disabled tooltip")
+
+            waypoint:GetScript("OnClick")()
+            assert(tracked==4736 and not panel.shown)
+
+            canTrack=false
+            trackMessage="No quest location is available yet."
+            ns.Breadcrumbs.HandleAccepted(800)
+            assert(panel.shown and waypoint.enabled==false)
+            assert(waypoint.disabledReason=="No quest location is available yet.")
+            canTrack=true
+            trackMessage=nil
+            ns.Breadcrumbs.OnQuestEnded(800)
+            assert(not panel.shown, "ending the follow-up closes the notice")
+
+            onQuest=false
+            ns.Breadcrumbs.HandleAccepted(800)
+            assert(abandon.enabled==false)
+            assert(abandon.disabledReason=="This quest is no longer in your log.")
+            abandon:GetScript("OnClick")()
+            assert(HasWidgetText(created,"fontstring","This quest is no longer in your log."))
+            ns.Breadcrumbs.OnQuestEnded(800)
+
+            onQuest=true
+            readyForTurnIn=true
+            ns.Breadcrumbs.HandleAccepted(800)
+            assert(abandon.enabled==false)
+            assert(abandon.disabledReason=="This quest is ready to turn in. Abandon it from the quest log instead.")
+            readyForTurnIn=false
+
+            ns.Breadcrumbs.OnQuestEnded(800)
+            C_QuestLog={IsOnQuest=function() return true end}
+            timers={}
+            ns.Breadcrumbs.HandleAccepted(800)
+            assert(abandon.enabled==true)
+            abandon:GetScript("OnClick")()
+            assert(timers[1]~=nil, "a failed abandon retries once")
+            timers[1]()
+            assert(panel.shown)
+            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
+
+            ns.Breadcrumbs.OnQuestEnded(800)
+            abandonCalls=0
+            clientInLog=true
+            timers={}
+            C_QuestLog={
+                SetSelectedQuest=function() end,
+                SetAbandonQuest=function() end,
+                AbandonQuest=function() abandonCalls=abandonCalls+1 end,
+                IsOnQuest=function() return clientInLog end,
+            }
+            ns.Breadcrumbs.HandleAccepted(800)
+            abandon:GetScript("OnClick")()
+            assert(abandonCalls==1 and timers[1]~=nil)
+            timers[1]()
+            assert(abandonCalls==2, "a client that still reports the quest triggers one retry")
+            assert(panel.shown)
+            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
+
+            ns.Breadcrumbs.OnQuestEnded(800)
+            abandonCalls=0
+            clientInLog=true
+            messages={}
+            timers={}
+            ns.Breadcrumbs.HandleAccepted(800)
+            abandon:GetScript("OnClick")()
+            assert(abandonCalls==1 and timers[1]~=nil)
+            clientInLog=false
+            ns.Breadcrumbs.OnQuestEnded(800)
+            assert(not panel.shown)
+            timers[1]()
+            assert(HasMessage(messages,"Abandoned Follow-up."),
+                "the retry confirms an abandon after QUEST_REMOVED closes the dialog")
+
+            clientInLog=true
+            abandonCalls=0
+            messages={}
+            C_QuestLog={
+                SetSelectedQuest=function() end,
+                SetAbandonQuest=function() end,
+                AbandonQuest=function() abandonCalls=abandonCalls+1; clientInLog=false end,
+                IsOnQuest=function() return clientInLog end,
+            }
+            ns.Breadcrumbs.HandleAccepted(800)
+            abandon:GetScript("OnClick")()
+            assert(abandonCalls==1 and not panel.shown)
+            assert(HasMessage(messages,"Abandoned Follow-up."))
+
+end
+cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
+
+            created={}
+            ns={Quests={
+                [1796]={sourceQuestSingle={4736},title="Components for the Enchanted Gold Bloodrobe",mapID=1413},
+                [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
+            }}
+            tracked=nil
+            clientAbandons=0
+            ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
+            ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
+            ns.IsQuestFlaggedCompleted=function() return false end
+            ns.IsQuestHidden=function() return false end
+            ns.IsOnQuest=function(questID) return questID==1796 end
+            ns.IsQuestReadyForTurnIn=function() return false end
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 9 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return true end
+            ns.CanTrackQuest=function() return true end
+            ns.TrackQuest=function(questID) tracked=questID; return true end
+            UnitLevel=function() return 40 end
+            C_QuestLog={
+                SetSelectedQuest=function() end,
+                SetAbandonQuest=function() end,
+                AbandonQuest=function() clientAbandons=clientAbandons+1 end,
+                IsOnQuest=function() return true end,
+            }
+            InstallDialogStubs(ns, created)
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            ns.Breadcrumbs.ShowPreview()
+            local panel=_G.ForeverQuestPinsBreadcrumb
+            local waypoint=FindWidget(created,"Button","Set Waypoint")
+            local abandon=FindWidget(created,"Button","Abandon Quest")
+            assert(panel.shown and waypoint and abandon)
+            assert(waypoint.enabled==false and abandon.enabled==false)
+            assert(waypoint.disabledReason==abandon.disabledReason)
+            assert(waypoint.disabledReason:find("Preview only.",1,true))
+
+            waypoint:GetScript("OnClick")()
+            abandon:GetScript("OnClick")()
+            assert(tracked==nil, "a preview never creates a waypoint")
+            assert(clientAbandons==0, "a preview never abandons a quest")
+            assert(panel.shown)
+
+            ns.Breadcrumbs.HandleAccepted(1796)
+            assert(panel.shown and waypoint.enabled==true and abandon.enabled==true,
+                "a real notice replaces an inert preview with the same breadcrumb")
+            assert(waypoint.disabledReason==nil and abandon.disabledReason==nil)
+            assert(HasWidgetText(created,"fontstring","Components for the Enchanted Gold Bloodrobe"))
+
+            panel:Hide()
+            assert(not panel.shown, "Escape dismisses a real notice")
+            ns.Breadcrumbs.HandleAccepted(1796)
+            assert(not panel.shown, "Escape suppresses the follow-up for the session")
+
+end
+cases["breadcrumbs_runtime.test_accepting_breadcrumb_clears_notice_and_queue"] = function()
+
+            created={}
+            ns={Quests={
+                [800]={sourceQuestSingle={400},title="Follow-up A"},
+                [400]={isBreadcrumb=true,mapID=1411,title="Breadcrumb A"},
+                [801]={sourceQuestSingle={401},title="Follow-up B"},
+                [401]={isBreadcrumb=true,mapID=1411,title="Breadcrumb B"},
+                [803]={sourceQuestSingle={235,742},title="Follow-up C"},
+                [235]={isBreadcrumb=true,mapID=1454,altQuests={742},title="Breadcrumb C1"},
+                [742]={isBreadcrumb=true,mapID=1456,altQuests={235},title="Breadcrumb C2"},
+                [802]={sourceQuestSingle={402},title="Follow-up D"},
+                [402]={isBreadcrumb=true,mapID=1411,title="Breadcrumb D"},
+            }}
+            onQuest={}
+            options={warnSkippedBreadcrumb=true,debug=false}
+            ns.GetOption=function(key) return options[key] end
+            ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
+            ns.IsQuestFlaggedCompleted=function() return false end
+            ns.IsQuestHidden=function() return false end
+            ns.IsOnQuest=function(questID) return onQuest[questID] or false end
+            ns.IsQuestReadyForTurnIn=function() return false end
+            ns.GetPlayerRaceID=function() return 2 end
+            ns.GetPlayerClassID=function() return 2 end
+            ns.GetPlayerFaction=function() return "Horde" end
+            ns.HasRequiredSkill=function() return true end
+            ns.CanTrackQuest=function() return true end
+            ns.TrackQuest=function() return true end
+            UnitLevel=function() return 40 end
+            InstallDialogStubs(ns, created)
+
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            ns.Breadcrumbs.OnQuestAccepted(800)
+            assert(#timers==1, "accept checks wait one tick for the quest log")
+            assert(_G.ForeverQuestPinsBreadcrumb==nil, "the dialog is not built before the check")
+            timers[1]()
+            local panel=_G.ForeverQuestPinsBreadcrumb
+            assert(panel and panel.shown)
+            assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
+
+            onQuest[400]=true
+            ns.Breadcrumbs.OnQuestAccepted(400)
+            assert(not panel.shown, "accepting the named breadcrumb closes the notice")
+
+            onQuest[400]=nil
+            timers={}
+            ns.Breadcrumbs.OnQuestAccepted(800)
+            timers[1]()
+            assert(panel.shown, "a breadcrumb accept does not suppress the follow-up")
+
+            ns.Breadcrumbs.HandleAccepted(801)
+            assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
+            onQuest[401]=true
+            ns.Breadcrumbs.OnQuestAccepted(401)
+            assert(panel.shown and HasWidgetText(created,"fontstring","Breadcrumb A"),
+                "accepting a breadcrumb drops only queued notices that named it")
+            assert(not HasWidgetText(created,"fontstring","Breadcrumb B"))
+
+            FindWidget(created,"Button","Ignore"):GetScript("OnClick")()
+            assert(not panel.shown, "the dropped queued notice never appears")
+
+            options.warnSkippedBreadcrumb=false
+            timers={}
+            ns.Breadcrumbs.OnQuestAccepted(800)
+            assert(#timers==0, "the option gate stops the accept check")
+
+            options.warnSkippedBreadcrumb=true
+            onQuest[401]=nil
+            timers={}
+            ns.Breadcrumbs.OnQuestAccepted(802)
+            timers[1]()
+            ns.Breadcrumbs.HandleAccepted(801)
+            assert(HasWidgetText(created,"fontstring","Breadcrumb D"))
+            ns.Breadcrumbs.OnQuestEnded(801)
+            assert(panel.shown and HasWidgetText(created,"fontstring","Breadcrumb D"),
+                "ending a follow-up drops only its queued notice")
+            ns.Breadcrumbs.OnQuestEnded(802)
+            assert(not panel.shown, "ending the visible follow-up closes the notice")
+
+            timers={}
+            ns.Breadcrumbs.OnQuestAccepted(803)
+            timers[1]()
+            assert(panel.shown and HasWidgetText(created,"fontstring","Breadcrumb C1"))
+            onQuest[742]=true
+            ns.Breadcrumbs.OnQuestAccepted(742)
+            assert(not panel.shown, "an alternate breadcrumb also settles the notice")
+
+end
+cases["breadcrumbs_runtime.test_shipped_database_breadcrumb_edges"] = function()
+
+            ns={}
+            completed={}
+            C_QuestLog={
+                GetAllCompletedQuestIDs=function() return completed end,
+                IsQuestFlaggedCompleted=function(questID) return completed[questID] or false end,
+                IsOnQuest=function() return false end,
+            }
+            UnitLevel=function() return 40 end
+            UnitFactionGroup=function() return "Horde" end
+            UnitRace=function() return "Orc","Orc",2 end
+            UnitClass=function() return "Warlock","WARLOCK",9 end
+            playerMap=1458
+            C_Map={GetBestMapForUnit=function() return playerMap end}
+            ns.GetOption=function(key) return key~="debug" end
+
+assert(loadfile("Database/ForeverQuests.lua"))("ForeverQuestPins", ns)
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
+
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(788)==4641)
+            completed[4641]=true
+            ns.InvalidateCompletionCache()
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(788)==nil)
+            completed[4641]=nil
+            ns.InvalidateCompletionCache()
+
+            completed[742]=true
+            ns.InvalidateCompletionCache()
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(6383)==nil,
+                "a completed alternate breadcrumb suppresses the warning")
+            completed[742]=nil
+            ns.InvalidateCompletionCache()
+
+            local candidates=ns.Breadcrumbs.CollectCandidates(1801)
+            assert(#candidates==2 and candidates[1]==2996 and candidates[2]==3001)
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(1801)==3001)
+
+            candidates=ns.Breadcrumbs.CollectCandidates(1796)
+            assert(#candidates==2 and candidates[1]==4737 and candidates[2]==4739)
+            playerMap=1454
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(1796)==4737)
+
+            playerMap=1442
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(6543)==6542)
+
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(2)==nil,
+                "a non-breadcrumb prerequisite is not a breadcrumb warning")
+
+            completed[1782]=true
+            ns.InvalidateCompletionCache()
+            assert(ns.Breadcrumbs.FindSkippedBreadcrumb(1710)==nil,
+                "a completed shared route means 1703 did not gate 1710")
+
+end
+cases["map_pins_runtime.display_updates_keep_the_existing_pin_set"] = function()
+    setupPinRendering()
+    ns.MapPins:Refresh("initial")
+    local status = ns.MapPins:GetStatus()
+    assert(status.mode == "canvas" and status.count == 1 and pin.shown)
+    local painted = status.refreshes
+    assert(painted and painted > 0)
+
+    ns.MapPins:Refresh("map-display")
+    ns.MapPins:Refresh("map-changed")
+    status = ns.MapPins:GetStatus()
+    assert(status.refreshes == painted, "display updates must not rebuild the same view")
+    assert(status.displaySkips == 2)
+    assert(pin.shown, "pins stay visible between display updates")
+
+    ns.MapPins:Refresh("manual")
+    status = ns.MapPins:GetStatus()
+    assert(status.refreshes == painted + 1, "a real refresh still repaints")
+    assert(status.displaySkips == 2)
+
+    OpenMapAPI = {
+        IsStitched = function() return true end,
+        WorldFromMap = function(_, x, y) return x, y end,
+        MapFromWorld = function(_, u, v) return u, v end,
+    }
+    painted = ns.MapPins:GetStatus().refreshes
+    ns.MapPins:Refresh("map-display")
+    assert(ns.MapPins:GetStatus().refreshes == painted + 1,
+        "switching OpenMap mode still repaints")
+end
+
+cases["map_pins_runtime.breadcrumb_quests_are_labelled_in_tooltips"] = function()
+    setupPinRendering()
+    ns.Quests[101].isBreadcrumb = true
+    ns.MapPins:Refresh("breadcrumb")
+    pin.scripts.OnEnter(pin)
+    assert(tooltipHas("Breadcrumb quest"))
+    assert(not tooltipHas("Includes a breadcrumb quest"))
+
+    ns.Quests[101].isBreadcrumb = nil
+    ns.Quests[102] = { mapID = 1, x = 50, y = 50, isBreadcrumb = true }
+    ns.ByMap[1][#ns.ByMap[1] + 1] = 102
+    ns.MapPins:Refresh("mixed")
+    pin.scripts.OnEnter(pin)
+    assert(tooltipHas("Includes a breadcrumb quest"),
+        "a mixed stack must not claim every quest is a breadcrumb")
+    assert(not tooltipHas("Breadcrumb quest"))
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

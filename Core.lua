@@ -204,6 +204,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if questID and ns.NoteQuestAccepted then
             ns.NoteQuestAccepted(questID)
         end
+        if questID and ns.Breadcrumbs and ns.Breadcrumbs.OnQuestAccepted then
+            ns.Breadcrumbs.OnQuestAccepted(questID)
+        end
     elseif event == "QUEST_TURNED_IN" then
         local questID = QuestIDFromEvent(event, ...)
         if questID and ns.InvalidateInstanceQuestCache then
@@ -214,6 +217,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         end
         if questID and ns.NoteQuestCompleted then
             ns.NoteQuestCompleted(questID)
+        end
+        if questID and ns.Breadcrumbs and ns.Breadcrumbs.OnQuestEnded then
+            ns.Breadcrumbs.OnQuestEnded(questID)
         end
         if ns.OnWaypointQuestEnded then
             ns.OnWaypointQuestEnded(questID)
@@ -228,6 +234,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         end
         if questID and ns.NoteQuestRemoved then
             ns.NoteQuestRemoved(questID)
+        end
+        if questID and ns.Breadcrumbs and ns.Breadcrumbs.OnQuestEnded then
+            ns.Breadcrumbs.OnQuestEnded(questID)
         end
         if ns.OnWaypointQuestEnded then
             ns.OnWaypointQuestEnded(questID)
