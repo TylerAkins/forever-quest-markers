@@ -43,7 +43,7 @@ Extract the downloaded zip so the folder is `ForeverQuestPins`, copy it into `In
 
 ## Settings
 
-The optional **Limit auto-accept quest level** checkbox defaults off. Its **Auto Accept quest Range** slider runs from -5 to +5 and defaults to +1. This is a maximum recommended quest level relative to your current level: at level 15, +1 allows level 16 and below. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
+The optional **Limit auto-accept quest level** checkbox defaults off. It turns on a level range relative to your current level, set with one slider that has two handles. Both ends run from -10 to +5; the defaults are -10 and +1. At level 15 with -5 and +5, quests from level 10 to 20 are auto-accepted. Auto-accept must also be enabled. Unknown quest levels and shared-quest confirmations are left for manual acceptance while the limit is enabled. The limit does not hide map pins or affect turn-ins.
 
 Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 

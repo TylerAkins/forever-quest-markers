@@ -557,6 +557,7 @@ end
                     if not wasShown and self.scripts.OnShow then self.scripts.OnShow(self) end
                 end
                 frame.CreateFontString = function() return newRegion() end
+                frame.CreateTexture = function() return newRegion() end
                 setmetatable(frame, { __index = function() return function() end end })
                 table.insert(controls, frame)
                 return frame
@@ -3947,7 +3948,10 @@ cases["events_runtime.test_generated_event_policy_loads"] = function()
 end
 
 cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function()
-    local options = { enabled = false, autoAccept = true, showRepeatable = false, autoAcceptLevelOffset = 1 }
+    local options = {
+        enabled = false, autoAccept = true, showRepeatable = false,
+        autoAcceptLevelOffset = 1, autoAcceptMinLevelOffset = -10,
+    }
     local writes, completed, printed = {}, 0, {}
     ns = { db = {}, WhatsNew = { version = "1.2.3", lines = { "A feature" } } }
     ns.GetOption = function(key) return options[key] or false end
@@ -3982,6 +3986,10 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
         table.insert(controls, object)
         return object
     end
+    local config = {}
+    assert(loadfile("Config.lua"))("ForeverQuestPins", config)
+    ns.CreateLevelRangeSlider = config.CreateLevelRangeSlider
+    controls = {}
     assert(loadfile("Setup.lua"))("ForeverQuestPins", ns)
     ns.StartWelcome()
     assert(#printed == 2 and ns.db._newsVersion == "1.2.3")
@@ -4006,26 +4014,75 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     button("Next").scripts.OnClick()
     button("Next").scripts.OnClick()
     button("Next").scripts.OnClick()
-    local slider, limit
+    local range, limit
     for _, control in ipairs(controls) do
-        if control.template == "OptionsSliderTemplate" then slider = control end
+        if rawget(control, "isLevelRange") then range = control end
         if control.key == "autoAcceptRangeEnabled" then limit = control end
     end
-    assert(slider and slider.shown and slider.value == 1 and not slider.mouseEnabled)
+    assert(range and range.shown and not range.active)
+    assert(range.lowValue == -10 and range.highValue == 1)
     limit.checked = true
     limit.scripts.OnClick(limit)
-    assert(slider.mouseEnabled)
-    slider:SetValue(3)
+    assert(range.active)
+    range:SetUserValue("high", 3)
+    range:SetUserValue("low", -5)
+    -- The low handle cannot pass the high handle.
+    range:SetUserValue("low", 4)
+    assert(range.lowValue == 3)
+    range:SetUserValue("low", -5)
     assert(next(writes) == nil, "level limit must remain staged")
     button("Back").scripts.OnClick()
     button("Next").scripts.OnClick()
-    assert(slider.value == 3 and slider.mouseEnabled)
+    assert(range.lowValue == -5 and range.highValue == 3 and range.active)
     button("Apply").scripts.OnClick()
     assert(writes.enabled == true and writes.autoAccept == nil and options.autoAccept == true)
     assert(writes.autoAcceptRangeEnabled == true and writes.autoAcceptLevelOffset == 3)
+    assert(writes.autoAcceptMinLevelOffset == -5)
     ns.ShowSetup()
     button("Use Defaults").scripts.OnClick()
     assert(writes.defaults == true)
+end
+
+cases["auto_quests_runtime.level_range_limits_both_ends"] = function()
+    local options = { autoAcceptRangeEnabled = true, autoAcceptLevelOffset = 5, autoAcceptMinLevelOffset = -5 }
+    ns = {}
+    ns.GetOption = function(key) return options[key] end
+    ns.defaults = { autoAcceptLevelOffset = 1, autoAcceptMinLevelOffset = -10 }
+    UnitLevel = function() return 20 end
+    CreateFrame = function()
+        return setmetatable({}, { __index = function() return function() end end })
+    end
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    ns.GetOption = function(key) return options[key] end
+    assert(loadfile("AutoQuests.lua"))("ForeverQuestPins", ns)
+    local allows = function(level) return ns.AutoQuests:AllowsLevel(nil, level) end
+    assert(allows(15) and allows(20) and allows(25))
+    assert(not allows(14) and not allows(26))
+    -- A maximum below the minimum collapses the window to the maximum.
+    options.autoAcceptLevelOffset, options.autoAcceptMinLevelOffset = -3, 0
+    assert(allows(17) and not allows(16) and not allows(18))
+    options.autoAcceptRangeEnabled = false
+    assert(allows(1) and allows(60))
+end
+
+cases["auto_quests_runtime.min_level_offset_mirrors_and_clamps"] = function()
+    local mirror = "revision=3;waypointProvider=blizzard;autoAcceptMinLevelOffset=-4;enabled=1"
+    C_CVar = {
+        GetCVar = function() return mirror end,
+        SetCVar = function(_, value) mirror = value end,
+        RegisterCVar = function() end,
+    }
+    ForeverQuestPinsDB, ForeverQuestPinsCharDB = {}, {}
+    ForeverQuestPinsDB_Settings, ForeverQuestPinsCharacterSettings = {}, {}
+    ns = {}
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(ns.InitSettings().autoAcceptMinLevelOffset == -4)
+    ns.SetOption("autoAcceptMinLevelOffset", -99)
+    assert(ns.GetOption("autoAcceptMinLevelOffset") == -10)
+    ns.SetOption("autoAcceptMinLevelOffset", 7)
+    assert(ns.GetOption("autoAcceptMinLevelOffset") == 5)
+    ns.SetOption("autoAcceptMinLevelOffset", -6)
+    assert(mirror:find("autoAcceptMinLevelOffset=-6", 1, true))
 end
 
 cases["setup_runtime.markers_survive_settings_recovery_without_changing_options"] = function()

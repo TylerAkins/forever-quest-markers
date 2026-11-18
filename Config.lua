@@ -26,6 +26,7 @@ ns.defaults = {
     autoAccept = false,
     autoAcceptRangeEnabled = false,
     autoAcceptLevelOffset = 1,
+    autoAcceptMinLevelOffset = -10,
     iconScale = 100,
     autoTurnIn = false,
     hideQuestTrackerInCombat = false,
@@ -52,6 +53,8 @@ local TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX = 3, 15
 local HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX = 3, 15
 local worldMapDropdownHooked = false
 
+local AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX = -10, 5
+
 local function NormalizeNumber(key, value)
     value = tonumber(value)
     if not value or value ~= value then
@@ -65,6 +68,9 @@ local function NormalizeNumber(key, value)
     end
     if key == "highLevelGap" then
         return math.max(HIGH_LEVEL_GAP_MIN, math.min(HIGH_LEVEL_GAP_MAX, math.floor(value + 0.5)))
+    end
+    if key == "autoAcceptMinLevelOffset" or key == "autoAcceptLevelOffset" then
+        return math.max(AUTO_ACCEPT_OFFSET_MIN, math.min(AUTO_ACCEPT_OFFSET_MAX, math.floor(value + 0.5)))
     end
     return math.max(-5, math.min(5, math.floor(value + 0.5)))
 end
@@ -111,8 +117,12 @@ local function DecodeMirror()
     end
     local mirror = {}
     local offset = tonumber(text:match("autoAcceptLevelOffset=([%-]?%d+)"))
-    if offset and offset >= -5 and offset <= 5 then
+    if offset and offset >= AUTO_ACCEPT_OFFSET_MIN and offset <= AUTO_ACCEPT_OFFSET_MAX then
         mirror.autoAcceptLevelOffset = offset
+    end
+    local minOffset = tonumber(text:match("autoAcceptMinLevelOffset=([%-]?%d+)"))
+    if minOffset and minOffset >= AUTO_ACCEPT_OFFSET_MIN and minOffset <= AUTO_ACCEPT_OFFSET_MAX then
+        mirror.autoAcceptMinLevelOffset = minOffset
     end
     local iconScale = tonumber(text:match("iconScale=(%d+)"))
     if iconScale and iconScale >= 50 and iconScale <= 150 then
@@ -224,6 +234,8 @@ local function SaveMirror(db)
     if db._setupComplete then parts[#parts + 1] = "setupComplete=1" end
     if db._newsVersion then parts[#parts + 1] = "newsVersion=" .. db._newsVersion end
     parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
+    parts[#parts + 1] = "autoAcceptMinLevelOffset="
+        .. tostring(db.autoAcceptMinLevelOffset or ns.defaults.autoAcceptMinLevelOffset)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
@@ -360,6 +372,153 @@ function ns.GetOption(key)
         return settings[key]
     end
     return ns.defaults[key]
+end
+
+ns.AUTO_ACCEPT_OFFSET_MIN, ns.AUTO_ACCEPT_OFFSET_MAX = AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX
+
+-- One track with two handles for the auto-accept level window. The game has no
+-- stock two-handle slider, so this is built from a frame, textures and buttons.
+-- getValues() returns the current (low, high); onChange(low, high) is called
+-- only when the user moves a handle.
+function ns.CreateLevelRangeSlider(parent, getValues, onChange)
+    local minValue, maxValue = AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX
+    local width = 240
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(width, 24)
+    frame.isLevelRange = true
+    local track = frame:CreateTexture(nil, "BACKGROUND")
+    track:SetPoint("LEFT", frame, "LEFT", 0, 0)
+    track:SetSize(width, 6)
+    track:SetColorTexture(0, 0, 0, 0.6)
+    local fill = frame:CreateTexture(nil, "BORDER")
+    fill:SetHeight(6)
+    fill:SetColorTexture(1, 0.82, 0, 0.7)
+    local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    label:SetPoint("BOTTOM", frame, "TOP", 0, 2)
+    local low = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    low:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, 2)
+    low:SetText(("%+d"):format(minValue))
+    local high = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    high:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", 0, 2)
+    high:SetText(("%+d"):format(maxValue))
+    local yours = frame:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    yours:SetPoint("TOP", track, "LEFT", (0 - minValue) / (maxValue - minValue) * width, -6)
+    yours:SetText("0")
+
+    local function X(value)
+        return (value - minValue) / (maxValue - minValue) * width
+    end
+    local function Thumb()
+        local thumb = CreateFrame("Button", nil, frame)
+        thumb:SetSize(32, 32)
+        local texture = thumb:CreateTexture(nil, "ARTWORK")
+        texture:SetAllPoints()
+        texture:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+        return thumb
+    end
+    local lowThumb, highThumb = Thumb(), Thumb()
+    frame.lowValue, frame.highValue = minValue, maxValue
+
+    local function Render()
+        lowThumb:ClearAllPoints()
+        lowThumb:SetPoint("CENTER", track, "LEFT", X(frame.lowValue), 0)
+        highThumb:ClearAllPoints()
+        highThumb:SetPoint("CENTER", track, "LEFT", X(frame.highValue), 0)
+        fill:ClearAllPoints()
+        fill:SetPoint("LEFT", track, "LEFT", X(frame.lowValue), 0)
+        fill:SetWidth(math.max(1, X(frame.highValue) - X(frame.lowValue)))
+        local playerLevel = UnitLevel and UnitLevel("player")
+        local text = (L["Auto-accept quest levels: yours %+d to %+d"]):format(frame.lowValue, frame.highValue)
+        if type(playerLevel) == "number" and playerLevel > 0 then
+            text = text .. (" (%d-%d)"):format(
+                math.max(1, playerLevel + frame.lowValue), playerLevel + frame.highValue)
+        end
+        label:SetText(text)
+    end
+
+    -- Moves one handle from user input, keeping low <= high.
+    function frame:SetUserValue(which, value)
+        value = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)))
+        if which == "low" then
+            value = math.min(value, self.highValue)
+            if value == self.lowValue then return end
+            self.lowValue = value
+        else
+            value = math.max(value, self.lowValue)
+            if value == self.highValue then return end
+            self.highValue = value
+        end
+        Render()
+        onChange(self.lowValue, self.highValue)
+    end
+
+    function frame:ApplySaved()
+        local lowValue, highValue = getValues()
+        self.lowValue = math.max(minValue, math.min(maxValue, tonumber(lowValue) or minValue))
+        self.highValue = math.max(self.lowValue, math.min(maxValue, tonumber(highValue) or maxValue))
+        Render()
+    end
+
+    function frame:SetActive(active)
+        self.active = active and true or false
+        self:EnableMouse(self.active)
+        lowThumb:EnableMouse(self.active)
+        highThumb:EnableMouse(self.active)
+        self:SetAlpha(self.active and 1 or 0.5)
+    end
+
+    local dragging
+    local function CursorValue()
+        local x = GetCursorPosition()
+        local scale = frame:GetEffectiveScale()
+        local left = track:GetLeft()
+        if not x or not scale or not left then return nil end
+        return minValue + (x / scale - left) / width * (maxValue - minValue)
+    end
+    local function Drag()
+        local value = CursorValue()
+        if not value then return end
+        local which = dragging
+        -- When both handles share a value, the drag direction picks the handle.
+        if frame.lowValue == frame.highValue then
+            which = value < frame.lowValue and "low" or "high"
+        end
+        frame:SetUserValue(which, value)
+    end
+    local function StartDrag(which)
+        if not frame.active then return end
+        dragging = which
+        frame:SetScript("OnUpdate", Drag)
+    end
+    local function StopDrag()
+        dragging = nil
+        frame:SetScript("OnUpdate", nil)
+    end
+    lowThumb:SetScript("OnMouseDown", function() StartDrag("low") end)
+    highThumb:SetScript("OnMouseDown", function() StartDrag("high") end)
+    lowThumb:SetScript("OnMouseUp", StopDrag)
+    highThumb:SetScript("OnMouseUp", StopDrag)
+    frame:SetScript("OnHide", StopDrag)
+    -- Clicking the track grabs the nearer handle.
+    frame:SetScript("OnMouseDown", function()
+        local value = CursorValue()
+        if not value then return end
+        local nearer = math.abs(value - frame.lowValue) <= math.abs(value - frame.highValue) and "low" or "high"
+        if frame.lowValue == frame.highValue then nearer = value < frame.lowValue and "low" or "high" end
+        StartDrag(nearer)
+        Drag()
+    end)
+    frame:SetScript("OnMouseUp", StopDrag)
+    frame:SetActive(true)
+    return frame
+end
+
+-- Returns the auto-accept window as offsets from the player's level. The
+-- minimum never exceeds the maximum, so a negative maximum still works.
+function ns.GetAutoAcceptLevelRange()
+    local maxOffset = tonumber(ns.GetOption("autoAcceptLevelOffset")) or ns.defaults.autoAcceptLevelOffset
+    local minOffset = tonumber(ns.GetOption("autoAcceptMinLevelOffset")) or ns.defaults.autoAcceptMinLevelOffset
+    return math.min(minOffset, maxOffset), maxOffset
 end
 
 function ns.SetOption(key, value)
@@ -740,6 +899,7 @@ function ns.PrintSettingsDebug()
         "autoAccept",
         "autoAcceptRangeEnabled",
         "autoAcceptLevelOffset",
+        "autoAcceptMinLevelOffset",
         "iconScale",
         "waypointProvider",
         "autoTurnIn",
@@ -1358,33 +1518,22 @@ function ns.TryRegisterSettings()
             accept:SetPoint("TOPLEFT", automationHelp, "BOTTOMLEFT", -4, -4)
 
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
-                L["Limit auto-accept quest level"], L["Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance."])
+                L["Limit auto-accept quest level"], L["Only auto-accept quests within the level range around your level. Unknown quest levels are left for manual acceptance."])
             range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
-            local slider = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            slider:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 8, -24)
-            slider:SetSize(240, 16)
-            slider:SetMinMaxValues(-5, 5)
-            slider:SetValueStep(1)
-            if slider.Low then slider.Low:SetText(L["-5 levels"]) end
-            if slider.High then slider.High:SetText(L["+5 levels"]) end
-            local label = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            label:SetPoint("BOTTOM", slider, "TOP", 0, 4)
-            slider.ApplySaved = function(control)
-                control.syncing = true
-                local offset = ns.GetOption("autoAcceptLevelOffset")
-                control:SetValue(offset)
-                label:SetText((L["Maximum quest level: yours %+d"]):format(offset))
-                local enabled = ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled")
-                control:EnableMouse(enabled)
-                control:SetAlpha(enabled and 1 or 0.5)
-                control.syncing = false
-            end
-            slider:SetScript("OnValueChanged", function(control, value)
-                if control.syncing then return end
-                ns.SetOption("autoAcceptLevelOffset", value)
-                control:ApplySaved()
+            local levelRange = ns.CreateLevelRangeSlider(self, function()
+                return ns.GetAutoAcceptLevelRange()
+            end, function(lowValue, highValue)
+                ns.SetOption("autoAcceptMinLevelOffset", lowValue)
+                ns.SetOption("autoAcceptLevelOffset", highValue)
             end)
-            optionChecks[#optionChecks + 1] = slider
+            levelRange:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 12, -22)
+            local applyRange = levelRange.ApplySaved
+            levelRange.ApplySaved = function(control)
+                applyRange(control)
+                control:SetActive(ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled"))
+            end
+            levelRange:ApplySaved()
+            optionChecks[#optionChecks + 1] = levelRange
 
             local turnin = CreateOptionCheckbox(
                 self,
@@ -1392,7 +1541,7 @@ function ns.TryRegisterSettings()
                 L["Auto-turn in quests"],
                 L["Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."]
             )
-            turnin:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -8, -16)
+            turnin:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
 
             local hideTracker = CreateOptionCheckbox(
                 self,

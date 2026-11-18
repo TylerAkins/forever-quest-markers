@@ -80,11 +80,9 @@ local function CreateSetup()
     help:SetWidth(440)
     help:SetJustifyH("LEFT")
     local checks = {}
-    local offsetSlider
+    local levelRange
     local function UpdateOffsetEnabled()
-        local enabled = panel.pending.autoAccept and panel.pending.autoAcceptRangeEnabled
-        offsetSlider:EnableMouse(enabled)
-        offsetSlider:SetAlpha(enabled and 1 or 0.5)
+        levelRange:SetActive(panel.pending.autoAccept and panel.pending.autoAcceptRangeEnabled)
     end
     for i = 1, 6 do
         local box = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
@@ -104,21 +102,14 @@ local function CreateSetup()
         end)
         checks[i] = box
     end
-    offsetSlider = CreateFrame("Slider", nil, panel, "OptionsSliderTemplate")
-    offsetSlider:SetPoint("TOPLEFT", 46, -225)
-    offsetSlider:SetSize(240, 16)
-    offsetSlider:SetMinMaxValues(-5, 5)
-    offsetSlider:SetValueStep(1)
-    if offsetSlider.Low then offsetSlider.Low:SetText(L["-5 levels"]) end
-    if offsetSlider.High then offsetSlider.High:SetText(L["+5 levels"]) end
-    local offsetLabel = offsetSlider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    offsetLabel:SetPoint("BOTTOM", offsetSlider, "TOP", 0, 4)
-    offsetSlider:SetScript("OnValueChanged", function(self, value)
-        if self.syncing then return end
-        value = math.max(-5, math.min(5, math.floor(value + 0.5)))
-        panel.pending.autoAcceptLevelOffset = value
-        offsetLabel:SetText((L["Maximum quest level: yours %+d"]):format(value))
+    levelRange = ns.CreateLevelRangeSlider(panel, function()
+        return math.min(panel.pending.autoAcceptMinLevelOffset, panel.pending.autoAcceptLevelOffset),
+            panel.pending.autoAcceptLevelOffset
+    end, function(lowValue, highValue)
+        panel.pending.autoAcceptMinLevelOffset = lowValue
+        panel.pending.autoAcceptLevelOffset = highValue
     end)
+    levelRange:SetPoint("TOPLEFT", 50, -230)
     local back, nextButton
     local function Render()
         local page = panel.page
@@ -132,7 +123,7 @@ local function CreateSetup()
             local option = guided and pages[page].options[i]
             if option then
                 box:ClearAllPoints()
-                local extra = page == #pages and i >= 3 and 64 or 0
+                local extra = page == #pages and i >= 3 and 80 or 0
                 box:SetPoint("TOPLEFT", 28, -135 - (i - 1) * 31 - extra)
                 box.key = option[1]
                 box.Text:SetText(L[option[2]])
@@ -142,12 +133,9 @@ local function CreateSetup()
                 box:Hide()
             end
         end
-        offsetSlider:SetShown(page == #pages)
+        levelRange:SetShown(page == #pages)
         if page == #pages then
-            offsetSlider.syncing = true
-            offsetSlider:SetValue(panel.pending.autoAcceptLevelOffset)
-            offsetSlider.syncing = false
-            offsetLabel:SetText((L["Maximum quest level: yours %+d"]):format(panel.pending.autoAcceptLevelOffset))
+            levelRange:ApplySaved()
             UpdateOffsetEnabled()
         end
         panel.keep:SetShown(not guided)
@@ -194,8 +182,10 @@ local function CreateSetup()
                 self.pending[option[1]], self.original[option[1]] = value, value
             end
         end
-        self.pending.autoAcceptLevelOffset = ns.GetOption("autoAcceptLevelOffset")
-        self.original.autoAcceptLevelOffset = self.pending.autoAcceptLevelOffset
+        for _, key in ipairs({ "autoAcceptLevelOffset", "autoAcceptMinLevelOffset" }) do
+            self.pending[key] = ns.GetOption(key)
+            self.original[key] = self.pending[key]
+        end
         Render()
         self:Show()
     end

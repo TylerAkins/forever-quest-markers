@@ -29,7 +29,8 @@ function AutoQuests:AllowsLevel(questID, offeredLevel)
     if type(level) ~= "number" or level <= 0 or type(playerLevel) ~= "number" or playerLevel <= 0 then
         return false
     end
-    return level <= playerLevel + ns.GetOption("autoAcceptLevelOffset")
+    local minOffset, maxOffset = ns.GetAutoAcceptLevelRange()
+    return level >= playerLevel + minOffset and level <= playerLevel + maxOffset
 end
 
 local function GossipSelectAvailable(info, index)
