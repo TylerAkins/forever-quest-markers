@@ -28,6 +28,7 @@ ns.defaults = {
     autoAcceptLevelOffset = 1,
     iconScale = 100,
     autoTurnIn = false,
+    warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
@@ -488,6 +489,8 @@ function ns.SlashCommand(msg)
         print(L["  /fqp wareffort always Always show AQ war effort pins"])
         print(L["  /fqp accept   Toggle auto-accept quests"])
         print(L["  /fqp turnin   Toggle auto-turn in quests"])
+        print(L["  /fqp breadcrumb Toggle skipped-breadcrumb warnings"])
+        print(L["  /fqp breadcrumbtest Preview the skipped-breadcrumb dialog"])
         print(L["  /fqp npctooltip Toggle quest accept and ready turn-in lines on NPC mouseover"])
         print(L["  /fqp nameplates Toggle quest icons on nameplates (on by default)"])
         print(L["  /fqp nameplatedebug Print visible nameplate icon state"])
@@ -616,6 +619,18 @@ function ns.SlashCommand(msg)
         ToggleFlag("autoTurnIn", L["Auto-turn in quests"])
         return
     end
+    if msg == "breadcrumb" then
+        ToggleFlag("warnSkippedBreadcrumb", L["Skipped breadcrumb warnings"])
+        return
+    end
+    if msg == "breadcrumbtest" then
+        if ns.Breadcrumbs and ns.Breadcrumbs.ShowPreview then
+            ns.Breadcrumbs.ShowPreview()
+        else
+            Print(L["Breadcrumb warnings are not loaded."])
+        end
+        return
+    end
     if msg == "refresh" then
         if ns.RefreshNow then
             ns.RefreshNow("slash")
@@ -696,6 +711,12 @@ function ns.PrintStats()
             tostring(status.managed or 0),
             tostring(status.cloudCount or 0)
         ))
+        print(("  refreshes %s (last %s) | display skips %s | pin moves %s"):format(
+            tostring(status.refreshes or 0),
+            tostring(status.lastRefreshReason or "none"),
+            tostring(status.displaySkips or 0),
+            tostring(status.pinMoves or 0)
+        ))
         if status.lastError then
             print("  last error: " .. tostring(status.lastError))
         end
@@ -742,6 +763,7 @@ function ns.PrintSettingsDebug()
         "autoAcceptLevelOffset",
         "iconScale",
         "waypointProvider",
+        "warnSkippedBreadcrumb",
         "autoTurnIn",
         "hideQuestTrackerInCombat",
         "showNPCTooltips",
@@ -1357,9 +1379,17 @@ function ns.TryRegisterSettings()
             )
             accept:SetPoint("TOPLEFT", automationHelp, "BOTTOMLEFT", -4, -4)
 
+            local breadcrumb = CreateOptionCheckbox(
+                self,
+                "warnSkippedBreadcrumb",
+                L["Warn on skipped breadcrumbs"],
+                L["Show a dialog when you accept a quest before you complete or pick up its breadcrumb quest."]
+            )
+            breadcrumb:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
+
             local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
                 L["Limit auto-accept quest level"], L["Only auto-accept quests at or below your level plus the offset. Unknown quest levels are left for manual acceptance."])
-            range:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
+            range:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", 0, 0)
             local slider = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
             slider:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 8, -24)
             slider:SetSize(240, 16)

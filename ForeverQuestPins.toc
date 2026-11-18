@@ -32,6 +32,7 @@ Eligibility.lua
 NPCTooltips.lua
 Nameplates.lua
 Waypoints.lua
+Breadcrumbs.lua
 MapPins.lua
 MapPins.xml
 AutoQuests.lua
