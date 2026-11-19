@@ -1,8 +1,8 @@
 {
   "artifact": {
-    "version": "1.1.1-dev.4588c44",
-    "commit": "4588c4426bf7a3faaf6a9e0033a67d33887341c9",
-    "sha256": "e3c32068ad197b6e415b3520937179fe927e3de9eff0412c1c47121846a243b0",
+    "version": "1.1.3-dev.4f628e8",
+    "commit": "4f628e8328ed8923ffba169c8b432996e0a7a326",
+    "sha256": "04632a6a68cda619eb7ac3a8b96351f097fea8ce46bb6f13d35aa580cd3ad60e",
     "ref": "preview",
     "flavor": "Forever",
     "contract_version": 4,
@@ -23,28 +23,28 @@
     "instance_quests": 1419
   },
   "counts": {
-    "quests": 5922,
-    "quests_with_coords": 5437,
-    "coord_pins": 9539,
-    "quests_with_turn_ins": 5669,
-    "turn_in_npcs": 1910,
-    "turn_in_objects": 210,
+    "quests": 6078,
+    "quests_with_coords": 5610,
+    "coord_pins": 10265,
+    "quests_with_turn_ins": 5887,
+    "turn_in_npcs": 1944,
+    "turn_in_objects": 218,
     "instance_quests": 678,
     "yearly_quests": 220,
-    "repeatable_quests": 745,
+    "repeatable_quests": 750,
     "monthly_quests": 0,
-    "breadcrumb_quests": 220,
-    "quests_with_races": 3910,
-    "quests_with_classes": 1033,
+    "breadcrumb_quests": 218,
+    "quests_with_races": 4005,
+    "quests_with_classes": 1059,
     "quests_with_skill": 230,
-    "quests_with_prereqs": 3188,
-    "quests_with_alt_quests": 554
+    "quests_with_prereqs": 3197,
+    "quests_with_alt_quests": 580
   },
   "start_gaps": {
-    "no_starter": 216,
+    "no_starter": 197,
     "item_no_drop_source": 249,
-    "item_drop_no_spawn": 11,
-    "starter_no_spawn": 9,
+    "item_drop_no_spawn": 12,
+    "starter_no_spawn": 10,
     "unmapped_zone": 0,
     "no_dungeon_entrance": 0,
     "missing_entity": 0,
@@ -60,6 +60,7 @@
       9301,
       9302,
       9304,
+      94973,
       94980,
       95664,
       95810
@@ -104,9 +105,9 @@
       5704,
       5705,
       5706,
-      7181,
-      7202,
-      7221
+      5707,
+      5708,
+      5709
     ],
     "starter_no_spawn": [
       6861,
@@ -116,16 +117,17 @@
       9310,
       79963,
       79970,
+      94399,
       95682,
       98109
     ]
   },
   "turn_ins": {
-    "quests_with_turn_ins": 5669,
-    "npcs": 1910,
-    "objects": 210,
-    "npc_quests": 5425,
-    "object_only_quests": 244
+    "quests_with_turn_ins": 5887,
+    "npcs": 1944,
+    "objects": 218,
+    "npc_quests": 5632,
+    "object_only_quests": 255
   },
   "policy_coverage": {
     "yearly_marked": 220,
