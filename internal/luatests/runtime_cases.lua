@@ -4405,6 +4405,8 @@ cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] =
     assert(loadfile("Database/ExcludedQuests.lua"))("ForeverQuestPins", ns)
     assert(ns.ExcludedQuests[60860])
     assert(ns.ExcludedQuests[60870])
+    assert(ns.ExcludedQuests[96339])
+    assert(ns.ExcludedQuests[96383])
     assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
     C_QuestLog.IsQuestFlaggedCompleted = function() return false end
     C_QuestLog.IsOnQuest = function() return false end
@@ -4413,6 +4415,10 @@ cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] =
     local available, reason = ns.IsQuestAvailable(60860, { minLevel = 1 })
     assert(available == false and reason == "excluded")
     available, reason = ns.IsQuestAvailable(60870, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(96339, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(96383, { minLevel = 1 })
     assert(available == false and reason == "excluded")
     available, reason = ns.IsQuestAvailable(60861, { minLevel = 1 })
     assert(available == true)
