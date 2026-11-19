@@ -878,7 +878,11 @@ local function ShowTooltip(pin, tooltip)
     local debugOn = ns.GetOption("debug")
     local primaryText, primaryLevel = QuestLineText(quests[1].id)
     local pr, pg, pb = QuestLineColor(primaryLevel)
+    -- The tooltip shows only level and title, so quests that render the same
+    -- line are indistinguishable to the player. List that text once.
+    local shownText = {}
     if primaryText then
+        shownText[primaryText] = true
         tooltip:SetText(primaryText, pr, pg, pb)
     elseif debugOn then
         tooltip:SetText(L["Quest "] .. tostring(quests[1].id), 1, 0.82, 0)
@@ -888,8 +892,11 @@ local function ShowTooltip(pin, tooltip)
     for i = 2, #quests do
         local extraText, extraLevel = QuestLineText(quests[i].id)
         if extraText then
-            local r, g, b = QuestLineColor(extraLevel)
-            tooltip:AddLine(extraText, r, g, b)
+            if not shownText[extraText] then
+                shownText[extraText] = true
+                local r, g, b = QuestLineColor(extraLevel)
+                tooltip:AddLine(extraText, r, g, b)
+            end
         elseif debugOn then
             tooltip:AddLine(L["Quest "] .. tostring(quests[i].id), 1, 0.82, 0)
         end

@@ -3320,6 +3320,63 @@ cases["map_pins_runtime.spawn_cloud_tracks_scaled_map_and_ui"] = function()
     end
 end
 
+cases["map_pins_runtime.tooltip_lists_duplicate_quest_titles_once"] = function()
+    setupPinRendering()
+    local crateIDs = { 91899, 91900, 91901, 91902, 91904, 91905, 91906, 91907 }
+    local titles, levels = {}, {}
+    local ids = {}
+    ns.Quests = {}
+    for i = 1, #crateIDs do
+        local questID = crateIDs[i]
+        ns.Quests[questID] = { mapID = 1, x = 50, y = 50, minLevel = 1 }
+        ids[#ids + 1] = questID
+        titles[questID] = "A Sealed Crate"
+        levels[questID] = 60
+    end
+    ns.Quests[93862] = { mapID = 1, x = 50, y = 50, minLevel = 1 }
+    ids[#ids + 1] = 93862
+    titles[93862] = "Crate Return"
+    levels[93862] = 60
+    -- The same title at another level is a different line, not a duplicate.
+    ns.Quests[99999] = { mapID = 1, x = 50, y = 50, minLevel = 1 }
+    ids[#ids + 1] = 99999
+    titles[99999] = "A Sealed Crate"
+    levels[99999] = 50
+    ns.ByMap = { [1] = ids }
+
+    ns.GetQuestTitle = function(questID) return titles[questID] end
+    ns.GetQuestDifficultyLevel = function(questID) return levels[questID] end
+
+    ns.MapPins:Refresh("duplicate-titles")
+    assert(ns.MapPins:GetStatus().count == 1, "quests share one pin")
+    assert(#pin.quests == #ids, "pin keeps every quest: " .. tostring(#pin.quests))
+
+    local function countLine(text)
+        local total = 0
+        for i = 1, #tooltipLines do
+            if tooltipLines[i] == text then
+                total = total + 1
+            end
+        end
+        return total
+    end
+
+    pin.scripts.OnEnter(pin)
+    assert(countLine("[60] A Sealed Crate") == 1, "duplicate title lines")
+    assert(countLine("[50] A Sealed Crate") == 1, "same title at another level")
+    assert(countLine("[60] Crate Return") == 1, "distinct title line")
+
+    options.debug = true
+    pin.scripts.OnEnter(pin)
+    local debugIDs = 0
+    for i = 1, #tooltipLines do
+        if tooltipLines[i]:find("^Quest ID: ") then
+            debugIDs = debugIDs + 1
+        end
+    end
+    assert(debugIDs == #ids, "debug keeps every quest id: " .. tostring(debugIDs))
+end
+
 cases["map_pins_runtime.stacked_quests_keep_separate_spawn_counts"] = function()
     setupPinRendering()
     local coords = { { 50, 50, 1 }, { 50.4, 50.1, 1 }, { 50.8, 50.2, 1 } }
@@ -4405,6 +4462,8 @@ cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] =
     assert(loadfile("Database/ExcludedQuests.lua"))("ForeverQuestPins", ns)
     assert(ns.ExcludedQuests[60860])
     assert(ns.ExcludedQuests[60870])
+    assert(ns.ExcludedQuests[96339])
+    assert(ns.ExcludedQuests[96383])
     assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
     C_QuestLog.IsQuestFlaggedCompleted = function() return false end
     C_QuestLog.IsOnQuest = function() return false end
@@ -4413,6 +4472,10 @@ cases["eligibility_runtime.test_excluded_quests_database_hides_reward_quests"] =
     local available, reason = ns.IsQuestAvailable(60860, { minLevel = 1 })
     assert(available == false and reason == "excluded")
     available, reason = ns.IsQuestAvailable(60870, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(96339, { minLevel = 1 })
+    assert(available == false and reason == "excluded")
+    available, reason = ns.IsQuestAvailable(96383, { minLevel = 1 })
     assert(available == false and reason == "excluded")
     available, reason = ns.IsQuestAvailable(60861, { minLevel = 1 })
     assert(available == true)
