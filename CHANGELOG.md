@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.11 - 2026-11-18
+
+- Limit auto-accept to a level range around your level with a two-handle slider. The lower bound now reaches 10 levels below you and the upper bound stays at 5 above. The limit is still off by default.
+- Add a "Don't auto-accept grey quests" option. It works with or without the level limit.
+- Dim the auto-accept level controls in options and the setup guide while auto-accept is off.
+
 ## 1.0.10 - 2026-11-17
 
 - Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning. Toggle it in options or with `/fqp breadcrumb`.
