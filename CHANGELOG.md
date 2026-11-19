@@ -5,6 +5,7 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 ## 1.0.12 - 2026-11-19
 
 - Hide "Legacy Reward: Replica Ironforge Air Rifle" and "Legacy Reward: Spectral Bear Cub" quest pins.
+- Show a quest title once on a map pin when several quests at that spot share it.
 
 ## 1.0.11 - 2026-11-18
 

@@ -4,5 +4,6 @@ ns.WhatsNew = {
     version = "1.0.12",
     lines = {
         "Hide \"Legacy Reward: Replica Ironforge Air Rifle\" and \"Legacy Reward: Spectral Bear Cub\" quest pins.",
+        "Show a quest title once on a map pin when several quests at that spot share it.",
     },
 }
