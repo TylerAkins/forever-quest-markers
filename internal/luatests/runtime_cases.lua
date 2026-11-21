@@ -4064,6 +4064,17 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     sparkle.scripts.OnClick(sparkle)
     assert(next(writes) == nil, "the sparkle choice must remain staged")
     button("Next").scripts.OnClick()
+    local enhance, nearest
+    for _, control in ipairs(controls) do
+        if control.key == "enhanceQuestTracker" then enhance = control end
+        if control.key == "selectNearestQuest" then nearest = control end
+    end
+    assert(enhance and enhance.shown, "the setup guide must offer the enhanced quest tracker")
+    assert(nearest and nearest.shown, "the setup guide must offer the nearest quest option")
+    nearest.checked = true
+    nearest.scripts.OnClick(nearest)
+    assert(next(writes) == nil, "the tracker choice must remain staged")
+    button("Next").scripts.OnClick()
     local range, limit
     for _, control in ipairs(controls) do
         if rawget(control, "isLevelRange") then range = control end
@@ -4089,6 +4100,7 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     assert(writes.autoAcceptRangeEnabled == true and writes.autoAcceptLevelOffset == 3)
     assert(writes.autoAcceptMinLevelOffset == -5)
     assert(writes.sparkleQuestItems == true)
+    assert(writes.selectNearestQuest == true)
     ns.ShowSetup()
     button("Use Defaults").scripts.OnClick()
     assert(writes.defaults == true)
