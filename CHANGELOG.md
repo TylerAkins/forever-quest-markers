@@ -2,6 +2,14 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.0.14 - 2026-11-20
+
+- Group Blizzard's tracked quests by zone, keep the current zone first, and add sort and filter options. Right-click the **Quests** header or use the new **Quest tracker** settings section. Zone headers collapse and remember their state per character. On by default.
+- Add a **Completed quests only** tracker filter that includes quests done and waiting to be turned in.
+- Add an off-by-default **Select nearest quest** option that super-tracks the closest tracked quest as you move. Use `/fqp nearest` to select it once.
+- Split the addon settings into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections. The in-world navigation option now shows a note instead of a checkbox when the client does not provide its CVar.
+- **Show tint for quests new in WoW Forever** now defaults off.
+
 ## 1.0.13 - 2026-11-20
 
 - Update the QuestieDB Forever artifact to `afe2c0df6f656f6cd7c2e7d7386292e7efbffdd207a25cd1e142b75e8b026004` (build `9cf27d6491dd80f1998aa0a846dbea9a3c5daad9`).

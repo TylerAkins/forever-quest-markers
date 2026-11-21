@@ -37,4 +37,5 @@ MapPins.lua
 MapPins.xml
 AutoQuests.lua
 QuestLinks.lua
+Tracker.lua
 Core.lua

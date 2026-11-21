@@ -61,6 +61,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"Nameplates.lua":                    "Waypoints.lua",
 		"Waypoints.lua":                     "Breadcrumbs.lua",
 		"Breadcrumbs.lua":                   "MapPins.lua",
+		"QuestLinks.lua":                    "Tracker.lua",
+		"Tracker.lua":                       "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
