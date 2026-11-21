@@ -6,6 +6,7 @@ ForeverQuestPins = ns
 local eventFrame = CreateFrame("Frame")
 local pending = false
 local accum = 0
+local taintScanned = false
 local REFRESH_GAP = 0.15
 local hiddenQuestTracker
 local questTrackerAlphaBeforeCombat
@@ -50,6 +51,7 @@ local WATCHED_EVENTS = {
     "ZONE_CHANGED_NEW_AREA",
     "NAME_PLATE_UNIT_ADDED",
     "NAME_PLATE_UNIT_REMOVED",
+    "ADDON_ACTION_BLOCKED",
 }
 
 function ns.RequestRefresh(reason)
@@ -123,17 +125,29 @@ local function QuestIDFromEvent(event, ...)
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
+    if event == "ADDON_ACTION_BLOCKED" then
+        local blockedAddon = ...
+        if blockedAddon == ADDON_NAME and ns.RunTaintScan and not taintScanned then
+            -- The block names us but every frame in its stack is Blizzard code.
+            -- Capture what those frames hold before the session moves on; the
+            -- taint stays until something rewrites it. Once per session is
+            -- enough and keeps a combat map from printing the report repeatedly.
+            taintScanned = true
+            if C_Timer and C_Timer.After then
+                C_Timer.After(0, function()
+                    if ns.RunTaintScan then
+                        ns.RunTaintScan()
+                    end
+                end)
+            end
+        end
+        return
+    end
     if event == "ADDON_LOADED" then
         local loaded = ...
         ns.TryRegisterQuestLinks()
         if ns.TryRegisterQuestTracker then
             ns.TryRegisterQuestTracker()
-        end
-        if loaded == "Blizzard_WorldMap" then
-            if ns.TryRegisterWorldMapDropdown then
-                ns.TryRegisterWorldMapDropdown()
-            end
-            return
         end
         if loaded ~= ADDON_NAME then
             return
@@ -141,9 +155,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.InitSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
-        if ns.TryRegisterWorldMapDropdown then
-            ns.TryRegisterWorldMapDropdown()
-        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -176,9 +187,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
             ns.TryRegisterQuestTracker()
         end
         ns.TryRegisterSettings()
-        if ns.TryRegisterWorldMapDropdown then
-            ns.TryRegisterWorldMapDropdown()
-        end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end
@@ -192,9 +200,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.TryRegisterSettings()
         if ns.TryRegisterQuestTracker then
             ns.TryRegisterQuestTracker()
-        end
-        if ns.TryRegisterWorldMapDropdown then
-            ns.TryRegisterWorldMapDropdown()
         end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()

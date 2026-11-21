@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.2 - 2026-11-21
+
+- Stop the blocked-action popup when opening the world map in combat. The addon no longer post-hooks Blizzard's map frame or adds its filters to the world map's Show menu, both of which tainted the map layout. The pin filters now have their own button on the world map.
+- Fall back to Blizzard's flat quest list when the client refuses a zone header in combat, instead of raising a Lua error in the enhanced tracker.
+- Add `/fqp taint`, a debug command that lists Blizzard fields an addon tainted and names the addon.
+
 ## 1.1.1 - 2026-11-20
 
 - Let Shift-click hide quest pins on world and continent maps, where pins ignored clicks so the map could still be dragged. Pin tooltips there now mention Shift-click.

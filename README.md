@@ -56,7 +56,7 @@ The optional **Don't auto-accept grey quests** checkbox defaults off. It skips q
 
 **Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
-Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
+Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -126,6 +126,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
+| `/fqp nearest` | Select the closest tracked quest once |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print the database commit, quest count, and painted pin count |
@@ -134,6 +135,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp available` | Starts that should pin on the open map |
 | `/fqp wipe` | Reset options (recovery; see Support) |
 | `/fqp apis` | Which Forever map/quest APIs this client exposes |
+| `/fqp taint` | List Blizzard fields tainted by an addon (debug; run after a blocked-action popup) |
 
 ## Known limitations
 
@@ -158,6 +160,7 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong). For nameplate icon issues, include `/fqp nameplatedebug`.
+- For a blocked-action popup or taint report, include the protected function name from the popup and the output of `/fqp taint`, run right after the popup appears and before `/reload`.
 - Quest **database** mistakes usually belong in [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, or in this repo’s QuestieDB converter if QuestieDB has the quest but we dropped a spawn
 - Quest **policy** mistakes (holiday membership or instance tags) belong in [Questie](https://github.com/Questie/Questie) corrections, or in the matching parser here
 - If you ran a **0.1.10–0.1.16** build and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
