@@ -1113,6 +1113,32 @@ end
             assert(not ns.IsQuestHidden(301))
 
 end
+cases["pin_filters_runtime.test_hidden_quests_adopt_pre_1_1_character_key"] = function()
+    ns = {}
+    UnitName = function() return "Thrall", "Doomhammer" end
+    GetRealmName = function() return "" end
+    C_CVar = nil
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("HiddenQuests.lua"))("ForeverQuestPins", ns)
+    ns.InitSettings()
+
+    -- 1.0.13 keyed this character by the realm name.
+    ForeverQuestPinsDB.hiddenQuests = {
+        ["Thrall-Forever"] = { [101] = true, [102] = true },
+        ["Jaina-Forever"] = { [201] = true },
+    }
+    assert(ns.IsQuestHidden(101), "a list saved before 1.1.0 is still visible")
+    assert(ForeverQuestPinsDB.hiddenQuests["Thrall-Doomhammer"][101] == true)
+    assert(ForeverQuestPinsDB.hiddenQuests["Thrall-Forever"] == nil)
+
+    -- A list written since the upgrade keeps both sets.
+    UnitName = function() return "Jaina", "Proudmoore" end
+    ForeverQuestPinsDB.hiddenQuests["Jaina-Proudmoore"] = { [202] = true }
+    assert(ns.IsQuestHidden(201) and ns.IsQuestHidden(202))
+    assert(ForeverQuestPinsDB.hiddenQuests["Jaina-Proudmoore"][201] == true)
+    assert(ForeverQuestPinsDB.hiddenQuests["Jaina-Forever"] == nil)
+end
+
 cases["pin_filters_runtime.test_hidden_quests_survive_init_and_wipe_settings"] = function()
 
             ns = {}
@@ -2817,10 +2843,12 @@ local function setupPinRendering()
     map.IsShown = function() return true end
     map.ScrollContainer = {}
     WorldMapFrame = map
-    CreateFrame = function(_, _, parent)
+    CreateFrame = function(frameType, _, parent)
         local created = frame()
         created.parent = parent
-        if parent == UIParent then
+        if frameType == "Frame" and not parent then
+            mapWatch = created
+        elseif parent == UIParent then
             cloudFrames[#cloudFrames + 1] = created
         elseif parent then
             pin = created
@@ -2893,6 +2921,39 @@ cases["map_pins_runtime.tracking_respects_map_level"] = function()
     for _, line in ipairs(tooltipLines) do
         assert(not line:find("Click to track", 1, true))
     end
+end
+
+cases["map_pins_runtime.shift_click_hides_on_click_through_maps"] = function()
+    setupPinRendering()
+    local shiftHeld = false
+    local hidden = {}
+    IsShiftKeyDown = function() return shiftHeld end
+    ns.HideQuests = function(ids)
+        for i = 1, #ids do
+            hidden[ids[i]] = true
+        end
+        return #ids
+    end
+    hooksecurefunc = function() end
+    C_Map.GetMapInfo = function() return { mapType = 2 } end
+
+    ns.MapPins:HookMap()
+    ns.MapPins:Refresh("continent")
+    assert(pin.clickEnabled == false, "plain clicks stay click-through on a continent map")
+    pin.scripts.OnEnter(pin)
+    assert(tooltipHas("Shift-click to hide this marker."))
+    assert(not tooltipHas("Click to track this quest start."))
+
+    shiftHeld = true
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(pin.clickEnabled == true, "holding Shift lets the pin receive the hide click")
+    pin.scripts.OnClick(pin, "LeftButton")
+    assert(trackedQuestID == nil)
+    assert(hidden[101])
+
+    shiftHeld = false
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(pin.clickEnabled == false, "releasing Shift restores click-through")
 end
 
 cases["map_pins_runtime.delayed_title_updates_hover_without_request_loop"] = function()

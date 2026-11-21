@@ -36,6 +36,48 @@ local function CharacterKey()
     return ns.CharacterKey()
 end
 
+-- 1.0.13 keyed hidden pins by <Name>-<Realm> from GetRealmName, which can be
+-- empty on Forever. 1.1.0 keys by the surname instead. Adopt any old bucket
+-- for this character so an upgrade does not look like the list was wiped.
+local function CharacterName()
+    local name = UnitName and UnitName("player")
+    if type(name) == "string" and name ~= "" then
+        return name
+    end
+    return nil
+end
+
+local function MergeLegacyBucket(all, key)
+    local name = CharacterName()
+    if not name then
+        return all[key]
+    end
+    local prefix = name .. "-"
+    local legacyKeys = {}
+    for legacy in pairs(all) do
+        if legacy ~= key and type(legacy) == "string"
+            and type(all[legacy]) == "table" and legacy:sub(1, #prefix) == prefix then
+            legacyKeys[#legacyKeys + 1] = legacy
+        end
+    end
+    for i = 1, #legacyKeys do
+        local legacy = legacyKeys[i]
+        local old = all[legacy]
+        local bucket = all[key]
+        if type(bucket) ~= "table" then
+            all[key] = old
+        else
+            for questID, value in pairs(old) do
+                if bucket[questID] == nil then
+                    bucket[questID] = value
+                end
+            end
+        end
+        all[legacy] = nil
+    end
+    return all[key]
+end
+
 local function Bucket(create)
     local db = ns.db
     local key = CharacterKey()
@@ -50,7 +92,7 @@ local function Bucket(create)
         all = {}
         db.hiddenQuests = all
     end
-    local bucket = all[key]
+    local bucket = MergeLegacyBucket(all, key)
     if type(bucket) ~= "table" then
         if not create then
             return nil

@@ -62,7 +62,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show**
 |--------|---------|
 | Show quest-start pins | On |
 | Show quest pins on world and continent maps | On (turn off to keep pins on zone, city, and dungeon maps) |
-| Click pins to track quest starts | On for zone maps (turn off to let clicks pass through pins; pin tooltips remain available, but Shift-click hiding is unavailable) |
+| Click pins to track quest starts | On for zone maps (turn off to let plain clicks pass through pins; pin tooltips and Shift-click hiding still work) |
 | Track from world and continent maps | Off |
 | Show trivial / low-level pins | Off (hides pins for quests too far below your character) |
 | Low-level range slider | 9 (hide quests 9+ levels below you; adjustable from 3 to 15, inactive while low-level pins are shown) |
@@ -93,7 +93,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show**
 | Debug tooltips | Off |
 | Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |
 
-Shift-click a quest-start marker to hide it. On a stacked marker every quest is hidden, so the marker disappears. Hidden quests also drop out of NPC mouseover tooltips, and `/fqp why <id>` reports them as `user-hidden`. The list is per character but saved in the account SavedVariables file (not the CVar mirror), so the settings repair below covers it. Use **Reset hidden quest pins** in settings, or `/fqp hidden` and `/fqp unhide <id|all>`, to restore them.
+Shift-click a quest-start marker on any map to hide it. On a stacked marker every quest is hidden, so the marker disappears. Hidden quests also drop out of NPC mouseover tooltips, and `/fqp why <id>` reports them as `user-hidden`. The list is per character but saved in the account SavedVariables file (not the CVar mirror), so the settings repair below covers it. Use **Reset hidden quest pins** in settings, or `/fqp hidden` and `/fqp unhide <id|all>`, to restore them.
 
 Click a quest-start marker to set a waypoint at the nearest actual spawn in its cluster. For stacked markers, the first quest is selected. When that quest is accepted, Blizzard tracking takes over its objectives and turn-in. With TomTom selected, the waypoint follows `C_QuestLog.GetNextWaypoint` as quest progress changes. If Blizzard has no location yet, no objective coordinate is invented. Selecting TomTom without it loaded displays a message.
 
