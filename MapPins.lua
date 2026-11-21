@@ -56,6 +56,9 @@ local lastMouseX, lastMouseY
 local liveAccum = 0
 local stitchedPins = false
 local ReprojectStitchedPins
+-- Pins stay click-through on world and continent maps so the map can still be
+-- dragged. While Shift is held they accept clicks so Shift-click can hide them.
+local shiftClickArmed = false
 local canvasCache
 local canvasCacheName
 local lastStatus = {
@@ -831,6 +834,22 @@ local function PinTrackingEnabled()
         and info.mapType ~= (types and types.Continent or 2)
 end
 
+-- Shift-click hiding works on every map. Tracking clicks stay limited to maps
+-- where tracking is enabled, so a plain click never turns into a failed track.
+local function PinClicksEnabled()
+    return PinTrackingEnabled() or shiftClickArmed
+end
+
+local function SyncPinClicks()
+    local enabled = PinClicksEnabled()
+    for i = 1, #active do
+        local pin = active[i]
+        if pin.SetMouseClickEnabled then
+            pin:SetMouseClickEnabled(enabled)
+        end
+    end
+end
+
 local function ShowTooltip(pin, tooltip)
     if not pin.questID and not (pin.quests and pin.quests[1]) then
         return
@@ -943,8 +962,8 @@ local function ShowTooltip(pin, tooltip)
     end
     if PinTrackingEnabled() then
         tooltip:AddLine(L["Click to track this quest start."], 1, 1, 1)
-        tooltip:AddLine(L["Shift-click to hide this marker."], 0.7, 0.7, 0.7)
     end
+    tooltip:AddLine(L["Shift-click to hide this marker."], 0.7, 0.7, 0.7)
     tooltip:Show()
 end
 
@@ -1286,7 +1305,7 @@ ReprojectStitchedPins = function(mapID)
         pin.nx, pin.ny = project(pin.attNx, pin.attNy)
         pin.attNx, pin.attNy = pin.nx, pin.ny
         pin.live = nil
-        if pin.SetMouseClickEnabled then pin:SetMouseClickEnabled(PinTrackingEnabled()) end
+        if pin.SetMouseClickEnabled then pin:SetMouseClickEnabled(PinClicksEnabled()) end
         for _, point in ipairs(pin.spawnPoints or {}) do
             point.nx, point.ny = project(point.nx, point.ny)
         end
@@ -1318,7 +1337,7 @@ local function AcquirePin(parent)
     pin:SetParent(parent)
     if pin.EnableMouse then
         pin:EnableMouse(true)
-        pin:SetMouseClickEnabled(PinTrackingEnabled())
+        pin:SetMouseClickEnabled(PinClicksEnabled())
     end
     pin.placedParent = nil
     if pin.SetIgnoreParentScale then
@@ -1337,14 +1356,14 @@ function ForeverQuestPinsMapPinMixin:OnClick(button)
     if button ~= "LeftButton" then
         return
     end
-    if not PinTrackingEnabled() then
+    local shiftDown = IsShiftKeyDown and IsShiftKeyDown() or false
+    if not shiftDown and not PinTrackingEnabled() then
         return
     end
     if IsGamepadUIEnabled() and C_Timer and C_Timer.After then
         -- MapCanvas dispatches controller pin clicks from its input handler.
         local pin = self
         local questID, data = pin.questID, pin.data
-        local shiftDown = IsShiftKeyDown and IsShiftKeyDown() or false
         C_Timer.After(0, function()
             if pin.questID == questID and pin.data == data then
                 OnPinClick(pin, shiftDown)
@@ -1352,7 +1371,7 @@ function ForeverQuestPinsMapPinMixin:OnClick(button)
         end)
         return
     end
-    OnPinClick(self)
+    OnPinClick(self, shiftDown)
 end
 
 function ForeverQuestPinsMapPinMixin:OnMouseEnter()
@@ -2140,6 +2159,7 @@ end
 local function OnMapOpen()
     mapOpen = true
     lastStitchedObserved = IsOpenMapStitched()
+    shiftClickArmed = IsShiftKeyDown and IsShiftKeyDown() or false
     ResetSizeSnapshots()
     InvalidateCanvas()
     ns.RequestRefresh("map-show")
@@ -2154,6 +2174,7 @@ end
 local function OnMapClose()
     mapOpen = false
     lastStitchedObserved = nil
+    shiftClickArmed = false
     sizeSnapshot = {}
     sizeWatchFrames = {}
     liveAccum = 0
@@ -2175,6 +2196,11 @@ mapWatch:SetScript("OnUpdate", function(_, elapsed)
     if stitched ~= lastStitchedObserved then
         lastStitchedObserved = stitched
         ns.RequestRefresh("openmap-mode")
+    end
+    local shiftDown = IsShiftKeyDown and IsShiftKeyDown() or false
+    if shiftDown ~= shiftClickArmed then
+        shiftClickArmed = shiftDown
+        SyncPinClicks()
     end
     local sizeChanged = MapSizeChanged()
     if sizeChanged then

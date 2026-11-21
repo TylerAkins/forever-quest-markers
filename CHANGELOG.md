@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.1 - 2026-11-20
+
+- Let Shift-click hide quest pins on world and continent maps, where pins ignored clicks so the map could still be dragged. Pin tooltips there now mention Shift-click.
+- Recover hidden quest pins saved before 1.1.0. Those lists were keyed by realm name, so they looked empty after 1.1.0 changed the character key.
+
 ## 1.1.0 - 2026-11-20
 
 - Group Blizzard's tracked quests by zone, keep the current zone first, and add sort and filter options. Right-click the **Quests** header or use the new **Quest tracker** settings section. Zone headers collapse and remember their state per character. On by default.

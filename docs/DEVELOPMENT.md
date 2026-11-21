@@ -11,7 +11,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
 | `Config.lua` | Saved variables, slash commands, settings panel |
 | `Sparkle.lua` | Native quest item sparkle CVar, login and graphics-change reapply, combat deferral |
-| `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Realm"]` |
+| `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Surname"]`; pre-1.1.0 realm-keyed buckets are adopted on first access |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `Events.lua` | Holiday windows and AQ war effort phase state from generated policy |
 | `MapPins.lua` | World-map start pins |
@@ -264,7 +264,7 @@ menus, item buttons, timers, and animations stay Blizzard's.
   `ObjectiveTrackerModuleMinimizeButtonTemplate` atlas, and hide their quest
   header button so quest click, hover, and Copy Wowhead URL handlers never see a
   string block ID.
-- Collapsed zones live in `ForeverQuestPinsDB.trackerCollapsedZones["Name-Realm"]`.
+- Collapsed zones live in `ForeverQuestPinsDB.trackerCollapsedZones["Name-Surname"]`.
   The table is outside `ns.defaults`, so settings synchronization never copies it.
 - `ObjectiveTrackerFrame:SetTrackerTargetButton`, `SelectFirstButton`, and
   `UpdateSmartNavigationOverrides` temporarily point `firstBlock` at the first
