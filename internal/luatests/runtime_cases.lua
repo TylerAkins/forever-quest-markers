@@ -2916,21 +2916,18 @@ end
 
 cases["map_pins_runtime.icon_scale_changes_rendered_pin_size"] = function()
     setupPinRendering()
-    local acquiredPin = {
-        SetSize = function(self, width, height) self.width, self.height = width, height end,
-        SetAlpha = function() end,
-    }
-    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
-    assert(acquiredPin.width == 24 and acquiredPin.height == 24)
+    options.iconScale = 100
+    ns.MapPins:Refresh("size")
+    assert(pin.width == 24 and pin.height == 24)
     options.iconScale = 50
-    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
-    assert(acquiredPin.width == 12 and acquiredPin.height == 12)
+    ns.MapPins:Refresh("size")
+    assert(pin.width == 12 and pin.height == 12)
     options.iconScale = 150
-    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
-    assert(acquiredPin.width == 36 and acquiredPin.height == 36)
+    ns.MapPins:Refresh("size")
+    assert(pin.width == 36 and pin.height == 36)
 end
 
-cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = function()
+cases["map_pins_runtime.gamepad_hover_uses_saved_pin_center_and_private_tooltip"] = function()
     setupPinRendering()
     ns.MapPins:Refresh("gamepad-test")
     pin._fqpGetCenter = function() return 320, 240 end
@@ -2964,17 +2961,6 @@ cases["map_pins_runtime.gamepad_cursor_cannot_read_addon_pin_centers"] = functio
     GetCVarBool = function() return true end
     assert(ns.MapPins:FindGamepadCursorPin() == pin, "addon map tooltips must remain available when Blizzard suppresses its gamepad tooltips")
     GetCVarBool = nil
-    local acquiredPin = {
-        GetCenter = function() return 320, 240 end,
-        UseFrameLevelType = function() end,
-        SetScalingLimits = function() end,
-        SetSize = function() end,
-        SetAlpha = function() end,
-        Texture = { ClearAllPoints = function() end, SetAllPoints = function() end },
-    }
-    ForeverQuestPinsMapPinMixin.OnLoad(acquiredPin)
-    assert(acquiredPin:GetCenter() == nil, "gamepad cursor must not discover addon pin")
-    assert(acquiredPin._fqpGetCenter(acquiredPin) == 320)
 end
 
 cases["map_pins_runtime.gamepad_hover_uses_normalized_world_map_cursor"] = function()
@@ -3091,34 +3077,42 @@ cases["map_pins_runtime.gamepad_mode_transition_replaces_existing_mouse_tooltip"
         "the gamepad poll must replace an existing mouse tooltip when the input mode changes")
 end
 
-cases["map_pins_runtime.gamepad_mode_keeps_pins_out_of_blizzard_pin_pool"] = function()
+cases["map_pins_runtime.pins_never_use_blizzard_pin_pool"] = function()
     setupPinRendering()
     local previousMixin = MapCanvasPinMixin
     local previousAcquirePin = WorldMapFrame.AcquirePin
     local previousRemovePin = WorldMapFrame.RemovePin
     local previousInputUtil = InputUtil
     local acquireCalls, removeCalls = 0, 0
+    -- The client exposes these; calling AcquirePin from addon code taints the
+    -- canvas pin pools even when the acquisition itself succeeds.
     MapCanvasPinMixin = { GetCenter = function(self) return self.centerX, self.centerY end }
     WorldMapFrame.AcquirePin = function()
         acquireCalls = acquireCalls + 1
-        error("gamepad pins must not use WorldMapFrame:AcquirePin")
+        error("map pins must not use WorldMapFrame:AcquirePin")
     end
     WorldMapFrame.RemovePin = function() removeCalls = removeCalls + 1 end
-    InputUtil = { IsGamepadUIEnabled = function() return true end }
 
-    ns.MapPins:Refresh("gamepad-test")
-    assert(acquireCalls == 0, "gamepad pins must bypass Blizzard's MapCanvas pin pool")
-    assert(pin and pin.parent == mapCanvas and not pin.managed,
-        "gamepad pins must be ordinary frames parented to the map canvas")
+    -- Mouse mode on a non-stitched map: the path that used to acquire one of
+    -- Blizzard's pins and taint the canvas pin pools.
+    InputUtil = { IsGamepadUIEnabled = function() return false end }
+    ns.MapPins:Refresh("mouse-test")
+    assert(acquireCalls == 0, "ordinary map pins must stay out of Blizzard's pin pool")
+    assert(pin and pin.parent == mapCanvas,
+        "pins must be ordinary frames parented to the map canvas")
     assert(pin.scripts.OnClick == ForeverQuestPinsMapPinMixin.OnClick,
-        "ordinary gamepad-mode pins must keep the addon's click handler")
+        "ordinary pins must keep the addon's click handler")
 
     ns.MapPins:Clear()
-    assert(removeCalls == 0, "ordinary gamepad-mode pins must not call WorldMapFrame:RemovePin")
+    assert(removeCalls == 0, "ordinary pins must not call WorldMapFrame:RemovePin")
 
-    MapCanvasPinMixin = previousMixin
+    InputUtil = { IsGamepadUIEnabled = function() return true end }
+    ns.MapPins:Refresh("gamepad-test")
+    assert(acquireCalls == 0, "gamepad pins must stay out of Blizzard's pin pool")
+
     WorldMapFrame.AcquirePin = previousAcquirePin
     WorldMapFrame.RemovePin = previousRemovePin
+    MapCanvasPinMixin = previousMixin
     InputUtil = previousInputUtil
 end
 
@@ -3135,7 +3129,7 @@ cases["map_pins_runtime.gamepad_pins_clear_discovered_map_art"] = function()
     end
 
     ns.MapPins:Refresh("gamepad-test")
-    assert(pin and not pin.managed, "gamepad pins must stay ordinary frames")
+    assert(pin, "gamepad pins must stay ordinary frames")
     assert(pin.frameLevel == 2023,
         "gamepad pins must use the map's pin level so discovered-area art cannot cover them")
 
@@ -3154,18 +3148,6 @@ cases["map_pins_runtime.gamepad_pins_clear_discovered_map_art"] = function()
     ns.MapPins:Refresh("gamepad-test")
     assert(pin.frameLevel == 9901,
         "stitched map art levels must stay above the pin floor")
-end
-
-cases["map_pins_runtime.pin_center_is_hidden_when_map_canvas_acquires_a_pin"] = function()
-    setupPinRendering()
-    local acquiredPin = {
-        GetCenter = function() return 320, 240 end,
-        SetSize = function() end,
-        SetAlpha = function() end,
-    }
-    ForeverQuestPinsMapPinMixin.OnAcquired(acquiredPin)
-    assert(acquiredPin:GetCenter() == nil, "the gamepad cursor must not discover an acquired addon pin")
-    assert(acquiredPin._fqpGetCenter(acquiredPin) == 320, "addon hover detection must retain the real center")
 end
 
 cases["map_pins_runtime.gamepad_cursor_poll_owns_tooltip_lifecycle"] = function()
@@ -6286,6 +6268,302 @@ cases["tracker_runtime.nearest_quest_ticker_starts_and_stops"] = function()
     options.selectNearestQuest = false
     tracker.UpdateNearestQuestTicker()
     assert(tickers[1].cancelled)
+end
+
+local SPARKLE_CVAR = "outlineModeShowLootEffectWhenDisabled"
+local SPARKLE_MIRROR_CVAR = "ForeverQuestPinsSettings"
+
+local function sparkleFixture(initialValue, mirrorText)
+    local state = {
+        cvar = initialValue or "0",
+        mirror = mirrorText or "",
+        reads = {},
+        writes = {},
+        unexpected = {},
+        messages = {},
+        timers = {},
+    }
+    -- Sparkle may touch only the one loot CVar. Config also mirrors settings
+    -- through its own CVar; nothing else is acceptable. Record violations
+    -- instead of throwing, because Sparkle wraps its CVar calls in pcall.
+    local function check(key)
+        if key ~= SPARKLE_CVAR and key ~= SPARKLE_MIRROR_CVAR then
+            state.unexpected[#state.unexpected + 1] = tostring(key)
+        end
+    end
+    C_CVar = {
+        GetCVar = function(key)
+            check(key)
+            state.reads[#state.reads + 1] = key
+            if key == SPARKLE_CVAR then
+                return state.cvar
+            end
+            return state.mirror
+        end,
+        SetCVar = function(key, value)
+            check(key)
+            state.writes[#state.writes + 1] = { key = key, value = value }
+            if key == SPARKLE_CVAR then
+                state.cvar = value
+            elseif key == SPARKLE_MIRROR_CVAR then
+                state.mirror = value
+            end
+        end,
+        RegisterCVar = function() end,
+    }
+    CreateFrame = function()
+        local frame = {}
+        function frame:SetScript(name, fn) self[name] = fn end
+        function frame:RegisterEvent(name)
+            self.events = self.events or {}
+            self.events[name] = true
+        end
+        state.frame = frame
+        return frame
+    end
+    C_Timer = {
+        After = function(delay, callback)
+            state.timers[#state.timers + 1] = { delay = delay, callback = callback }
+        end,
+    }
+    InCombatLockdown = function() return state.combat == true end
+    UnitAffectingCombat = function() return false end
+    print = function(message) state.messages[#state.messages + 1] = message end
+
+    function state.assertClean()
+        assert(#state.unexpected == 0,
+            "unexpected CVar access: " .. table.concat(state.unexpected, ", "))
+    end
+    function state.targetWrites()
+        state.assertClean()
+        local values = {}
+        for _, write in ipairs(state.writes) do
+            if write.key == SPARKLE_CVAR then
+                values[#values + 1] = write.value
+            end
+        end
+        return values
+    end
+    function state.fire(event, ...)
+        assert(state.frame and state.frame.OnEvent, "Sparkle frame did not register an event handler")
+        state.frame.OnEvent(state.frame, event, ...)
+        state.assertClean()
+    end
+    function state.runTimers()
+        state.assertClean()
+        local pending = state.timers
+        state.timers = {}
+        for _, timer in ipairs(pending) do
+            timer.callback()
+        end
+        state.assertClean()
+        return pending
+    end
+    return state
+end
+
+local function loadSparkleAddon()
+    ns = {}
+    ForeverQuestPinsDB = ForeverQuestPinsDB or {}
+    ForeverQuestPinsCharDB = ForeverQuestPinsCharDB or {}
+    ForeverQuestPinsDB_Settings = ForeverQuestPinsDB_Settings or {}
+    ForeverQuestPinsCharacterSettings = ForeverQuestPinsCharacterSettings or {}
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("Sparkle.lua"))("ForeverQuestPins", ns)
+    ns.InitSettings()
+end
+
+cases["sparkle_runtime.default_is_on_and_existing_settings_survive"] = function()
+    local state = sparkleFixture("0")
+    ForeverQuestPinsDB = { _revision = 7, enabled = false, showPvP = true, trivialLevelGap = 5 }
+    loadSparkleAddon()
+
+    local db = ns.GetSettings()
+    assert(db.sparkleQuestItems == true, "sparkles default on")
+    assert(db.enabled == false and db.showPvP == true and db.trivialLevelGap == 5,
+        "existing options survive")
+    assert(db._revision == 7, "adding a default does not bump the revision")
+    assert(state.mirror:find("sparkleQuestItems=1", 1, true), "the mirror gains the new option")
+
+    state.fire("PLAYER_LOGIN")
+    assert(state.cvar == "1", "login turns the native sparkle on")
+    assert(db._revision == 7, "applying the CVar does not bump the revision")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.enabling_writes_only_the_loot_sparkle_cvar"] = function()
+    local state = sparkleFixture("0")
+    loadSparkleAddon()
+
+    state.fire("PLAYER_LOGIN")
+    local writes = state.targetWrites()
+    assert(#writes == 1 and writes[1] == "1")
+    ns.SetOption("sparkleQuestItems", true)
+    assert(#state.targetWrites() == 1, "an already-on option does not rewrite the CVar")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.outline_cvars_are_never_read_or_written"] = function()
+    local state = sparkleFixture("1")
+    loadSparkleAddon()
+
+    state.fire("PLAYER_LOGIN")
+    ns.SetOption("sparkleQuestItems", false)
+    ns.SetOption("sparkleQuestItems", true)
+    state.cvar = "0"
+    state.fire("CVAR_UPDATE", "graphicsquality", "3")
+    state.runTimers()
+
+    for _, key in ipairs(state.reads) do
+        assert(key == SPARKLE_CVAR or key == SPARKLE_MIRROR_CVAR)
+    end
+    assert(table.concat(state.targetWrites(), ",") == "0,1,1")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.graphics_quality_change_reapplies_after_delay"] = function()
+    local state = sparkleFixture("1")
+    loadSparkleAddon()
+
+    state.fire("PLAYER_LOGIN")
+    state.runTimers()
+    assert(#state.targetWrites() == 0, "login leaves an already-on CVar alone")
+
+    state.cvar = "0"
+    state.fire("CVAR_UPDATE", "graphicsquality", "3")
+    assert(#state.targetWrites() == 0, "the write waits for the delayed apply")
+    local timers = state.runTimers()
+    assert(#timers == 1)
+    assert(state.cvar == "1", "a graphics preset is repaired")
+
+    state.cvar = "0"
+    state.fire("CVAR_UPDATE", "raidgraphicsquality", "2")
+    state.runTimers()
+    assert(state.cvar == "1")
+
+    state.cvar = "0"
+    state.fire("CVAR_UPDATE", "sound", "0")
+    assert(#state.timers == 0, "unrelated CVars do not schedule an apply")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.combat_change_defers_until_regen"] = function()
+    local state = sparkleFixture("0")
+    loadSparkleAddon()
+
+    state.combat = true
+    state.fire("PLAYER_LOGIN")
+    assert(#state.targetWrites() == 0, "no CVar write during combat")
+    state.combat = false
+    state.fire("PLAYER_REGEN_ENABLED")
+    assert(state.cvar == "1")
+
+    state.combat = true
+    ns.SetOption("sparkleQuestItems", false)
+    assert(state.cvar == "1", "the change waits for combat to end")
+    assert(#state.messages == 0)
+    state.combat = false
+    state.fire("PLAYER_REGEN_ENABLED")
+    assert(state.cvar == "0")
+    assert(#state.messages == 1, "the restart warning waits for combat to end")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.disabling_writes_zero_and_warns_once"] = function()
+    local state = sparkleFixture("1")
+    loadSparkleAddon()
+
+    state.fire("PLAYER_LOGIN")
+    assert(#state.messages == 0)
+
+    ns.SetOption("sparkleQuestItems", false)
+    assert(state.cvar == "0")
+    assert(state.mirror:find("sparkleQuestItems=0", 1, true), "the mirror stores the off value")
+    assert(#state.messages == 1)
+    assert(state.messages[1]:find("Restart the game", 1, true))
+
+    ns.ApplySparkleSetting()
+    state.fire("PLAYER_LOGIN")
+    assert(#state.messages == 1, "repeat logins stay quiet while the option is off")
+
+    ns.SetOption("sparkleQuestItems", true)
+    assert(state.cvar == "1")
+    ns.SetOption("sparkleQuestItems", false)
+    assert(#state.messages == 2, "turning it back on re-arms the warning")
+
+    ns.WipeSettings()
+    assert(ns.GetOption("sparkleQuestItems") == true, "Use Defaults re-enables sparkles")
+    assert(state.cvar == "1")
+    assert(#state.messages == 2)
+    state.assertClean()
+end
+
+cases["sparkle_runtime.stored_off_setting_stays_off_and_warns_on_login"] = function()
+    local state = sparkleFixture("1", "revision=9;sparkleQuestItems=0;enabled=1")
+    loadSparkleAddon()
+
+    assert(ns.GetOption("sparkleQuestItems") == false, "the stored off value wins")
+    state.fire("PLAYER_LOGIN")
+    assert(state.cvar == "0")
+    assert(#state.messages == 1, "login warns that the sparkle needs a restart")
+    state.assertClean()
+end
+
+cases["sparkle_runtime.missing_cvar_or_api_is_safe"] = function()
+    local state = sparkleFixture("1")
+    loadSparkleAddon()
+
+    C_CVar = nil
+    state.fire("PLAYER_LOGIN")
+    state.runTimers()
+    ns.SetOption("sparkleQuestItems", false)
+    assert(#state.targetWrites() == 0)
+    assert(#state.messages == 0, "no warning when the CVar API is missing")
+    assert(ns.ApplySparkleSetting() == false)
+
+    C_CVar = { GetCVar = function() return nil end }
+    assert(ns.ApplySparkleSetting() == false)
+    assert(#state.targetWrites() == 0)
+
+    C_CVar = {
+        GetCVar = function() return nil end,
+        SetCVar = function() error("must not write when the CVar is missing") end,
+    }
+    assert(ns.ApplySparkleSetting() == false)
+    state.assertClean()
+end
+
+cases["sparkle_runtime.diagnostics_report_cvar_state"] = function()
+    local state = sparkleFixture("1")
+    loadSparkleAddon()
+    UnitRace = function() return nil, "Human", 1 end
+    UnitClass = function() return nil, "Warrior", 1 end
+    UnitFactionGroup = function() return "Alliance" end
+    UnitLevel = function() return 60 end
+
+    ns.PrintAPIProbe()
+    local probe = table.concat(state.messages, "\n")
+    assert(probe:find("C_CVar.GetCVar: yes", 1, true))
+    assert(probe:find(SPARKLE_CVAR .. ": 1", 1, true))
+
+    state.messages = {}
+    C_CVar = nil
+    ns.PrintAPIProbe()
+    probe = table.concat(state.messages, "\n")
+    assert(probe:find("C_CVar.GetCVar: no", 1, true))
+    assert(probe:find(SPARKLE_CVAR .. ": missing", 1, true))
+
+    state.messages = {}
+    C_CVar = { GetCVar = function() return nil end }
+    ns.PrintAPIProbe()
+    probe = table.concat(state.messages, "\n")
+    assert(probe:find(SPARKLE_CVAR .. ": missing", 1, true))
+
+    state.messages = {}
+    ns.PrintSettingsDebug()
+    local settings = table.concat(state.messages, "\n")
+    assert(settings:find("sparkleQuestItems raw=true effective=true", 1, true))
+    state.assertClean()
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

@@ -34,7 +34,6 @@ jobs:
           grep -qE '^## Version:' ForeverQuestPins.toc
           grep -qxF '## SavedVariables: ForeverQuestPinsDB, ForeverQuestPinsDB_Settings' ForeverQuestPins.toc
           grep -qxF '## SavedVariablesPerCharacter: ForeverQuestPinsCharDB, ForeverQuestPinsCharacterSettings' ForeverQuestPins.toc
-          test -f MapPins.xml
           test -f Media/QuestAvailable.tga
           test -f Database/ForeverQuests.lua
           test -f Database/Metadata.lua

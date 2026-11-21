@@ -38,6 +38,7 @@ ns.defaults = {
     selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
+    sparkleQuestItems = true,
     debug = false,
 }
 
@@ -392,6 +393,9 @@ function ns.WipeSettings()
     end
     db._revision = Revision(db) + 1
     SyncSettings()
+    if ns.ApplySparkleSetting then
+        ns.ApplySparkleSetting()
+    end
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
     end
@@ -606,6 +610,9 @@ function ns.SetOption(key, value)
     if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
     if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
         ns.SyncQuestTrackerCombatVisibility()
+    end
+    if key == "sparkleQuestItems" and ns.ApplySparkleSetting then
+        ns.ApplySparkleSetting()
     end
     if trackerOption then
         if ns.NotifyTrackerOptionsChanged then
@@ -929,12 +936,11 @@ function ns.PrintStats()
     end
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
-        print(("  viewed map %s | painted %s | mode %s | parent %s | managed %s | hover dots %s"):format(
+        print(("  viewed map %s | painted %s | mode %s | parent %s | hover dots %s"):format(
             tostring(status.viewedMap),
             tostring(status.count),
             tostring(status.mode),
             tostring(status.parent or "?"),
-            tostring(status.managed or 0),
             tostring(status.cloudCount or 0)
         ))
         print(("  refreshes %s (last %s) | display skips %s | pin moves %s"):format(
@@ -996,6 +1002,7 @@ function ns.PrintSettingsDebug()
         "hideQuestTrackerInCombat",
         "showNPCTooltips",
         "showNameplateIcons",
+        "sparkleQuestItems",
         "debug",
     }) do
         local raw = account and account[key]
@@ -1232,6 +1239,17 @@ function ns.PrintAPIProbe()
     print("  MapCanvasDataProviderMixin: " .. has(MapCanvasDataProviderMixin))
     print("  MapCanvasPinMixin: " .. has(MapCanvasPinMixin))
     print("  Settings API: " .. has(Settings and Settings.RegisterAddOnCategory))
+    print("  C_CVar.GetCVar: " .. has(C_CVar and C_CVar.GetCVar))
+    print("  C_CVar.SetCVar: " .. has(C_CVar and C_CVar.SetCVar))
+    local sparkleCVar = ns.SPARKLE_CVAR or "outlineModeShowLootEffectWhenDisabled"
+    local sparkleValue
+    if C_CVar and type(C_CVar.GetCVar) == "function" then
+        local ok, value = pcall(C_CVar.GetCVar, sparkleCVar)
+        if ok then
+            sparkleValue = value
+        end
+    end
+    print("  " .. sparkleCVar .. ": " .. tostring(sparkleValue or "missing"))
     print("  GetQuestGreenRange: " .. has(GetQuestGreenRange))
     print("  C_DateAndTime.GetCurrentCalendarTime: " .. has(C_DateAndTime and C_DateAndTime.GetCurrentCalendarTime))
     print("  C_DateAndTime.GetTodaysDate: " .. has(C_DateAndTime and C_DateAndTime.GetTodaysDate))
@@ -1812,6 +1830,13 @@ local function BuildInterfaceSettings(self)
         L["Show a quest start, turn-in, or objective icon beside NPC nameplates."]
     )
     nameplateIcons:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 0, 0)
+    local sparkles = CreateOptionCheckbox(
+        self,
+        "sparkleQuestItems",
+        L["Show quest item sparkles"],
+        L["Keeps the game's quest item sparkle on. The same setting also makes quest givers sparkle. Turning it off requires a full game restart; /reload is not enough."]
+    )
+    sparkles:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 0, 0)
 end
 
 function ns.TryRegisterSettings()

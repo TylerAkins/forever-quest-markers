@@ -10,6 +10,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 |------|------|
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
 | `Config.lua` | Saved variables, slash commands, settings panel |
+| `Sparkle.lua` | Native quest item sparkle CVar, login and graphics-change reapply, combat deferral |
 | `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Realm"]` |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `Events.lua` | Holiday windows and AQ war effort phase state from generated policy |
@@ -173,7 +174,7 @@ License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data
 
 Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, repeatable, then normal; mixed stacks stay yellow. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
-MapCanvas pins return no center to Forever's native gamepad cursor so closing the map does not taint its protected interaction-target update. The addon retains each pin's original center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map; confirm the tooltip works and no blocked-action popup or taint-log entry appears.
+Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which taints the pools, and Blizzard's own quest pin then fails its protected `SetPassThroughButtons` call when the map opens in combat. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called. The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup or taint-log entry appears.
 
 ## Support split
 
@@ -293,3 +294,30 @@ quest block does not fit, and a client without `GetDistanceSqToQuest` uses
 Blizzard's flat order for Distance without applying the view filters. The default
 Blizzard order keeps native calling and `overridesSortOrder` priority; the other
 sorts use their own order inside each zone.
+
+## Quest item sparkles
+
+`Sparkle.lua` keeps the client's native quest item sparkle enabled. It writes one
+CVar, `outlineModeShowLootEffectWhenDisabled`. Never read or write
+`graphicsOutlineMode`, `outlineMode`, or any other outline CVar: those remove the
+player's Self Highlight outline, and earlier sparkle addons were changed for that
+reason. The client has one switch for quest items and quest givers, so enabling
+the option makes quest givers sparkle too.
+
+- The option is `sparkleQuestItems`, default on. It uses the normal defaults and
+  settings mirror, so existing installs gain it without rewriting other options.
+- `ns.ApplySparkleSetting` runs at `PLAYER_LOGIN`, again after five seconds, and
+  one second after `CVAR_UPDATE` for `graphicsquality` or `raidgraphicsquality`.
+  Graphics presets reset the CVar, which is why the delayed reapply exists.
+- A write during combat is deferred to `PLAYER_REGEN_ENABLED`.
+- Turning the option off writes `"0"` and prints one restart notice per off
+  period. The client keeps drawing sparkles until the game restarts; `/reload`
+  does not clear them.
+- A missing `C_CVar`, missing `GetCVar`/`SetCVar`, or a missing target CVar makes
+  the apply a no-op. `/fqp apis` reports the API and CVar state, and `/fqp
+  settings` prints the option.
+
+Runtime cases cover the default and settings migration, the single-CVar
+boundary, the delayed graphics reapply, combat deferral, the one-time warning,
+and missing-API handling. In-game checks still cover the rendered sparkle, the
+unchanged character outline, preset recovery, and the restart requirement.

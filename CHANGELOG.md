@@ -8,6 +8,8 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 - Add a **Completed quests only** tracker filter that includes quests done and waiting to be turned in.
 - Add an off-by-default **Select nearest quest** option that super-tracks the closest tracked quest as you move. Use `/fqp nearest` to select it once.
 - Split the addon settings into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections. The in-world navigation option now shows a note instead of a checkbox when the client does not provide its CVar.
+- Add an on-by-default **Show quest item sparkles** option that keeps the game's quest item sparkle on, including after a graphics preset resets it. The client has one switch for quest items and quest givers. Turning the option off needs a full game restart; `/reload` is not enough.
+- Stop adding the addon's map pins to Blizzard's map pin pools. That tainted the world map, so opening it in combat could block Blizzard's own quest pin and report an addon action blocked error.
 - **Show tint for quests new in WoW Forever** now defaults off.
 
 ## 1.0.13 - 2026-11-20
