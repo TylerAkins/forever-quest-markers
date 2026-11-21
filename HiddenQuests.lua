@@ -11,13 +11,29 @@ local function Print(message)
     print("|cffffd100Forever Quest Pins:|r " .. tostring(message))
 end
 
-local function CharacterKey()
-    local name = UnitName and UnitName("player")
-    local realm = GetRealmName and GetRealmName()
-    if type(name) ~= "string" or name == "" or type(realm) ~= "string" or realm == "" then
+-- Forever names character folders <Name>-<Surname>. Prefer the surname over
+-- GetRealmName, which can be empty on this client, so per-character state
+-- stays keyed to the same identity the client uses on disk.
+function ns.CharacterKey()
+    local name, surname
+    if UnitName then
+        name, surname = UnitName("player")
+    end
+    if type(name) ~= "string" or name == "" then
         return nil
     end
-    return name .. "-" .. realm
+    if type(surname) == "string" and surname ~= "" then
+        return name .. "-" .. surname
+    end
+    local realm = GetRealmName and GetRealmName()
+    if type(realm) == "string" and realm ~= "" then
+        return name .. "-" .. realm
+    end
+    return name
+end
+
+local function CharacterKey()
+    return ns.CharacterKey()
 end
 
 local function Bucket(create)

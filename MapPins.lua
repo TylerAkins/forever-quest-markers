@@ -67,7 +67,6 @@ local lastStatus = {
     parent = nil,
     paintedIDs = {},
     cloudCount = 0,
-    managed = 0,
 }
 
 -- Counters for /fqp stats. A repaint hides and rebuilds every pin, so a
@@ -83,17 +82,6 @@ end
 
 local function IsGamepadCursorVisible()
     return IsGamepadUIEnabled() and SoftCursor and SoftCursor.IsShown and SoftCursor:IsShown() or false
-end
-
-local function ReturnNoPinCenter()
-    return nil
-end
-
-local function HidePinFromGamepadCursor(pin)
-    if not pin._fqpGetCenter then
-        pin._fqpGetCenter = pin.GetCenter
-    end
-    pin.GetCenter = ReturnNoPinCenter
 end
 
 local BLIZZARD_PIN_TEMPLATES = {
@@ -755,20 +743,6 @@ local function ReleasePin(pin)
     if cloudOwner == pin then
         HideSpawnCloud()
     end
-    if pin.managed then
-        local map = pin.GetMap and pin:GetMap()
-        if map and map.RemovePin then
-            map:RemovePin(pin)
-        elseif WorldMapFrame and WorldMapFrame.RemovePin then
-            pcall(WorldMapFrame.RemovePin, WorldMapFrame, pin)
-        elseif pin.Hide then
-            pin:Hide()
-        end
-        pin.quests, pin.questID, pin.data = nil, nil, nil
-        pin.spawnPoints, pin.spawnCount, pin.anchor = nil, nil, nil
-        pin.placedNx, pin.placedNy, pin.placedSize = nil, nil, nil
-        return
-    end
     pin:Hide()
     pin:ClearAllPoints()
     pin.questID = nil
@@ -1252,22 +1226,6 @@ local function RaisePin(pin, parent)
 end
 
 local function ApplyPinPoint(pin, parent)
-    if pin.managed then
-        local pinSize = GetPinSize()
-        -- RepositionAll runs every frame while the map is open. Repeating the
-        -- same SetSize and SetPosition on a MapCanvas pin is wasted work and
-        -- can restart its layout, so only apply real changes.
-        if pin.placedSize ~= pinSize then
-            pin.placedSize = pinSize
-            pin:SetSize(pinSize, pinSize)
-        end
-        if pin.placedNx ~= pin.nx or pin.placedNy ~= pin.ny then
-            pin.placedNx, pin.placedNy = pin.nx, pin.ny
-            pin:SetPosition(pin.nx, pin.ny)
-            pinMoves = pinMoves + 1
-        end
-        return true
-    end
     parent = parent or pin:GetParent() or GetCanvas()
     local ox, oy = CanvasOffsets(parent, pin.nx, pin.ny)
     if not ox then
@@ -1339,22 +1297,9 @@ ReprojectStitchedPins = function(mapID)
 end
 
 local function AcquirePin(parent)
-    -- The native gamepad cursor scans MapCanvas pins outside secure code. Use
-    -- ordinary canvas children in gamepad mode and resolve hover privately.
-    if not IsOpenMapStitched() and not IsGamepadUIEnabled() and MapCanvasPinMixin and WorldMapFrame and WorldMapFrame.AcquirePin then
-        -- Populate the mixin lazily in case Blizzard_MapCanvas loaded after us.
-        for key, value in pairs(MapCanvasPinMixin) do
-            if ForeverQuestPinsMapPinMixin[key] == nil then
-                ForeverQuestPinsMapPinMixin[key] = value
-            end
-        end
-        local pin = WorldMapFrame:AcquirePin("ForeverQuestPinsMapPinTemplate")
-        if pin and pin.EnableMouse then
-            pin:EnableMouse(true)
-            pin:SetMouseClickEnabled(PinTrackingEnabled())
-        end
-        return pin
-    end
+    -- Never call WorldMapFrame:AcquirePin. It writes our template into the
+    -- canvas pin pools, which is shared Blizzard state. Ordinary canvas
+    -- children behave the same for our pins and leave the pools alone.
     local pin = table.remove(pool)
     if not pin then
         pin = CreateFrame("Button", nil, parent)
@@ -1387,25 +1332,6 @@ local function AcquirePin(parent)
 end
 
 ForeverQuestPinsMapPinMixin = {}
-
-function ForeverQuestPinsMapPinMixin:OnLoad()
-    self.managed = true
-    HidePinFromGamepadCursor(self)
-    self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI")
-    self:SetScalingLimits(1, 1, 1)
-    self:SetSize(PIN_SIZE, PIN_SIZE)
-    self.Texture:ClearAllPoints()
-    self.Texture:SetAllPoints(self)
-end
-
-function ForeverQuestPinsMapPinMixin:OnAcquired()
-    HidePinFromGamepadCursor(self)
-    local pinSize = GetPinSize()
-    self:SetSize(pinSize, pinSize)
-    self:SetAlpha(1)
-    self.placedSize = pinSize
-    self.placedNx, self.placedNy = nil, nil
-end
 
 function ForeverQuestPinsMapPinMixin:OnClick(button)
     if button ~= "LeftButton" then
@@ -1978,9 +1904,8 @@ function MapPins:GetStatus()
 end
 
 function MapPins:Refresh(reason)
-    -- Forever's MapCanvas calls the protected SetPassThroughButtons method
-    -- while managed pins are added or removed. Defer the whole refresh so the
-    -- existing pin set remains intact until PLAYER_REGEN_ENABLED.
+    -- Clear refuses to run in combat, so a refresh there would stack a second
+    -- pin set. Defer the whole refresh until PLAYER_REGEN_ENABLED.
     if InCombatLockdown and InCombatLockdown() then
         lastStatus.mode = "combat-deferred"
         return
@@ -2161,13 +2086,6 @@ function MapPins:Refresh(reason)
 
         refreshJob = nil
         lastStatus.mode = "canvas"
-        local managed = 0
-        for i = 1, #active do
-            if active[i].managed then
-                managed = managed + 1
-            end
-        end
-        lastStatus.managed = managed
         if job.refreshAfter then
             ns.RequestRefresh("quest-level")
         end

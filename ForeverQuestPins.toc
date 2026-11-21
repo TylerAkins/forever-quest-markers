@@ -23,6 +23,7 @@ Database\ExcludedQuests.lua
 Database\VanillaQuests.lua
 Localization.lua
 Config.lua
+Sparkle.lua
 WhatsNew.lua
 Setup.lua
 HiddenQuests.lua
@@ -34,7 +35,7 @@ Nameplates.lua
 Waypoints.lua
 Breadcrumbs.lua
 MapPins.lua
-MapPins.xml
 AutoQuests.lua
 QuestLinks.lua
+Tracker.lua
 Core.lua

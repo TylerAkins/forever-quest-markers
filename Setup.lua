@@ -26,6 +26,11 @@ local pages = {
         { "showNameplateIcons", "Show quest icons on nameplates" },
         { "showSpawnClusters", "Show spawn clusters" },
         { "highlightNewQuests", "Show tint for quests new in WoW Forever" },
+        { "sparkleQuestItems", "Show quest item sparkles" },
+    } },
+    { title = "Quest tracker", options = {
+        { "enhanceQuestTracker", "Enhance quest tracker" },
+        { "selectNearestQuest", "Select nearest quest" },
     } },
     { title = "Quest automation", options = {
         { "autoAccept", "Auto-accept quests" },
@@ -93,7 +98,7 @@ local function CreateSetup()
             end
         end
     end
-    for i = 1, 6 do
+    for i = 1, 7 do
         local box = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
         box:SetSize(26, 26)
         box:SetPoint("TOPLEFT", 28, -135 - (i - 1) * 31)
@@ -133,8 +138,11 @@ local function CreateSetup()
             if option then
                 box:ClearAllPoints()
                 local lastPage = page == #pages
-                local firstY = lastPage and -120 or -135
-                local spacing = lastPage and 30 or 31
+                -- The Navigation page has seven options. Tighten the rows so the
+                -- last one clears the buttons.
+                local compact = #pages[page].options >= 7
+                local firstY = lastPage and -120 or (compact and -128 or -135)
+                local spacing = (lastPage or compact) and 30 or 31
                 local extra = lastPage and i >= 3 and 92 or 0
                 box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]

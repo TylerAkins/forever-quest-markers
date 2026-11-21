@@ -126,6 +126,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
         ns.TryRegisterQuestLinks()
+        if ns.TryRegisterQuestTracker then
+            ns.TryRegisterQuestTracker()
+        end
         if loaded == "Blizzard_WorldMap" then
             if ns.TryRegisterWorldMapDropdown then
                 ns.TryRegisterWorldMapDropdown()
@@ -169,6 +172,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
         if ns.StartWelcome then ns.StartWelcome() end
         ns.TryRegisterQuestLinks()
+        if ns.TryRegisterQuestTracker then
+            ns.TryRegisterQuestTracker()
+        end
         ns.TryRegisterSettings()
         if ns.TryRegisterWorldMapDropdown then
             ns.TryRegisterWorldMapDropdown()
@@ -184,6 +190,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_ENTERING_WORLD" then
         ns.TryRegisterSettings()
+        if ns.TryRegisterQuestTracker then
+            ns.TryRegisterQuestTracker()
+        end
         if ns.TryRegisterWorldMapDropdown then
             ns.TryRegisterWorldMapDropdown()
         end

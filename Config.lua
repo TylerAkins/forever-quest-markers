@@ -19,7 +19,7 @@ ns.defaults = {
     showPvP = false,
     showRepeatable = true,
     showSpawnClusters = true,
-    highlightNewQuests = true,
+    highlightNewQuests = false,
     showSeasonal = false,
     showWarEffort = false,
     showWarEffortAlways = false,
@@ -32,9 +32,35 @@ ns.defaults = {
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
+    enhanceQuestTracker = true,
+    trackerSort = "blizzard",
+    trackerFilter = "all",
+    selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
+    sparkleQuestItems = false,
     debug = false,
+}
+
+ns.TRACKER_SORT_VALUES = { blizzard = true, distance = true, level = true, title = true }
+ns.TRACKER_FILTER_VALUES = { all = true, current = true, instance = true, completed = true }
+ns.TrackerSortOrder = { "blizzard", "distance", "level", "title" }
+ns.TrackerFilterOrder = { "all", "current", "instance", "completed" }
+ns.TrackerSortLabels = {
+    blizzard = L["Blizzard order"],
+    distance = L["Distance"],
+    level = L["Level"],
+    title = L["Title"],
+}
+ns.TrackerFilterLabels = {
+    all = L["All tracked quests"],
+    current = L["Current zone only"],
+    instance = L["Instance quests"],
+    completed = L["Completed quests only"],
+}
+local trackerStringOptions = {
+    trackerSort = ns.TRACKER_SORT_VALUES,
+    trackerFilter = ns.TRACKER_FILTER_VALUES,
 }
 
 local optionChecks = {}
@@ -143,6 +169,14 @@ local function DecodeMirror()
         mirror.limitHighLevelQuests = legacyHighLevelLimit == "1"
     end
     mirror.waypointProvider = text:match("waypointProvider=(%a+)")
+    local trackerSort = text:match("trackerSort=(%a+)")
+    if trackerSort and ns.TRACKER_SORT_VALUES[trackerSort] then
+        mirror.trackerSort = trackerSort
+    end
+    local trackerFilter = text:match("trackerFilter=(%a+)")
+    if trackerFilter and ns.TRACKER_FILTER_VALUES[trackerFilter] then
+        mirror.trackerFilter = trackerFilter
+    end
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     mirror._setupComplete = text:match("setupComplete=1") ~= nil
     mirror._newsVersion = text:match("newsVersion=([%d%.]+)")
@@ -182,6 +216,8 @@ local function CopySettings(src, dest, revision)
         if src[key] ~= nil then
             if type(ns.defaults[key]) == "number" then
                 dest[key] = NormalizeNumber(key, src[key])
+            elseif trackerStringOptions[key] then
+                dest[key] = trackerStringOptions[key][src[key]] and src[key] or ns.defaults[key]
             elseif key == "waypointProvider" then
                 dest[key] = src[key] == "tomtom" and "tomtom" or "blizzard"
             else
@@ -241,6 +277,8 @@ local function SaveMirror(db)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
+    parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
+    parts[#parts + 1] = "trackerFilter=" .. tostring(db.trackerFilter or ns.defaults.trackerFilter)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -355,8 +393,18 @@ function ns.WipeSettings()
     end
     db._revision = Revision(db) + 1
     SyncSettings()
+    if ns.ApplySparkleSetting then
+        if ns.GetOption("sparkleQuestItems") then
+            ns.ApplySparkleSetting()
+        elseif ns.DisableSparkleSetting then
+            ns.DisableSparkleSetting()
+        end
+    end
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
+    end
+    if ns.NotifyTrackerOptionsChanged then
+        ns.NotifyTrackerOptionsChanged()
     end
 end
 
@@ -535,9 +583,16 @@ function ns.SetOption(key, value)
         if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
         return
     end
+    local trackerOption = key == "enhanceQuestTracker"
+        or key == "trackerSort" or key == "trackerFilter"
+        or key == "selectNearestQuest"
     if key == "waypointProvider" then
         if value ~= "blizzard" and value ~= "tomtom" then return end
         if value ~= ns.GetOption(key) and ns.ClearWaypoint then ns.ClearWaypoint() end
+    elseif trackerStringOptions[key] then
+        if not trackerStringOptions[key][value] then
+            return
+        end
     elseif type(ns.defaults[key]) == "number" then
         if tonumber(value) == nil then
             return
@@ -560,7 +615,18 @@ function ns.SetOption(key, value)
     if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
         ns.SyncQuestTrackerCombatVisibility()
     end
-    if ns.RequestRefresh then
+    if key == "sparkleQuestItems" then
+        if value then
+            if ns.ApplySparkleSetting then ns.ApplySparkleSetting() end
+        elseif ns.DisableSparkleSetting then
+            ns.DisableSparkleSetting()
+        end
+    end
+    if trackerOption then
+        if ns.NotifyTrackerOptionsChanged then
+            ns.NotifyTrackerOptionsChanged(key)
+        end
+    elseif ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
 end
@@ -632,6 +698,7 @@ function ns.SlashCommand(msg)
         Print(L["Commands:"])
         print(L["  /fqp setup   Open the setup guide"])
         print(L["  /fqp track <id> Track a quest start, objective, or turn-in"])
+        print(L["  /fqp nearest  Select the nearest tracked quest"])
         print(L["  /fqp clear    Clear the addon waypoint"])
         print(L["  /fqp on       Enable quest-start pins"])
         print(L["  /fqp off      Disable quest-start pins"])
@@ -670,6 +737,20 @@ function ns.SlashCommand(msg)
     local trackID = tonumber(msg:match("^track%s+(%d+)$"))
     if trackID and ns.TrackQuest then
         ns.TrackQuest(trackID)
+        return
+    end
+    if msg == "nearest" then
+        if ns.AddOnActionsRestricted and ns.AddOnActionsRestricted() then
+            Print(L["Select nearest quest is unavailable in combat."])
+            return
+        end
+        if ns.SelectNearestQuest then
+            if ns.SelectNearestQuest() then
+                Print(L["Selected the nearest quest."])
+            else
+                Print(L["No tracked quest with a location was found."])
+            end
+        end
         return
     end
     if msg == "clear" and ns.ClearWaypoint then
@@ -863,12 +944,11 @@ function ns.PrintStats()
     end
     if ns.MapPins and ns.MapPins.GetStatus then
         local status = ns.MapPins:GetStatus()
-        print(("  viewed map %s | painted %s | mode %s | parent %s | managed %s | hover dots %s"):format(
+        print(("  viewed map %s | painted %s | mode %s | parent %s | hover dots %s"):format(
             tostring(status.viewedMap),
             tostring(status.count),
             tostring(status.mode),
             tostring(status.parent or "?"),
-            tostring(status.managed or 0),
             tostring(status.cloudCount or 0)
         ))
         print(("  refreshes %s (last %s) | display skips %s | pin moves %s"):format(
@@ -930,6 +1010,7 @@ function ns.PrintSettingsDebug()
         "hideQuestTrackerInCombat",
         "showNPCTooltips",
         "showNameplateIcons",
+        "sparkleQuestItems",
         "debug",
     }) do
         local raw = account and account[key]
@@ -1166,6 +1247,17 @@ function ns.PrintAPIProbe()
     print("  MapCanvasDataProviderMixin: " .. has(MapCanvasDataProviderMixin))
     print("  MapCanvasPinMixin: " .. has(MapCanvasPinMixin))
     print("  Settings API: " .. has(Settings and Settings.RegisterAddOnCategory))
+    print("  C_CVar.GetCVar: " .. has(C_CVar and C_CVar.GetCVar))
+    print("  C_CVar.SetCVar: " .. has(C_CVar and C_CVar.SetCVar))
+    local sparkleCVar = ns.SPARKLE_CVAR or "outlineModeShowLootEffectWhenDisabled"
+    local sparkleValue
+    if C_CVar and type(C_CVar.GetCVar) == "function" then
+        local ok, value = pcall(C_CVar.GetCVar, sparkleCVar)
+        if ok then
+            sparkleValue = value
+        end
+    end
+    print("  " .. sparkleCVar .. ": " .. tostring(sparkleValue or "missing"))
     print("  GetQuestGreenRange: " .. has(GetQuestGreenRange))
     print("  C_DateAndTime.GetCurrentCalendarTime: " .. has(C_DateAndTime and C_DateAndTime.GetCurrentCalendarTime))
     print("  C_DateAndTime.GetTodaysDate: " .. has(C_DateAndTime and C_DateAndTime.GetTodaysDate))
@@ -1272,6 +1364,43 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
     return box
 end
 
+local function CreateTrackerDropdown(parent, optionKey, label, order, labels)
+    local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    caption:SetText(label)
+    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    dropdown:SetSize(240, 24)
+    dropdown:SetDefaultText(labels[ns.GetOption(optionKey)] or "")
+    dropdown:SetupMenu(function(_, root)
+        for i = 1, #order do
+            local value = order[i]
+            root:CreateRadio(labels[value],
+                function() return ns.GetOption(optionKey) == value end,
+                function() ns.SetOption(optionKey, value) end,
+                value)
+        end
+    end)
+    dropdown.ApplySaved = function(control)
+        control:SetDefaultText(labels[ns.GetOption(optionKey)] or "")
+        control:GenerateMenu()
+    end
+    optionChecks[#optionChecks + 1] = dropdown
+    return caption, dropdown
+end
+
+local function DimWithoutTracker(control, captions)
+    local applySaved = control.ApplySaved
+    control.ApplySaved = function(self)
+        applySaved(self)
+        local enabled = ns.GetOption("enhanceQuestTracker") and true or false
+        self:SetEnabled(enabled)
+        self:SetAlpha(enabled and 1 or 0.5)
+        for i = 1, #captions do
+            captions[i]:SetAlpha(enabled and 1 or 0.5)
+        end
+    end
+    control:ApplySaved()
+end
+
 function ns.SyncSettingsCheckboxes()
     for i = 1, #optionChecks do
         local box = optionChecks[i]
@@ -1281,376 +1410,474 @@ function ns.SyncSettingsCheckboxes()
     end
 end
 
-function ns.TryRegisterSettings()
-    if ns.settingsRegistered then
-        return true
+local function DimWithoutAutoAccept(box)
+    local applySaved = box.ApplySaved
+    box.ApplySaved = function(control)
+        applySaved(control)
+        local enabled = ns.GetOption("autoAccept") and true or false
+        control:SetEnabled(enabled)
+        control.Text:SetAlpha(enabled and 1 or 0.5)
     end
-    if not Settings or not Settings.RegisterCanvasLayoutCategory then
-        return false
-    end
+    box:ApplySaved()
+end
 
+local function NewSettingsPanel(build)
     local panel = CreateFrame("Frame")
-    panel.name = "Forever Quest Pins"
     panel:Hide()
     panel:SetScript("OnShow", function(self)
         if not self.built then
             self.built = true
-            local title = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-            title:SetPoint("TOPLEFT", 16, -16)
-            title:SetText("Forever Quest Pins")
-            local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-            help:SetWidth(500)
-            help:SetJustifyH("LEFT")
-            help:SetText(L["Quest starts on your world map. Click a marker to track its location."])
-
-            local mapHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-            mapHeading:SetPoint("TOPLEFT", help, "BOTTOMLEFT", 0, -16)
-            mapHeading:SetText(L["Map pins"])
-
-            local pins = CreateOptionCheckbox(
-                self,
-                "enabled",
-                L["Show quest start pins"],
-                L["Start markers on the world map for unaccepted quests."]
-            )
-            pins:SetPoint("TOPLEFT", mapHeading, "BOTTOMLEFT", -4, -4)
-
-            local worldPins = CreateOptionCheckbox(self, "showWorldMapPins",
-                L["Show quest pins on world and continent maps"],
-                L["When off, quest starts remain visible on zone, city, and dungeon maps."])
-            worldPins:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
-
-            local unexplored = CreateOptionCheckbox(self, "showUnexplored",
-                L["Show quests in unexplored areas"],
-                L["When off, quest start pins in areas you have not discovered are hidden."])
-            unexplored:SetPoint("TOPLEFT", worldPins, "BOTTOMLEFT", 0, 0)
-
-            local normal = CreateOptionCheckbox(self, "showNormal", L["Show normal quest start pins"],
-                L["Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories."])
-            normal:SetPoint("TOPLEFT", unexplored, "BOTTOMLEFT", 0, 0)
-            local class = CreateOptionCheckbox(self, "showClass", L["Show class quest pins"],
-                L["Class-restricted quest starts, except dungeon / raid quests."])
-            class:SetPoint("TOPLEFT", normal, "BOTTOMLEFT", 0, 0)
-            local dungeon = CreateOptionCheckbox(self, "showDungeon", L["Show dungeon / raid quest pins"],
-                L["Dungeon, raid, and attunement quest starts."])
-            dungeon:SetPoint("TOPLEFT", class, "BOTTOMLEFT", 0, 0)
-
-            local pvp = CreateOptionCheckbox(self, "showPvP", L["Show PvP quest pins"],
-                L["Player versus player quest starts, such as battleground call to arms."])
-            pvp:SetPoint("TOPLEFT", dungeon, "BOTTOMLEFT", 0, 0)
-
-            local profession = CreateOptionCheckbox(self, "showProfession", L["Show profession quest pins"],
-                L["Profession-restricted quest starts, except class and dungeon / raid quests."])
-            profession:SetPoint("TOPLEFT", pvp, "BOTTOMLEFT", 0, 0)
-            local seasonal = CreateOptionCheckbox(
-                self,
-                "showSeasonal",
-                L["Show seasonal / holiday quest pins"],
-                L["Event quests appear only while the event is live. Darkmoon Faire stays hidden on Forever."]
-            )
-            seasonal:SetPoint("TOPLEFT", profession, "BOTTOMLEFT", 0, 0)
-
-            local warEffort = CreateOptionCheckbox(
-                self,
-                "showWarEffort",
-                L["Show AQ war effort pins"],
-                L["Commodity turn-ins at Orgrimmar / Ironforge, shown after a war effort quest is offered or in your log."]
-            )
-            warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
-
-            local warEffortAlways = CreateOptionCheckbox(
-                self,
-                "showWarEffortAlways",
-                L["Always show AQ war effort pins"],
-                L["Show AQ war effort pins even before a war effort quest confirms the phase."]
-            )
-            warEffortAlways:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, 0)
-
-            local repeatable = CreateOptionCheckbox(
-                self,
-                "showRepeatable",
-                L["Show repeatable quest pins"],
-                L["Blue start markers for repeatable, daily, weekly, and monthly quests."]
-            )
-            repeatable:SetPoint("TOPLEFT", warEffortAlways, "BOTTOMLEFT", 0, 0)
-
-            local spawnClusters = CreateOptionCheckbox(
-                self,
-                "showSpawnClusters",
-                L["Show spawn clusters"],
-                L["Group nearby spawn points into one pin. Hovering shows the spawn count and every location on the map. When off, show one pin per quest."]
-            )
-            spawnClusters:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
-
-            local highlightNew = CreateOptionCheckbox(
-                self,
-                "highlightNewQuests",
-                L["Show tint for quests new in WoW Forever"],
-                L["Yellow start markers for quests that were not in original Classic get the Forever yellow-to-blue gradient."]
-            )
-            highlightNew:SetPoint("TOPLEFT", spawnClusters, "BOTTOMLEFT", 0, 0)
-
-            local trivial = CreateOptionCheckbox(
-                self,
-                "showTrivial",
-                L["Show low-level quests"],
-                L["When off, hides pins for quests too far below your level. Set how far with the slider below."]
-            )
-            trivial:SetPoint("TOPLEFT", highlightNew, "BOTTOMLEFT", 0, 0)
-
-            local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -22)
-            trivialGap:SetSize(240, 16)
-            trivialGap:SetMinMaxValues(TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX)
-            trivialGap:SetValueStep(1)
-            if trivialGap.Low then trivialGap.Low:SetText(tostring(TRIVIAL_GAP_MIN)) end
-            if trivialGap.High then trivialGap.High:SetText(tostring(TRIVIAL_GAP_MAX)) end
-            local trivialGapLabel = trivialGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            trivialGapLabel:SetPoint("BOTTOM", trivialGap, "TOP", 0, 4)
-            trivialGap.ApplySaved = function(control)
-                control.syncing = true
-                local gap = ns.GetOption("trivialLevelGap")
-                control:SetValue(gap)
-                trivialGapLabel:SetText((L["Hide quests %d+ levels below you"]):format(gap))
-                local enabled = not ns.GetOption("showTrivial")
-                control:EnableMouse(enabled)
-                control:SetAlpha(enabled and 1 or 0.5)
-                control.syncing = false
-            end
-            trivialGap:SetScript("OnValueChanged", function(control, value)
-                if control.syncing or NormalizeNumber("trivialLevelGap", value) == ns.GetOption("trivialLevelGap") then
-                    return
-                end
-                ns.SetOption("trivialLevelGap", value)
-                control:ApplySaved()
-            end)
-            optionChecks[#optionChecks + 1] = trivialGap
-
-            local highLevelGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            highLevelGap:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", 0, -26)
-            highLevelGap:SetSize(240, 16)
-            highLevelGap:SetMinMaxValues(HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX)
-            highLevelGap:SetValueStep(1)
-            if highLevelGap.Low then highLevelGap.Low:SetText(tostring(HIGH_LEVEL_GAP_MIN)) end
-            if highLevelGap.High then highLevelGap.High:SetText(L["All"]) end
-            local highLevelGapLabel = highLevelGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            highLevelGapLabel:SetPoint("BOTTOM", highLevelGap, "TOP", 0, 4)
-            highLevelGap.ApplySaved = function(control)
-                control.syncing = true
-                local gap = ns.GetOption("highLevelGap")
-                control:SetValue(gap)
-                highLevelGapLabel:SetText(gap == HIGH_LEVEL_GAP_MAX
-                    and L["Show all quests above you"]
-                    or (L["Hide quests %d+ levels above you"]):format(gap))
-                control.syncing = false
-            end
-            highLevelGap:SetScript("OnValueChanged", function(control, value)
-                if control.syncing or NormalizeNumber("highLevelGap", value) == ns.GetOption("highLevelGap") then
-                    return
-                end
-                ns.SetOption("highLevelGap", value)
-                control:ApplySaved()
-            end)
-            optionChecks[#optionChecks + 1] = highLevelGap
-
-            local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-            iconScale:SetPoint("TOPLEFT", highLevelGap, "BOTTOMLEFT", 0, -26)
-            iconScale:SetSize(240, 16)
-            iconScale:SetMinMaxValues(50, 150)
-            iconScale:SetValueStep(5)
-            if iconScale.Low then iconScale.Low:SetText("50%") end
-            if iconScale.High then iconScale.High:SetText("150%") end
-            local iconScaleLabel = iconScale:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            iconScaleLabel:SetPoint("BOTTOM", iconScale, "TOP", 0, 4)
-            iconScale.ApplySaved = function(control)
-                control.syncing = true
-                local value = ns.GetOption("iconScale")
-                control:SetValue(value)
-                iconScaleLabel:SetText((L["Pin size: %d%%"]):format(value))
-                control.syncing = false
-            end
-            iconScale:SetScript("OnValueChanged", function(control, value)
-                if control.syncing then return end
-                ns.SetOption("iconScale", value)
-                control:ApplySaved()
-            end)
-            optionChecks[#optionChecks + 1] = iconScale
-
-            local npcTooltips = CreateOptionCheckbox(
-                self,
-                "showNPCTooltips",
-                L["Show quests on NPC tooltips"],
-                L["List quests you can accept or turn in from this NPC (accept eligibility matches start pins; turn-ins require an active, complete quest)."]
-            )
-            local nameplateIcons = CreateOptionCheckbox(
-                self,
-                "showNameplateIcons",
-                L["Show quest icons on nameplates"],
-                L["Show a quest start, turn-in, or objective icon beside NPC nameplates."]
-            )
-
-            local navigationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-            navigationHeading:SetText(L["Navigation"])
-            local providerLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-            providerLabel:SetPoint("TOPLEFT", navigationHeading, "BOTTOMLEFT", 0, -8)
-            providerLabel:SetText(L["Waypoint provider"])
-            local provider = CreateFrame("DropdownButton", nil, self, "WowStyle1DropdownTemplate")
-            provider:SetPoint("TOPLEFT", providerLabel, "BOTTOMLEFT", 0, -6)
-            provider:SetSize(240, 24)
-            provider:SetDefaultText(L["Blizzard Map Pins"])
-            provider:SetupMenu(function(_, root)
-                local function IsSelected(value) return ns.GetOption("waypointProvider") == value end
-                local function SetSelected(value) ns.SetOption("waypointProvider", value) end
-                root:CreateRadio(L["Blizzard Map Pins"], IsSelected, SetSelected, "blizzard")
-                root:CreateRadio(L["TomTom (optional addon)"], IsSelected, SetSelected, "tomtom")
-            end)
-            provider.ApplySaved = function(control) control:GenerateMenu() end
-            optionChecks[#optionChecks + 1] = provider
-
-            local inWorld = CreateOptionCheckbox(
-                self,
-                "showInGameNavigation",
-                L["Show in-world destination marker"],
-                L["Show Blizzard's floating destination marker and distance for the tracked quest or map pin. This changes the game's shared navigation setting."]
-            )
-            inWorld:SetPoint("TOPLEFT", provider, "BOTTOMLEFT", -4, -8)
-            local tracking = CreateOptionCheckbox(self, "enablePinTracking", L["Click pins to track quest starts"],
-                L["When off, clicks pass through quest start pins to the map. Tooltips remain available, but Shift-click hiding is unavailable. By default, tracking is available on zone maps."])
-            tracking:SetPoint("TOPLEFT", inWorld, "BOTTOMLEFT", 0, 0)
-            local worldTracking = CreateOptionCheckbox(self, "trackOnWorldMaps", L["Track from world and continent maps"],
-                L["Allow clicks on quest start pins to track them on world and continent maps. When off, tooltips remain available, but Shift-click hiding is unavailable on those maps."])
-            worldTracking:SetPoint("TOPLEFT", tracking, "BOTTOMLEFT", 0, 0)
-            npcTooltips:SetPoint("TOPLEFT", worldTracking, "BOTTOMLEFT", 0, 0)
-            nameplateIcons:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 0, 0)
-
-            local automationHeading = self:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-            automationHeading:SetPoint("TOPLEFT", mapHeading, "TOPLEFT", 300, 0)
-            automationHeading:SetText(L["Quest automation"])
-            local automationHelp = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            automationHelp:SetPoint("TOPLEFT", automationHeading, "BOTTOMLEFT", 0, -4)
-            automationHelp:SetWidth(260)
-            automationHelp:SetJustifyH("LEFT")
-            automationHelp:SetText(L["Hold Shift at an NPC to skip automation once."])
-
-            local accept = CreateOptionCheckbox(
-                self,
-                "autoAccept",
-                L["Auto-accept quests"],
-                L["Accept quests automatically when you talk to an NPC. Hold Shift to skip."]
-            )
-            accept:SetPoint("TOPLEFT", automationHelp, "BOTTOMLEFT", -4, -4)
-
-            local breadcrumb = CreateOptionCheckbox(
-                self,
-                "warnSkippedBreadcrumb",
-                L["Warn on skipped breadcrumbs"],
-                L["Show a dialog when you accept a quest before you complete or pick up its breadcrumb quest."]
-            )
-            breadcrumb:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
-
-            local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
-                L["Limit auto-accept quest level"], L["Only auto-accept quests within the level range around your level. Unknown quest levels are left for manual acceptance."])
-            range:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", 0, 0)
-            -- Auto-accept filters do nothing while auto-accept is off, so dim them.
-            local function DimWithoutAutoAccept(box)
-                local applySaved = box.ApplySaved
-                box.ApplySaved = function(control)
-                    applySaved(control)
-                    local enabled = ns.GetOption("autoAccept") and true or false
-                    control:SetEnabled(enabled)
-                    control.Text:SetAlpha(enabled and 1 or 0.5)
-                end
-                box:ApplySaved()
-            end
-            DimWithoutAutoAccept(range)
-            local levelRange = ns.CreateLevelRangeSlider(self, function()
-                return ns.GetAutoAcceptLevelRange()
-            end, function(lowValue, highValue)
-                ns.SetOption("autoAcceptMinLevelOffset", lowValue)
-                ns.SetOption("autoAcceptLevelOffset", highValue)
-            end)
-            levelRange:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 12, -22)
-            local applyRange = levelRange.ApplySaved
-            levelRange.ApplySaved = function(control)
-                applyRange(control)
-                control:SetActive(ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled"))
-            end
-            levelRange:ApplySaved()
-            optionChecks[#optionChecks + 1] = levelRange
-
-            local skipGrey = CreateOptionCheckbox(self, "autoAcceptSkipGrey",
-                L["Don't auto-accept grey quests"],
-                L["Skip quests the game shows as grey (trivial) for your level. You can still accept them manually."])
-            skipGrey:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
-            DimWithoutAutoAccept(skipGrey)
-
-            local turnin = CreateOptionCheckbox(
-                self,
-                "autoTurnIn",
-                L["Auto-turn in quests"],
-                L["Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."]
-            )
-            turnin:SetPoint("TOPLEFT", skipGrey, "BOTTOMLEFT", 0, 0)
-
-            local hideTracker = CreateOptionCheckbox(
-                self,
-                "hideQuestTrackerInCombat",
-                L["Hide quest tracker in combat"],
-                L["Makes the default objective tracker transparent while you are in combat and restores its opacity afterward. Keeps your manual collapse setting."]
-            )
-            hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, 0)
-
-            local debugBox = CreateOptionCheckbox(
-                self,
-                "debug",
-                L["Debug tooltips"],
-                L["Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."]
-            )
-            debugBox:SetPoint("TOPLEFT", hideTracker, "BOTTOMLEFT", 0, 0)
-
-            local resetHidden = CreateFrame("Button", nil, self, "UIPanelButtonTemplate")
-            resetHidden:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 4, -8)
-            resetHidden:SetSize(200, 22)
-            resetHidden:SetText(L["Reset hidden quest pins"])
-            local resetHiddenCaption = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            resetHiddenCaption:SetPoint("TOPLEFT", resetHidden, "BOTTOMLEFT", 0, -4)
-            resetHiddenCaption:SetWidth(260)
-            resetHiddenCaption:SetJustifyH("LEFT")
-            resetHidden.ApplySaved = function(control)
-                local count = #ns.HiddenQuestIDs()
-                resetHiddenCaption:SetText((L["%d hidden on this character. Shift-click a map pin to hide it."]):format(count))
-                control:SetEnabled(count > 0)
-            end
-            resetHidden:SetScript("OnClick", function()
-                ns.ResetHiddenQuestPins()
-            end)
-            resetHidden:SetScript("OnEnter", function(control)
-                GameTooltip:SetOwner(control, "ANCHOR_RIGHT")
-                GameTooltip:SetText(L["Reset hidden quest pins"], 1, 0.82, 0)
-                GameTooltip:AddLine(L["Show every quest pin you hid with Shift-click on this character. Other characters keep their hidden pins."], 1, 1, 1, true)
-                GameTooltip:Show()
-            end)
-            resetHidden:SetScript("OnLeave", function()
-                GameTooltip:Hide()
-            end)
-            optionChecks[#optionChecks + 1] = resetHidden
-
-            navigationHeading:SetPoint("TOPLEFT", resetHiddenCaption, "BOTTOMLEFT", 0, -8)
-
-            local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            slash:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 4, -12)
-            slash:SetText(L["Type /fqp for commands and troubleshooting."])
+            build(self)
         end
         ns.SyncSettingsCheckboxes()
     end)
+    return panel
+end
 
-    local category = Settings.RegisterCanvasLayoutCategory(panel, "Forever Quest Pins")
-    if category then
-        Settings.RegisterAddOnCategory(category)
-        ns.settingsRegistered = true
-        ns.settingsMode = "canvas"
+local function BuildGeneralSettings(self)
+    local title = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText("Forever Quest Pins")
+    local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    help:SetWidth(520)
+    help:SetJustifyH("LEFT")
+    help:SetText(L["Quest starts on your world map. Click a marker to track its location."])
+
+    local pins = CreateOptionCheckbox(
+        self,
+        "enabled",
+        L["Show quest start pins"],
+        L["Start markers on the world map for unaccepted quests."]
+    )
+    pins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -16)
+
+    local debugBox = CreateOptionCheckbox(
+        self,
+        "debug",
+        L["Debug tooltips"],
+        L["Show quest IDs, NPC IDs, map coordinates, and pin-parent diagnostics on hover."]
+    )
+    debugBox:SetPoint("TOPLEFT", pins, "BOTTOMLEFT", 0, 0)
+
+    local resetHidden = CreateFrame("Button", nil, self, "UIPanelButtonTemplate")
+    resetHidden:SetPoint("TOPLEFT", debugBox, "BOTTOMLEFT", 4, -8)
+    resetHidden:SetSize(200, 22)
+    resetHidden:SetText(L["Reset hidden quest pins"])
+    local resetHiddenCaption = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    resetHiddenCaption:SetPoint("TOPLEFT", resetHidden, "BOTTOMLEFT", 0, -4)
+    resetHiddenCaption:SetWidth(320)
+    resetHiddenCaption:SetJustifyH("LEFT")
+    resetHidden.ApplySaved = function(control)
+        local count = #ns.HiddenQuestIDs()
+        resetHiddenCaption:SetText((L["%d hidden on this character. Shift-click a map pin to hide it."]):format(count))
+        control:SetEnabled(count > 0)
+    end
+    resetHidden:SetScript("OnClick", function()
+        ns.ResetHiddenQuestPins()
+    end)
+    resetHidden:SetScript("OnEnter", function(control)
+        GameTooltip:SetOwner(control, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Reset hidden quest pins"], 1, 0.82, 0)
+        GameTooltip:AddLine(L["Show every quest pin you hid with Shift-click on this character. Other characters keep their hidden pins."], 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    resetHidden:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    optionChecks[#optionChecks + 1] = resetHidden
+
+    local slash = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    slash:SetPoint("TOPLEFT", resetHiddenCaption, "BOTTOMLEFT", 0, -12)
+    slash:SetText(L["Type /fqp for commands and troubleshooting."])
+end
+
+local function BuildMapPinsSettings(self)
+    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    heading:SetPoint("TOPLEFT", 16, -16)
+    heading:SetText(L["Map pins"])
+    local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    help:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
+    help:SetWidth(520)
+    help:SetJustifyH("LEFT")
+    help:SetText(L["Start markers on the world map for unaccepted quests."])
+
+    local worldPins = CreateOptionCheckbox(self, "showWorldMapPins",
+        L["Show quest pins on world and continent maps"],
+        L["When off, quest starts remain visible on zone, city, and dungeon maps."])
+    worldPins:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -12)
+
+    local unexplored = CreateOptionCheckbox(self, "showUnexplored",
+        L["Show quests in unexplored areas"],
+        L["When off, quest start pins in areas you have not discovered are hidden."])
+    unexplored:SetPoint("TOPLEFT", worldPins, "BOTTOMLEFT", 0, 0)
+
+    local normal = CreateOptionCheckbox(self, "showNormal", L["Show normal quest start pins"],
+        L["Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories."])
+    normal:SetPoint("TOPLEFT", unexplored, "BOTTOMLEFT", 0, 0)
+    local class = CreateOptionCheckbox(self, "showClass", L["Show class quest pins"],
+        L["Class-restricted quest starts, except dungeon / raid quests."])
+    class:SetPoint("TOPLEFT", normal, "BOTTOMLEFT", 0, 0)
+    local dungeon = CreateOptionCheckbox(self, "showDungeon", L["Show dungeon / raid quest pins"],
+        L["Dungeon, raid, and attunement quest starts."])
+    dungeon:SetPoint("TOPLEFT", class, "BOTTOMLEFT", 0, 0)
+
+    local pvp = CreateOptionCheckbox(self, "showPvP", L["Show PvP quest pins"],
+        L["Player versus player quest starts, such as battleground call to arms."])
+    pvp:SetPoint("TOPLEFT", dungeon, "BOTTOMLEFT", 0, 0)
+
+    local profession = CreateOptionCheckbox(self, "showProfession", L["Show profession quest pins"],
+        L["Profession-restricted quest starts, except class and dungeon / raid quests."])
+    profession:SetPoint("TOPLEFT", pvp, "BOTTOMLEFT", 0, 0)
+    local seasonal = CreateOptionCheckbox(
+        self,
+        "showSeasonal",
+        L["Show seasonal / holiday quest pins"],
+        L["Event quests appear only while the event is live. Darkmoon Faire stays hidden on Forever."]
+    )
+    seasonal:SetPoint("TOPLEFT", profession, "BOTTOMLEFT", 0, 0)
+
+    local warEffort = CreateOptionCheckbox(
+        self,
+        "showWarEffort",
+        L["Show AQ war effort pins"],
+        L["Commodity turn-ins at Orgrimmar / Ironforge, shown after a war effort quest is offered or in your log."]
+    )
+    warEffort:SetPoint("TOPLEFT", seasonal, "BOTTOMLEFT", 0, 0)
+
+    local warEffortAlways = CreateOptionCheckbox(
+        self,
+        "showWarEffortAlways",
+        L["Always show AQ war effort pins"],
+        L["Show AQ war effort pins even before a war effort quest confirms the phase."]
+    )
+    warEffortAlways:SetPoint("TOPLEFT", warEffort, "BOTTOMLEFT", 0, 0)
+
+    local repeatable = CreateOptionCheckbox(
+        self,
+        "showRepeatable",
+        L["Show repeatable quest pins"],
+        L["Blue start markers for repeatable, daily, weekly, and monthly quests."]
+    )
+    repeatable:SetPoint("TOPLEFT", warEffortAlways, "BOTTOMLEFT", 0, 0)
+
+    local spawnClusters = CreateOptionCheckbox(
+        self,
+        "showSpawnClusters",
+        L["Show spawn clusters"],
+        L["Group nearby spawn points into one pin. Hovering shows the spawn count and every location on the map. When off, show one pin per quest."]
+    )
+    spawnClusters:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
+
+    local highlightNew = CreateOptionCheckbox(
+        self,
+        "highlightNewQuests",
+        L["Show tint for quests new in WoW Forever"],
+        L["Yellow start markers for quests that were not in original Classic get the Forever yellow-to-blue gradient."]
+    )
+    highlightNew:SetPoint("TOPLEFT", spawnClusters, "BOTTOMLEFT", 0, 0)
+
+    local trivial = CreateOptionCheckbox(
+        self,
+        "showTrivial",
+        L["Show low-level quests"],
+        L["When off, hides pins for quests too far below your level. Set how far with the slider below."]
+    )
+    trivial:SetPoint("TOPLEFT", highlightNew, "BOTTOMLEFT", 0, 0)
+
+    local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -22)
+    trivialGap:SetSize(240, 16)
+    trivialGap:SetMinMaxValues(TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX)
+    trivialGap:SetValueStep(1)
+    if trivialGap.Low then trivialGap.Low:SetText(tostring(TRIVIAL_GAP_MIN)) end
+    if trivialGap.High then trivialGap.High:SetText(tostring(TRIVIAL_GAP_MAX)) end
+    local trivialGapLabel = trivialGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    trivialGapLabel:SetPoint("BOTTOM", trivialGap, "TOP", 0, 4)
+    trivialGap.ApplySaved = function(control)
+        control.syncing = true
+        local gap = ns.GetOption("trivialLevelGap")
+        control:SetValue(gap)
+        trivialGapLabel:SetText((L["Hide quests %d+ levels below you"]):format(gap))
+        local enabled = not ns.GetOption("showTrivial")
+        control:EnableMouse(enabled)
+        control:SetAlpha(enabled and 1 or 0.5)
+        control.syncing = false
+    end
+    trivialGap:SetScript("OnValueChanged", function(control, value)
+        if control.syncing or NormalizeNumber("trivialLevelGap", value) == ns.GetOption("trivialLevelGap") then
+            return
+        end
+        ns.SetOption("trivialLevelGap", value)
+        control:ApplySaved()
+    end)
+    optionChecks[#optionChecks + 1] = trivialGap
+
+    local highLevelGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    highLevelGap:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", 0, -26)
+    highLevelGap:SetSize(240, 16)
+    highLevelGap:SetMinMaxValues(HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX)
+    highLevelGap:SetValueStep(1)
+    if highLevelGap.Low then highLevelGap.Low:SetText(tostring(HIGH_LEVEL_GAP_MIN)) end
+    if highLevelGap.High then highLevelGap.High:SetText(L["All"]) end
+    local highLevelGapLabel = highLevelGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    highLevelGapLabel:SetPoint("BOTTOM", highLevelGap, "TOP", 0, 4)
+    highLevelGap.ApplySaved = function(control)
+        control.syncing = true
+        local gap = ns.GetOption("highLevelGap")
+        control:SetValue(gap)
+        highLevelGapLabel:SetText(gap == HIGH_LEVEL_GAP_MAX
+            and L["Show all quests above you"]
+            or (L["Hide quests %d+ levels above you"]):format(gap))
+        control.syncing = false
+    end
+    highLevelGap:SetScript("OnValueChanged", function(control, value)
+        if control.syncing or NormalizeNumber("highLevelGap", value) == ns.GetOption("highLevelGap") then
+            return
+        end
+        ns.SetOption("highLevelGap", value)
+        control:ApplySaved()
+    end)
+    optionChecks[#optionChecks + 1] = highLevelGap
+
+    local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    iconScale:SetPoint("TOPLEFT", highLevelGap, "BOTTOMLEFT", 0, -26)
+    iconScale:SetSize(240, 16)
+    iconScale:SetMinMaxValues(50, 150)
+    iconScale:SetValueStep(5)
+    if iconScale.Low then iconScale.Low:SetText("50%") end
+    if iconScale.High then iconScale.High:SetText("150%") end
+    local iconScaleLabel = iconScale:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    iconScaleLabel:SetPoint("BOTTOM", iconScale, "TOP", 0, 4)
+    iconScale.ApplySaved = function(control)
+        control.syncing = true
+        local value = ns.GetOption("iconScale")
+        control:SetValue(value)
+        iconScaleLabel:SetText((L["Pin size: %d%%"]):format(value))
+        control.syncing = false
+    end
+    iconScale:SetScript("OnValueChanged", function(control, value)
+        if control.syncing then return end
+        ns.SetOption("iconScale", value)
+        control:ApplySaved()
+    end)
+    optionChecks[#optionChecks + 1] = iconScale
+end
+
+local function BuildAutomationSettings(self)
+    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    heading:SetPoint("TOPLEFT", 16, -16)
+    heading:SetText(L["Quest automation"])
+    local help = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    help:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
+    help:SetWidth(360)
+    help:SetJustifyH("LEFT")
+    help:SetText(L["Hold Shift at an NPC to skip automation once."])
+
+    local accept = CreateOptionCheckbox(
+        self,
+        "autoAccept",
+        L["Auto-accept quests"],
+        L["Accept quests automatically when you talk to an NPC. Hold Shift to skip."]
+    )
+    accept:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -8)
+
+    local breadcrumb = CreateOptionCheckbox(
+        self,
+        "warnSkippedBreadcrumb",
+        L["Warn on skipped breadcrumbs"],
+        L["Show a dialog when you accept a quest before you complete or pick up its breadcrumb quest."]
+    )
+    breadcrumb:SetPoint("TOPLEFT", accept, "BOTTOMLEFT", 0, 0)
+
+    local range = CreateOptionCheckbox(self, "autoAcceptRangeEnabled",
+        L["Limit auto-accept quest level"], L["Only auto-accept quests within the level range around your level. Unknown quest levels are left for manual acceptance."])
+    range:SetPoint("TOPLEFT", breadcrumb, "BOTTOMLEFT", 0, 0)
+    DimWithoutAutoAccept(range)
+
+    local levelRange = ns.CreateLevelRangeSlider(self, function()
+        return ns.GetAutoAcceptLevelRange()
+    end, function(lowValue, highValue)
+        ns.SetOption("autoAcceptMinLevelOffset", lowValue)
+        ns.SetOption("autoAcceptLevelOffset", highValue)
+    end)
+    levelRange:SetPoint("TOPLEFT", range, "BOTTOMLEFT", 12, -22)
+    local applyRange = levelRange.ApplySaved
+    levelRange.ApplySaved = function(control)
+        applyRange(control)
+        control:SetActive(ns.GetOption("autoAccept") and ns.GetOption("autoAcceptRangeEnabled"))
+    end
+    levelRange:ApplySaved()
+    optionChecks[#optionChecks + 1] = levelRange
+
+    local skipGrey = CreateOptionCheckbox(self, "autoAcceptSkipGrey",
+        L["Don't auto-accept grey quests"],
+        L["Skip quests the game shows as grey (trivial) for your level. You can still accept them manually."])
+    skipGrey:SetPoint("TOPLEFT", levelRange, "BOTTOMLEFT", -12, -16)
+    DimWithoutAutoAccept(skipGrey)
+
+    local turnin = CreateOptionCheckbox(
+        self,
+        "autoTurnIn",
+        L["Auto-turn in quests"],
+        L["Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."]
+    )
+    turnin:SetPoint("TOPLEFT", skipGrey, "BOTTOMLEFT", 0, 0)
+
+    local hideTracker = CreateOptionCheckbox(
+        self,
+        "hideQuestTrackerInCombat",
+        L["Hide quest tracker in combat"],
+        L["Makes the default objective tracker transparent while you are in combat and restores its opacity afterward. Keeps your manual collapse setting."]
+    )
+    hideTracker:SetPoint("TOPLEFT", turnin, "BOTTOMLEFT", 0, 0)
+end
+
+local function BuildNavigationSettings(self)
+    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    heading:SetPoint("TOPLEFT", 16, -16)
+    heading:SetText(L["Navigation"])
+    local providerLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    providerLabel:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -12)
+    providerLabel:SetText(L["Waypoint provider"])
+    local provider = CreateFrame("DropdownButton", nil, self, "WowStyle1DropdownTemplate")
+    provider:SetPoint("TOPLEFT", providerLabel, "BOTTOMLEFT", 0, -6)
+    provider:SetSize(240, 24)
+    provider:SetDefaultText(L["Blizzard Map Pins"])
+    provider:SetupMenu(function(_, root)
+        local function IsSelected(value) return ns.GetOption("waypointProvider") == value end
+        local function SetSelected(value) ns.SetOption("waypointProvider", value) end
+        root:CreateRadio(L["Blizzard Map Pins"], IsSelected, SetSelected, "blizzard")
+        root:CreateRadio(L["TomTom (optional addon)"], IsSelected, SetSelected, "tomtom")
+    end)
+    provider.ApplySaved = function(control) control:GenerateMenu() end
+    optionChecks[#optionChecks + 1] = provider
+
+    local navigationAvailable = C_CVar
+        and type(C_CVar.GetCVar) == "function"
+        and C_CVar.GetCVar("showInGameNavigation") ~= nil
+    local lastNavigation
+    if navigationAvailable then
+        local inWorld = CreateOptionCheckbox(
+            self,
+            "showInGameNavigation",
+            L["Show in-world destination marker"],
+            L["Show Blizzard's floating destination marker and distance for the tracked quest or map pin. This changes the game's shared navigation setting."]
+        )
+        inWorld:SetPoint("TOPLEFT", provider, "BOTTOMLEFT", -4, -8)
+        lastNavigation = inWorld
+    else
+        local note = self:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        note:SetPoint("TOPLEFT", provider, "BOTTOMLEFT", 0, -12)
+        note:SetWidth(380)
+        note:SetJustifyH("LEFT")
+        note:SetText(L["|cff33ff99Forever Quest Pins:|r In-world navigation is unavailable on this client."])
+        lastNavigation = note
+    end
+
+    local tracking = CreateOptionCheckbox(self, "enablePinTracking", L["Click pins to track quest starts"],
+        L["When off, clicks pass through quest start pins to the map. Tooltips remain available, but Shift-click hiding is unavailable. By default, tracking is available on zone maps."])
+    tracking:SetPoint("TOPLEFT", lastNavigation, "BOTTOMLEFT", 0, navigationAvailable and 0 or -4)
+    local worldTracking = CreateOptionCheckbox(self, "trackOnWorldMaps", L["Track from world and continent maps"],
+        L["Allow clicks on quest start pins to track them on world and continent maps. When off, tooltips remain available, but Shift-click hiding is unavailable on those maps."])
+    worldTracking:SetPoint("TOPLEFT", tracking, "BOTTOMLEFT", 0, 0)
+end
+
+local function BuildTrackerSettings(self)
+    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    heading:SetPoint("TOPLEFT", 16, -16)
+    heading:SetText(L["Quest tracker"])
+    local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    help:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
+    help:SetWidth(520)
+    help:SetJustifyH("LEFT")
+    help:SetText(L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."])
+
+    local enhanceTracker = CreateOptionCheckbox(
+        self,
+        "enhanceQuestTracker",
+        L["Enhance quest tracker"],
+        L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."]
+    )
+    enhanceTracker:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -12)
+    local sortCaption, sortDropdown = CreateTrackerDropdown(
+        self, "trackerSort", L["Sort quests"], ns.TrackerSortOrder, ns.TrackerSortLabels)
+    sortCaption:SetPoint("TOPLEFT", enhanceTracker, "BOTTOMLEFT", 4, -6)
+    sortDropdown:SetPoint("TOPLEFT", sortCaption, "BOTTOMLEFT", 0, -4)
+    local filterCaption, filterDropdown = CreateTrackerDropdown(
+        self, "trackerFilter", L["Show quests"], ns.TrackerFilterOrder, ns.TrackerFilterLabels)
+    filterCaption:SetPoint("TOPLEFT", sortDropdown, "BOTTOMLEFT", 0, -10)
+    filterDropdown:SetPoint("TOPLEFT", filterCaption, "BOTTOMLEFT", 0, -4)
+    DimWithoutTracker(sortDropdown, { sortCaption })
+    DimWithoutTracker(filterDropdown, { filterCaption })
+
+    local nearest = CreateOptionCheckbox(
+        self,
+        "selectNearestQuest",
+        L["Select nearest quest"],
+        L["Super-track the closest tracked quest and update it as you move."]
+    )
+    nearest:SetPoint("TOPLEFT", filterDropdown, "BOTTOMLEFT", -4, -10)
+end
+
+local function BuildInterfaceSettings(self)
+    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    heading:SetPoint("TOPLEFT", 16, -16)
+    heading:SetText(L["Interface"])
+    local npcTooltips = CreateOptionCheckbox(
+        self,
+        "showNPCTooltips",
+        L["Show quests on NPC tooltips"],
+        L["List quests you can accept or turn in from this NPC (accept eligibility matches start pins; turn-ins require an active, complete quest)."]
+    )
+    npcTooltips:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", -4, -12)
+    local nameplateIcons = CreateOptionCheckbox(
+        self,
+        "showNameplateIcons",
+        L["Show quest icons on nameplates"],
+        L["Show a quest start, turn-in, or objective icon beside NPC nameplates."]
+    )
+    nameplateIcons:SetPoint("TOPLEFT", npcTooltips, "BOTTOMLEFT", 0, 0)
+    local sparkles = CreateOptionCheckbox(
+        self,
+        "sparkleQuestItems",
+        L["Show quest item sparkles"],
+        L["Keeps the game's quest item sparkle on. The same setting also makes quest givers sparkle. Turning it off requires a full game restart; /reload is not enough."]
+    )
+    sparkles:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 0, 0)
+end
+
+function ns.TryRegisterSettings()
+    if ns.settingsRegistered then
         return true
     end
-    return false
+    if not Settings or not Settings.RegisterCanvasLayoutCategory
+        or type(Settings.RegisterCanvasLayoutSubcategory) ~= "function" then
+        return false
+    end
+
+    local general = NewSettingsPanel(BuildGeneralSettings)
+    general.name = "Forever Quest Pins"
+    local category = Settings.RegisterCanvasLayoutCategory(general, "Forever Quest Pins")
+    if not category then
+        return false
+    end
+    Settings.RegisterAddOnCategory(category)
+
+    local sections = {
+        { L["Map pins"], BuildMapPinsSettings },
+        { L["Quest automation"], BuildAutomationSettings },
+        { L["Navigation"], BuildNavigationSettings },
+        { L["Quest tracker"], BuildTrackerSettings },
+        { L["Interface"], BuildInterfaceSettings },
+    }
+    for i = 1, #sections do
+        local panel = NewSettingsPanel(sections[i][2])
+        panel.name = sections[i][1]
+        Settings.RegisterCanvasLayoutSubcategory(category, panel, sections[i][1])
+    end
+
+    ns.settingsRegistered = true
+    ns.settingsMode = "canvas"
+    return true
 end

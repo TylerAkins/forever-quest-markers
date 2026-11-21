@@ -16,8 +16,8 @@ import (
 var rootFiles = []string{
 	"ATTRIBUTION.md", "AutoQuests.lua", "Breadcrumbs.lua", "CHANGELOG.md", "Config.lua", "Core.lua",
 	"Eligibility.lua", "Events.lua", "HiddenQuests.lua", "NPCTooltips.lua", "Nameplates.lua", "QuestLinks.lua",
-	"ForeverQuestPins.toc", "LICENSE", "Localization.lua", "MapPins.lua", "MapPins.xml", "README.md",
-	"RELEASE_NOTES.md", "Setup.lua", "WarEffort.lua", "WhatsNew.lua", "Waypoints.lua",
+	"ForeverQuestPins.toc", "LICENSE", "Localization.lua", "MapPins.lua", "README.md",
+	"RELEASE_NOTES.md", "Setup.lua", "Sparkle.lua", "Tracker.lua", "WarEffort.lua", "WhatsNew.lua", "Waypoints.lua",
 }
 
 var directories = []string{"Database", "Media"}

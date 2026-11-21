@@ -10,6 +10,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 |------|------|
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
 | `Config.lua` | Saved variables, slash commands, settings panel |
+| `Sparkle.lua` | Native quest item sparkle CVar, login and graphics-change reapply, combat deferral |
 | `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Realm"]` |
 | `Eligibility.lua` | Completion, log, source quests, NPC-offered quests |
 | `Events.lua` | Holiday windows and AQ war effort phase state from generated policy |
@@ -18,6 +19,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
+| `Tracker.lua` | In-place zone groups, sorting, filters, and collapsible headers for Blizzard's `QuestObjectiveTracker` |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
@@ -172,7 +174,7 @@ License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data
 
 Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, repeatable, then normal; mixed stacks stay yellow. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
-MapCanvas pins return no center to Forever's native gamepad cursor so closing the map does not taint its protected interaction-target update. The addon retains each pin's original center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map; confirm the tooltip works and no blocked-action popup or taint-log entry appears.
+Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which is shared Blizzard state that addon code should not write. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called. Removing that call did not stop the in-combat `SetPassThroughButtons` blocked action in testing, so that report is still open. The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup or taint-log entry appears.
 
 ## Support split
 
@@ -232,3 +234,94 @@ In game, right-click two different tracked quest titles and copy each URL. Confi
 the Forever quest IDs, existing tracking/details/share/abandon actions, Escape
 closing the copy dialog, and behavior after `/reload`. Combat and taint behavior
 require client verification.
+
+## Quest tracker enhancement
+
+`Tracker.lua` enhances Blizzard's `QuestObjectiveTracker` in place. It wraps
+`BuildQuestWatchInfos` to annotate each watched quest with its native quest-log
+header, current-zone match, instance flag, level, title, and distance, then sorts
+and filters the list. `EnumQuestWatchData` walks that list and inserts an
+`ObjectiveTrackerBlockTemplate` header block when the zone changes. Quest blocks,
+menus, item buttons, timers, and animations stay Blizzard's.
+
+- Zone names come from `C_QuestLog.GetHeaderIndexForQuest` and
+  `C_QuestLog.GetInfo`. If the header index is missing or not a header for a
+  specific quest, the code scans backward from `C_QuestLog.GetLogIndexForQuestID`
+  for the nearest header. Quests with no header use **Other**. If
+  `GetHeaderIndexForQuest` or `GetDistanceSqToQuest` is unavailable, the tracker
+  keeps Blizzard's flat order and does not start the distance ticker.
+- The current zone is `C_Map.GetBestMapForUnit("player")` plus its parent maps,
+  stopping before the continent so every zone on the continent does not match. A
+  quest matches when its header name or next waypoint map is in that chain.
+  Blizzard order, distance, level, and title sort inside each zone, and the
+  current zone group goes first.
+- Filters only change the view. They never call `AddQuestWatch` or
+  `RemoveQuestWatch`, so Shift-click untrack is unchanged. **Completed quests
+  only** uses the quest object's `IsComplete()` and therefore includes quests
+  done and waiting to be turned in.
+- Zone header blocks use `ObjectiveTrackerHeaderFont` and
+  `OBJECTIVE_TRACKER_COLOR.Header`, reserve room for the
+  `ObjectiveTrackerModuleMinimizeButtonTemplate` atlas, and hide their quest
+  header button so quest click, hover, and Copy Wowhead URL handlers never see a
+  string block ID.
+- Collapsed zones live in `ForeverQuestPinsDB.trackerCollapsedZones["Name-Realm"]`.
+  The table is outside `ns.defaults`, so settings synchronization never copies it.
+- `ObjectiveTrackerFrame:SetTrackerTargetButton`, `SelectFirstButton`, and
+  `UpdateSmartNavigationOverrides` temporarily point `firstBlock` at the first
+  non-zone block, so gamepad focus skips zone headers and keeps Blizzard's
+  auto-quest popups.
+- During combat the annotation cache reuses the last out-of-combat grouping and
+  distances, and a zone change in combat keeps those cached zones until combat
+  ends. A quest first seen in combat goes under **Other** until the next
+  out-of-combat layout. The distance ticker runs every 5 seconds only for the
+  Distance sort, while the tracker is visible and out of combat, and skips
+  `MarkDirty` when the order did not change.
+- **Select nearest quest** reads `C_QuestLog.GetDistanceSqToQuest` for every
+  watched quest, skips other-continent results, and calls
+  `C_SuperTrack.SetSuperTrackedQuestID` for the smallest distance. It refreshes
+  every 5 seconds while enabled and out of combat. `/fqp nearest` runs the same
+  selection once.
+
+Runtime cases cover grouping, every sort and filter, the current-zone match, the
+**Other** fallback, missing header and distance APIs, collapse isolation, header
+block handlers, registration, gamepad targeting, the right-click menu, settings
+migration and mirroring, the combat annotation cache, and the distance ticker.
+In-game checks still cover the side-by-side look, Edit Mode, UI scale, gamepad,
+and taint behavior.
+
+Known limits: a nearly full tracker can add a zone header even when its first
+quest block does not fit, and a client without `GetDistanceSqToQuest` uses
+Blizzard's flat order for Distance without applying the view filters. The default
+Blizzard order keeps native calling and `overridesSortOrder` priority; the other
+sorts use their own order inside each zone.
+
+## Quest item sparkles
+
+`Sparkle.lua` keeps the client's native quest item sparkle enabled. It writes one
+CVar, `outlineModeShowLootEffectWhenDisabled`. Never read or write
+`graphicsOutlineMode`, `outlineMode`, or any other outline CVar: those remove the
+player's Self Highlight outline, and earlier sparkle addons were changed for that
+reason. The client has one switch for quest items and quest givers, so enabling
+the option makes quest givers sparkle too.
+
+- The option is `sparkleQuestItems`, default off, and the setup guide offers it
+  on the **Navigation** page. It uses the normal defaults and settings mirror, so
+  existing installs keep a saved on value and gain the key only when missing.
+- `ns.ApplySparkleSetting` runs at `PLAYER_LOGIN`, again after five seconds, and
+  one second after `CVAR_UPDATE` for `graphicsquality` or `raidgraphicsquality`.
+  Graphics presets reset the CVar, which is why the delayed reapply exists.
+- With the option off, both of those paths leave the CVar alone, so a fresh
+  install never writes it and a player who set the sparkle in the game's graphics
+  options keeps that choice.
+- A write during combat is deferred to `PLAYER_REGEN_ENABLED`.
+- Turning the option off calls `ns.DisableSparkleSetting`, which writes `"0"` and
+  prints one restart notice per off period. The client keeps drawing sparkles
+  until the game restarts; `/reload` does not clear them.
+- A missing `C_CVar`, missing `GetCVar`/`SetCVar`, or a missing target CVar makes
+  the apply a no-op. `/fqp apis` reports the API and CVar state, and `/fqp
+  settings` prints the option.
+
+Runtime cases cover the default and settings migration, the single-CVar
+boundary, the delayed graphics reapply, combat deferral, the one-time warning,
+and missing-API handling. In-game checks still cover the rendered sparkle, the
+unchanged character outline, preset recovery, and the restart requirement.
