@@ -14,6 +14,7 @@ local GRAPHICS_RETRY_SECONDS = 1
 local applying = false
 local warnedOff = false
 local pendingApply = false
+local pendingDisable = false
 local scheduledApply = false
 
 local function Print(message)
@@ -78,6 +79,12 @@ function ns.ApplySparkleSetting()
     if not CVarAPI() then
         return false
     end
+    -- Off by default. With the option off the addon leaves the player's own
+    -- client setting alone, so a fresh install never writes the CVar.
+    if not ns.GetOption("sparkleQuestItems") then
+        return true
+    end
+    pendingDisable = false
     if InCombat() then
         pendingApply = true
         return false
@@ -87,21 +94,31 @@ function ns.ApplySparkleSetting()
     if current == nil then
         return false
     end
-    if ns.GetOption("sparkleQuestItems") then
-        warnedOff = false
-        if current == "1" then
-            return true
-        end
-        return WriteCVar("1")
+    warnedOff = false
+    if current == "1" then
+        return true
     end
-    if current ~= "1" then
+    return WriteCVar("1")
+end
+
+-- Runs when the player unchecks the option. The client keeps drawing sparkles
+-- until the game restarts, so this writes 0 and warns once per off period.
+function ns.DisableSparkleSetting()
+    if not CVarAPI() then
+        return false
+    end
+    pendingApply = false
+    if InCombat() then
+        pendingDisable = true
+        return false
+    end
+    pendingDisable = false
+    if ReadCVar() ~= "1" then
         return true
     end
     if not WriteCVar("0") then
         return false
     end
-    -- The client keeps drawing sparkles until the game restarts, so warn once
-    -- per off period instead of on every login and settings refresh.
     if not warnedOff then
         warnedOff = true
         Print(L["Quest item sparkles are off. Restart the game to remove them; /reload is not enough."])
@@ -130,7 +147,9 @@ frame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "PLAYER_REGEN_ENABLED" then
-        if pendingApply then
+        if pendingDisable then
+            ns.DisableSparkleSetting()
+        elseif pendingApply then
             ns.ApplySparkleSetting()
         end
         return

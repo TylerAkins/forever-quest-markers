@@ -4054,6 +4054,15 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     assert(next(writes) == nil, "guided choices must remain staged")
     button("Next").scripts.OnClick()
     button("Next").scripts.OnClick()
+    local sparkle
+    for _, control in ipairs(controls) do
+        if control.key == "sparkleQuestItems" then sparkle = control end
+    end
+    assert(sparkle and sparkle.shown, "the setup guide must offer quest item sparkles")
+    assert(sparkle.checked == false, "sparkles start unchecked")
+    sparkle.checked = true
+    sparkle.scripts.OnClick(sparkle)
+    assert(next(writes) == nil, "the sparkle choice must remain staged")
     button("Next").scripts.OnClick()
     local range, limit
     for _, control in ipairs(controls) do
@@ -4079,6 +4088,7 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     assert(writes.enabled == true and writes.autoAccept == nil and options.autoAccept == true)
     assert(writes.autoAcceptRangeEnabled == true and writes.autoAcceptLevelOffset == 3)
     assert(writes.autoAcceptMinLevelOffset == -5)
+    assert(writes.sparkleQuestItems == true)
     ns.ShowSetup()
     button("Use Defaults").scripts.OnClick()
     assert(writes.defaults == true)
@@ -6373,20 +6383,21 @@ local function loadSparkleAddon()
     ns.InitSettings()
 end
 
-cases["sparkle_runtime.default_is_on_and_existing_settings_survive"] = function()
+cases["sparkle_runtime.default_is_off_and_existing_settings_survive"] = function()
     local state = sparkleFixture("0")
     ForeverQuestPinsDB = { _revision = 7, enabled = false, showPvP = true, trivialLevelGap = 5 }
     loadSparkleAddon()
 
     local db = ns.GetSettings()
-    assert(db.sparkleQuestItems == true, "sparkles default on")
+    assert(db.sparkleQuestItems == false, "sparkles default off")
     assert(db.enabled == false and db.showPvP == true and db.trivialLevelGap == 5,
         "existing options survive")
     assert(db._revision == 7, "adding a default does not bump the revision")
-    assert(state.mirror:find("sparkleQuestItems=1", 1, true), "the mirror gains the new option")
+    assert(state.mirror:find("sparkleQuestItems=0", 1, true), "the mirror gains the new option")
 
     state.fire("PLAYER_LOGIN")
-    assert(state.cvar == "1", "login turns the native sparkle on")
+    assert(#state.targetWrites() == 0, "the default leaves the client's own setting alone")
+    assert(#state.messages == 0, "a fresh install does not see the restart notice")
     assert(db._revision == 7, "applying the CVar does not bump the revision")
     state.assertClean()
 end
@@ -6396,6 +6407,8 @@ cases["sparkle_runtime.enabling_writes_only_the_loot_sparkle_cvar"] = function()
     loadSparkleAddon()
 
     state.fire("PLAYER_LOGIN")
+    assert(#state.targetWrites() == 0)
+    ns.SetOption("sparkleQuestItems", true)
     local writes = state.targetWrites()
     assert(#writes == 1 and writes[1] == "1")
     ns.SetOption("sparkleQuestItems", true)
@@ -6424,6 +6437,7 @@ end
 cases["sparkle_runtime.graphics_quality_change_reapplies_after_delay"] = function()
     local state = sparkleFixture("1")
     loadSparkleAddon()
+    ns.SetOption("sparkleQuestItems", true)
 
     state.fire("PLAYER_LOGIN")
     state.runTimers()
@@ -6451,9 +6465,12 @@ cases["sparkle_runtime.combat_change_defers_until_regen"] = function()
     local state = sparkleFixture("0")
     loadSparkleAddon()
 
+    ns.SetOption("sparkleQuestItems", true)
+    local writesBefore = #state.targetWrites()
     state.combat = true
-    state.fire("PLAYER_LOGIN")
-    assert(#state.targetWrites() == 0, "no CVar write during combat")
+    state.cvar = "0"
+    ns.ApplySparkleSetting()
+    assert(#state.targetWrites() == writesBefore, "no CVar apply during combat")
     state.combat = false
     state.fire("PLAYER_REGEN_ENABLED")
     assert(state.cvar == "1")
@@ -6470,12 +6487,14 @@ cases["sparkle_runtime.combat_change_defers_until_regen"] = function()
 end
 
 cases["sparkle_runtime.disabling_writes_zero_and_warns_once"] = function()
-    local state = sparkleFixture("1")
+    local state = sparkleFixture("0")
     loadSparkleAddon()
 
     state.fire("PLAYER_LOGIN")
     assert(#state.messages == 0)
 
+    ns.SetOption("sparkleQuestItems", true)
+    assert(state.cvar == "1")
     ns.SetOption("sparkleQuestItems", false)
     assert(state.cvar == "0")
     assert(state.mirror:find("sparkleQuestItems=0", 1, true), "the mirror stores the off value")
@@ -6492,38 +6511,45 @@ cases["sparkle_runtime.disabling_writes_zero_and_warns_once"] = function()
     assert(#state.messages == 2, "turning it back on re-arms the warning")
 
     ns.WipeSettings()
-    assert(ns.GetOption("sparkleQuestItems") == true, "Use Defaults re-enables sparkles")
-    assert(state.cvar == "1")
-    assert(#state.messages == 2)
+    assert(ns.GetOption("sparkleQuestItems") == false, "Use Defaults leaves sparkles off")
+    assert(state.cvar == "0")
+    assert(#state.messages == 2, "the CVar is already off, so no second notice")
     state.assertClean()
 end
 
-cases["sparkle_runtime.stored_off_setting_stays_off_and_warns_on_login"] = function()
+cases["sparkle_runtime.stored_off_setting_leaves_the_client_alone"] = function()
     local state = sparkleFixture("1", "revision=9;sparkleQuestItems=0;enabled=1")
     loadSparkleAddon()
 
     assert(ns.GetOption("sparkleQuestItems") == false, "the stored off value wins")
     state.fire("PLAYER_LOGIN")
-    assert(state.cvar == "0")
-    assert(#state.messages == 1, "login warns that the sparkle needs a restart")
+    assert(state.cvar == "1", "login must not touch the client's own sparkle setting")
+    assert(#state.messages == 0, "no restart notice for a player who never turned it on")
     state.assertClean()
 end
 
 cases["sparkle_runtime.missing_cvar_or_api_is_safe"] = function()
     local state = sparkleFixture("1")
     loadSparkleAddon()
+    local cvarAPI = C_CVar
 
     C_CVar = nil
     state.fire("PLAYER_LOGIN")
     state.runTimers()
+    ns.SetOption("sparkleQuestItems", true)
     ns.SetOption("sparkleQuestItems", false)
     assert(#state.targetWrites() == 0)
     assert(#state.messages == 0, "no warning when the CVar API is missing")
     assert(ns.ApplySparkleSetting() == false)
+    assert(ns.DisableSparkleSetting() == false)
+
+    C_CVar = cvarAPI
+    ns.SetOption("sparkleQuestItems", true)
+    local writes = #state.targetWrites()
 
     C_CVar = { GetCVar = function() return nil end }
     assert(ns.ApplySparkleSetting() == false)
-    assert(#state.targetWrites() == 0)
+    assert(#state.targetWrites() == writes)
 
     C_CVar = {
         GetCVar = function() return nil end,
@@ -6562,7 +6588,7 @@ cases["sparkle_runtime.diagnostics_report_cvar_state"] = function()
     state.messages = {}
     ns.PrintSettingsDebug()
     local settings = table.concat(state.messages, "\n")
-    assert(settings:find("sparkleQuestItems raw=true effective=true", 1, true))
+    assert(settings:find("sparkleQuestItems raw=false effective=false", 1, true))
     state.assertClean()
 end
 

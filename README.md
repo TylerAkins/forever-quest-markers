@@ -32,7 +32,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning (on by default)
 - Seasonal / holiday starts (such as Lunar Festival elders) off by default; when on, pins appear only while the event is live
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge off by default; when on, they appear after a war effort quest is offered or in your log, or with the always-show override
-- Keeps the game's quest item sparkle on, including after a graphics preset resets it (on by default). The same client setting also makes quest givers sparkle, and turning it off needs a full game restart; `/reload` is not enough
+- Keeps the game's quest item sparkle on if you turn it on, including after a graphics preset resets it (off by default, and offered in the first-run setup guide). The same client setting also makes quest givers sparkle, and turning it off needs a full game restart; `/reload` is not enough
 
 Quest coordinates, quest-giver IDs, turn-in targets, and restrictions come from [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, with holiday, event, and instance-tag policy from [Questie](https://github.com/Questie/Questie). The Go tool `go run ./cmd/fqp build-db` generates the addon database. Quests without a usable spawn stay in the database for tooltips and prerequisites but may not get a map pin. Nameplate objective icons use the client’s unit tooltip, not extra database data.
 
@@ -54,7 +54,7 @@ The optional **Don't auto-accept grey quests** checkbox defaults off. It skips q
 
 **Enhance quest tracker** defaults on. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Right-click the **Quests** header for the same controls. **Blizzard order** keeps the client's proximity order. **Distance** refreshes every 5 seconds while the tracker is visible and pauses in combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Completed quests only** includes quests that are done and waiting to be turned in. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. Use `/fqp nearest` to select it once. Click a zone's collapse arrow to hide its quests; the state is saved per character. Turn the option off to leave the tracker exactly as Blizzard draws it.
 
-**Show quest item sparkles** defaults on and keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough.
+**Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
 Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
@@ -85,7 +85,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show**
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
-| Show quest item sparkles | On (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
+| Show quest item sparkles | Off (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
 | Enhance quest tracker | On (zone groups, sort, and filters inside Blizzard's quest tracker) |
 | Sort quests | Blizzard order (distance, level, or title optional) |
 | Show quests | All tracked quests (current zone only, instance quests, or completed quests optional) |

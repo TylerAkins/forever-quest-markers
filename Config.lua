@@ -38,7 +38,7 @@ ns.defaults = {
     selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
-    sparkleQuestItems = true,
+    sparkleQuestItems = false,
     debug = false,
 }
 
@@ -394,7 +394,11 @@ function ns.WipeSettings()
     db._revision = Revision(db) + 1
     SyncSettings()
     if ns.ApplySparkleSetting then
-        ns.ApplySparkleSetting()
+        if ns.GetOption("sparkleQuestItems") then
+            ns.ApplySparkleSetting()
+        elseif ns.DisableSparkleSetting then
+            ns.DisableSparkleSetting()
+        end
     end
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
@@ -611,8 +615,12 @@ function ns.SetOption(key, value)
     if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
         ns.SyncQuestTrackerCombatVisibility()
     end
-    if key == "sparkleQuestItems" and ns.ApplySparkleSetting then
-        ns.ApplySparkleSetting()
+    if key == "sparkleQuestItems" then
+        if value then
+            if ns.ApplySparkleSetting then ns.ApplySparkleSetting() end
+        elseif ns.DisableSparkleSetting then
+            ns.DisableSparkleSetting()
+        end
     end
     if trackerOption then
         if ns.NotifyTrackerOptionsChanged then

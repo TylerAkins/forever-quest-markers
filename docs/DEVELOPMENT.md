@@ -304,15 +304,19 @@ player's Self Highlight outline, and earlier sparkle addons were changed for tha
 reason. The client has one switch for quest items and quest givers, so enabling
 the option makes quest givers sparkle too.
 
-- The option is `sparkleQuestItems`, default on. It uses the normal defaults and
-  settings mirror, so existing installs gain it without rewriting other options.
+- The option is `sparkleQuestItems`, default off, and the setup guide offers it
+  on the **Navigation** page. It uses the normal defaults and settings mirror, so
+  existing installs keep a saved on value and gain the key only when missing.
 - `ns.ApplySparkleSetting` runs at `PLAYER_LOGIN`, again after five seconds, and
   one second after `CVAR_UPDATE` for `graphicsquality` or `raidgraphicsquality`.
   Graphics presets reset the CVar, which is why the delayed reapply exists.
+- With the option off, both of those paths leave the CVar alone, so a fresh
+  install never writes it and a player who set the sparkle in the game's graphics
+  options keeps that choice.
 - A write during combat is deferred to `PLAYER_REGEN_ENABLED`.
-- Turning the option off writes `"0"` and prints one restart notice per off
-  period. The client keeps drawing sparkles until the game restarts; `/reload`
-  does not clear them.
+- Turning the option off calls `ns.DisableSparkleSetting`, which writes `"0"` and
+  prints one restart notice per off period. The client keeps drawing sparkles
+  until the game restarts; `/reload` does not clear them.
 - A missing `C_CVar`, missing `GetCVar`/`SetCVar`, or a missing target CVar makes
   the apply a no-op. `/fqp apis` reports the API and CVar state, and `/fqp
   settings` prints the option.
