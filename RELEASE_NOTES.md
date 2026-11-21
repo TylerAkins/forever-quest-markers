@@ -1,4 +1,4 @@
-## 1.0.14 - 2026-11-20
+## 1.1.0 - 2026-11-20
 
 - Group tracked quests by zone, keep the current zone first, and add sort and filter options. Right-click the **Quests** header or use the **Quest tracker** settings section. Zone headers collapse and remember their state per character.
 - Add a **Completed quests only** tracker filter and an optional **Select nearest quest** super-track.

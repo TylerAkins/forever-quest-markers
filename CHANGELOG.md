@@ -2,7 +2,7 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
-## 1.0.14 - 2026-11-20
+## 1.1.0 - 2026-11-20
 
 - Group Blizzard's tracked quests by zone, keep the current zone first, and add sort and filter options. Right-click the **Quests** header or use the new **Quest tracker** settings section. Zone headers collapse and remember their state per character. On by default.
 - Add a **Completed quests only** tracker filter that includes quests done and waiting to be turned in.
