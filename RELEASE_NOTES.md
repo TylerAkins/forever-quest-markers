@@ -4,5 +4,5 @@
 - Add a **Completed quests only** tracker filter and an optional **Select nearest quest** super-track.
 - Split the settings into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections.
 - Add an off-by-default **Show quest item sparkles** option, also offered in the setup guide. It keeps the game's quest item sparkle on, including after a graphics preset resets it. The client also makes quest givers sparkle, and turning the option off needs a full game restart.
-- Stop adding the addon's map pins to Blizzard's map pin pools. That could block Blizzard's own quest pin when the world map opened in combat.
+- Create map pins as ordinary map canvas buttons instead of through Blizzard's shared pin pools.
 - **Show tint for quests new in WoW Forever** now defaults off.

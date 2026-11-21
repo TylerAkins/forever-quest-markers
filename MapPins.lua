@@ -1297,11 +1297,9 @@ ReprojectStitchedPins = function(mapID)
 end
 
 local function AcquirePin(parent)
-    -- Never call WorldMapFrame:AcquirePin. That writes our template into the
-    -- canvas pin pools from addon code, which taints the pools, and Blizzard's
-    -- own quest pin then fails its protected SetPassThroughButtons call when
-    -- the map opens in combat. Ordinary canvas children behave the same for
-    -- our pins and leave Blizzard's pool untouched.
+    -- Never call WorldMapFrame:AcquirePin. It writes our template into the
+    -- canvas pin pools, which is shared Blizzard state. Ordinary canvas
+    -- children behave the same for our pins and leave the pools alone.
     local pin = table.remove(pool)
     if not pin then
         pin = CreateFrame("Button", nil, parent)
