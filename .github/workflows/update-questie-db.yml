@@ -69,10 +69,14 @@ jobs:
 
       - name: Download QuestieDB preview artifact
         id: artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p .cache
           RELEASE_JSON="$(curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/Questie/QuestieDB/releases/tags/preview)"
           ASSET_COUNT="$(jq '[.assets[] | select(.name | test("^QuestieDB-.+-Forever[.]zip$"))] | length' <<<"$RELEASE_JSON")"
           if [[ "$ASSET_COUNT" != 1 ]]; then
