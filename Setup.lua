@@ -29,7 +29,7 @@ local pages = {
         { "sparkleQuestItems", "Show quest item sparkles" },
     } },
     { title = "Quest tracker", options = {
-        { "enhanceQuestTracker", "Enhance quest tracker" },
+        { "enhanceQuestTracker", "Enhance quest tracker (BETA)" },
         { "selectNearestQuest", "Select nearest quest" },
     } },
     { title = "Quest automation", options = {
