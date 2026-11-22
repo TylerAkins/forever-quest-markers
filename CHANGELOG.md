@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.3 - 2026-11-21
+
+- Keep the enhanced quest tracker out of Blizzard's combat layout. The addon restores Blizzard's tracker methods while in combat, so the scenario tracker can read secret aura data, then re-applies the zone groups, sort, and filters after combat.
+
 ## 1.1.2 - 2026-11-21
 
 - Stop the blocked-action popup when opening the world map in combat. The addon no longer post-hooks Blizzard's map frame or adds its filters to the world map's Show menu, both of which tainted the map layout. The pin filters now have their own button on the world map.

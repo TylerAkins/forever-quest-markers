@@ -20,6 +20,7 @@ local FILTER_LABELS = ns.TrackerFilterLabels or {
 }
 
 local registered = false
+local ApplyTrackerEnhancement, RestoreTrackerEnhancement
 local zoneChainCache
 local distanceCache = {}
 local annotationCache = {}
@@ -1013,9 +1014,11 @@ function ns.NotifyTrackerOptionsChanged()
     ns.UpdateNearestQuestTicker()
     if InCombat() then
         pendingLayout = true
+        ns.RefreshTrackerEnhancement()
         return
     end
     pendingLayout = false
+    ns.RefreshTrackerEnhancement()
     local tracker = QuestObjectiveTracker
     if tracker and tracker.MarkDirty then
         tracker:MarkDirty()
@@ -1042,6 +1045,74 @@ end
 
 local originalBuildQuestWatchInfos
 local originalEnumQuestWatchData
+local originalSetTrackerTargetButton
+local originalSelectFirstButton
+local originalUpdateSmartNavigationOverrides
+local enhancedBuildQuestWatchInfos
+local enhancedEnumQuestWatchData
+local enhancedSetTrackerTargetButton
+local enhancedSelectFirstButton
+local enhancedUpdateSmartNavigationOverrides
+local enhancementActive = false
+
+ApplyTrackerEnhancement = function()
+    if not registered or enhancementActive or InCombat() then
+        return
+    end
+    local tracker = QuestObjectiveTracker
+    local frame = ObjectiveTrackerFrame
+    if not tracker or not frame then
+        return
+    end
+    tracker.BuildQuestWatchInfos = enhancedBuildQuestWatchInfos
+    tracker.EnumQuestWatchData = enhancedEnumQuestWatchData
+    if enhancedSetTrackerTargetButton then
+        frame.SetTrackerTargetButton = enhancedSetTrackerTargetButton
+    end
+    if enhancedSelectFirstButton then
+        frame.SelectFirstButton = enhancedSelectFirstButton
+    end
+    if enhancedUpdateSmartNavigationOverrides then
+        frame.UpdateSmartNavigationOverrides = enhancedUpdateSmartNavigationOverrides
+    end
+    enhancementActive = true
+end
+
+RestoreTrackerEnhancement = function()
+    if not registered or not enhancementActive then
+        return
+    end
+    local tracker = QuestObjectiveTracker
+    local frame = ObjectiveTrackerFrame
+    if tracker then
+        tracker.BuildQuestWatchInfos = originalBuildQuestWatchInfos
+        tracker.EnumQuestWatchData = originalEnumQuestWatchData
+    end
+    if frame then
+        if originalSetTrackerTargetButton then
+            frame.SetTrackerTargetButton = originalSetTrackerTargetButton
+        end
+        if originalSelectFirstButton then
+            frame.SelectFirstButton = originalSelectFirstButton
+        end
+        if originalUpdateSmartNavigationOverrides then
+            frame.UpdateSmartNavigationOverrides = originalUpdateSmartNavigationOverrides
+        end
+    end
+    enhancementActive = false
+end
+
+-- The tracker layout runs inside Blizzard's execution. Our replacement methods
+-- are addon code, so calling them taints the rest of the layout, and in combat
+-- the scenario tracker then cannot read secret aura data. Keep the originals in
+-- place while in combat and re-apply the enhancement after combat.
+function ns.RefreshTrackerEnhancement()
+    if ns.GetOption("enhanceQuestTracker") and not InCombat() then
+        ApplyTrackerEnhancement()
+    else
+        RestoreTrackerEnhancement()
+    end
+end
 
 function ns.TryRegisterQuestTracker()
     if registered then
@@ -1058,7 +1129,7 @@ function ns.TryRegisterQuestTracker()
     end
     originalBuildQuestWatchInfos = tracker.BuildQuestWatchInfos
     originalEnumQuestWatchData = tracker.EnumQuestWatchData
-    tracker.BuildQuestWatchInfos = function(self, ...)
+    enhancedBuildQuestWatchInfos = function(self, ...)
         local infos = originalBuildQuestWatchInfos(self, ...)
         if not ns.GetOption("enhanceQuestTracker") then
             return infos
@@ -1069,7 +1140,7 @@ function ns.TryRegisterQuestTracker()
         end
         return enhanced
     end
-    tracker.EnumQuestWatchData = function(self, func)
+    enhancedEnumQuestWatchData = function(self, func)
         if not ns.GetOption("enhanceQuestTracker") then
             return originalEnumQuestWatchData(self, func)
         end
@@ -1079,13 +1150,16 @@ function ns.TryRegisterQuestTracker()
         end
     end
     if type(frame.SetTrackerTargetButton) == "function" then
-        frame.SetTrackerTargetButton = TargetFirstQuestBlock(frame.SetTrackerTargetButton)
+        originalSetTrackerTargetButton = frame.SetTrackerTargetButton
+        enhancedSetTrackerTargetButton = TargetFirstQuestBlock(originalSetTrackerTargetButton)
     end
     if type(frame.SelectFirstButton) == "function" then
-        frame.SelectFirstButton = WithFirstQuestBlock(frame.SelectFirstButton)
+        originalSelectFirstButton = frame.SelectFirstButton
+        enhancedSelectFirstButton = WithFirstQuestBlock(originalSelectFirstButton)
     end
     if type(frame.UpdateSmartNavigationOverrides) == "function" then
-        frame.UpdateSmartNavigationOverrides = WithFirstQuestBlock(frame.UpdateSmartNavigationOverrides)
+        originalUpdateSmartNavigationOverrides = frame.UpdateSmartNavigationOverrides
+        enhancedUpdateSmartNavigationOverrides = WithFirstQuestBlock(originalUpdateSmartNavigationOverrides)
     end
     HookTrackerHeader(tracker)
     if tracker.HookScript then
@@ -1099,6 +1173,7 @@ function ns.TryRegisterQuestTracker()
         end)
     end
     registered = true
+    ns.RefreshTrackerEnhancement()
     ns.UpdateTrackerTicker()
     ns.UpdateNearestQuestTicker()
     return true
@@ -1121,17 +1196,17 @@ if CreateFrame then
         elseif event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
             ns.OnTrackerZoneChanged(true)
         elseif event == "PLAYER_REGEN_DISABLED" then
+            ns.RefreshTrackerEnhancement()
             StopTicker()
             StopNearestTicker()
         elseif event == "PLAYER_REGEN_ENABLED" then
+            ns.RefreshTrackerEnhancement()
             ns.UpdateTrackerTicker()
             ns.UpdateNearestQuestTicker()
-            if pendingLayout then
-                pendingLayout = false
-                local tracker = QuestObjectiveTracker
-                if tracker and tracker.MarkDirty then
-                    tracker:MarkDirty()
-                end
+            pendingLayout = false
+            local tracker = QuestObjectiveTracker
+            if tracker and tracker.MarkDirty then
+                tracker:MarkDirty()
             end
         end
     end)

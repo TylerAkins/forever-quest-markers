@@ -5983,6 +5983,43 @@ cases["tracker_runtime.registration_wraps_once_and_respects_the_option"] = funct
     assert(calls.enum == 1)
 end
 
+cases["tracker_runtime.enhancement_is_removed_in_combat"] = function()
+    local tracker, options = trackerFixture()
+    local originalBuild = function() return {} end
+    local originalEnum = function() end
+    QuestObjectiveTracker = {
+        Header = {
+            EnableMouse = function() end,
+            GetScript = function() return nil end,
+            SetScript = function() end,
+        },
+        BuildQuestWatchInfos = originalBuild,
+        EnumQuestWatchData = originalEnum,
+    }
+    ObjectiveTrackerFrame = {
+        SetTrackerTargetButton = function() end,
+        SelectFirstButton = function() end,
+        UpdateSmartNavigationOverrides = function() end,
+    }
+    InCombatLockdown = function() return false end
+    assert(tracker.TryRegisterQuestTracker())
+    assert(QuestObjectiveTracker.BuildQuestWatchInfos ~= originalBuild,
+        "the enhanced wrapper is installed out of combat")
+    assert(QuestObjectiveTracker.EnumQuestWatchData ~= originalEnum)
+
+    InCombatLockdown = function() return true end
+    tracker.RefreshTrackerEnhancement()
+    assert(QuestObjectiveTracker.BuildQuestWatchInfos == originalBuild,
+        "the original build method is restored in combat")
+    assert(QuestObjectiveTracker.EnumQuestWatchData == originalEnum,
+        "the original enum method is restored in combat")
+
+    InCombatLockdown = function() return false end
+    tracker.RefreshTrackerEnhancement()
+    assert(QuestObjectiveTracker.BuildQuestWatchInfos ~= originalBuild,
+        "the enhancement returns after combat")
+end
+
 cases["tracker_runtime.blocked_block_value_falls_back_to_flat_list"] = function()
     local tracker, options = trackerFixture()
     local quest = trackerQuest(1, "One", 10)
