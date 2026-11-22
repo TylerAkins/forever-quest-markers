@@ -43,13 +43,13 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 
 ## Database
 
-Quest coordinates, starters, turn-in targets, and restrictions come from the [QuestieDB](https://github.com/Questie/QuestieDB) Forever preview artifact. Holiday membership, event windows, the AQ war effort quest list, and instance-tag corrections come from [Questie](https://github.com/Questie/Questie).
+Quest coordinates, starters, turn-in targets, and restrictions come from the latest stable [QuestieDB](https://github.com/Questie/QuestieDB) Forever release artifact. Holiday membership, event windows, the AQ war effort quest list, and instance-tag corrections come from [Questie](https://github.com/Questie/Questie).
 
 ```bash
 go run ./cmd/fqp build-db \
   --questiedb /path/to/QuestieDB-Forever.zip \
   --questiedb-sha bdfc31538466a575c9a4aa8d7c2cf9678cf3ca4734f682c5381f0d697e567aa8 \
-  --questiedb-ref preview \
+  --questiedb-ref v1.1.4 \
   --questie /path/to/Questie \
   --questie-sha d0b0e89ac228e380e139f1c524408507e6d4fe1b \
   --out Database
@@ -74,7 +74,8 @@ This adds recovered/lost starts, coordinate changes, flag changes, and conflicts
 Workflow **Update QuestieDB database** (`.github/workflows/update-questie-db.yml`):
 
 - Daily at 06:00 UTC and on manual **Run workflow**
-- Downloads the mutable QuestieDB `preview` artifact and records its SHA-256 in the PR
+- Resolves the latest non-prerelease QuestieDB release and fails when none exists
+- Downloads that stable `v*` Forever artifact and records its tag and SHA-256 in the PR
 - Checks out Questie at the policy commit already pinned in `Database/Metadata.lua`
 - Opens a versioned PR only when `Database/ForeverQuests.lua` or `Database/EventPolicy.lua` changed; artifact SHA-only updates with no data diff are ignored
 - Closes its existing `questie-db-update` PR if regenerated quest records return to the version already on `main`

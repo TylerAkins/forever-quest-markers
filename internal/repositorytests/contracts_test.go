@@ -363,6 +363,25 @@ func TestWorkflowsRunGoToolsAndRetainLuaJITTestsWithoutPython(t *testing.T) {
 	}
 }
 
+func TestQuestieDBUpdateUsesStableRelease(t *testing.T) {
+	base := root(t)
+	workflow := read(t, base, filepath.Join(".github", "workflows", "update-questie-db.yml"))
+	for _, expected := range []string{
+		"https://api.github.com/repos/Questie/QuestieDB/releases/latest",
+		`--questiedb-ref "$QUESTIEDB_REF"`,
+		"ref=${RELEASE_TAG}",
+	} {
+		if !strings.Contains(workflow, expected) {
+			t.Errorf("QuestieDB update workflow is missing %q", expected)
+		}
+	}
+	for _, retired := range []string{"releases/tags/preview", "--questiedb-ref preview"} {
+		if strings.Contains(workflow, retired) {
+			t.Errorf("QuestieDB update workflow still uses the preview artifact: %q", retired)
+		}
+	}
+}
+
 func TestLuaFilesAndDocumentationDescribeGoTooling(t *testing.T) {
 	base := root(t)
 	toc := read(t, base, "ForeverQuestPins.toc")
