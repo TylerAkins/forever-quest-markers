@@ -219,6 +219,12 @@ that shared CVar directly, so it reflects changes from the console or other
 addons and does not overwrite the player's choice on login. Verify presentation
 in game.
 
+`ns.TrackQuest`, `ns.UpdateWaypoint`, and `ns.ClearWaypoint` refuse to write while
+`AddOnActionsRestricted()` is true. A super-track or user waypoint write from
+addon code in combat taints the map's pin refresh. Existing tracking resumes on
+the post-combat refresh; a new tracking click in combat reports that tracking is
+unavailable.
+
 In-game verification: choose Blizzard Map Pins with TomTom disabled, click a
 start on both its zone map and a parent map, accept it, progress its objectives,
 and turn it in. Repeat with TomTom selected. Check changing provider, manually

@@ -12,6 +12,10 @@ local function Report(message)
     print("|cff33ff99Forever Quest Pins:|r " .. message)
 end
 
+local function ActionsRestricted()
+    return ns.AddOnActionsRestricted and ns.AddOnActionsRestricted() or false
+end
+
 local function ValidPoint(mapID, x, y)
     return type(mapID) == "number" and mapID > 0
         and type(x) == "number" and type(y) == "number"
@@ -29,6 +33,12 @@ local function OwnsBlizzardPin()
 end
 
 function ns.ClearWaypoint()
+    -- Writing the super-track or the user waypoint from addon code in combat
+    -- taints the map's pin refresh. Leave the current state alone and let the
+    -- post-combat refresh clear or replace it.
+    if ActionsRestricted() then
+        return
+    end
     if nativeQuestID and C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID
         and C_SuperTrack.GetSuperTrackedQuestID() == nativeQuestID then
         C_SuperTrack.SetSuperTrackedQuestID(0)
@@ -131,6 +141,11 @@ function ns.CanTrackQuest(questID, data)
 end
 
 function ns.TrackQuest(questID, data, quiet)
+    if ActionsRestricted() then
+        local message = L["Quest tracking is unavailable in combat."]
+        if not quiet then Report(message) end
+        return false, message
+    end
     local target, message = ResolveTrackTarget(questID, data)
     if not target then
         if message and not quiet then Report(message) end
@@ -161,6 +176,7 @@ function ns.TrackQuest(questID, data, quiet)
 end
 
 function ns.UpdateWaypoint()
+    if ActionsRestricted() then return end
     if not selectedQuestID or nativeQuestID then return end
     if startPoint and (not OwnsBlizzardPin()
         or (C_SuperTrack and C_SuperTrack.IsSuperTrackingUserWaypoint
