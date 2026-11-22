@@ -182,6 +182,8 @@ Do not register `Menu.ModifyMenu` callbacks for menus the world map generates, a
 
 `/fqp taint` scans the map, quest log, and tracker frames with `issecurevariable` and names the addon that last wrote each tainted field; run it before `/reload` after a block, and check that no map field is tainted.
 
+The skipped-breadcrumb dialog's **Abandon Quest** action calls `C_QuestLog.SetSelectedQuest`, so the quest log writes `DetailsFrame.questID` and the related fields under the addon's taint. That is the one remaining path that can block map pins in combat until a reload. The feature is kept deliberately; if it becomes a problem, remove the action or require the player to abandon from the quest log.
+
 The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup appears. Do not test with `/console taintLog` on: on Forever it breaks post-hooked methods and does not produce a usable log.
 
 ## Support split

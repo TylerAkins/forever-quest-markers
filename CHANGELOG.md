@@ -5,6 +5,7 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 ## 1.1.2 - 2026-11-21
 
 - Stop the blocked-action popup when opening the world map in combat. The addon no longer post-hooks Blizzard's map frame or adds its filters to the world map's Show menu, both of which tainted the map layout. The pin filters now have their own button on the world map.
+- Keep the skipped-breadcrumb **Abandon Quest** action, with a known cost: it selects the quest in your log from addon code, so using it can make the map report a blocked action in combat until you reload. Abandon from the quest log to avoid it.
 - Fall back to Blizzard's flat quest list when the client refuses a zone header in combat, instead of raising a Lua error in the enhanced tracker.
 - Add `/fqp taint`, a debug command that lists Blizzard fields an addon tainted and names the addon.
 
