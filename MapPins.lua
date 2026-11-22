@@ -748,6 +748,10 @@ local function ReleasePin(pin)
     end
     pin:Hide()
     pin:ClearAllPoints()
+    -- Keep released pins off Blizzard's canvas. The canvas creates its own pins
+    -- when the map opens, and addon frames left in its child list can taint
+    -- that work, which blocks SetPassThroughButtons in combat.
+    pin:SetParent(UIParent)
     pin.questID = nil
     pin.data = nil
     pin.reason = nil
@@ -2116,10 +2120,19 @@ function MapPins:Refresh(reason)
     end
 end
 
--- Avoid HookScript on WorldMapFrame; use hooksecurefunc and our own OnUpdate while open.
+-- Never post-hook WorldMapFrame. A hook runs inside Blizzard's own map
+-- execution, and the rest of that execution inherits this addon's taint: the
+-- quest log layout, the scroll container scale/scroll fields, and
+-- wasShowingQuestLog all come out written by ForeverQuestPins. The map reads
+-- them again when it places its pins, and in combat the protected pin calls
+-- are then refused. Watch the frame from our own OnUpdate instead.
 local mapWatch = CreateFrame("Frame")
 local mapOpen = false
 local lastStitchedObserved
+local lastViewedMapID
+local lastCanvasScale
+local pollAccum = 0
+local POLL_GAP = 0.05
 local sizeWatchFrames = {}
 local sizeSnapshot = {}
 
@@ -2156,12 +2169,67 @@ local function MapSizeChanged()
     return false
 end
 
+local function CurrentCanvasScale()
+    if WorldMapFrame and type(WorldMapFrame.GetCanvasScale) == "function" then
+        local ok, scale = pcall(WorldMapFrame.GetCanvasScale, WorldMapFrame)
+        if ok then
+            return scale
+        end
+    end
+    return nil
+end
+
+local function OnViewedMapChanged()
+    InvalidateCanvas()
+    local viewedMapID = ns.GetViewedMapID()
+    if MapPins:IsRefreshingOtherMap(viewedMapID) then
+        -- Let the debounced refresh paint this map from scratch.
+        MapPins:CancelPendingRefresh()
+    elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
+        return
+    end
+    local previousMapID = lastStatus.viewedMap
+    if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
+        -- Remove the previous zone's pins now; the debounced, sliced
+        -- refresh will paint the new zone over the next few frames.
+        MapPins:Clear()
+        lastStatus.mode = "map-changing"
+    end
+    ns.RequestRefresh("map-changed")
+end
+
+local function OnDisplayStateChanged()
+    InvalidateCanvas()
+    HideSpawnCloud()
+    if ns.RefreshWorldMapFilterButton then
+        ns.RefreshWorldMapFilterButton()
+    end
+    local viewedMapID = ns.GetViewedMapID()
+    if MapPins:IsRefreshingOtherMap(viewedMapID) then
+        MapPins:CancelPendingRefresh()
+    elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
+        MapPins:RepositionAll()
+        return
+    end
+    local previousMapID = lastStatus.viewedMap
+    if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
+        MapPins:Clear()
+        lastStatus.mode = "map-changing"
+    end
+    ns.RequestRefresh("map-display")
+end
+
 local function OnMapOpen()
     mapOpen = true
     lastStitchedObserved = IsOpenMapStitched()
-    shiftClickArmed = IsShiftKeyDown and IsShiftKeyDown() or false
+    lastViewedMapID = ns.GetViewedMapID()
+    lastCanvasScale = CurrentCanvasScale()
     ResetSizeSnapshots()
     InvalidateCanvas()
+    if ns.EnsureWorldMapFilterButton then
+        ns.EnsureWorldMapFilterButton()
+        ns.RefreshWorldMapFilterButton()
+    end
     ns.RequestRefresh("map-show")
     if C_Timer and C_Timer.After then
         C_Timer.After(0, function()
@@ -2174,6 +2242,8 @@ end
 local function OnMapClose()
     mapOpen = false
     lastStitchedObserved = nil
+    lastViewedMapID = nil
+    lastCanvasScale = nil
     shiftClickArmed = false
     sizeSnapshot = {}
     sizeWatchFrames = {}
@@ -2189,8 +2259,31 @@ local function OnMapClose()
 end
 
 mapWatch:SetScript("OnUpdate", function(_, elapsed)
+    pollAccum = pollAccum + elapsed
+    if pollAccum >= POLL_GAP then
+        pollAccum = 0
+        local shown = WorldMapFrame and type(WorldMapFrame.IsShown) == "function"
+            and WorldMapFrame:IsShown() or false
+        if shown ~= mapOpen then
+            if shown then
+                OnMapOpen()
+            else
+                OnMapClose()
+            end
+        end
+    end
     if not mapOpen then
         return
+    end
+    local viewedMapID = ns.GetViewedMapID()
+    if viewedMapID ~= lastViewedMapID then
+        lastViewedMapID = viewedMapID
+        OnViewedMapChanged()
+    end
+    local canvasScale = CurrentCanvasScale()
+    if canvasScale ~= lastCanvasScale then
+        lastCanvasScale = canvasScale
+        OnDisplayStateChanged()
     end
     local stitched = IsOpenMapStitched()
     if stitched ~= lastStitchedObserved then
@@ -2234,71 +2327,7 @@ function MapPins:HookMap()
     if self.hooked or not WorldMapFrame then
         return
     end
-    if ns.TryRegisterWorldMapDropdown then
-        ns.TryRegisterWorldMapDropdown()
-    end
     self.hooked = true
-    mapOpen = WorldMapFrame.IsShown and WorldMapFrame:IsShown() or false
-    if mapOpen then
-        OnMapOpen()
-    end
-    if WorldMapFrame.Show then
-        hooksecurefunc(WorldMapFrame, "Show", function()
-            if not mapOpen then
-                OnMapOpen()
-            end
-        end)
-    end
-    if WorldMapFrame.Hide then
-        hooksecurefunc(WorldMapFrame, "Hide", function()
-            if mapOpen then
-                OnMapClose()
-            end
-        end)
-    end
-    if WorldMapFrame.OnMapChanged then
-        hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
-            InvalidateCanvas()
-            local viewedMapID = ns.GetViewedMapID()
-            if MapPins:IsRefreshingOtherMap(viewedMapID) then
-                -- Let the debounced refresh paint this map from scratch.
-                MapPins:CancelPendingRefresh()
-            elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
-                return
-            end
-            local previousMapID = lastStatus.viewedMap
-            if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
-                -- Remove the previous zone's pins now; the debounced, sliced
-                -- refresh will paint the new zone over the next few frames.
-                MapPins:Clear()
-                lastStatus.mode = "map-changing"
-            end
-            ns.RequestRefresh("map-changed")
-        end)
-    end
-    if WorldMapFrame.OnCanvasScaleChanged then
-        hooksecurefunc(WorldMapFrame, "OnCanvasScaleChanged", function()
-            InvalidateCanvas()
-            HideSpawnCloud()
-            MapPins:RepositionAll()
-        end)
-    end
-    if WorldMapFrame.SynchronizeDisplayState then
-        hooksecurefunc(WorldMapFrame, "SynchronizeDisplayState", function()
-            InvalidateCanvas()
-            local viewedMapID = ns.GetViewedMapID()
-            if MapPins:IsRefreshingOtherMap(viewedMapID) then
-                MapPins:CancelPendingRefresh()
-            elseif stitchedPins and IsOpenMapStitched() and ReprojectStitchedPins(viewedMapID) then
-                MapPins:RepositionAll()
-                return
-            end
-            local previousMapID = lastStatus.viewedMap
-            if previousMapID and viewedMapID and previousMapID ~= viewedMapID then
-                MapPins:Clear()
-                lastStatus.mode = "map-changing"
-            end
-            ns.RequestRefresh("map-display")
-        end)
-    end
+    -- No hooks on WorldMapFrame: see the note above. The OnUpdate watch
+    -- notices open/close, map changes, and canvas scale changes on its own.
 end

@@ -620,7 +620,10 @@ end
 
 function ns.AddZoneHeader(module, zone)
     local block = module:GetBlock("zone:" .. zone, "ObjectiveTrackerBlockTemplate")
-    if not block then
+    -- In combat the client can hand back a blocked value instead of a block.
+    -- Indexing it raises "indexed assignment on local 'block'"; fall back to
+    -- Blizzard's flat list for this pass instead.
+    if type(block) ~= "table" then
         return false
     end
     block.zoneName = zone
@@ -673,10 +676,10 @@ function ns.EnumEnhancedQuestWatchData(module, func)
         -- Grouping was unavailable, so keep Blizzard's flat enumeration.
         for i = 1, #infos do
             if not func(module, infos[i].quest) then
-                return
+                return true
             end
         end
-        return
+        return true
     end
     local currentZone
     for i = 1, #infos do
@@ -685,15 +688,18 @@ function ns.EnumEnhancedQuestWatchData(module, func)
         if zone ~= currentZone then
             currentZone = zone
             if not ns.AddZoneHeader(module, zone) then
-                return
+                -- The client refused a block (it hands back a blocked value in
+                -- combat). Tell the caller so it can use Blizzard's flat list.
+                return false
             end
         end
         if not ns.IsZoneCollapsed(zone) then
             if not func(module, info.quest) then
-                return
+                return true
             end
         end
     end
+    return true
 end
 
 local function IsZoneHeaderBlock(block)
@@ -1067,8 +1073,8 @@ function ns.TryRegisterQuestTracker()
         if not ns.GetOption("enhanceQuestTracker") then
             return originalEnumQuestWatchData(self, func)
         end
-        local ok = pcall(ns.EnumEnhancedQuestWatchData, self, func)
-        if not ok then
+        local ok, enhanced = pcall(ns.EnumEnhancedQuestWatchData, self, func)
+        if not ok or enhanced == false then
             return originalEnumQuestWatchData(self, func)
         end
     end

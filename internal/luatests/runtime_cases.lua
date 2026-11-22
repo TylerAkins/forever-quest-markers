@@ -399,92 +399,77 @@ end
             assert(ns.IsQuestAvailable(101, { classes = { 1 }, requireSkill = 164 }))
 
 end
-cases["pin_filters_runtime.test_map_menu_controls_share_saved_settings"] = function()
+cases["pin_filters_runtime.map_filter_button_builds_its_own_menu"] = function()
+    ns = {}
+    print = function() end
+    WorldMapFrame = {
+        GetFrameStrata = function() return "FULLSCREEN_DIALOG" end,
+        GetFrameLevel = function() return 1 end,
+        GetCanvasContainer = function() return nil end,
+    }
+    local frames = {}
+    local function region()
+        return {
+            SetAllPoints = function() end,
+            SetSize = function() end,
+            SetPoint = function() end,
+            SetColorTexture = function() end,
+            SetAtlas = function() end,
+            SetTexture = function() end,
+            SetText = function() end,
+            SetTextColor = function() end,
+            SetShown = function(self, value) self.shown = value and true or false end,
+        }
+    end
+    CreateFrame = function(kind, name, parent)
+        local frame = { kind = kind, name = name, parent = parent, scripts = {}, shown = true }
+        frame.SetSize = function() end
+        frame.SetPoint = function() end
+        frame.ClearAllPoints = function() end
+        frame.SetClampedToScreen = function() end
+        frame.SetFrameStrata = function() end
+        frame.SetFrameLevel = function() end
+        frame.EnableMouse = function() end
+        frame.CreateTexture = function() return region() end
+        frame.CreateFontString = function() return region() end
+        frame.SetScript = function(self, event, callback) self.scripts[event] = callback end
+        frame.Show = function(self) self.shown = true end
+        frame.Hide = function(self) self.shown = false end
+        frame.SetShown = function(self, value) self.shown = value and true or false end
+        frame.IsShown = function(self) return self.shown end
+        frame.SetChecked = function(self, value) self.checked = value and true or false end
+        frame.GetChecked = function(self) return self.checked end
+        frame.Enable = function(self) self.enabled = true end
+        frame.Disable = function(self) self.enabled = false end
+        frames[#frames + 1] = frame
+        return frame
+    end
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    assert(ns.EnsureWorldMapFilterButton)
+    ns.EnsureWorldMapFilterButton()
+    local button
+    for _, frame in ipairs(frames) do
+        if frame.kind == "Button" then button = frame end
+    end
+    assert(button and button.scripts.OnClick, "the map filter button must exist")
 
-            ns = {}
-            messages = {}
-            refreshes = {}
-            print = function(message) table.insert(messages, message) end
-            function said(text)
-                for _, message in ipairs(messages) do
-                    if message:find(text, 1, true) then return true end
-                end
-                return false
-            end
-            playerName = "Thrall"
-            realmName = "Forever"
-            UnitName = function() return playerName end
-            GetRealmName = function() return realmName end
-            UnitLevel = function() return 30 end
-            C_QuestLog = {}
-            gamepadEnabled = false
-            timerQueue = {}
-            C_Timer = { After = function(_, callback) table.insert(timerQueue, callback) end }
-            InputUtil = { IsGamepadUIEnabled = function() return gamepadEnabled end }
-            shift = false
-            IsShiftKeyDown = function() return shift end
-            GameTooltip = {
-                Hide = function() tooltipHidden = (tooltipHidden or 0) + 1 end,
-                SetOwner = function() tooltipOwners = (tooltipOwners or 0) + 1 end,
-                SetText = function() end,
-                AddLine = function() end,
-                Show = function() end,
-            }
-            CreateFrame = function() return { SetScript = function() end } end
+    button.scripts.OnClick(button)
+    local list
+    for _, frame in ipairs(frames) do
+        if frame.name == "ForeverQuestPinsMapFilterList" then list = frame end
+    end
+    assert(list, "clicking the button must build the addon's own list")
+    assert(list.shown == true, "the list opens on click")
+    local rows = 0
+    for _, frame in ipairs(frames) do
+        if frame.kind == "CheckButton" then rows = rows + 1 end
+    end
+    assert(rows == 13, "the list keeps the full filter set")
 
-assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
-assert(loadfile("HiddenQuests.lua"))("ForeverQuestPins", ns)
-assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
-assert(loadfile("MapPins.lua"))("ForeverQuestPins", ns)
-
-            ns.RequestRefresh = function(reason) table.insert(refreshes, reason) end
-            ns.TrackQuest = function(questID) tracked = questID end
-
-local function use_mirror(text)
-mirror = text
-
-            C_CVar = {
-                GetCVar = function() return mirror end,
-                SetCVar = function(_, text) mirror = text end,
-                RegisterCVar = function() end,
-            }
-
+    button.scripts.OnClick(button)
+    assert(list.shown == false, "clicking the button again closes the list")
 end
 
-            ns.InitSettings()
-            ns.MapPins.Clear = function() cleared = true end
-            local modify
-            Menu = { ModifyMenu = function(_, callback) modify = callback end }
-            MenuUtil = { CreateCheckbox = function(label, selected, click)
-                return { label = label, selected = selected, click = click,
-                    SetEnabled = function(self, predicate) self.enabled = predicate end }
-            end }
-            assert(ns.TryRegisterWorldMapDropdown())
-            local buttons = {}
-            modify(nil, { CreateDivider = function() end, CreateTitle = function() end,
-                Insert = function(_, button) table.insert(buttons, button) end })
-            assert(#buttons == 13)
-            assert(buttons[1].enabled == nil)
-            assert(buttons[13].label == "Click pins to track quest starts")
-            assert(buttons[13].enabled == nil)
-            local categoryButtons = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 12 }
-            for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
-            ns.SetOption("enabled", false)
-            for _, i in ipairs(categoryButtons) do assert(not buttons[i].enabled()) end
-            ns.SetOption("enabled", true)
-            for _, i in ipairs(categoryButtons) do assert(buttons[i].enabled()) end
-            local keys = { "enabled", "showWorldMapPins", "showUnexplored", "showNormal", "showClass", "showDungeon",
-                "showPvP", "showProfession", "showSeasonal", "showWarEffort", "showWarEffortAlways", "showRepeatable", "enablePinTracking" }
-            for i, button in ipairs(buttons) do
-                assert(not button.label:find("Show", 1, true))
-                local before = ns.GetOption(keys[i])
-                assert(button.selected() == before)
-                button.click()
-                assert(ns.GetOption(keys[i]) == not before)
-                assert(button.selected() == not before)
-            end
-
-end
 cases["pin_filters_runtime.test_options_category_controls_disable_without_losing_selections"] = function()
 
             ns = {}
@@ -2923,6 +2908,22 @@ cases["map_pins_runtime.tracking_respects_map_level"] = function()
     end
 end
 
+cases["map_pins_runtime.map_never_post_hooks_world_map_frame"] = function()
+    setupPinRendering()
+    local hooked = {}
+    hooksecurefunc = function(_, name)
+        hooked[#hooked + 1] = name
+    end
+    ns.MapPins:HookMap()
+    assert(#hooked == 0,
+        "post-hooking WorldMapFrame taints the rest of Blizzard's map execution (hooked: "
+            .. table.concat(hooked, ", ") .. ")")
+    -- Open detection is the OnUpdate watch, not a Show hook.
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    ns.MapPins:Refresh("map-show")
+    assert(ns.MapPins:GetStatus().count > 0, "the watch still notices an open map")
+end
+
 cases["map_pins_runtime.shift_click_hides_on_click_through_maps"] = function()
     setupPinRendering()
     local shiftHeld = false
@@ -3166,6 +3167,8 @@ cases["map_pins_runtime.pins_never_use_blizzard_pin_pool"] = function()
 
     ns.MapPins:Clear()
     assert(removeCalls == 0, "ordinary pins must not call WorldMapFrame:RemovePin")
+    assert(pin.parent == UIParent,
+        "released pins must leave the canvas so Blizzard's pin work never walks addon frames")
 
     InputUtil = { IsGamepadUIEnabled = function() return true end }
     ns.MapPins:Refresh("gamepad-test")
@@ -3664,6 +3667,27 @@ cases["localization.map_legend_and_help"] = function()
             assert(localNS.L["Ordinary quest starts without repeatable, seasonal, AQ, class, profession, or dungeon / raid categories."]:find("職業、專業", 1, true))
         end
     end
+end
+
+cases["config_runtime.taint_scan_names_the_addon_that_wrote_a_field"] = function()
+    local ns = {}
+    assert(loadfile("Localization.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    local lines = {}
+    print = function(line) lines[#lines + 1] = line end
+    WorldMapFrame = { mapID = 1427, pinPools = {} }
+    issecurevariable = function(tbl, key)
+        if tbl == WorldMapFrame and key == "mapID" then
+            return false, "ForeverQuestPins"
+        end
+        return true
+    end
+    ns.db = {}
+    ns.RunTaintScan()
+    local text = table.concat(lines, "\n")
+    assert(text:find("WorldMapFrame.mapID <- ForeverQuestPins", 1, true), text)
+    assert(ns.db._taintScan and ns.db._taintScan:find("WorldMapFrame.mapID", 1, true),
+        "the report is saved so it can be read after a reload")
 end
 
 cases["localization.level_gap_help"] = function()
@@ -4307,8 +4331,7 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
         timerQueue = {}
         for i = 1, #queued do queued[i]() end
     end
-    local hooks = {}
-    hooksecurefunc = function(_, name, callback) hooks[name] = callback end
+    local canvasScale = 1
     local mapID = 1
     OpenMapAPI = {
         IsStitched = function() return true end,
@@ -4316,8 +4339,7 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
         MapFromWorld = function(id, u, v) return (u - (id - 1) / 2) * 2, v end,
     }
     WorldMapFrame.GetMapID = function() return mapID end
-    WorldMapFrame.OnMapChanged = function() end
-    WorldMapFrame.SynchronizeDisplayState = function() end
+    WorldMapFrame.GetCanvasScale = function() return canvasScale end
     ns.ProjectToViewedMap = function(_, x, y) return x / 100, y / 100 end
     local refreshes = {}
     ns.RequestRefresh = function(reason) refreshes[#refreshes + 1] = reason end
@@ -4327,6 +4349,7 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
         ns.ByMap[1][#ns.ByMap[1] + 1] = questID
     end
     ns.MapPins:HookMap()
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
     runTimers()
     refreshes = {}
 
@@ -4337,7 +4360,7 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
     assert(#timerQueue == 1)
 
     mapID = 2
-    hooks.OnMapChanged()
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
     assert(ns.MapPins:GetStatus().count == 0 and ns.MapPins:GetStatus().mode == "map-changing")
     assert(refreshes[#refreshes] == "map-changed", "map change must request a repaint")
     runTimers()
@@ -4348,17 +4371,15 @@ cases["map_pins_runtime.map_change_during_sliced_stitched_paint_repaints"] = fun
     runTimers()
     assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
 
-    -- The display-state hook needs the same handling: clear the partial pin set
-    -- and let the follow-up refresh paint instead of reprojecting it.
+    -- A display-state change (canvas scale) on the same map reprojects the
+    -- partial set instead of restarting it.
     ns.MapPins:Refresh("initial")
     assert(ns.MapPins:GetStatus().count == 60 and #timerQueue == 1)
-    mapID = 3
-    hooks.SynchronizeDisplayState()
-    assert(ns.MapPins:GetStatus().count == 0 and ns.MapPins:GetStatus().mode == "map-changing")
-    assert(refreshes[#refreshes] == "map-display", "display state change must request a repaint")
-    runTimers()
-    ns.MapPins:Refresh("map-display")
-    assert(ns.MapPins:GetStatus().mode == "painting")
+    refreshes = {}
+    canvasScale = 2
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(ns.MapPins:GetStatus().mode == "painting", "a scale change must not cancel the paint")
+    assert(#refreshes == 0, "reprojecting the same map needs no new refresh")
     runTimers()
     assert(ns.MapPins:GetStatus().mode == "canvas" and ns.MapPins:GetStatus().count == 81)
 
@@ -5960,6 +5981,40 @@ cases["tracker_runtime.registration_wraps_once_and_respects_the_option"] = funct
     assert(calls.build == 1 and #infos == 1)
     QuestObjectiveTracker:EnumQuestWatchData(function() end)
     assert(calls.enum == 1)
+end
+
+cases["tracker_runtime.blocked_block_value_falls_back_to_flat_list"] = function()
+    local tracker, options = trackerFixture()
+    local quest = trackerQuest(1, "One", 10)
+    local flatCalls = 0
+    QuestObjectiveTracker = {
+        Header = {
+            EnableMouse = function() end,
+            GetScript = function() return nil end,
+            SetScript = function() end,
+        },
+        BuildQuestWatchInfos = function()
+            return { { quest = quest, index = 1, zoneName = "Ashenvale" } }
+        end,
+        EnumQuestWatchData = function(_, func)
+            flatCalls = flatCalls + 1
+            func(nil, quest)
+        end,
+    }
+    ObjectiveTrackerFrame = {
+        SetTrackerTargetButton = function() end,
+        SelectFirstButton = function() end,
+        UpdateSmartNavigationOverrides = function() end,
+    }
+    assert(tracker.TryRegisterQuestTracker())
+    options.enhanceQuestTracker = true
+
+    -- In combat the client can return a blocked value where a block belongs.
+    -- Indexing it raised "indexed assignment on local 'block'" 29 times.
+    QuestObjectiveTracker.GetBlock = function() return "zone:Ashenvale" end
+    local ok, err = pcall(QuestObjectiveTracker.EnumQuestWatchData, QuestObjectiveTracker, function() end)
+    assert(ok, tostring(err))
+    assert(flatCalls == 1, "a blocked block value must fall back to Blizzard's flat list")
 end
 
 cases["tracker_runtime.gamepad_targets_the_first_quest_block"] = function()

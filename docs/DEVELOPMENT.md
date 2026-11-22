@@ -174,7 +174,17 @@ License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data
 
 Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, repeatable, then normal; mixed stacks stay yellow. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
-Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which is shared Blizzard state that addon code should not write. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called. Removing that call did not stop the in-combat `SetPassThroughButtons` blocked action in testing, so that report is still open. The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup or taint-log entry appears.
+Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which is shared Blizzard state that addon code should not write. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called.
+
+Never post-hook `WorldMapFrame`. A `hooksecurefunc` post-hook runs inside Blizzard's map execution, so the rest of that execution inherits the addon's taint. In 1.1.1 the `Show`, `Hide`, `OnMapChanged`, `OnCanvasScaleChanged`, and `SynchronizeDisplayState` hooks made `SetDisplayState` write the quest log list and scroll container fields after `ShowUIPanel` as ForeverQuestPins. The next map opened in combat read those fields while placing its pins, and the client refused `SetPassThroughButtons` and `SetPropagateMouseClicks` with this addon named. Open, close, map changes, and canvas scale changes are watched from `mapWatch`'s `OnUpdate`, which runs in the addon's own execution.
+
+Do not register `Menu.ModifyMenu` callbacks for menus the world map generates, and do not open a game menu over the map. `WorldMapTrackingOptionsButtonMixin:OnShow` calls `SetupMenu`, which generates the menu while the map opens, so an addon callback runs inside that execution and taints everything Blizzard writes afterwards. The map also reads the frame under the pointer every frame, so addon entries in a game menu taint the map while the menu is open. Leatrix Maps avoids both with its own pop-up lists. The pin filters use the addon's own button and list of addon frames (`Config.lua`), built only on click, and remain in the settings panel and the `/fqp` commands.
+
+`/fqp taint` scans the map, quest log, and tracker frames with `issecurevariable` and names the addon that last wrote each tainted field; run it before `/reload` after a block, and check that no map field is tainted.
+
+The skipped-breadcrumb dialog's **Abandon Quest** action calls `C_QuestLog.SetSelectedQuest`, so the quest log writes `DetailsFrame.questID` and the related fields under the addon's taint. That is the one remaining path that can block map pins in combat until a reload. The feature is kept deliberately; if it becomes a problem, remove the action or require the player to abandon from the quest log.
+
+The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup appears. Do not test with `/console taintLog` on: on Forever it breaks post-hooked methods and does not produce a usable log.
 
 ## Support split
 
@@ -276,6 +286,9 @@ menus, item buttons, timers, and animations stay Blizzard's.
   out-of-combat layout. The distance ticker runs every 5 seconds only for the
   Distance sort, while the tracker is visible and out of combat, and skips
   `MarkDirty` when the order did not change.
+- `module:GetBlock` can hand back a blocked value in combat instead of a block.
+  `AddZoneHeader` treats a non-table as a refusal, and the `EnumQuestWatchData`
+  wrapper then falls back to Blizzard's flat enumeration for that layout.
 - **Select nearest quest** reads `C_QuestLog.GetDistanceSqToQuest` for every
   watched quest, skips other-continent results, and calls
   `C_SuperTrack.SetSuperTrackedQuestID` for the smallest distance. It refreshes

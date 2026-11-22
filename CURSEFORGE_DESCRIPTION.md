@@ -15,6 +15,7 @@ It adds quest-start markers to the world map, quest icons to NPC nameplates, and
 - Shows quest-start markers for unaccepted quests on the world map.
 - Shows nameplate icons for NPCs that offer a quest, accept a turn-in, or are an active quest objective. The icon goes away when the objective is done.
 - Lists quests you can accept and quests ready to turn in on NPC tooltips.
+- Groups Blizzard's tracked quests by zone, with sort and filter menus, inside the existing quest tracker.
 - Tracks a quest start with Blizzard map pins or TomTom when you click a marker.
 - Groups nearby spawn points into one marker. Hover to see the count and every location.
 - Hides a marker for the current character with Shift-click. Restore it in settings or with `/fqp unhide`.
@@ -44,7 +45,7 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 ## Notes
 
 - Forever only (Interface 16001). Not for Retail, Classic Era, or Cataclysm Classic.
-- This is not a quest tracker. It does not add a quest-log UI or turn-in map pins.
+- This is not a quest tracker. It enhances Blizzard's existing tracker when you leave that option on. It does not add a quest-log UI or turn-in map pins.
 - Quest data comes from QuestieDB. Missing markers are usually missing data, not a setting.
 - Reputation requirements are not in the addon database, so they do not hide markers.
 - Auto-accept and auto-turn-in are off by default.

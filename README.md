@@ -29,7 +29,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
 - Adjustable high-level range: choose how many levels above you quests must be before their pins are hidden (default shows all levels)
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
-- Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning (on by default)
+- Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning (on by default). **Abandon Quest** selects the quest in your log from addon code, so using it can make the map report a blocked action in combat until you reload.
 - Seasonal / holiday starts (such as Lunar Festival elders) off by default; when on, pins appear only while the event is live
 - AQ opening **war effort** commodity pins in Orgrimmar / Ironforge off by default; when on, they appear after a war effort quest is offered or in your log, or with the always-show override
 - Keeps the game's quest item sparkle on if you turn it on, including after a graphics preset resets it (off by default, and offered in the first-run setup guide). The same client setting also makes quest givers sparkle, and turning it off needs a full game restart; `/reload` is not enough
@@ -50,13 +50,13 @@ The optional **Limit auto-accept quest level** checkbox defaults off. It turns o
 
 The optional **Don't auto-accept grey quests** checkbox defaults off. It skips quests the game shows as grey (trivial) for your level, using the game's own grey flag where it is available. Quests with an unknown level are not treated as grey.
 
-**Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload.
+**Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload. **Abandon Quest** selects the quest in your quest log from addon code, which can make the map report a blocked action in combat until you reload. Abandon it from the quest log instead if you want to avoid that.
 
 **Enhance quest tracker** defaults on. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Right-click the **Quests** header for the same controls. **Blizzard order** keeps the client's proximity order. **Distance** refreshes every 5 seconds while the tracker is visible and pauses in combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Completed quests only** includes quests that are done and waiting to be turned in. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. Use `/fqp nearest` to select it once. Click a zone's collapse arrow to hide its quests; the state is saved per character. Turn the option off to leave the tracker exactly as Blizzard draws it.
 
 **Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
-Escape > Options > AddOns > **Forever Quest Pins**, use the world map's **Show** dropdown for quest-start pins, or use the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
+Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -126,6 +126,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
+| `/fqp nearest` | Select the closest tracked quest once |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print the database commit, quest count, and painted pin count |
@@ -134,6 +135,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp available` | Starts that should pin on the open map |
 | `/fqp wipe` | Reset options (recovery; see Support) |
 | `/fqp apis` | Which Forever map/quest APIs this client exposes |
+| `/fqp taint` | List Blizzard fields tainted by an addon (debug; run after a blocked-action popup) |
 
 ## Known limitations
 
@@ -158,6 +160,7 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 
 - Bugs: [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues)
 - Please include `/fqp stats` (and `/fqp why <id>` if a specific quest is wrong). For nameplate icon issues, include `/fqp nameplatedebug`.
+- For a blocked-action popup or taint report, include the protected function name from the popup and the output of `/fqp taint`, run right after the popup appears and before `/reload`.
 - Quest **database** mistakes usually belong in [QuestieDB](https://github.com/Questie/QuestieDB) Forever data, or in this repo’s QuestieDB converter if QuestieDB has the quest but we dropped a spawn
 - Quest **policy** mistakes (holiday membership or instance tags) belong in [Questie](https://github.com/Questie/Questie) corrections, or in the matching parser here
 - If you ran a **0.1.10–0.1.16** build and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
