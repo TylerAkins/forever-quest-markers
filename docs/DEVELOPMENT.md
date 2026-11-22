@@ -301,7 +301,10 @@ it is off.
   `MarkDirty` when the order did not change.
 - `module:GetBlock` can hand back a blocked value in combat instead of a block.
   `AddZoneHeader` treats a non-table as a refusal, and the `EnumQuestWatchData`
-  wrapper then falls back to Blizzard's flat enumeration for that layout.
+  wrapper then falls back to Blizzard's flat enumeration for that layout. The
+  wrapper only relays before the enhanced pass has laid out a block: re-running
+  Blizzard's enumeration afterwards re-fetches blocks through `GetBlock`, whose
+  `AnchorBlock` call targets a chain that still depends on them.
 - In combat the original `BuildQuestWatchInfos`, `EnumQuestWatchData`, and
   tracker frame methods are restored, so the layout runs in Blizzard's code and
   the scenario tracker can read secret aura data. `PLAYER_REGEN_ENABLED`

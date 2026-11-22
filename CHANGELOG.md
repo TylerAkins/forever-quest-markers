@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.6 - 2026-11-22
+
+- Stop the enhanced quest tracker from erroring when a full tracker cannot fit another zone header. The grouped layout now stops for that pass instead of falling back to Blizzard's flat list, which could raise `Cannot anchor to a region dependent on it`.
+
 ## 1.1.5 - 2026-11-22
 
 - Stop quest tracking from writing Blizzard's waypoint or super-track during combat or another restricted action. The write could taint the map's pin refresh and block `SetPassThroughButtons`. Existing tracking resumes after combat.

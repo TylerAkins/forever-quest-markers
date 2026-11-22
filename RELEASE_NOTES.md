@@ -1,3 +1,3 @@
-## 1.1.5 - 2026-11-22
+## 1.1.6 - 2026-11-22
 
-- Quest tracking no longer writes Blizzard's waypoint or super-track during combat or another restricted action. That write could taint the map's pin refresh and block `SetPassThroughButtons`. Existing tracking resumes after combat.
+- Fix a `Cannot anchor to a region dependent on it` Lua error when the enhanced quest tracker is full and another zone header does not fit. The grouped layout now stops for that pass instead of retrying Blizzard's flat list.

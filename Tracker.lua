@@ -1146,8 +1146,12 @@ function ns.TryRegisterQuestTracker()
         if not ns.GetOption("enhanceQuestTracker") then
             return originalEnumQuestWatchData(self, func)
         end
+        -- Re-running Blizzard's flat enumeration after this pass laid out a
+        -- block re-fetches it through GetBlock, whose AnchorBlock call targets
+        -- a chain that still depends on it. Only relay before any block is added.
+        local lastBlock = self.lastBlock
         local ok, enhanced = pcall(ns.EnumEnhancedQuestWatchData, self, func)
-        if not ok or enhanced == false then
+        if (not ok or enhanced == false) and self.lastBlock == lastBlock then
             return originalEnumQuestWatchData(self, func)
         end
     end

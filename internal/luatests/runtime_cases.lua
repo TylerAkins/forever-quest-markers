@@ -5994,6 +5994,160 @@ cases["tracker_runtime.enumeration_inserts_headers_and_skips_collapsed_zones"] =
         "collapsed zones keep their header and hide their quests")
 end
 
+cases["tracker_runtime.full_tracker_stops_without_relaying_quest_blocks"] = function()
+    local tracker, options = trackerFixture()
+    UnitName = function() return "Tester" end
+    GetRealmName = function() return "Realm" end
+    tracker.db = {}
+    ObjectiveTrackerHeaderFont = nil
+    OBJECTIVE_TRACKER_COLOR = nil
+
+    local questTemplate = "ObjectiveTrackerQuestPOIBlockTemplate"
+    local headerTemplate = "ObjectiveTrackerBlockTemplate"
+    local module = {
+        contentsHeight = 25,
+        availableHeight = 160,
+        usedBlocks = {},
+        ContentsFrame = {},
+    }
+    local fetches = {}
+
+    local function DependsOn(block, target)
+        local guard = 0
+        while block and guard < 200 do
+            if block == target then
+                return true
+            end
+            block = block.anchor
+            guard = guard + 1
+        end
+        return false
+    end
+
+    local function NewBlock(id, template)
+        local block = {
+            id = id,
+            template = template,
+            HeaderText = {
+                SetFontObject = function() end,
+                SetTextColor = function() end,
+                SetShadowColor = function() end,
+                SetShadowOffset = function() end,
+            },
+            HeaderButton = {
+                SetScript = function(self, name, fn) self[name] = fn end,
+                EnableMouse = function() end,
+                Show = function() end,
+                Hide = function() end,
+            },
+            EnableMouse = function() end,
+            SetScript = function(self, name, fn) self[name] = fn end,
+        }
+        function block:SetHeader(text) self.header = text end
+        return block
+    end
+
+    function module:GetNextBlockAnchoring()
+        if self.lastBlock then
+            return self.lastBlock, -10
+        end
+        return self.ContentsFrame, -10
+    end
+
+    function module:AnchorBlock(block)
+        local anchorFrame = self:GetNextBlockAnchoring()
+        if anchorFrame ~= self.ContentsFrame and DependsOn(anchorFrame, block) then
+            error("Cannot anchor to a region dependent on it")
+        end
+        block.anchor = anchorFrame
+    end
+
+    function module:GetBlock(id, template)
+        template = template or questTemplate
+        local blocks = self.usedBlocks[template]
+        if not blocks then
+            blocks = {}
+            self.usedBlocks[template] = blocks
+        end
+        fetches[id] = (fetches[id] or 0) + 1
+        local block = blocks[id]
+        if not block then
+            block = NewBlock(id, template)
+            blocks[id] = block
+        end
+        block.used = false
+        block.nextBlock = nil
+        block.height = 0
+        self:AnchorBlock(block)
+        return block
+    end
+
+    function module:LayoutBlock(block)
+        local _, offsetY = self:GetNextBlockAnchoring()
+        if self.contentsHeight + block.height - offsetY > self.availableHeight then
+            return false
+        end
+        self:AnchorBlock(block)
+        if self.lastBlock then
+            self.lastBlock.nextBlock = block
+        end
+        self.lastBlock = block
+        self.firstBlock = self.firstBlock or block
+        self.contentsHeight = self.contentsHeight + block.height - offsetY
+        block.used = true
+        return true
+    end
+
+    local function UpdateSingle(self, quest)
+        local block = self:GetBlock(quest:GetID())
+        block.height = 20
+        return self:LayoutBlock(block)
+    end
+
+    local infos = {
+        { quest = trackerQuest(1, "One", 10), zoneName = "A" },
+        { quest = trackerQuest(2, "Two", 10), zoneName = "A" },
+        { quest = trackerQuest(3, "Three", 10), zoneName = "B" },
+        { quest = trackerQuest(4, "Four", 10), zoneName = "C" },
+    }
+    local function flatEnumeration(_, func)
+        for i = 1, #infos do
+            if not func(module, infos[i].quest) then
+                return
+            end
+        end
+    end
+    module.Header = {
+        EnableMouse = function() end,
+        GetScript = function() return nil end,
+        SetScript = function() end,
+    }
+    module.BuildQuestWatchInfos = function() return infos end
+    module.EnumQuestWatchData = flatEnumeration
+    QuestObjectiveTracker = module
+    ObjectiveTrackerFrame = {
+        SetTrackerTargetButton = function() end,
+        SelectFirstButton = function() end,
+        UpdateSmartNavigationOverrides = function() end,
+    }
+    assert(tracker.TryRegisterQuestTracker())
+    tracker.EnhanceQuestWatchInfos = function(_, watched) return watched end
+    options.enhanceQuestTracker = true
+    tracker.SetZoneCollapsed("B", true)
+    tracker.SetZoneCollapsed("C", true)
+
+    -- Header C does not fit. Blizzard's flat enumeration must not run on the
+    -- same layout, because re-fetching quest 1 would anchor it below a block
+    -- whose chain still starts at quest 1.
+    local ok, err = pcall(QuestObjectiveTracker.EnumQuestWatchData, QuestObjectiveTracker, UpdateSingle)
+    assert(ok, tostring(err))
+    assert(fetches[1] == 1 and fetches[2] == 1,
+        "a full tracker must not re-fetch quests that were already laid out")
+    assert(module.lastBlock.id == "zone:B", "the last block that fits stays last")
+    local headerC = module.usedBlocks[headerTemplate]["zone:C"]
+    assert(headerC and headerC.used == false, "the overflowing zone header is left unused")
+end
+
 cases["tracker_runtime.registration_wraps_once_and_respects_the_option"] = function()
     local tracker, options = trackerFixture()
     local calls = { build = 0, enum = 0 }
