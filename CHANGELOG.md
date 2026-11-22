@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.5 - 2026-11-22
+
+- Stop quest tracking from writing Blizzard's waypoint or super-track during combat or another restricted action. The write could taint the map's pin refresh and block `SetPassThroughButtons`. Existing tracking resumes after combat.
+
 ## 1.1.4 - 2026-11-22
 
 - Move the enhanced quest tracker to a beta feature, off by default. Turn it on with **Enhance quest tracker (BETA)** in settings, the setup guide, or the tracker's right-click menu. The first load after this update turns it off once; turning it back on is remembered.

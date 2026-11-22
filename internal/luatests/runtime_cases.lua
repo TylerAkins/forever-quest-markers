@@ -2332,6 +2332,52 @@ assert(loadfile("Waypoints.lua"))("ForeverQuestPins", ns)
             assert(trackedQuest==0)
 
 end
+cases["waypoints_runtime.tracking_waits_out_of_combat"] = function()
+    ns = { Quests = { [1] = { mapID = 1412, x = 54.4, y = 60.4 } } }
+    local provider = "blizzard"
+    local inCombat = true
+    local waypoint, trackedQuest, userTracked
+    ns.GetOption = function() return provider end
+    ns.GetQuestTitle = function() return "A Quest" end
+    ns.IsOnQuest = function() return false end
+    ns.AddOnActionsRestricted = function() return inCombat end
+    UiMapPoint = { CreateFromCoordinates = function(map, x, y)
+        return { uiMapID = map, position = { x = x, y = y } }
+    end }
+    C_Map = {
+        CanSetUserWaypointOnMap = function() return true end,
+        SetUserWaypoint = function(point) waypoint = point end,
+        GetUserWaypoint = function() return waypoint end,
+        ClearUserWaypoint = function() waypoint = nil end,
+    }
+    C_SuperTrack = {
+        SetSuperTrackedUserWaypoint = function(value) userTracked = value end,
+        IsSuperTrackingUserWaypoint = function() return userTracked end,
+        SetSuperTrackedQuestID = function(id) trackedQuest = id end,
+        GetSuperTrackedQuestID = function() return trackedQuest end,
+    }
+    C_QuestLog = { GetNextWaypoint = function() end }
+    assert(loadfile("Waypoints.lua"))("ForeverQuestPins", ns)
+    print = function() end
+
+    local ok, message = ns.TrackQuest(1)
+    assert(ok == false, "tracking is refused in combat")
+    assert(message == "Quest tracking is unavailable in combat.")
+    assert(waypoint == nil and trackedQuest == nil, "no waypoint or super-track write in combat")
+
+    inCombat = false
+    assert(ns.TrackQuest(1))
+    assert(waypoint and waypoint.uiMapID == 1412)
+    assert(userTracked == true)
+
+    inCombat = true
+    ns.ClearWaypoint()
+    assert(waypoint ~= nil, "clearing waits until combat ends")
+    inCombat = false
+    ns.ClearWaypoint()
+    assert(waypoint == nil)
+end
+
 cases["waypoints_runtime.test_manual_pin_and_quest_changes_are_respected"] = function()
 
             ns={Quests={[1]={mapID=1412,x=54.4,y=60.4}}}
