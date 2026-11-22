@@ -13,7 +13,7 @@ func RunBuild(args []string, stdout, stderr io.Writer) error {
 	flags.SetOutput(stderr)
 	artifactPath := flags.String("questiedb", "", "QuestieDB-Forever.zip or extracted QuestieDB directory")
 	artifactSHA := flags.String("questiedb-sha", "", "expected SHA-256 of the QuestieDB zip")
-	artifactRef := flags.String("questiedb-ref", "", "artifact label recorded in metadata (for example preview)")
+	artifactRef := flags.String("questiedb-ref", "", "release tag recorded in metadata (for example v1.1.4)")
 	policyPath := flags.String("questie", "", "Questie checkout containing Database/Corrections")
 	policyCommit := flags.String("questie-sha", "", "pinned Questie commit recorded in metadata")
 	outputDir := flags.String("out", "Database", "output directory")
