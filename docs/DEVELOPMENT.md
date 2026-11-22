@@ -254,6 +254,12 @@ and filters the list. `EnumQuestWatchData` walks that list and inserts an
 `ObjectiveTrackerBlockTemplate` header block when the zone changes. Quest blocks,
 menus, item buttons, timers, and animations stay Blizzard's.
 
+The enhancement is a beta feature and off by default. `InitSettings` turns
+`enhanceQuestTracker` off once for every install and records `_trackerBetaSeen`,
+then respects a later opt-in. The settings panel, setup guide, and tracker menu
+label it **BETA**, and the tracker menu hides the sort and filter sections while
+it is off.
+
 - Zone names come from `C_QuestLog.GetHeaderIndexForQuest` and
   `C_QuestLog.GetInfo`. If the header index is missing or not a header for a
   specific quest, the code scans backward from `C_QuestLog.GetLogIndexForQuestID`

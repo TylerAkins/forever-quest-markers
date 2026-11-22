@@ -1,3 +1,4 @@
-## 1.1.3 - 2026-11-21
+## 1.1.4 - 2026-11-22
 
-- The enhanced quest tracker now uses Blizzard's flat list during combat and returns to zone groups, sort, and filters after combat. This stops the client blocking secret aura reads in the scenario tracker while leveling or fighting in combat.
+- The enhanced quest tracker is now a beta feature, off by default. Turn it on with **Enhance quest tracker (BETA)** in settings, the setup guide, or the tracker's right-click menu.
+- The first load after this update turns it off once. If you turn it back on, that choice is remembered.

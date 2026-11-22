@@ -6118,7 +6118,7 @@ cases["tracker_runtime.menu_mirrors_settings"] = function()
         CreateContextMenu = function(_, build) build(nil, root) end,
     }
     assert(tracker.OpenTrackerMenu({}))
-    assert(titles[1] == "Quest tracker")
+    assert(titles[1] == "Quest tracker (BETA)")
     assert(#radios == 7)
     assert(checkboxes[1].isSelected() == true)
     checkboxes[1].setSelected()
@@ -6131,6 +6131,23 @@ cases["tracker_runtime.menu_mirrors_settings"] = function()
     assert(distanceRadio.isSelected() == false)
     distanceRadio.setSelected()
     assert(options.trackerSort == "distance")
+    MenuUtil = nil
+end
+
+cases["tracker_runtime.menu_hides_sort_and_filters_while_beta_is_off"] = function()
+    local tracker, options = trackerFixture()
+    options.enhanceQuestTracker = false
+    local radios = 0
+    local root = {
+        SetTag = function() end,
+        CreateTitle = function() end,
+        CreateDivider = function() end,
+        CreateCheckbox = function() end,
+        CreateRadio = function() radios = radios + 1 end,
+    }
+    MenuUtil = { CreateContextMenu = function(_, build) build(nil, root) end }
+    assert(tracker.OpenTrackerMenu({}))
+    assert(radios == 0, "sort and filter controls stay hidden while the beta is off")
     MenuUtil = nil
 end
 
@@ -6148,7 +6165,7 @@ cases["tracker_runtime.settings_strings_validate_and_mirror"] = function()
     local db = ns.InitSettings()
     assert(db.trackerSort == "distance")
     assert(db.trackerFilter == "instance")
-    assert(db.enhanceQuestTracker == true)
+    assert(db.enhanceQuestTracker == false, "the beta tracker starts off")
     ns.SetOption("trackerSort", "title")
     assert(ns.GetOption("trackerSort") == "title")
     assert(mirror:find("trackerSort=title", 1, true))
@@ -6327,9 +6344,30 @@ cases["tracker_runtime.existing_settings_keep_values_and_gain_tracker_defaults"]
     local db = ns.InitSettings()
     assert(db.enabled == false, "existing values survive")
     assert(db.trivialLevelGap == 5)
-    assert(db.enhanceQuestTracker == true, "new tracker defaults fill missing keys")
+    assert(db.enhanceQuestTracker == false, "the beta tracker starts off")
+    assert(db._trackerBetaSeen == true, "the beta default is applied once")
     assert(db.trackerSort == "blizzard")
     assert(db.trackerFilter == "all")
+end
+
+cases["tracker_runtime.tracker_beta_opt_in_survives"] = function()
+    C_CVar = {
+        GetCVar = function() return "" end,
+        SetCVar = function() end,
+        RegisterCVar = function() end,
+    }
+    ForeverQuestPinsDB = {
+        _revision = 9,
+        _trackerBetaSeen = true,
+        enhanceQuestTracker = true,
+    }
+    ForeverQuestPinsCharDB = {}
+    ForeverQuestPinsDB_Settings = {}
+    ForeverQuestPinsCharacterSettings = {}
+    ns = {}
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    local db = ns.InitSettings()
+    assert(db.enhanceQuestTracker == true, "an explicit opt-in survives the beta default")
 end
 
 cases["tracker_runtime.select_nearest_quest_picks_the_closest"] = function()

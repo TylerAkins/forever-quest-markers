@@ -32,7 +32,7 @@ ns.defaults = {
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
-    enhanceQuestTracker = true,
+    enhanceQuestTracker = false,
     trackerSort = "blizzard",
     trackerFilter = "all",
     selectNearestQuest = false,
@@ -348,9 +348,28 @@ function ns.InitSettings()
     CopySettings(account, character, revision)
     CopySettings(account, legacyAccount, revision)
     CopySettings(account, legacyCharacter, revision)
+
+    -- The enhanced tracker became a beta feature in 1.1.4. Turn it off once for
+    -- every install, then respect the player's later choice. The marker keeps
+    -- this from overriding a player who turns it back on.
+    local trackerBetaSeen = false
+    for i = 1, 4 do
+        if stores[i]._trackerBetaSeen then
+            trackerBetaSeen = true
+            break
+        end
+    end
+    if not trackerBetaSeen then
+        account.enhanceQuestTracker = false
+        CopySettings(account, character, revision)
+        CopySettings(account, legacyAccount, revision)
+        CopySettings(account, legacyCharacter, revision)
+    end
+
     for i = 1, 4 do
         stores[i]._setupComplete = setupComplete or nil
         stores[i]._newsVersion = newsVersion and newsVersion.value or nil
+        stores[i]._trackerBetaSeen = true
     end
     ns.db = account
     ns.settingsSource = source == account and "account"
@@ -2059,17 +2078,17 @@ end
 local function BuildTrackerSettings(self)
     local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     heading:SetPoint("TOPLEFT", 16, -16)
-    heading:SetText(L["Quest tracker"])
+    heading:SetText(L["Quest tracker"] .. " (BETA)")
     local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     help:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
     help:SetWidth(520)
     help:SetJustifyH("LEFT")
-    help:SetText(L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."])
+    help:SetText(L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."] .. " " .. L["Beta feature, off by default."])
 
     local enhanceTracker = CreateOptionCheckbox(
         self,
         "enhanceQuestTracker",
-        L["Enhance quest tracker"],
+        L["Enhance quest tracker"] .. " (BETA)",
         L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."]
     )
     enhanceTracker:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -12)

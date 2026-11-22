@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.4 - 2026-11-22
+
+- Move the enhanced quest tracker to a beta feature, off by default. Turn it on with **Enhance quest tracker (BETA)** in settings, the setup guide, or the tracker's right-click menu. The first load after this update turns it off once; turning it back on is remembered.
+
 ## 1.1.3 - 2026-11-21
 
 - Keep the enhanced quest tracker out of Blizzard's combat layout. The addon restores Blizzard's tracker methods while in combat, so the scenario tracker can read secret aura data, then re-applies the zone groups, sort, and filters after combat.

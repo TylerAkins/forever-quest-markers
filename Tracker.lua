@@ -780,16 +780,16 @@ function ns.OpenTrackerMenu(owner)
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
         root:SetTag("FOREVER_QUEST_PINS_TRACKER")
-        root:CreateTitle(L["Quest tracker"])
+        root:CreateTitle(L["Quest tracker"] .. " (BETA)")
         if MenuUtil and type(MenuUtil.CreateCheckbox) == "function" then
             root:Insert(MenuUtil.CreateCheckbox(
-                L["Enhance quest tracker"],
+                L["Enhance quest tracker"] .. " (BETA)",
                 function() return ns.GetOption("enhanceQuestTracker") end,
                 function() ns.SetOption("enhanceQuestTracker", not ns.GetOption("enhanceQuestTracker")) end
             ))
         else
             root:CreateCheckbox(
-                L["Enhance quest tracker"],
+                L["Enhance quest tracker"] .. " (BETA)",
                 function() return ns.GetOption("enhanceQuestTracker") end,
                 function() ns.SetOption("enhanceQuestTracker", not ns.GetOption("enhanceQuestTracker")) end
             )
@@ -807,23 +807,25 @@ function ns.OpenTrackerMenu(owner)
                 function() ns.SetOption("selectNearestQuest", not ns.GetOption("selectNearestQuest")) end
             )
         end
-        root:CreateDivider()
-        root:CreateTitle(L["Sort quests"])
-        for i = 1, #SORT_ORDER do
-            local value = SORT_ORDER[i]
-            root:CreateRadio(SORT_LABELS[value],
-                function() return ns.GetOption("trackerSort") == value end,
-                function() ns.SetOption("trackerSort", value) end,
-                value)
-        end
-        root:CreateDivider()
-        root:CreateTitle(L["Show quests"])
-        for i = 1, #FILTER_ORDER do
-            local value = FILTER_ORDER[i]
-            root:CreateRadio(FILTER_LABELS[value],
-                function() return ns.GetOption("trackerFilter") == value end,
-                function() ns.SetOption("trackerFilter", value) end,
-                value)
+        if ns.GetOption("enhanceQuestTracker") then
+            root:CreateDivider()
+            root:CreateTitle(L["Sort quests"])
+            for i = 1, #SORT_ORDER do
+                local value = SORT_ORDER[i]
+                root:CreateRadio(SORT_LABELS[value],
+                    function() return ns.GetOption("trackerSort") == value end,
+                    function() ns.SetOption("trackerSort", value) end,
+                    value)
+            end
+            root:CreateDivider()
+            root:CreateTitle(L["Show quests"])
+            for i = 1, #FILTER_ORDER do
+                local value = FILTER_ORDER[i]
+                root:CreateRadio(FILTER_LABELS[value],
+                    function() return ns.GetOption("trackerFilter") == value end,
+                    function() ns.SetOption("trackerFilter", value) end,
+                    value)
+            end
         end
     end)
     return true
