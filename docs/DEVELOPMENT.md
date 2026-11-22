@@ -289,6 +289,11 @@ menus, item buttons, timers, and animations stay Blizzard's.
 - `module:GetBlock` can hand back a blocked value in combat instead of a block.
   `AddZoneHeader` treats a non-table as a refusal, and the `EnumQuestWatchData`
   wrapper then falls back to Blizzard's flat enumeration for that layout.
+- In combat the original `BuildQuestWatchInfos`, `EnumQuestWatchData`, and
+  tracker frame methods are restored, so the layout runs in Blizzard's code and
+  the scenario tracker can read secret aura data. `PLAYER_REGEN_ENABLED`
+  re-applies the wrappers and marks the tracker dirty.
+  `ns.RefreshTrackerEnhancement` owns the switch.
 - **Select nearest quest** reads `C_QuestLog.GetDistanceSqToQuest` for every
   watched quest, skips other-continent results, and calls
   `C_SuperTrack.SetSuperTrackedQuestID` for the smallest distance. It refreshes
