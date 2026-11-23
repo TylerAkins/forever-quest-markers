@@ -35,6 +35,7 @@ ns.defaults = {
     enhanceQuestTracker = false,
     trackerSort = "blizzard",
     trackerFilter = "all",
+    trackerBottomInset = 15,
     selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
@@ -98,6 +99,9 @@ local function NormalizeNumber(key, value)
     end
     if key == "autoAcceptMinLevelOffset" or key == "autoAcceptLevelOffset" then
         return math.max(AUTO_ACCEPT_OFFSET_MIN, math.min(AUTO_ACCEPT_OFFSET_MAX, math.floor(value + 0.5)))
+    end
+    if key == "trackerBottomInset" then
+        return math.max(0, math.min(60, math.floor(value + 0.5)))
     end
     return math.max(-5, math.min(5, math.floor(value + 0.5)))
 end
@@ -175,6 +179,10 @@ local function DecodeMirror()
     local trackerFilter = text:match("trackerFilter=(%a+)")
     if trackerFilter and ns.TRACKER_FILTER_VALUES[trackerFilter] then
         mirror.trackerFilter = trackerFilter
+    end
+    local trackerBottomInset = tonumber(text:match("trackerBottomInset=(%d+)"))
+    if trackerBottomInset and trackerBottomInset >= 0 and trackerBottomInset <= 60 then
+        mirror.trackerBottomInset = trackerBottomInset
     end
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     mirror._setupComplete = text:match("setupComplete=1") ~= nil
@@ -282,6 +290,7 @@ local function SaveMirror(db)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
     parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
     parts[#parts + 1] = "trackerFilter=" .. tostring(db.trackerFilter or ns.defaults.trackerFilter)
+    parts[#parts + 1] = "trackerBottomInset=" .. tostring(db.trackerBottomInset or ns.defaults.trackerBottomInset)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -664,6 +673,7 @@ function ns.SetOption(key, value)
     local trackerOption = key == "enhanceQuestTracker"
         or key == "trackerSort"
         or key == "trackerFilter"
+        or key == "trackerBottomInset"
         or key == "selectNearestQuest"
     if trackerOption then
         if ns.NotifyTrackerOptionsChanged then
@@ -1226,6 +1236,7 @@ function ns.PrintSettingsDebug()
         "enhanceQuestTracker",
         "trackerSort",
         "trackerFilter",
+        "trackerBottomInset",
         "selectNearestQuest",
         "showNPCTooltips",
         "showNameplateIcons",
@@ -2170,13 +2181,43 @@ local function BuildTrackerSettings(self)
     DimWithoutTracker(sortDropdown, { sortCaption })
     DimWithoutTracker(filterDropdown, { filterCaption })
 
+    local insetSlider = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    insetSlider:SetPoint("TOPLEFT", filterDropdown, "BOTTOMLEFT", 8, -24)
+    insetSlider:SetSize(240, 16)
+    insetSlider:SetMinMaxValues(0, 60)
+    insetSlider:SetValueStep(1)
+    if insetSlider.Low then insetSlider.Low:SetText("0") end
+    if insetSlider.High then insetSlider.High:SetText("60") end
+    local insetLabel = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    insetLabel:SetPoint("BOTTOM", insetSlider, "TOP", 0, 4)
+    insetSlider.ApplySaved = function(control)
+        control.syncing = true
+        local value = ns.GetOption("trackerBottomInset")
+        control:SetValue(value)
+        insetLabel:SetText((L["Bottom spacing: %dpx"]):format(value))
+        control.syncing = false
+    end
+    insetSlider:SetScript("OnValueChanged", function(control, value)
+        if control.syncing then
+            return
+        end
+        local normalized = math.max(0, math.min(60, math.floor(value + 0.5)))
+        if normalized == ns.GetOption("trackerBottomInset") then
+            return
+        end
+        ns.SetOption("trackerBottomInset", normalized)
+        control:ApplySaved()
+    end)
+    optionChecks[#optionChecks + 1] = insetSlider
+    DimWithoutTracker(insetSlider, { insetLabel })
+
     local nearest = CreateOptionCheckbox(
         self,
         "selectNearestQuest",
         L["Select nearest quest"],
         L["Super-track the closest tracked quest and update it as you move."]
     )
-    nearest:SetPoint("TOPLEFT", filterDropdown, "BOTTOMLEFT", -4, -10)
+    nearest:SetPoint("TOPLEFT", insetSlider, "BOTTOMLEFT", -8, -18)
     DimInGamepad(nearest)
 end
 

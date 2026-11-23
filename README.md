@@ -89,6 +89,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or 
 | Enhance quest tracker (BETA) | Off (zone groups, sorting, filters, and mouse-wheel scrolling; unavailable in gamepad UI) |
 | Sort quests | Blizzard order (distance, level, or title optional) |
 | Show quests | All tracked quests (current zone only, instance quests, or completed quests optional) |
+| Tracker bottom spacing | 15px (slider 0-60px; space kept above the action bars) |
 | Select nearest quest | Off (super-track the closest tracked quest; `/fqp nearest` selects it once) |
 | Debug tooltips | Off |
 | Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |

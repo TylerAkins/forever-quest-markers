@@ -1503,6 +1503,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "Seleccionar la misión más cercana no está disponible en combate.",
         ["Other"] = "Otras",
         ["No tracked quests match this filter."] = "No hay misiones seguidas que coincidan con este filtro.",
+        ["Bottom spacing: %dpx"] = "Espacio inferior: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "El rastreador de misiones no está disponible en la interfaz de mando.",
     },
     deDE = {
@@ -1527,6 +1528,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "Die Auswahl der nächsten Quest ist im Kampf nicht verfügbar.",
         ["Other"] = "Sonstige",
         ["No tracked quests match this filter."] = "Keine verfolgte Quest entspricht diesem Filter.",
+        ["Bottom spacing: %dpx"] = "Abstand unten: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "Die Questverfolgung ist in der Gamepad-Oberfläche nicht verfügbar.",
     },
     frFR = {
@@ -1551,6 +1553,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "La sélection de la quête la plus proche n'est pas disponible en combat.",
         ["Other"] = "Autres",
         ["No tracked quests match this filter."] = "Aucune quête suivie ne correspond à ce filtre.",
+        ["Bottom spacing: %dpx"] = "Marge inférieure : %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "Le suivi des quêtes n'est pas disponible dans l'interface manette.",
     },
     ptBR = {
@@ -1575,6 +1578,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "Selecionar a missão mais próxima não está disponível em combate.",
         ["Other"] = "Outras",
         ["No tracked quests match this filter."] = "Nenhuma missão rastreada corresponde a este filtro.",
+        ["Bottom spacing: %dpx"] = "Espaçamento inferior: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "O rastreador de missões não está disponível na interface de controle.",
     },
     zhCN = {
@@ -1599,6 +1603,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "战斗中无法选择最近的任务。",
         ["Other"] = "其他",
         ["No tracked quests match this filter."] = "没有符合此筛选条件的已追踪任务。",
+        ["Bottom spacing: %dpx"] = "底部间距：%dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "任务追踪器在手柄界面中不可用。",
     },
     zhTW = {
@@ -1623,6 +1628,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "戰鬥中無法選擇最近的任務。",
         ["Other"] = "其他",
         ["No tracked quests match this filter."] = "沒有符合此篩選條件的已追蹤任務。",
+        ["Bottom spacing: %dpx"] = "底部間距：%dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "任務追蹤器在搖桿介面中無法使用。",
     },
     koKR = {
@@ -1647,6 +1653,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "전투 중에는 가장 가까운 퀘스트를 선택할 수 없습니다.",
         ["Other"] = "기타",
         ["No tracked quests match this filter."] = "이 필터와 일치하는 추적 중인 퀘스트가 없습니다.",
+        ["Bottom spacing: %dpx"] = "하단 여백: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "퀘스트 추적기는 게임패드 UI에서 사용할 수 없습니다.",
     },
     itIT = {
@@ -1671,6 +1678,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "La selezione della missione più vicina non è disponibile in combattimento.",
         ["Other"] = "Altre",
         ["No tracked quests match this filter."] = "Nessuna missione tracciata corrisponde a questo filtro.",
+        ["Bottom spacing: %dpx"] = "Spaziatura inferiore: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "Il tracker delle missioni non è disponibile nell'interfaccia gamepad.",
     },
     ruRU = {
@@ -1695,6 +1703,7 @@ local trackerTranslations = {
         ["Select nearest quest is unavailable in combat."] = "Выбор ближайшего задания недоступен в бою.",
         ["Other"] = "Другие",
         ["No tracked quests match this filter."] = "Нет отслеживаемых заданий, соответствующих этому фильтру.",
+        ["Bottom spacing: %dpx"] = "Отступ снизу: %dpx",
         ["The quest tracker is unavailable in gamepad UI."] = "Отслеживание заданий недоступно в интерфейсе геймпада.",
     },
 }

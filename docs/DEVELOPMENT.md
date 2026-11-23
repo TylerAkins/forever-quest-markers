@@ -295,12 +295,16 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   viewport in `UpdateScrollViewport`. The scroll child keeps the full content
   height, and `SetCollapsed` hides and resets the viewport. Mouse wheel handlers
   are attached to the module, scroll frame, content, zone headers, quest blocks,
-  item buttons, and POI buttons.
+  item buttons, and POI buttons. The bottom inset is configurable as
+  `trackerBottomInset`, default 15px and adjustable from 0 to 60px, so the last row
+  can clear the action bars without the old large gap.
 - Auto-quest popup blocks use a negative offset in Blizzard's module. The
   tracker clamps that offset to zero inside the scroll child so the popup's left
   edge and icon are not clipped.
-- Quest blocks use a 48px indent so the 20px POI icon and its larger glow stay
-  inside the clipped scroll area. Zone headers stay at the left edge.
+- Quest blocks use a 30px indent so the visible 20px POI icon stays inside the
+  clipped scroll area. The wider POI glow is hidden there instead of clipping
+  its edge. Zone headers use a 7px offset so their text lines up with the
+  **Quests** module header.
 - When a non-all filter has no matches, the module keeps its header available
   with a muted "No tracked quests match this filter." block. The right-click
   menu stays reachable instead of disappearing with the content.

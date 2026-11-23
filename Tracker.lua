@@ -24,7 +24,16 @@ local FILTER_LABELS = ns.TrackerFilterLabels or {
 local MODULE_NAME = "FQPQuestObjectiveTracker"
 local SCROLL_STEP = 36
 local CONTENT_BOTTOM_PADDING = 8
+local DEFAULT_BOTTOM_INSET = 15
 local SCROLL_LEFT_INSET = 0
+
+local function BottomViewportInset()
+    local value = tonumber(ns.GetOption("trackerBottomInset"))
+    if not value or value ~= value then
+        return DEFAULT_BOTTOM_INSET
+    end
+    return math.max(0, math.min(60, value))
+end
 
 local trackerMixin
 local module
@@ -529,7 +538,7 @@ local function AddZoneHeader(self, zone)
     end
     block.zoneName = zone
     block.smartNavigationIgnored = true
-    block.offsetX = 0
+    block.offsetX = 7
     self:AnchorBlock(block)
     block.rightEdgeOffset = -20
     if ObjectiveTrackerHeaderFont and block.HeaderText and block.HeaderText.SetFontObject then
@@ -583,8 +592,8 @@ local function BuildTrackerMixin()
     local mixin = CreateFromMixins(QuestObjectiveTrackerMixin)
     -- Blizzard draws the quest POI icon just left of the block text. Inside a
     -- scroll frame that overhang would be clipped, so indent quest blocks enough
-    -- to keep the visible icon and its glow inside the content.
-    mixin.blockOffsetX = 48
+    -- to keep the visible icon inside the content.
+    mixin.blockOffsetX = 30
 
     function mixin:BuildQuestWatchInfos()
         local infos = QuestObjectiveTrackerMixin.BuildQuestWatchInfos(self)
@@ -648,7 +657,7 @@ local function BuildTrackerMixin()
         end
         block.zoneName = nil
         block.smartNavigationIgnored = true
-        block.offsetX = 0
+        block.offsetX = 7
         self:AnchorBlock(block)
         block.rightEdgeOffset = 0
         if block.HeaderText and block.HeaderText.SetPoint then
@@ -710,7 +719,7 @@ local function BuildTrackerMixin()
         local fullHeight = self.contentsHeight or headerHeight
         local contentHeight = math.max(0, fullHeight - headerHeight)
         local available = self.availableHeight or 0
-        local viewport = math.min(contentHeight, math.max(0, available - headerHeight))
+        local viewport = math.min(contentHeight, math.max(0, available - headerHeight - BottomViewportInset()))
         self.contentsHeight = headerHeight + viewport
         scroll:SetHeight(math.max(viewport, 1))
         scroll:SetShown(viewport > 0)
@@ -775,6 +784,14 @@ local function BuildTrackerMixin()
         local placed = ObjectiveTrackerModuleMixin.LayoutBlock(self, block)
         if placed then
             self:EnableBlockWheel(block)
+            if block.poiButton then
+                -- The glow is wider than the scroll content. Keep the icon
+                -- itself whole and use the stock indent instead of clipping it.
+                block.poiButton.shouldShowGlow = false
+                if block.poiButton.Glow then
+                    block.poiButton.Glow:Hide()
+                end
+            end
         end
         return placed
     end

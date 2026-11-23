@@ -6074,6 +6074,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         enhanceQuestTracker = false,
         trackerSort = "blizzard",
         trackerFilter = "all",
+        trackerBottomInset = 15,
         selectNearestQuest = false,
     }
     local collapsed = {}
@@ -6300,8 +6301,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule.contentsHeight = 425
     ourModule.ScrollFrame.range = 400
     ourModule:UpdateScrollViewport()
-    assert(ourModule.contentsHeight == 125, "the module height is capped to the viewport")
-    assert(ourModule.ScrollFrame.height == 100)
+    assert(ourModule.contentsHeight == 110, "the module height leaves room above the action bars")
+    assert(ourModule.ScrollFrame.height == 85)
     assert(ourModule.ScrollFrame.shown == true)
     assert(ourModule.ContentsFrame.height == 408, "content keeps its full height plus scroll padding")
     ourModule:Scroll(-1)
@@ -6357,6 +6358,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end)
     assert(#seen == 3)
     assert(headers["zone:Ashenvale"] and headers["zone:Darkshore"])
+    assert(headers["zone:Ashenvale"].offsetX == 7, "zone headers align with the Quests header")
     collapsed["Darkshore"] = true
     seen = {}
     ourModule:EnumQuestWatchData(function(_, quest)
@@ -6376,6 +6378,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     local empty = headers["fqp-filter-empty"]
     assert(empty and empty.HeaderText.text == "No tracked quests match this filter.",
         "a zero-match filter must keep the module header available")
+    assert(empty.offsetX == 7, "the empty-filter message aligns with zone headers")
 end
 
 cases["tracker_runtime.beta_opt_in_resets_once_then_survives"] = function()
