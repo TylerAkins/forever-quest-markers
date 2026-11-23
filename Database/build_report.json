@@ -1,9 +1,9 @@
 {
   "artifact": {
-    "version": "1.1.3-dev.9cf27d6",
-    "commit": "9cf27d6491dd80f1998aa0a846dbea9a3c5daad9",
-    "sha256": "afe2c0df6f656f6cd7c2e7d7386292e7efbffdd207a25cd1e142b75e8b026004",
-    "ref": "preview",
+    "version": "1.1.5",
+    "commit": "47a4756b775e8c73687fd3066d6c13f0bc43a55e",
+    "sha256": "1d2843cc8f6f3d074644142a8f79ab045224fc4f6b0ce4b213469c3002d9165b",
+    "ref": "v1.1.5",
     "flavor": "Forever",
     "contract_version": 4,
     "build_time": "2023-11-14T22:13:20Z"
@@ -23,28 +23,28 @@
     "instance_quests": 1419
   },
   "counts": {
-    "quests": 6078,
-    "quests_with_coords": 5618,
-    "coord_pins": 10372,
-    "quests_with_turn_ins": 5902,
-    "turn_in_npcs": 1948,
-    "turn_in_objects": 218,
+    "quests": 6083,
+    "quests_with_coords": 5631,
+    "coord_pins": 10447,
+    "quests_with_turn_ins": 5916,
+    "turn_in_npcs": 1954,
+    "turn_in_objects": 219,
     "instance_quests": 678,
     "yearly_quests": 220,
-    "repeatable_quests": 753,
+    "repeatable_quests": 906,
     "monthly_quests": 0,
-    "breadcrumb_quests": 218,
-    "quests_with_races": 4008,
+    "breadcrumb_quests": 220,
+    "quests_with_races": 4007,
     "quests_with_classes": 1059,
     "quests_with_skill": 230,
-    "quests_with_prereqs": 3200,
-    "quests_with_alt_quests": 580
+    "quests_with_prereqs": 3196,
+    "quests_with_alt_quests": 579
   },
   "start_gaps": {
-    "no_starter": 191,
+    "no_starter": 184,
     "item_no_drop_source": 249,
     "item_drop_no_spawn": 10,
-    "starter_no_spawn": 10,
+    "starter_no_spawn": 9,
     "unmapped_zone": 0,
     "no_dungeon_entrance": 0,
     "missing_entity": 0,
@@ -116,16 +116,15 @@
       79963,
       79970,
       94399,
-      95682,
       98109
     ]
   },
   "turn_ins": {
-    "quests_with_turn_ins": 5902,
-    "npcs": 1948,
-    "objects": 218,
-    "npc_quests": 5647,
-    "object_only_quests": 255
+    "quests_with_turn_ins": 5916,
+    "npcs": 1954,
+    "objects": 219,
+    "npc_quests": 5660,
+    "object_only_quests": 256
   },
   "policy_coverage": {
     "yearly_marked": 220,
