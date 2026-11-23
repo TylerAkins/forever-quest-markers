@@ -1,3 +1,4 @@
-## 1.1.6 - 2026-11-22
+## 1.1.7 - 2026-11-23
 
-- Fix a `Cannot anchor to a region dependent on it` Lua error when the enhanced quest tracker is full and another zone header does not fit. The grouped layout now stops for that pass instead of retrying Blizzard's flat list.
+- Update the QuestieDB Forever artifact to `1d2843cc8f6f3d074644142a8f79ab045224fc4f6b0ce4b213469c3002d9165b` (build `47a4756b775e8c73687fd3066d6c13f0bc43a55e`).
+- Ship 6083 quests with 10447 coordinate pins (678 static instance quests, 220 yearly quests).
