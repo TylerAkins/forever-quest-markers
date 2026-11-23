@@ -3,6 +3,44 @@ local ADDON_NAME, ns = ...
 -- One addon table, shared across files via the WoW addon environment (`...`).
 ForeverQuestPins = ns
 
+local function InCombat()
+    if InCombatLockdown then
+        local ok, value = pcall(InCombatLockdown)
+        if ok then
+            return value and true or false
+        end
+    end
+    return UnitAffectingCombat and UnitAffectingCombat("player") and true or false
+end
+
+-- Super-tracking refreshes Blizzard map pins on the call stack. The client
+-- blocks that in combat, encounters, challenge modes, and PvP matches and
+-- blames the addon, so selection waits until the restriction clears.
+local function AddOnActionsRestricted()
+    if InCombat() then
+        return true
+    end
+    local restricted = C_RestrictedActions
+    local kinds = Enum and Enum.AddOnRestrictionType
+    if type(restricted) ~= "table"
+        or type(restricted.IsAddOnRestrictionActive) ~= "function"
+        or type(kinds) ~= "table" then
+        return false
+    end
+    for _, name in ipairs({ "Combat", "Encounter", "ChallengeMode", "PvPMatch" }) do
+        local kind = kinds[name]
+        if kind ~= nil then
+            local ok, active = pcall(restricted.IsAddOnRestrictionActive, kind)
+            if ok and active then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+ns.AddOnActionsRestricted = AddOnActionsRestricted
+
 local eventFrame = CreateFrame("Frame")
 local pending = false
 local accum = 0
@@ -146,9 +184,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
         ns.TryRegisterQuestLinks()
-        if ns.TryRegisterQuestTracker then
-            ns.TryRegisterQuestTracker()
-        end
         if loaded ~= ADDON_NAME then
             return
         end
@@ -183,9 +218,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
         if ns.StartWelcome then ns.StartWelcome() end
         ns.TryRegisterQuestLinks()
-        if ns.TryRegisterQuestTracker then
-            ns.TryRegisterQuestTracker()
-        end
         ns.TryRegisterSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
@@ -198,9 +230,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_ENTERING_WORLD" then
         ns.TryRegisterSettings()
-        if ns.TryRegisterQuestTracker then
-            ns.TryRegisterQuestTracker()
-        end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end

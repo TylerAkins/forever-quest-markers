@@ -28,10 +28,6 @@ local pages = {
         { "highlightNewQuests", "Show tint for quests new in WoW Forever" },
         { "sparkleQuestItems", "Show quest item sparkles" },
     } },
-    { title = "Quest tracker", options = {
-        { "enhanceQuestTracker", "Enhance quest tracker (BETA)" },
-        { "selectNearestQuest", "Select nearest quest" },
-    } },
     { title = "Quest automation", options = {
         { "autoAccept", "Auto-accept quests" },
         { "autoAcceptRangeEnabled", "Limit auto-accept quest level" },

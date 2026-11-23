@@ -32,35 +32,10 @@ ns.defaults = {
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
-    enhanceQuestTracker = false,
-    trackerSort = "blizzard",
-    trackerFilter = "all",
-    selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
     sparkleQuestItems = false,
     debug = false,
-}
-
-ns.TRACKER_SORT_VALUES = { blizzard = true, distance = true, level = true, title = true }
-ns.TRACKER_FILTER_VALUES = { all = true, current = true, instance = true, completed = true }
-ns.TrackerSortOrder = { "blizzard", "distance", "level", "title" }
-ns.TrackerFilterOrder = { "all", "current", "instance", "completed" }
-ns.TrackerSortLabels = {
-    blizzard = L["Blizzard order"],
-    distance = L["Distance"],
-    level = L["Level"],
-    title = L["Title"],
-}
-ns.TrackerFilterLabels = {
-    all = L["All tracked quests"],
-    current = L["Current zone only"],
-    instance = L["Instance quests"],
-    completed = L["Completed quests only"],
-}
-local trackerStringOptions = {
-    trackerSort = ns.TRACKER_SORT_VALUES,
-    trackerFilter = ns.TRACKER_FILTER_VALUES,
 }
 
 local optionChecks = {}
@@ -168,14 +143,6 @@ local function DecodeMirror()
         mirror.limitHighLevelQuests = legacyHighLevelLimit == "1"
     end
     mirror.waypointProvider = text:match("waypointProvider=(%a+)")
-    local trackerSort = text:match("trackerSort=(%a+)")
-    if trackerSort and ns.TRACKER_SORT_VALUES[trackerSort] then
-        mirror.trackerSort = trackerSort
-    end
-    local trackerFilter = text:match("trackerFilter=(%a+)")
-    if trackerFilter and ns.TRACKER_FILTER_VALUES[trackerFilter] then
-        mirror.trackerFilter = trackerFilter
-    end
     mirror._revision = tonumber(text:match("revision=(%d+)")) or 0
     mirror._setupComplete = text:match("setupComplete=1") ~= nil
     mirror._newsVersion = text:match("newsVersion=([%d%.]+)")
@@ -215,8 +182,6 @@ local function CopySettings(src, dest, revision)
         if src[key] ~= nil then
             if type(ns.defaults[key]) == "number" then
                 dest[key] = NormalizeNumber(key, src[key])
-            elseif trackerStringOptions[key] then
-                dest[key] = trackerStringOptions[key][src[key]] and src[key] or ns.defaults[key]
             elseif key == "waypointProvider" then
                 dest[key] = src[key] == "tomtom" and "tomtom" or "blizzard"
             else
@@ -276,8 +241,6 @@ local function SaveMirror(db)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
-    parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
-    parts[#parts + 1] = "trackerFilter=" .. tostring(db.trackerFilter or ns.defaults.trackerFilter)
     for i = 1, #keys do
         local key = keys[i]
         parts[#parts + 1] = key .. "=" .. (db[key] and "1" or "0")
@@ -349,27 +312,9 @@ function ns.InitSettings()
     CopySettings(account, legacyAccount, revision)
     CopySettings(account, legacyCharacter, revision)
 
-    -- The enhanced tracker became a beta feature in 1.1.4. Turn it off once for
-    -- every install, then respect the player's later choice. The marker keeps
-    -- this from overriding a player who turns it back on.
-    local trackerBetaSeen = false
-    for i = 1, 4 do
-        if stores[i]._trackerBetaSeen then
-            trackerBetaSeen = true
-            break
-        end
-    end
-    if not trackerBetaSeen then
-        account.enhanceQuestTracker = false
-        CopySettings(account, character, revision)
-        CopySettings(account, legacyAccount, revision)
-        CopySettings(account, legacyCharacter, revision)
-    end
-
     for i = 1, 4 do
         stores[i]._setupComplete = setupComplete or nil
         stores[i]._newsVersion = newsVersion and newsVersion.value or nil
-        stores[i]._trackerBetaSeen = true
     end
     ns.db = account
     ns.settingsSource = source == account and "account"
@@ -420,9 +365,6 @@ function ns.WipeSettings()
     end
     if ns.SyncSettingsCheckboxes then
         ns.SyncSettingsCheckboxes()
-    end
-    if ns.NotifyTrackerOptionsChanged then
-        ns.NotifyTrackerOptionsChanged()
     end
 end
 
@@ -601,16 +543,9 @@ function ns.SetOption(key, value)
         if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
         return
     end
-    local trackerOption = key == "enhanceQuestTracker"
-        or key == "trackerSort" or key == "trackerFilter"
-        or key == "selectNearestQuest"
     if key == "waypointProvider" then
         if value ~= "blizzard" and value ~= "tomtom" then return end
         if value ~= ns.GetOption(key) and ns.ClearWaypoint then ns.ClearWaypoint() end
-    elseif trackerStringOptions[key] then
-        if not trackerStringOptions[key][value] then
-            return
-        end
     elseif type(ns.defaults[key]) == "number" then
         if tonumber(value) == nil then
             return
@@ -640,11 +575,7 @@ function ns.SetOption(key, value)
             ns.DisableSparkleSetting()
         end
     end
-    if trackerOption then
-        if ns.NotifyTrackerOptionsChanged then
-            ns.NotifyTrackerOptionsChanged(key)
-        end
-    elseif ns.RequestRefresh then
+    if ns.RequestRefresh then
         ns.RequestRefresh("settings")
     end
 end
@@ -872,7 +803,6 @@ function ns.SlashCommand(msg)
         Print(L["Commands:"])
         print(L["  /fqp setup   Open the setup guide"])
         print(L["  /fqp track <id> Track a quest start, objective, or turn-in"])
-        print(L["  /fqp nearest  Select the nearest tracked quest"])
         print(L["  /fqp clear    Clear the addon waypoint"])
         print(L["  /fqp on       Enable quest-start pins"])
         print(L["  /fqp off      Disable quest-start pins"])
@@ -912,20 +842,6 @@ function ns.SlashCommand(msg)
     local trackID = tonumber(msg:match("^track%s+(%d+)$"))
     if trackID and ns.TrackQuest then
         ns.TrackQuest(trackID)
-        return
-    end
-    if msg == "nearest" then
-        if ns.AddOnActionsRestricted and ns.AddOnActionsRestricted() then
-            Print(L["Select nearest quest is unavailable in combat."])
-            return
-        end
-        if ns.SelectNearestQuest then
-            if ns.SelectNearestQuest() then
-                Print(L["Selected the nearest quest."])
-            else
-                Print(L["No tracked quest with a location was found."])
-            end
-        end
         return
     end
     if msg == "clear" and ns.ClearWaypoint then
@@ -1656,43 +1572,6 @@ local function CreateOptionCheckbox(parent, optionKey, label, tooltip)
     return box
 end
 
-local function CreateTrackerDropdown(parent, optionKey, label, order, labels)
-    local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    caption:SetText(label)
-    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
-    dropdown:SetSize(240, 24)
-    dropdown:SetDefaultText(labels[ns.GetOption(optionKey)] or "")
-    dropdown:SetupMenu(function(_, root)
-        for i = 1, #order do
-            local value = order[i]
-            root:CreateRadio(labels[value],
-                function() return ns.GetOption(optionKey) == value end,
-                function() ns.SetOption(optionKey, value) end,
-                value)
-        end
-    end)
-    dropdown.ApplySaved = function(control)
-        control:SetDefaultText(labels[ns.GetOption(optionKey)] or "")
-        control:GenerateMenu()
-    end
-    optionChecks[#optionChecks + 1] = dropdown
-    return caption, dropdown
-end
-
-local function DimWithoutTracker(control, captions)
-    local applySaved = control.ApplySaved
-    control.ApplySaved = function(self)
-        applySaved(self)
-        local enabled = ns.GetOption("enhanceQuestTracker") and true or false
-        self:SetEnabled(enabled)
-        self:SetAlpha(enabled and 1 or 0.5)
-        for i = 1, #captions do
-            captions[i]:SetAlpha(enabled and 1 or 0.5)
-        end
-    end
-    control:ApplySaved()
-end
-
 function ns.SyncSettingsCheckboxes()
     for i = 1, #optionChecks do
         local box = optionChecks[i]
@@ -2075,43 +1954,6 @@ local function BuildNavigationSettings(self)
     worldTracking:SetPoint("TOPLEFT", tracking, "BOTTOMLEFT", 0, 0)
 end
 
-local function BuildTrackerSettings(self)
-    local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    heading:SetPoint("TOPLEFT", 16, -16)
-    heading:SetText(L["Quest tracker"] .. " (BETA)")
-    local help = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    help:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
-    help:SetWidth(520)
-    help:SetJustifyH("LEFT")
-    help:SetText(L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."] .. " " .. L["Beta feature, off by default."])
-
-    local enhanceTracker = CreateOptionCheckbox(
-        self,
-        "enhanceQuestTracker",
-        L["Enhance quest tracker"] .. " (BETA)",
-        L["Group tracked quests by zone and add sort and filter options to Blizzard's tracker."]
-    )
-    enhanceTracker:SetPoint("TOPLEFT", help, "BOTTOMLEFT", -4, -12)
-    local sortCaption, sortDropdown = CreateTrackerDropdown(
-        self, "trackerSort", L["Sort quests"], ns.TrackerSortOrder, ns.TrackerSortLabels)
-    sortCaption:SetPoint("TOPLEFT", enhanceTracker, "BOTTOMLEFT", 4, -6)
-    sortDropdown:SetPoint("TOPLEFT", sortCaption, "BOTTOMLEFT", 0, -4)
-    local filterCaption, filterDropdown = CreateTrackerDropdown(
-        self, "trackerFilter", L["Show quests"], ns.TrackerFilterOrder, ns.TrackerFilterLabels)
-    filterCaption:SetPoint("TOPLEFT", sortDropdown, "BOTTOMLEFT", 0, -10)
-    filterDropdown:SetPoint("TOPLEFT", filterCaption, "BOTTOMLEFT", 0, -4)
-    DimWithoutTracker(sortDropdown, { sortCaption })
-    DimWithoutTracker(filterDropdown, { filterCaption })
-
-    local nearest = CreateOptionCheckbox(
-        self,
-        "selectNearestQuest",
-        L["Select nearest quest"],
-        L["Super-track the closest tracked quest and update it as you move."]
-    )
-    nearest:SetPoint("TOPLEFT", filterDropdown, "BOTTOMLEFT", -4, -10)
-end
-
 local function BuildInterfaceSettings(self)
     local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     heading:SetPoint("TOPLEFT", 16, -16)
@@ -2160,7 +2002,6 @@ function ns.TryRegisterSettings()
         { L["Map pins"], BuildMapPinsSettings },
         { L["Quest automation"], BuildAutomationSettings },
         { L["Navigation"], BuildNavigationSettings },
-        { L["Quest tracker"], BuildTrackerSettings },
         { L["Interface"], BuildInterfaceSettings },
     }
     for i = 1, #sections do

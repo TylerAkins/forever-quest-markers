@@ -19,7 +19,6 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
-| `Tracker.lua` | In-place zone groups, sorting, filters, and collapsible headers for Blizzard's `QuestObjectiveTracker` |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
@@ -251,83 +250,6 @@ In game, right-click two different tracked quest titles and copy each URL. Confi
 the Forever quest IDs, existing tracking/details/share/abandon actions, Escape
 closing the copy dialog, and behavior after `/reload`. Combat and taint behavior
 require client verification.
-
-## Quest tracker enhancement
-
-`Tracker.lua` enhances Blizzard's `QuestObjectiveTracker` in place. It wraps
-`BuildQuestWatchInfos` to annotate each watched quest with its native quest-log
-header, current-zone match, instance flag, level, title, and distance, then sorts
-and filters the list. `EnumQuestWatchData` walks that list and inserts an
-`ObjectiveTrackerBlockTemplate` header block when the zone changes. Quest blocks,
-menus, item buttons, timers, and animations stay Blizzard's.
-
-The enhancement is a beta feature and off by default. `InitSettings` turns
-`enhanceQuestTracker` off once for every install and records `_trackerBetaSeen`,
-then respects a later opt-in. The settings panel, setup guide, and tracker menu
-label it **BETA**, and the tracker menu hides the sort and filter sections while
-it is off.
-
-- Zone names come from `C_QuestLog.GetHeaderIndexForQuest` and
-  `C_QuestLog.GetInfo`. If the header index is missing or not a header for a
-  specific quest, the code scans backward from `C_QuestLog.GetLogIndexForQuestID`
-  for the nearest header. Quests with no header use **Other**. If
-  `GetHeaderIndexForQuest` or `GetDistanceSqToQuest` is unavailable, the tracker
-  keeps Blizzard's flat order and does not start the distance ticker.
-- The current zone is `C_Map.GetBestMapForUnit("player")` plus its parent maps,
-  stopping before the continent so every zone on the continent does not match. A
-  quest matches when its header name or next waypoint map is in that chain.
-  Blizzard order, distance, level, and title sort inside each zone, and the
-  current zone group goes first.
-- Filters only change the view. They never call `AddQuestWatch` or
-  `RemoveQuestWatch`, so Shift-click untrack is unchanged. **Completed quests
-  only** uses the quest object's `IsComplete()` and therefore includes quests
-  done and waiting to be turned in.
-- Zone header blocks use `ObjectiveTrackerHeaderFont` and
-  `OBJECTIVE_TRACKER_COLOR.Header`, reserve room for the
-  `ObjectiveTrackerModuleMinimizeButtonTemplate` atlas, and hide their quest
-  header button so quest click, hover, and Copy Wowhead URL handlers never see a
-  string block ID.
-- Collapsed zones live in `ForeverQuestPinsDB.trackerCollapsedZones["Name-Surname"]`.
-  The table is outside `ns.defaults`, so settings synchronization never copies it.
-- `ObjectiveTrackerFrame:SetTrackerTargetButton`, `SelectFirstButton`, and
-  `UpdateSmartNavigationOverrides` temporarily point `firstBlock` at the first
-  non-zone block, so gamepad focus skips zone headers and keeps Blizzard's
-  auto-quest popups.
-- During combat the annotation cache reuses the last out-of-combat grouping and
-  distances, and a zone change in combat keeps those cached zones until combat
-  ends. A quest first seen in combat goes under **Other** until the next
-  out-of-combat layout. The distance ticker runs every 5 seconds only for the
-  Distance sort, while the tracker is visible and out of combat, and skips
-  `MarkDirty` when the order did not change.
-- `module:GetBlock` can hand back a blocked value in combat instead of a block.
-  `AddZoneHeader` treats a non-table as a refusal, and the `EnumQuestWatchData`
-  wrapper then falls back to Blizzard's flat enumeration for that layout. The
-  wrapper only relays before the enhanced pass has laid out a block: re-running
-  Blizzard's enumeration afterwards re-fetches blocks through `GetBlock`, whose
-  `AnchorBlock` call targets a chain that still depends on them.
-- In combat the original `BuildQuestWatchInfos`, `EnumQuestWatchData`, and
-  tracker frame methods are restored, so the layout runs in Blizzard's code and
-  the scenario tracker can read secret aura data. `PLAYER_REGEN_ENABLED`
-  re-applies the wrappers and marks the tracker dirty.
-  `ns.RefreshTrackerEnhancement` owns the switch.
-- **Select nearest quest** reads `C_QuestLog.GetDistanceSqToQuest` for every
-  watched quest, skips other-continent results, and calls
-  `C_SuperTrack.SetSuperTrackedQuestID` for the smallest distance. It refreshes
-  every 5 seconds while enabled and out of combat. `/fqp nearest` runs the same
-  selection once.
-
-Runtime cases cover grouping, every sort and filter, the current-zone match, the
-**Other** fallback, missing header and distance APIs, collapse isolation, header
-block handlers, registration, gamepad targeting, the right-click menu, settings
-migration and mirroring, the combat annotation cache, and the distance ticker.
-In-game checks still cover the side-by-side look, Edit Mode, UI scale, gamepad,
-and taint behavior.
-
-Known limits: a nearly full tracker can add a zone header even when its first
-quest block does not fit, and a client without `GetDistanceSqToQuest` uses
-Blizzard's flat order for Distance without applying the view filters. The default
-Blizzard order keeps native calling and `overridesSortOrder` priority; the other
-sorts use their own order inside each zone.
 
 ## Quest item sparkles
 

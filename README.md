@@ -21,7 +21,6 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
-- Enhances Blizzard's quest tracker with zone groups, sort options (Blizzard order, distance, level, title), and view filters (all tracked quests, current zone only, instance quests). Right-click the **Quests** header for the same controls. Zone headers collapse and remember their state per character. In combat it uses Blizzard's flat list and returns to the grouped view after combat. **Beta and off by default**; turn it on with **Enhance quest tracker (BETA)** in settings or the tracker's right-click menu.
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
 - Overlapping starts on the same spot stack into one pin
@@ -52,11 +51,9 @@ The optional **Don't auto-accept grey quests** checkbox defaults off. It skips q
 
 **Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload. **Abandon Quest** selects the quest in your quest log from addon code, which can make the map report a blocked action in combat until you reload. Abandon it from the quest log instead if you want to avoid that.
 
-**Enhance quest tracker (BETA)** is off by default. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Right-click the **Quests** header for the same controls. **Blizzard order** keeps the client's proximity order. **Distance** refreshes every 5 seconds while the tracker is visible and pauses in combat. In combat the tracker uses Blizzard's flat list, then returns to the grouped view after combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Completed quests only** includes quests that are done and waiting to be turned in. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. Use `/fqp nearest` to select it once. Click a zone's collapse arrow to hide its quests; the state is saved per character. Turn the option off to leave the tracker exactly as Blizzard draws it.
-
 **Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
-Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
+Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -86,10 +83,6 @@ Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or 
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
 | Show quest item sparkles | Off (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
-| Enhance quest tracker (BETA) | Off (zone groups, sort, and filters inside Blizzard's quest tracker; enable to use) |
-| Sort quests | Blizzard order (distance, level, or title optional) |
-| Show quests | All tracked quests (current zone only, instance quests, or completed quests optional) |
-| Select nearest quest | Off (super-track the closest tracked quest; `/fqp nearest` selects it once) |
 | Debug tooltips | Off |
 | Reset hidden quest pins | Button: shows every pin you hid with Shift-click on the current character |
 
@@ -99,7 +92,7 @@ Click a quest-start marker to set a waypoint at the nearest actual spawn in its 
 
 Blizzard supports one user waypoint at a time. Clicking a start replaces that waypoint. Manually changing the Blizzard pin or tracking another quest stops the pending handoff. The addon only clears a matching pin that it created. Forever builds may differ in API support; an unavailable API is reported in chat. Enable **Show in-world destination marker** under Navigation to display Blizzard’s floating marker and distance. This controls the shared `showInGameNavigation` game setting and reflects its current value, including changes made by other addons.
 
-Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhead URL** to open its Forever quest link. Press Cmd+C or Ctrl+C to copy the selected URL. Right-clicking the **Quests** header opens the tracker sort and filter menu instead.
+Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhead URL** to open its Forever quest link. Press Cmd+C or Ctrl+C to copy the selected URL.
 
 ## Commands
 
@@ -126,7 +119,6 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
-| `/fqp nearest` | Select the closest tracked quest once |
 | `/fqp clear` | Clear the addon waypoint or its tracked quest |
 | `/fqp refresh` | Rebuild pins on the current map |
 | `/fqp stats` | Print the database commit, quest count, and painted pin count |
@@ -142,7 +134,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 Forever’s quest data is still moving. Missing pins are often a gap in the published export: most quest givers have no coordinates, so those quests cannot be pinned.
 
 - **Saved settings:** Forever client 1.60.1.69913 can write account and character SavedVariables without restoring them. Revisioned copies alone cannot fix this client bug. The optional local repair below has been confirmed on a native macOS Forever installation.
-- **Does not add a quest tracker.** The optional enhancement works inside Blizzard's existing tracker. It does not add a quest-log UI, new objectives, or turn-in map pins.
+- **Does not add or modify a quest tracker.** Quest tracking, objectives, and turn-in pins stay Blizzard's.
 - **Quest eligibility depends on source data.** Forever exposes completion, quest-log membership, and quests offered by the NPC currently being visited, but no API that answers whether an arbitrary quest ID can be accepted. Missing prerequisites can therefore produce early pins until the database is corrected. NPC tooltips list available accepts (including session gossip offers) and active quests that are ready to turn in at that NPC. Incomplete turn-ins are not listed.
 - Missing quest starters are learned for the current session when an NPC offers them through gossip or quest details. Unavailable titles appear as `Quest <ID> (title unavailable)` until loaded.
 - **Forever-only quests** missing from the export will not pin until the export (or a gossip offer we already saw this session) knows them
