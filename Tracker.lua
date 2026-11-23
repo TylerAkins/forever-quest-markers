@@ -24,6 +24,7 @@ local FILTER_LABELS = ns.TrackerFilterLabels or {
 local MODULE_NAME = "FQPQuestObjectiveTracker"
 local SCROLL_STEP = 36
 local CONTENT_BOTTOM_PADDING = 8
+local SCROLL_LEFT_INSET = 0
 
 local trackerMixin
 local module
@@ -39,6 +40,7 @@ local gamepadRegistered = false
 local eventFrame
 local registerRetries = 0
 local blizzardEventsSuspended = false
+local moduleEventsSuspended = false
 
 local function InCombat()
     if InCombatLockdown then
@@ -105,6 +107,11 @@ local function CanUseQuestTracker()
         and TemplateExists("ObjectiveTrackerModuleTemplate")
         and TemplateExists("ObjectiveTrackerBlockTemplate")
         and TemplateExists("ObjectiveTrackerModuleMinimizeButtonTemplate")
+        and TemplateExists("ObjectiveTrackerQuestPOIBlockTemplate")
+        and TemplateExists("QuestObjectiveItemButtonTemplate")
+        and TemplateExists("QuestObjectiveFindGroupButtonTemplate")
+        and TemplateExists("ObjectiveTrackerPOIButtonTemplate")
+        and TemplateExists("AutoQuestPopUpBlockTemplate")
         and type(C_QuestLog) == "table"
         and type(C_QuestLog.GetNumQuestWatches) == "function"
         and type(C_QuestLog.GetQuestIDForQuestWatchIndex) == "function"
@@ -576,8 +583,8 @@ local function BuildTrackerMixin()
     local mixin = CreateFromMixins(QuestObjectiveTrackerMixin)
     -- Blizzard draws the quest POI icon just left of the block text. Inside a
     -- scroll frame that overhang would be clipped, so indent quest blocks enough
-    -- to keep the visible icon inside the content.
-    mixin.blockOffsetX = 30
+    -- to keep the visible icon and its glow inside the content.
+    mixin.blockOffsetX = 48
 
     function mixin:BuildQuestWatchInfos()
         local infos = QuestObjectiveTrackerMixin.BuildQuestWatchInfos(self)
@@ -587,6 +594,10 @@ local function BuildTrackerMixin()
     function mixin:EnumQuestWatchData(func)
         local infos = self:BuildQuestWatchInfos()
         if type(infos) ~= "table" or #infos == 0 then
+            local filter = ns.GetOption("trackerFilter")
+            if filter and filter ~= "all" then
+                self:AddFilterEmptyBlock()
+            end
             return
         end
         if infos[1].zoneName == nil then
@@ -630,11 +641,62 @@ local function BuildTrackerMixin()
         return true
     end
 
+    function mixin:AddFilterEmptyBlock()
+        local block = self:GetBlock("fqp-filter-empty", "ObjectiveTrackerBlockTemplate")
+        if type(block) ~= "table" then
+            return
+        end
+        block.zoneName = nil
+        block.smartNavigationIgnored = true
+        block.offsetX = 0
+        self:AnchorBlock(block)
+        block.rightEdgeOffset = 0
+        if block.HeaderText and block.HeaderText.SetPoint then
+            block.HeaderText:SetPoint("RIGHT", 0, 0)
+        end
+        if block.zoneCollapseButton then
+            block.zoneCollapseButton:Hide()
+        end
+        if block.HeaderButton then
+            block.HeaderButton:Hide()
+            block.HeaderButton:EnableMouse(false)
+        end
+        block:SetScript("OnMouseUp", nil)
+        if ObjectiveTrackerLineFont and block.HeaderText and block.HeaderText.SetFontObject then
+            block.HeaderText:SetFontObject(ObjectiveTrackerLineFont)
+        end
+        block.HeaderText:SetText(L["No tracked quests match this filter."])
+        block.HeaderText:SetTextColor(0.6, 0.6, 0.6)
+        if block.HeaderText.SetMaxLines then
+            block.HeaderText:SetMaxLines(0)
+        end
+        block.height = math.max(block.HeaderText:GetHeight() or 0, 18)
+        self:LayoutBlock(block)
+    end
+
     -- The normal fast path skips relayout when the module is complete and its
     -- capped height fits. Edit Mode can grow the viewport without changing the
     -- content, so always re-layout when the container asks.
     function mixin:IsComplete()
         return false
+    end
+
+    function mixin:UpdateScrollContentSize()
+        local scroll = self.ScrollFrame
+        local content = self.ContentsFrame
+        if not scroll or not content then
+            return
+        end
+        content:ClearAllPoints()
+        content:SetPoint("TOPLEFT", scroll, "TOPLEFT", SCROLL_LEFT_INSET, 0)
+        local contentWidth = (scroll:GetWidth() or 0) - SCROLL_LEFT_INSET
+        if contentWidth <= 1 then
+            contentWidth = (self:GetWidth() or 0) - SCROLL_LEFT_INSET
+        end
+        if contentWidth <= 1 and self.Header then
+            contentWidth = (self.Header:GetWidth() or 0) - SCROLL_LEFT_INSET
+        end
+        content:SetWidth(math.max(contentWidth, 1))
     end
 
     function mixin:UpdateScrollViewport()
@@ -643,36 +705,15 @@ local function BuildTrackerMixin()
         if not scroll or not content then
             return
         end
+        self:UpdateScrollContentSize()
         local headerHeight = self.headerHeight or 0
         local fullHeight = self.contentsHeight or headerHeight
         local contentHeight = math.max(0, fullHeight - headerHeight)
         local available = self.availableHeight or 0
         local viewport = math.min(contentHeight, math.max(0, available - headerHeight))
-        if UIParent and UIParent.GetHeight and scroll.GetTop then
-            local screenHeight = UIParent:GetHeight() or 0
-            local top = scroll:GetTop() or 0
-            if screenHeight > 0 and top > 0 then
-                local scale = (scroll:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
-                if scale <= 0 then
-                    scale = 1
-                end
-                local screenSpace = math.max(0, (screenHeight - top) / scale)
-                viewport = math.min(viewport, screenSpace)
-            end
-        end
         self.contentsHeight = headerHeight + viewport
         scroll:SetHeight(math.max(viewport, 1))
         scroll:SetShown(viewport > 0)
-        content:ClearAllPoints()
-        content:SetPoint("TOPLEFT", scroll, "TOPLEFT", 0, 0)
-        local contentWidth = scroll:GetWidth() or 0
-        if contentWidth <= 1 then
-            contentWidth = self:GetWidth() or 0
-        end
-        if contentWidth <= 1 and self.Header then
-            contentWidth = self.Header:GetWidth() or 0
-        end
-        content:SetWidth(math.max(contentWidth, 1))
         content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING, viewport, 1))
         scroll:UpdateScrollChildRect()
         local range = scroll:GetVerticalScrollRange() or 0
@@ -683,6 +724,7 @@ local function BuildTrackerMixin()
     end
 
     function mixin:LayoutContents()
+        self:UpdateScrollContentSize()
         QuestObjectiveTrackerMixin.LayoutContents(self)
         self:UpdateScrollViewport()
     end
@@ -735,6 +777,15 @@ local function BuildTrackerMixin()
             self:EnableBlockWheel(block)
         end
         return placed
+    end
+
+    function mixin:AnchorBlock(block)
+        -- Auto-quest popups use a negative offset to overhang the old module.
+        -- Inside the scroll child that overhang is clipped, so keep them inside.
+        if block.offsetX and block.offsetX < 0 then
+            block.offsetX = 0
+        end
+        return ObjectiveTrackerModuleMixin.AnchorBlock(self, block)
     end
 
     function mixin:ToggleZoneCollapse(block)
@@ -822,7 +873,7 @@ local function CreateModule()
     content:ClearAllPoints()
     content:SetParent(scroll)
     scroll:SetScrollChild(content)
-    content:SetPoint("TOPLEFT", scroll, "TOPLEFT", 0, 0)
+    content:SetPoint("TOPLEFT", scroll, "TOPLEFT", SCROLL_LEFT_INSET, 0)
     content:SetSize(1, 1)
     content:EnableMouse(true)
     content:EnableMouseWheel(true)
@@ -865,6 +916,12 @@ local function AddTrackerModule()
         end
     end
     ObjectiveTrackerManager:SetModuleContainer(module, ObjectiveTrackerFrame)
+    if moduleEventsSuspended and type(module.events) == "table" then
+        moduleEventsSuspended = false
+        for i = 1, #module.events do
+            module:RegisterEvent(module.events[i])
+        end
+    end
     if ns.HookQuestLinkModule then
         ns.HookQuestLinkModule(module)
     end
@@ -882,6 +939,12 @@ local function RemoveTrackerModule()
     end
     ObjectiveTrackerFrame:RemoveModule(module)
     module:Hide()
+    if not moduleEventsSuspended and type(module.events) == "table" then
+        moduleEventsSuspended = true
+        for i = 1, #module.events do
+            module:UnregisterEvent(module.events[i])
+        end
+    end
     ObjectiveTrackerManager:SetModuleContainer(QuestObjectiveTracker, ObjectiveTrackerFrame)
     if blizzardEventsSuspended and type(QuestObjectiveTracker.events) == "table" then
         blizzardEventsSuspended = false

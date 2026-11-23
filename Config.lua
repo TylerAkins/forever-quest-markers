@@ -180,6 +180,7 @@ local function DecodeMirror()
     mirror._setupComplete = text:match("setupComplete=1") ~= nil
     mirror._newsVersion = text:match("newsVersion=([%d%.]+)")
     mirror._trackerBetaSeenV2 = text:match("trackerBetaSeen=1") ~= nil
+    mirror._trackerCollapseResetV2 = text:match("trackerCollapseReset=1") ~= nil
     for key, raw in text:gmatch("([%w_]+)=([01])") do
         if type(ns.defaults[key]) == "boolean" then
             mirror[key] = raw == "1"
@@ -272,6 +273,7 @@ local function SaveMirror(db)
     if db._setupComplete then parts[#parts + 1] = "setupComplete=1" end
     if db._newsVersion then parts[#parts + 1] = "newsVersion=" .. db._newsVersion end
     if db._trackerBetaSeenV2 then parts[#parts + 1] = "trackerBetaSeen=1" end
+    if db._trackerCollapseResetV2 then parts[#parts + 1] = "trackerCollapseReset=1" end
     parts[#parts + 1] = "autoAcceptLevelOffset=" .. tostring(db.autoAcceptLevelOffset or 1)
     parts[#parts + 1] = "autoAcceptMinLevelOffset="
         .. tostring(db.autoAcceptMinLevelOffset or ns.defaults.autoAcceptMinLevelOffset)
@@ -430,6 +432,7 @@ function ns.WipeSettings()
     for key, value in pairs(ns.defaults) do
         db[key] = value
     end
+    db.trackerCollapsedZones = nil
     db._revision = Revision(db) + 1
     SyncSettings()
     if ns.ApplySparkleSetting then

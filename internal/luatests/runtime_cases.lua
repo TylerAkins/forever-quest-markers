@@ -4161,6 +4161,8 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
         if version then ns.db._newsVersion = version end
     end
     print = function(text) table.insert(printed, text) end
+    local gamepadEnabled = false
+    InputUtil = { IsGamepadUIEnabled = function() return gamepadEnabled end }
     local controls = {}
     local function region()
         return setmetatable({}, { __index = function() return function() end end })
@@ -4178,6 +4180,7 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
             if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self, value) end
         end
         object.EnableMouse = function(self, enabled) self.mouseEnabled = enabled end
+        object.SetEnabled = function(self, enabled) self.enabled = enabled end
         object.Show = function(self) self.shown = true end
         object.Hide = function(self) self.shown = false end
         object.SetShown = function(self, shown) self.shown = shown end
@@ -4232,6 +4235,15 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     nearest.checked = true
     nearest.scripts.OnClick(nearest)
     assert(next(writes) == nil, "the tracker choice must remain staged")
+    gamepadEnabled = true
+    button("Back").scripts.OnClick()
+    button("Next").scripts.OnClick()
+    assert(enhance.enabled == false and nearest.enabled == false,
+        "the setup guide must disable tracker choices in gamepad UI")
+    gamepadEnabled = false
+    button("Back").scripts.OnClick()
+    button("Next").scripts.OnClick()
+    assert(enhance.enabled == true and nearest.enabled == true)
     button("Next").scripts.OnClick()
     local range, limit
     for _, control in ipairs(controls) do
@@ -4253,7 +4265,11 @@ cases["setup_runtime.preserves_current_settings_and_stages_choices"] = function(
     button("Back").scripts.OnClick()
     button("Next").scripts.OnClick()
     assert(range.lowValue == -5 and range.highValue == 3 and range.active)
+    gamepadEnabled = true
     button("Apply").scripts.OnClick()
+    assert(writes.enhanceQuestTracker == nil and writes.selectNearestQuest == nil,
+        "Apply must not write tracker options in gamepad UI")
+    gamepadEnabled = false
     assert(writes.enabled == true and writes.autoAccept == nil and options.autoAccept == true)
     assert(writes.autoAcceptRangeEnabled == true and writes.autoAcceptLevelOffset == 3)
     assert(writes.autoAcceptMinLevelOffset == -5)
@@ -6157,6 +6173,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         return target
     end
     QuestObjectiveTrackerMixin = {
+        events = { "QUEST_LOG_UPDATE" },
         BuildQuestWatchInfos = function() return {} end,
         LayoutContents = function() end,
         OnBlockHeaderClick = function() end,
@@ -6166,6 +6183,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ObjectiveTrackerModuleMixin = {
         LayoutBlock = function(_, block) block.used = true; return true end,
         SetCollapsed = function(self, collapsed) self.collapsed = collapsed end,
+        AnchorBlock = function(_, block) block.anchoredOffset = block.offsetX end,
     }
     ObjectiveTrackerFrame = fakeFrame("Frame", "ObjectiveTrackerFrame")
     ObjectiveTrackerFrame.modules = {}
@@ -6202,14 +6220,16 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ObjectiveTrackerManager.moduleToContainerMap[QuestObjectiveTracker] = ObjectiveTrackerFrame
     ObjectiveTrackerFrame.modules[1] = QuestObjectiveTracker
 
+    local watches = 0
     C_QuestLog = {
-        GetNumQuestWatches = function() return 0 end,
+        GetNumQuestWatches = function() return watches end,
         GetQuestIDForQuestWatchIndex = function() return nil end,
     }
     QuestCache = {}
     C_XMLUtil = { GetTemplateInfo = function() return {} end }
     TRACKER_HEADER_QUESTS = "Quests"
     ObjectiveTrackerHeaderFont = {}
+    ObjectiveTrackerLineFont = {}
     OBJECTIVE_TRACKER_COLOR = {
         Header = { r = 1, g = 1, b = 1 },
         HeaderHighlight = { r = 1, g = 1, b = 1 },
@@ -6247,6 +6267,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(QuestObjectiveTracker.unregisteredEvents
         and QuestObjectiveTracker.unregisteredEvents.QUEST_LOG_UPDATE,
         "Blizzard's quest events are suspended while our module is active")
+    ourModule.events.QUEST_LOG_UPDATE = true
 
     options.enhanceQuestTracker = false
     ns.ApplyTrackerState()
@@ -6254,6 +6275,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(ourModule.shown == false)
     assert(QuestObjectiveTracker.events.QUEST_LOG_UPDATE == true,
         "Blizzard's quest events are restored with its module")
+    assert(ourModule.unregisteredEvents and ourModule.unregisteredEvents.QUEST_LOG_UPDATE,
+        "our module's quest events are suspended while the beta is off")
 
     gamepad = true
     options.enhanceQuestTracker = true
@@ -6264,6 +6287,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     gamepad = false
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == ourModule)
+    assert(ourModule.events.QUEST_LOG_UPDATE == true,
+        "our module's quest events are restored with the beta")
 
     gamepad = true
     InCombatLockdown = function() return true end
@@ -6296,9 +6321,14 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         { zoneName = "Ashenvale", quest = { id = 103 } },
         { zoneName = "Darkshore", quest = { id = 101 } },
     }
+    ourModule.ScrollFrame.width = 260
+    ourModule:UpdateScrollContentSize()
+    assert(ourModule.ContentsFrame.width == 260, "content width is set before block layout")
+    local autoBlock = { offsetX = -20 }
+    ourModule:AnchorBlock(autoBlock)
+    assert(autoBlock.offsetX == 0, "auto quest popup offset is clamped inside the scroll content")
     ns.EnhanceQuestWatchInfos = function() return zoneInfos end
     local headers = {}
-    function ourModule:AnchorBlock() end
     function ourModule:GetBlock(id)
         local block = headers[id]
         if not block then
@@ -6306,7 +6336,11 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
             block.ids = id
             block.HeaderText = {
                 SetFontObject = function() end,
+                SetPoint = function() end,
+                SetText = function(self, text) self.text = text end,
                 SetTextColor = function() end,
+                SetMaxLines = function() end,
+                GetHeight = function() return 18 end,
                 SetShadowColor = function() end,
                 SetShadowOffset = function() end,
             }
@@ -6330,6 +6364,18 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         return true
     end)
     assert(#seen == 2 and seen[1] == 102 and seen[2] == 103)
+
+    options.trackerFilter = "current"
+    watches = 18
+    ns.EnhanceQuestWatchInfos = function() return {} end
+    seen = {}
+    ourModule:EnumQuestWatchData(function()
+        seen[#seen + 1] = true
+    end)
+    assert(#seen == 0)
+    local empty = headers["fqp-filter-empty"]
+    assert(empty and empty.HeaderText.text == "No tracked quests match this filter.",
+        "a zero-match filter must keep the module header available")
 end
 
 cases["tracker_runtime.beta_opt_in_resets_once_then_survives"] = function()
@@ -6345,6 +6391,9 @@ cases["tracker_runtime.beta_opt_in_resets_once_then_survives"] = function()
     first.InitSettings()
     assert(first.GetOption("enhanceQuestTracker") == false, "the old beta opt-in is reset once")
     assert(ForeverQuestPinsDB._trackerBetaSeenV2 == true)
+    first.db.trackerCollapsedZones = { ["Hero-Realm"] = { Tanaris = true } }
+    first.WipeSettings()
+    assert(first.db.trackerCollapsedZones == nil, "Use Defaults clears collapsed tracker zones")
 
     local second = {}
     ForeverQuestPinsDB = { enhanceQuestTracker = true, _trackerBetaSeenV2 = true, _revision = 1 }
@@ -6377,6 +6426,8 @@ cases["tracker_runtime.beta_marker_survives_in_cvar_mirror"] = function()
         "the mirror marker must protect the saved opt-in")
     assert(mirrorText:find("trackerBetaSeen=1", 1, true),
         "the beta marker must be written back to the mirror")
+    assert(mirrorText:find("trackerCollapseReset=1", 1, true),
+        "the collapse reset marker must be written back to the mirror")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

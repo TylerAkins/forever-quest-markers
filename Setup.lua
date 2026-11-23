@@ -109,6 +109,9 @@ local function CreateSetup()
         box.Text:SetWidth(410)
         box.Text:SetJustifyH("LEFT")
         box:SetScript("OnClick", function(self)
+            if self.disabledForGamepad then
+                return
+            end
             panel.pending[self.key] = not not self:GetChecked()
             if self.key == "autoAccept" or self.key == "autoAcceptRangeEnabled" then
                 UpdateOffsetEnabled()
@@ -128,10 +131,16 @@ local function CreateSetup()
     local function Render()
         local page = panel.page
         local guided = page > 0
+        local gamepad = InputUtil
+            and type(InputUtil.IsGamepadUIEnabled) == "function"
+            and InputUtil.IsGamepadUIEnabled()
+        local trackerPage = guided and pages[page].title == "Quest tracker"
         panel:SetHeight(guided and (page == #pages and 450 or 400) or 200)
         progress:SetText(guided and (page .. " / " .. #pages) or "")
         heading:SetText(guided and L[pages[page].title] or L["Choose your options"])
-        help:SetText(guided and L["Choose what works for you. You can change these later in the addon options."]
+        help:SetText(guided and (trackerPage and gamepad
+                and L["The quest tracker is unavailable in gamepad UI."]
+                or L["Choose what works for you. You can change these later in the addon options."])
             or L["Set up quest pins, use the defaults, or keep your current settings."])
         for i, box in ipairs(checks) do
             local option = guided and pages[page].options[i]
@@ -146,8 +155,10 @@ local function CreateSetup()
                 local extra = lastPage and i >= 3 and 92 or 0
                 box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]
-                box:SetEnabled(true)
-                box.Text:SetAlpha(1)
+                local disabled = trackerPage and gamepad and true or false
+                box.disabledForGamepad = disabled
+                box:SetEnabled(not disabled)
+                box.Text:SetAlpha(disabled and 0.5 or 1)
                 box.Text:SetText(L[option[2]])
                 box:SetChecked(panel.pending[box.key])
                 box:Show()
@@ -189,7 +200,14 @@ local function CreateSetup()
             return
         end
         for key, value in pairs(panel.pending) do
-            if value ~= panel.original[key] then ns.SetOption(key, value) end
+            if value ~= panel.original[key] then
+                local gamepad = InputUtil
+                    and type(InputUtil.IsGamepadUIEnabled) == "function"
+                    and InputUtil.IsGamepadUIEnabled()
+                if not (gamepad and (key == "enhanceQuestTracker" or key == "selectNearestQuest")) then
+                    ns.SetOption(key, value)
+                end
+            end
         end
         Complete()
     end)
