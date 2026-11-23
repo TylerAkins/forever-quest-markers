@@ -126,7 +126,7 @@ local function CreateSetup()
         panel.pending.autoAcceptMinLevelOffset = lowValue
         panel.pending.autoAcceptLevelOffset = highValue
     end)
-    levelRange:SetPoint("TOPLEFT", 50, -230)
+    levelRange:SetPoint("TOPLEFT", 50, -200)
     local back, nextButton
     local function Render()
         local page = panel.page
@@ -152,7 +152,7 @@ local function CreateSetup()
                 local compact = #pages[page].options >= 7
                 local firstY = lastPage and -120 or (compact and -128 or -135)
                 local spacing = (lastPage or compact) and 30 or 31
-                local extra = lastPage and i >= 3 and 92 or 0
+                local extra = lastPage and i >= 3 and 74 or 0
                 box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]
                 local disabled = trackerPage and gamepad and true or false
