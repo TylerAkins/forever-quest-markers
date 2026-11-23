@@ -15,6 +15,7 @@ It adds quest-start markers to the world map, quest icons to NPC nameplates, and
 - Shows quest-start markers for unaccepted quests on the world map.
 - Shows nameplate icons for NPCs that offer a quest, accept a turn-in, or are an active quest objective. The icon goes away when the objective is done.
 - Lists quests you can accept and quests ready to turn in on NPC tooltips.
+- Adds an optional beta quest tracker layout with zone groups, sort and filter menus, and mouse-wheel scrolling inside Blizzard's tracker. Edit Mode moves and resizes it normally. Off by default.
 - Tracks a quest start with Blizzard map pins or TomTom when you click a marker.
 - Groups nearby spawn points into one marker. Hover to see the count and every location.
 - Hides a marker for the current character with Shift-click. Restore it in settings or with `/fqp unhide`.
@@ -34,6 +35,7 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 | `/fqp on` / `/fqp off` | Toggle quest-start markers |
 | `/fqp nameplates` | Toggle nameplate icons |
 | `/fqp npctooltip` | Toggle NPC quest lines |
+| `/fqp nearest` | Select the closest tracked quest once |
 | `/fqp spawns` | Toggle grouped spawn markers |
 | `/fqp seasonal` | Toggle holiday markers |
 | `/fqp wareffort` | Toggle AQ war effort markers |
@@ -44,7 +46,7 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 ## Notes
 
 - Forever only (Interface 16001). Not for Retail, Classic Era, or Cataclysm Classic.
-- This is not a quest tracker. Blizzard's tracker, objectives, and turn-in map pins are left as they are.
+- This is not a quest-log replacement. Blizzard's tracker, objectives, and turn-in map pins stay in place. The optional beta layout is off by default and is unavailable while gamepad UI is active.
 - Quest data comes from QuestieDB. Missing markers are usually missing data, not a setting.
 - Reputation requirements are not in the addon database, so they do not hide markers.
 - Auto-accept and auto-turn-in are off by default.

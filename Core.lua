@@ -190,6 +190,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ns.InitSettings()
         ns.RegisterSlash()
         ns.TryRegisterSettings()
+        if ns.TryRegisterQuestTracker then
+            ns.TryRegisterQuestTracker()
+        end
         if ns.MapPins then
             ns.MapPins:HookMap()
         end
@@ -218,6 +221,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
         if ns.StartWelcome then ns.StartWelcome() end
         ns.TryRegisterQuestLinks()
+        if ns.TryRegisterQuestTracker then ns.TryRegisterQuestTracker() end
         ns.TryRegisterSettings()
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
@@ -230,6 +234,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_ENTERING_WORLD" then
         ns.TryRegisterSettings()
+        if ns.TryRegisterQuestTracker then ns.TryRegisterQuestTracker() end
         if ns.SyncSettingsCheckboxes then
             ns.SyncSettingsCheckboxes()
         end

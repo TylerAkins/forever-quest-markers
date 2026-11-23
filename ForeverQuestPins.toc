@@ -37,4 +37,6 @@ Breadcrumbs.lua
 MapPins.lua
 AutoQuests.lua
 QuestLinks.lua
+TrackerData.lua
+Tracker.lua
 Core.lua

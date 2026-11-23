@@ -3,6 +3,7 @@ local L = ns.L or setmetatable({}, { __index = function(_, key) return key end }
 
 local registered = false
 local hoveredBlock
+local hookedModules = {}
 local POPUP = "FOREVER_QUEST_PINS_WOWHEAD_URL"
 
 local function QuestURL(questID)
@@ -41,29 +42,45 @@ function ns.ShowWowheadQuestURL(questID)
     return StaticPopup_Show(POPUP, nil, nil, url) ~= nil
 end
 
+-- Forever's menu tag has no quest context. The header hover identifies the
+-- clicked block without replacing Blizzard's or our tracker's click handler.
+function ns.HookQuestLinkModule(module)
+    if not module
+        or type(module.OnBlockHeaderEnter) ~= "function"
+        or type(module.OnBlockHeaderLeave) ~= "function"
+        or type(hooksecurefunc) ~= "function" then
+        return false
+    end
+    if hookedModules[module] then
+        return true
+    end
+    hookedModules[module] = true
+    hooksecurefunc(module, "OnBlockHeaderEnter", function(_, block)
+        hoveredBlock = block
+    end)
+    hooksecurefunc(module, "OnBlockHeaderLeave", function(_, block)
+        if hoveredBlock == block then
+            hoveredBlock = nil
+        end
+    end)
+    return true
+end
+
 function ns.TryRegisterQuestLinks()
     if registered then
         return true
     end
     local tracker = QuestObjectiveTracker
-    if not tracker or type(tracker.OnBlockHeaderEnter) ~= "function"
-        or type(tracker.OnBlockHeaderLeave) ~= "function"
+    if not tracker
         or type(tracker.GetContextMenuParent) ~= "function"
-        or not Menu or type(Menu.ModifyMenu) ~= "function"
+        or not Menu
+        or type(Menu.ModifyMenu) ~= "function"
         or type(hooksecurefunc) ~= "function" then
         return false
     end
-
-    -- Forever's menu tag has no quest context. The header hover identifies the
-    -- clicked block without replacing Blizzard's click handler.
-    hooksecurefunc(tracker, "OnBlockHeaderEnter", function(_, block)
-        hoveredBlock = block
-    end)
-    hooksecurefunc(tracker, "OnBlockHeaderLeave", function(_, block)
-        if hoveredBlock == block then
-            hoveredBlock = nil
-        end
-    end)
+    if not ns.HookQuestLinkModule(tracker) then
+        return false
+    end
     Menu.ModifyMenu("MENU_QUEST_OBJECTIVE_TRACKER", function(owner, root)
         if owner ~= tracker:GetContextMenuParent() then
             return

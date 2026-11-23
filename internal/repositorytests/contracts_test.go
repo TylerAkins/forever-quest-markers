@@ -62,7 +62,9 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"Nameplates.lua":                    "Waypoints.lua",
 		"Waypoints.lua":                     "Breadcrumbs.lua",
 		"Breadcrumbs.lua":                   "MapPins.lua",
-		"QuestLinks.lua":                    "Core.lua",
+		"QuestLinks.lua":                    "TrackerData.lua",
+		"TrackerData.lua":                   "Tracker.lua",
+		"Tracker.lua":                       "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -79,8 +81,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 	base := root(t)
 	toc := read(t, base, "ForeverQuestPins.toc")
-	if strings.Contains(toc, "Tracker.lua") {
-		t.Fatal("ForeverQuestPins.toc must not load a tracker enhancement")
+	if !strings.Contains(toc, "Tracker.lua") {
+		t.Fatal("ForeverQuestPins.toc must load the quest tracker module")
 	}
 	replaced := regexp.MustCompile(`\.(?:BuildQuestWatchInfos|EnumQuestWatchData|SetTrackerTargetButton|SelectFirstButton|UpdateSmartNavigationOverrides)\s*=`)
 	for _, line := range strings.Split(toc, "\n") {
@@ -92,6 +94,24 @@ func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 		if match := replaced.FindString(read(t, base, path)); match != "" {
 			t.Errorf("%s replaces Blizzard's tracker method %s", entry, match)
 		}
+	}
+	tracker := read(t, base, "Tracker.lua")
+	for _, contract := range []string{
+		"ObjectiveTrackerManager:SetModuleContainer",
+		"InputUtil.IsGamepadUIEnabled",
+		"InputUtil.RegisterForInterfaceTransitions",
+		"C_XMLUtil.GetTemplateInfo",
+		"SetScrollChild",
+		"QuestObjectiveTrackerMixin.LayoutContents",
+		"UnregisterEvent(QuestObjectiveTracker.events[i])",
+		"RegisterEvent(QuestObjectiveTracker.events[i])",
+	} {
+		if !strings.Contains(tracker, contract) {
+			t.Errorf("Tracker.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(tracker, "HookTrackerMenu(QuestObjectiveTracker") {
+		t.Fatal("Tracker.lua must not hook Blizzard's header while the beta is off")
 	}
 }
 

@@ -18,6 +18,9 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Nameplates.lua` | Quest start, turn-in, and objective icons on NPC nameplates |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
+| `QuestLinks.lua` | Copy Wowhead URL menu entry for tracked quest blocks |
+| `TrackerData.lua` | Quest-log zone headers, current-zone chain, distance, and the tracker sort/filter view |
+| `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
@@ -237,10 +240,11 @@ provider setting. Stacked start markers select their first quest.
 Forever's menu does not supply quest context, so secure post-hooks on the tracker
 header enter/leave methods identify the hovered block. The menu action captures
 its quest ID before the block can be recycled. This supports mouse right-clicks
-on Blizzard's quest titles; gamepad menus without a hovered header are unchanged.
+on Blizzard's quest titles and on the beta module's quest titles; gamepad menus
+without a hovered header are unchanged.
 
 The menu tag, hover methods, owner, and popup edit box contract were checked
-against the [Forever Blizzard UI source at 9465cb2](https://github.com/Gethe/wow-ui-source/tree/9465cb273b5513495d8ecc12fbb19930dd6b8957),
+against the [Forever Blizzard UI source at 734f065](https://github.com/Gethe/wow-ui-source/tree/734f065329cff4992835b01a84f210a297db91b6),
 including `Blizzard_QuestObjectiveTracker.lua`, `Blizzard_ObjectiveTrackerModule.lua`,
 `Blizzard_StaticPopup/StaticPopup.lua`, and `Blizzard_StaticPopup_Game/GameDialog.lua`.
 Runtime tests cover URL selection, invalid IDs, delayed initialization, menu scope,
@@ -250,6 +254,74 @@ In game, right-click two different tracked quest titles and copy each URL. Confi
 the Forever quest IDs, existing tracking/details/share/abandon actions, Escape
 closing the copy dialog, and behavior after `/reload`. Combat and taint behavior
 require client verification.
+
+## Quest tracker beta
+
+`Tracker.lua` creates a second quest module inside Blizzard's
+`ObjectiveTrackerFrame`. It uses `ObjectiveTrackerModuleTemplate`, mixes in
+`QuestObjectiveTrackerMixin`, and registers through
+`ObjectiveTrackerManager:SetModuleContainer`. Blizzard's `QuestObjectiveTracker`
+is removed from the frame and hidden while ours is active. Its quest events are
+unregistered for that time so auto-quest popups and turn-in updates are handled
+once by our module; they are registered again when Blizzard's module is restored.
+Disabling the option restores it. The addon never assigns Blizzard's `BuildQuestWatchInfos`,
+`EnumQuestWatchData`, `SetTrackerTargetButton`, `SelectFirstButton`, or
+`UpdateSmartNavigationOverrides`; the repository contract test checks that.
+
+`Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
+`_trackerBetaSeenV2` marker forces the option off once for installs that had the
+retired beta enabled, then respects later choices. The settings section, setup
+guide, and tracker right-click menu label it **BETA**. The menu is attached only
+to our module header; Blizzard's header is not hooked while the beta is off, so
+the stock tracker stays untouched. Enable the beta from settings or the setup
+guide.
+
+`TrackerData.lua` annotates each watched quest with its native quest-log header,
+current-zone match, instance flag, level, title, and distance. Zone groups put the
+current zone first, then sort and filter the view. Combat reuses the cached
+annotations; a quest first seen in combat goes under **Other** until the next
+out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
+
+- `Tracker.lua` inserts `ObjectiveTrackerBlockTemplate` headers for each zone.
+  Header clicks and the collapse arrow toggle the zone, and the state lives in
+  `ForeverQuestPinsDB.trackerCollapsedZones["Name-Surname"]`, outside
+  `ns.defaults` so settings sync never copies it.
+- Zone headers use `ObjectiveTrackerHeaderFont`, `OBJECTIVE_TRACKER_COLOR`, and
+  `ObjectiveTrackerModuleMinimizeButtonTemplate`. The **Quests** module header
+  stays fixed. All other blocks scroll.
+- Scrolling reparents the module's `ContentsFrame` into a `ScrollFrame`. The
+  module overrides `CanFitBlock` so every block lays out, then caps
+  `contentsHeight` to the available viewport in `UpdateScrollViewport`. The
+  scroll child keeps the full content height, and `SetCollapsed` hides and resets
+  the viewport. Mouse wheel handlers are attached to the module, scroll frame,
+  content, zone headers, quest blocks, item buttons, and POI buttons.
+- Sort, filter, and zone changes reset the scroll position to the top. Quest
+  updates preserve it and clamp it when the content shrinks.
+- Edit Mode is Blizzard's existing Objective Tracker system. Moving the tracker,
+  changing its height, text size, or opacity needs no custom mover; the viewport
+  follows the height setting.
+- `InputUtil.IsGamepadUIEnabled()` is a hard gate. When gamepad UI is active the
+  module is not added, the settings controls are disabled with a note, and
+  `/fqp nearest` reports that the tracker is unavailable. A gamepad init callback
+  restores Blizzard's module immediately, even in combat. Uninit re-enables the
+  saved option out of combat.
+- Registration waits for `QuestObjectiveTracker.uiOrder` and the manager's
+  container mapping. If the client is not ready, it retries on a one-second
+  timer instead of adding a duplicate module before `ObjectiveTrackerManager.Init`.
+- During combat, module add/remove changes are deferred. Gamepad activation is the exception
+  because leaving our module active would disrupt Blizzard's gamepad targeting.
+
+Runtime cases cover grouping, every sort and filter, the current-zone match,
+**Other**, missing header and distance APIs, the per-character collapse table,
+combat caching, module registration and restoration, gamepad fallback, zone
+header insertion, collapse skipping, and the scroll viewport math. In-game checks
+still cover the side-by-side look, Edit Mode, scrolling over every control,
+animations, combat, taint, and the gamepad transition.
+
+Known limits: the module relies on Blizzard's tracker internals; if a client patch
+renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party
+addons that enumerate tracker blocks by the `quest` tag also see zone header blocks;
+those blocks use string IDs and are ignored by normal quest consumers.
 
 ## Quest item sparkles
 
