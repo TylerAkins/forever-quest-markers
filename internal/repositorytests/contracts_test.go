@@ -40,6 +40,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"## X-Website: https://github.com/TylerAkins/forever-quest-markers",
 		`Database\QuestTagCorrections.lua`,
 		`Database\EventPolicy.lua`,
+		`Database\BookQuests.lua`,
 		"Events.lua",
 		"Localization.lua",
 	} {
@@ -47,10 +48,15 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 			t.Errorf("TOC missing %q", required)
 		}
 	}
+	if _, err := os.Stat(filepath.Join(base, "Media/QuestBook.tga")); err != nil {
+		t.Errorf("book pin texture is missing: %v", err)
+	}
 	for before, after := range map[string]string{
 		"Database\\ForeverQuests.lua":       "Database\\QuestTagCorrections.lua",
 		"Database\\QuestTagCorrections.lua": "Database\\EventPolicy.lua",
 		"Database\\EventPolicy.lua":         "Config.lua",
+		"Database\\VanillaQuests.lua":       "Database\\BookQuests.lua",
+		"Database\\BookQuests.lua":          "Localization.lua",
 		"Localization.lua":                  "Config.lua",
 		"Config.lua":                        "Sparkle.lua",
 		"Sparkle.lua":                       "HiddenQuests.lua",
@@ -74,6 +80,50 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 	for _, excluded := range []string{"tests", "cmd", "internal", "go.mod", "go.sum", "Database/build_report.json"} {
 		if !strings.Contains(metadata, "- "+excluded) {
 			t.Errorf("packager does not exclude %s", excluded)
+		}
+	}
+}
+
+func TestBookQuestListMatchesGeneratedDatabase(t *testing.T) {
+	base := root(t)
+	source := read(t, base, "Database/BookQuests.lua")
+	quests := read(t, base, "Database/ForeverQuests.lua")
+
+	expected := []string{
+		"78124", "78127", "78142", "78143", "78145", "78146", "78147", "78148", "78149", "79091",
+		"79092", "79093", "79094", "79095", "79096", "79097", "79535", "79947", "79948", "79949",
+		"79950", "79951", "79952", "79953", "81947", "81949", "81951", "81952", "81953", "81954",
+		"81955", "81956", "84395", "84396", "84397", "84398", "84399", "84400", "84401", "84402",
+	}
+
+	entry := regexp.MustCompile(`(?m)^\s*\[(\d+)\]\s*=\s*true,`)
+	found := map[string]bool{}
+	for _, match := range entry.FindAllStringSubmatch(source, -1) {
+		found[match[1]] = true
+	}
+	if len(found) != len(expected) {
+		t.Errorf("book quest list has %d IDs, want %d", len(found), len(expected))
+	}
+	for _, id := range expected {
+		if !found[id] {
+			t.Errorf("book quest list is missing %s", id)
+		}
+		if !strings.Contains(quests, "["+id+"] = {") {
+			t.Errorf("book quest %s is missing from Database/ForeverQuests.lua", id)
+		}
+		delete(found, id)
+	}
+	for id := range found {
+		t.Errorf("book quest list has unexpected ID %s", id)
+	}
+	for _, turnIn := range []string{"78150", "79536", "82208", "84394"} {
+		if strings.Contains(source, "["+turnIn+"]") {
+			t.Errorf("Friend of the Library turn-in %s must not be a book pickup", turnIn)
+		}
+	}
+	for _, contract := range []string{"ns.BookQuests", "function ns.IsBookQuest("} {
+		if !strings.Contains(source, contract) {
+			t.Errorf("Database/BookQuests.lua missing %q", contract)
 		}
 	}
 }

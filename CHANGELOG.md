@@ -2,6 +2,12 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.9 - 2026-11-24
+
+- Add a collectible library book pin category, off by default, with an optional bundled book icon for book-only pins. Hidden books are excluded from map pins, NPC tooltips, nameplates, and auto-accept.
+- Make **Select nearest quest** use the active beta tracker filter, so the selection matches the filtered tracker view.
+- Replace the low-level and high-level sliders with one two-handle level filter. Defaults stay at 9 levels below and all levels above.
+
 ## 1.1.8 - 2026-11-23
 
 - Add an optional beta quest tracker module inside Blizzard's tracker. It groups tracked quests by zone, collapses zone headers, sorts by Blizzard order, distance, level, or title, filters the view, and scrolls with the mouse wheel. It uses Blizzard's own quest blocks, item buttons, POI buttons, and Edit Mode. Off by default.

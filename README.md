@@ -17,6 +17,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
+- Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
@@ -26,8 +27,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
 - Overlapping starts on the same spot stack into one pin
 - **Shift-click** a pin to hide it (every quest on a stacked pin) for the current character; restore with **Reset hidden quest pins** in settings or `/fqp unhide`
-- Adjustable low-level range: choose how many levels below you a quest must be before its pin is hidden (default 9)
-- Adjustable high-level range: choose how many levels above you quests must be before their pins are hidden (default shows all levels)
+- Adjustable level range with one two-handle slider: hide quests below you and quests above you (default hides quests 9+ levels below and shows all levels above)
 - Optional auto-accept and auto-turn-in when talking to NPCs (off by default; hold **Shift** to skip once)
 - Warn when you accept a quest whose breadcrumb quest you skipped. The dialog can set a waypoint to the breadcrumb, abandon the quest you just accepted, or ignore the warning (on by default). **Abandon Quest** selects the quest in your log from addon code, so using it can make the map report a blocked action in combat until you reload.
 - Seasonal / holiday starts (such as Lunar Festival elders) off by default; when on, pins appear only while the event is live
@@ -52,7 +52,7 @@ The optional **Don't auto-accept grey quests** checkbox defaults off. It skips q
 
 **Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload. **Abandon Quest** selects the quest in your quest log from addon code, which can make the map report a blocked action in combat until you reload. Abandon it from the quest log instead if you want to avoid that.
 
-**Enhance quest tracker (BETA)** is off by default. Turn it on in settings or the setup guide. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Once it is on, right-click the **Quests** header for the same controls. A filter with no matches keeps the **Quests** header visible with a short note, so the menu is still reachable. Zone headers collapse and remember their state per character. The tracker scrolls with the mouse wheel when it has more quests than fit; the **Quests** header stays fixed. Edit Mode moves the tracker, changes its height, text size, and opacity, and the scroll viewport follows the height. In combat the tracker uses cached zone data and returns to a fresh view after combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. Use `/fqp nearest` to select it once. The beta is unavailable while gamepad UI is active; Blizzard's tracker runs unchanged there.
+**Enhance quest tracker (BETA)** is off by default. Turn it on in settings or the setup guide. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Once it is on, right-click the **Quests** header for the same controls. A filter with no matches keeps the **Quests** header visible with a short note, so the menu is still reachable. Zone headers collapse and remember their state per character. The tracker scrolls with the mouse wheel when it has more quests than fit; the **Quests** header stays fixed. Edit Mode moves the tracker, changes its height, text size, and opacity, and the scroll viewport follows the height. In combat the tracker uses cached zone data and returns to a fresh view after combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. With the beta on, it uses the active **Show quests** filter, so a current-zone filter only considers current-zone quests. With the beta off, it uses every tracked quest. Use `/fqp nearest` to select it once. The beta is unavailable while gamepad UI is active; Blizzard's tracker runs unchanged there.
 
 **Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
@@ -65,9 +65,10 @@ Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or 
 | Click pins to track quest starts | On for zone maps (turn off to let plain clicks pass through pins; pin tooltips and Shift-click hiding still work) |
 | Track from world and continent maps | Off |
 | Show trivial / low-level pins | Off (hides pins for quests too far below your character) |
-| Low-level range slider | 9 (hide quests 9+ levels below you; adjustable from 3 to 15, inactive while low-level pins are shown) |
-| High-level range slider | All (show quests at every level above you; move left to hide quests 3+ through 14+ levels above you) |
+| Level range slider | 9 levels below to all above (drag either handle; the below handle is inactive while low-level pins are shown) |
 | Show repeatable quest pins | On |
+| Show collectible book quest pins | Off |
+| Show book icon for book quest pins | Off (book-only pins use the bundled book icon when on) |
 | Show spawn clusters | On (group nearby spawns into one pin; off shows one pin per quest) |
 | Show tint for quests new in WoW Forever | Off (turn on to tint yellow start markers with the Forever yellow-to-blue gradient for quests not in original Classic) |
 | Show seasonal / holiday quest pins | Off (when on, pins appear only while the event is live; Darkmoon Faire stays hidden) |
@@ -114,6 +115,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp hidden` | List quest pins hidden with Shift-click on this character |
 | `/fqp unhide <id\|all>` | Restore one or all hidden quest pins |
 | `/fqp repeatable` | Toggle repeatable quest pins |
+| `/fqp books` | Toggle collectible book quest pins |
 | `/fqp spawns` | Toggle grouped spawn pins |
 | `/fqp seasonal` | Toggle holiday / seasonal pins |
 | `/fqp wareffort` | Toggle AQ war effort pins in capitals |
@@ -154,7 +156,7 @@ Forever’s quest data is still moving. Missing pins are often a gap in the publ
 - **Continent** view needs `C_Map.GetMapRectOnMap`; without it, pins only appear on the quest’s own zone map
 - **Patrols** (for example Morin Cloudstalker) use the exported static points, plus a second pin at a known path end, until the NPC is visible and near those points
 - Reputation requirements are not copied into the addon database, so they do not hide pins
-- Most start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow. Mixed stacks stay yellow.
+- Most start pins share Blizzard’s `QuestNormal` shape; special pins tint it (blue, red-orange, class color, or copper), with bundled yellow/blue/red-orange fallbacks. Book-only pins use a bundled transparent book icon with a subtle drop shadow instead. Rogue class pins add a dark bang shadow so they stay distinct from normal yellow. Mixed stacks stay yellow; when a stack contains a repeatable quest, its tooltip line ends with `(Repeatable)`.
 
 ## Support
 

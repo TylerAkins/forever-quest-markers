@@ -27,11 +27,13 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
 | `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
+| `Database/BookQuests.lua` | Hand-maintained library book pickup quest IDs for the collectible book category |
 | `Database/ExcludedQuests.lua` | Hand-maintained quest IDs that should never show map pins |
 | `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
 | `RELEASE_NOTES.md` | Curated notes for only the current release |
 | `Media/QuestAvailable.tga` | Yellow fallback bang if `QuestNormal` fails |
+| `Media/QuestBook.tga` | Bundled transparent book icon for book-only pins |
 | `Media/QuestRepeatable.tga` | Blue fallback if the tinted `QuestNormal` atlas cannot be used |
 | `Media/QuestAttunement.tga` | Red-orange fallback for dungeon and raid quests |
 | `cmd/fqp` | Go command-line entry point for repository tools |
@@ -60,6 +62,8 @@ go run ./cmd/fqp build-db \
 `--questiedb` accepts the release zip or an extracted directory. A second run on the same artifact and policy commit produces the same bytes. `Database/Metadata.lua` records the artifact SHA-256, build commit, policy commit, contract version, and counts. `Database/QuestTagCorrections.lua` is loaded before `Eligibility.lua` and gives the runtime a static instance hint when `C_QuestLog.GetQuestTagInfo` is missing or slow.
 
 `Database/EventPolicy.lua` is generated from Questie's Era event data. It carries year-less `{ month, day, hour, minute }` windows, per-quest overrides such as the Winter Veil presents, Questie's Lunar Festival year table, and the `AQWarEffortQuests` IDs. The build fails if a yearly quest has no event name or a referenced event has neither a window nor a disabled marker. Darkmoon Faire is emitted as disabled: Questie skips it on Forever, it has no importable faire window, and most of its records mix Mulgore and Elwynn coordinates. Lunar Festival windows end at Questie's pinned year; later years hide with `lunar-year-unknown` instead of failing the build.
+
+`Database/BookQuests.lua` is hand-maintained. The generated artifact has no objective text, so the build cannot reliably identify the library pickup quests. The list matches the quests whose objective is "Collect '<book title>' and bring it to ..." and excludes the Friend of the Library turn-ins (78150, 79536, 82208, 84394). `TestBookQuestListMatchesGeneratedDatabase` pins the 40 IDs, checks that each exists in `Database/ForeverQuests.lua`, and fails when the list or generated data diverges.
 
 The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
 
@@ -175,7 +179,7 @@ License on CurseForge: **GPL-3.0-or-later**. Credit QuestieDB for the quest data
 
 ## Pin textures
 
-Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, repeatable, then normal; mixed stacks stay yellow. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
+Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Special pins use the same atlas with desaturation and a vertex tint: red-orange for dungeon/raid, `RAID_CLASS_COLORS` / `C_ClassColor` for class-only stacks, copper `(1.00, 0.65, 0.20)` for profession-only stacks, and blue for repeatable-only stacks. Pins whose quests are all library book pickups use `Media/QuestBook.tga` with a subtle black drop shadow when the **Show book icon for book quest pins** option is on; a stack mixed with a normal quest keeps the normal marker. Rogue class pins also draw a near-black tinted `QuestNormal` on the ARTWORK fill layer, offset 1px down-right, so class yellow does not look like a normal start. Priority is instance, class, profession, book, repeatable, then normal; mixed stacks stay yellow, and a repeatable quest in a multi-quest stack adds `(Repeatable)` to its tooltip line. Instance classification asks `C_QuestLog.GetQuestTagInfo`, falls back to the generated Questie tag corrections, then to the static `isInstanceQuest` flag. Bundled yellow, blue, and red-orange TGAs remain as fallbacks, followed by `QuestDaily` for repeatable pins. Do not bind `Interface\GossipFrame\AvailableQuestIcon` on the map: on Forever that path can succeed with no pixels and hide working art.
 
 Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which is shared Blizzard state that addon code should not write. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called.
 
@@ -319,6 +323,9 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   that the tracker is unavailable. A gamepad init callback restores Blizzard's
   module immediately, even in combat. Uninit re-enables the saved option out of
   combat.
+- `ns.SelectNearestQuest` uses the beta module's `BuildQuestWatchInfos`, so the
+  active filter shapes the candidate list. With the beta off it uses Blizzard's
+  raw watch list and ignores a saved filter.
 - Our module's quest events are unregistered when the beta is turned off and
   registered again when it is turned back on, so a hidden module does not keep
   processing watch-list or turn-in events.

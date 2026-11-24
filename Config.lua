@@ -18,6 +18,8 @@ ns.defaults = {
     showDungeon = true,
     showPvP = false,
     showRepeatable = true,
+    showBooks = false,
+    showBookIcon = false,
     showSpawnClusters = true,
     highlightNewQuests = false,
     showSeasonal = false,
@@ -76,6 +78,8 @@ local pinCategoryOptions = {
     showSeasonal = true,
     showWarEffort = true,
     showRepeatable = true,
+    showBooks = true,
+    showBookIcon = true,
 }
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
 local TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX = 3, 15
@@ -477,12 +481,19 @@ end
 
 ns.AUTO_ACCEPT_OFFSET_MIN, ns.AUTO_ACCEPT_OFFSET_MAX = AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX
 
--- One track with two handles for the auto-accept level window. The game has no
--- stock two-handle slider, so this is built from a frame, textures and buttons.
+-- One track with two handles for a level window. The game has no stock
+-- two-handle slider, so this is built from a frame, textures and buttons.
 -- getValues() returns the current (low, high); onChange(low, high) is called
--- only when the user moves a handle.
-function ns.CreateLevelRangeSlider(parent, getValues, onChange)
-    local minValue, maxValue = AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX
+-- only when the user moves a handle. Options can set ranges, endpoint labels,
+-- label text, and per-handle bounds.
+function ns.CreateLevelRangeSlider(parent, getValues, onChange, options)
+    options = options or {}
+    local minValue = options.min or AUTO_ACCEPT_OFFSET_MIN
+    local maxValue = options.max or AUTO_ACCEPT_OFFSET_MAX
+    local lowMin = options.lowMin or minValue
+    local lowMax = options.lowMax or maxValue
+    local highMin = options.highMin or minValue
+    local highMax = options.highMax or maxValue
     local width = 240
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(width, 24)
@@ -496,15 +507,19 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
     fill:SetColorTexture(1, 0.82, 0, 0.7)
     local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     label:SetPoint("BOTTOM", frame, "TOP", 0, 2)
+    frame.label = label
     local low = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     low:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, 2)
-    low:SetText(("%+d"):format(minValue))
+    low:SetText(options.lowLabel or ("%+d"):format(minValue))
     local high = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     high:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", 0, 2)
-    high:SetText(("%+d"):format(maxValue))
+    high:SetText(options.highLabel or ("%+d"):format(maxValue))
     local yours = frame:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     yours:SetPoint("TOP", track, "LEFT", (0 - minValue) / (maxValue - minValue) * width, -6)
     yours:SetText("0")
+    if options.zeroLabel == false then
+        yours:Hide()
+    end
 
     local function X(value)
         return (value - minValue) / (maxValue - minValue) * width
@@ -519,6 +534,7 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
     end
     local lowThumb, highThumb = Thumb(), Thumb()
     frame.lowValue, frame.highValue = minValue, maxValue
+    local lowActive, highActive = true, true
 
     local function Render()
         lowThumb:ClearAllPoints()
@@ -529,22 +545,30 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
         fill:SetPoint("LEFT", track, "LEFT", X(frame.lowValue), 0)
         fill:SetWidth(math.max(1, X(frame.highValue) - X(frame.lowValue)))
         local playerLevel = UnitLevel and UnitLevel("player")
-        local text = (L["Auto-accept quest levels: yours %+d to %+d"]):format(frame.lowValue, frame.highValue)
-        if type(playerLevel) == "number" and playerLevel > 0 then
-            text = text .. (" (%d-%d)"):format(
-                math.max(1, playerLevel + frame.lowValue), playerLevel + frame.highValue)
+        local text
+        if options.formatText then
+            text = options.formatText(frame.lowValue, frame.highValue)
+        else
+            text = (L["Auto-accept quest levels: yours %+d to %+d"]):format(frame.lowValue, frame.highValue)
+            if type(playerLevel) == "number" and playerLevel > 0 then
+                text = text .. (" (%d-%d)"):format(
+                    math.max(1, playerLevel + frame.lowValue), playerLevel + frame.highValue)
+            end
         end
         label:SetText(text)
+        frame.labelText = text
     end
 
     -- Moves one handle from user input, keeping low <= high.
     function frame:SetUserValue(which, value)
         value = math.max(minValue, math.min(maxValue, math.floor(value + 0.5)))
         if which == "low" then
+            value = math.max(lowMin, math.min(lowMax, value))
             value = math.min(value, self.highValue)
             if value == self.lowValue then return end
             self.lowValue = value
         else
+            value = math.max(highMin, math.min(highMax, value))
             value = math.max(value, self.lowValue)
             if value == self.highValue then return end
             self.highValue = value
@@ -555,17 +579,32 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
 
     function frame:ApplySaved()
         local lowValue, highValue = getValues()
-        self.lowValue = math.max(minValue, math.min(maxValue, tonumber(lowValue) or minValue))
-        self.highValue = math.max(self.lowValue, math.min(maxValue, tonumber(highValue) or maxValue))
+        self.lowValue = math.max(lowMin, math.min(lowMax, tonumber(lowValue) or lowMin))
+        self.highValue = math.max(highMin, math.min(highMax, tonumber(highValue) or highMax))
+        self.highValue = math.max(self.lowValue, self.highValue)
         Render()
     end
 
     function frame:SetActive(active)
         self.active = active and true or false
         self:EnableMouse(self.active)
-        lowThumb:EnableMouse(self.active)
-        highThumb:EnableMouse(self.active)
+        lowThumb:EnableMouse(self.active and lowActive)
+        highThumb:EnableMouse(self.active and highActive)
         self:SetAlpha(self.active and 1 or 0.5)
+    end
+
+    function frame:SetLowActive(active)
+        lowActive = active and true or false
+        self.lowActive = lowActive
+        lowThumb:EnableMouse(self.active and lowActive)
+        lowThumb:SetAlpha(lowActive and 1 or 0.35)
+    end
+
+    function frame:SetHighActive(active)
+        highActive = active and true or false
+        self.highActive = highActive
+        highThumb:EnableMouse(self.active and highActive)
+        highThumb:SetAlpha(highActive and 1 or 0.35)
     end
 
     local dragging
@@ -587,7 +626,9 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
         frame:SetUserValue(which, value)
     end
     local function StartDrag(which)
-        if not frame.active then return end
+        if not frame.active or (which == "low" and not lowActive) or (which == "high" and not highActive) then
+            return
+        end
         dragging = which
         frame:SetScript("OnUpdate", Drag)
     end
@@ -606,6 +647,7 @@ function ns.CreateLevelRangeSlider(parent, getValues, onChange)
         if not value then return end
         local nearer = math.abs(value - frame.lowValue) <= math.abs(value - frame.highValue) and "low" or "high"
         if frame.lowValue == frame.highValue then nearer = value < frame.lowValue and "low" or "high" end
+        if (nearer == "low" and not lowActive) or (nearer == "high" and not highActive) then return end
         StartDrag(nearer)
         Drag()
     end)
@@ -704,6 +746,7 @@ local WORLD_MAP_FILTERS = {
     { "showWarEffort", L["AQ war effort"] },
     { "showWarEffortAlways", L["Always show AQ war effort pins"] },
     { "showRepeatable", L["Repeatable quest"] },
+    { "showBooks", L["Collectible book quest"] },
     { "enablePinTracking", L["Click pins to track quest starts"] },
 }
 local worldMapFilterButton
@@ -917,6 +960,7 @@ function ns.SlashCommand(msg)
         print((L["  /fqp highlevel <%d-%d> Hide quests this many levels above you (default %d means show all)"]):format(
             HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX, ns.defaults.highLevelGap))
         print(L["  /fqp repeatable Toggle repeatable quest pins (on by default)"])
+        print(L["  /fqp books    Toggle collectible book quest pins (off by default)"])
         print(L["  /fqp spawns   Toggle grouped spawn pins (on by default)"])
         print(L["  /fqp seasonal Toggle holiday/seasonal pins (off by default)"])
         print(L["  /fqp pvp      Toggle PvP quest pins (off by default)"])
@@ -1041,6 +1085,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "repeatable" then
         ToggleFlag("showRepeatable", L["Show repeatable quests"])
+        return
+    end
+    if msg == "books" then
+        ToggleFlag("showBooks", L["Show collectible book quest pins"])
         return
     end
     if msg == "spawns" or msg == "spawnclusters" then
@@ -1217,6 +1265,8 @@ function ns.PrintSettingsDebug()
         "trivialLevelGap",
         "highLevelGap",
         "showRepeatable",
+        "showBooks",
+        "showBookIcon",
         "showSpawnClusters",
         "highlightNewQuests",
         "showSeasonal",
@@ -1923,13 +1973,29 @@ local function BuildMapPinsSettings(self)
     )
     repeatable:SetPoint("TOPLEFT", warEffortAlways, "BOTTOMLEFT", 0, 0)
 
+    local books = CreateOptionCheckbox(
+        self,
+        "showBooks",
+        L["Show collectible book quest pins"],
+        L["Library book pickup quests. Off hides their pins, NPC tooltips, nameplate icons, and auto-accept."]
+    )
+    books:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
+
+    local bookIcon = CreateOptionCheckbox(
+        self,
+        "showBookIcon",
+        L["Show book icon for book quest pins"],
+        L["Replaces the yellow marker with a book icon when every quest on the pin is a library book pickup."]
+    )
+    bookIcon:SetPoint("TOPLEFT", books, "BOTTOMLEFT", 0, 0)
+
     local spawnClusters = CreateOptionCheckbox(
         self,
         "showSpawnClusters",
         L["Show spawn clusters"],
         L["Group nearby spawn points into one pin. Hovering shows the spawn count and every location on the map. When off, show one pin per quest."]
     )
-    spawnClusters:SetPoint("TOPLEFT", repeatable, "BOTTOMLEFT", 0, 0)
+    spawnClusters:SetPoint("TOPLEFT", bookIcon, "BOTTOMLEFT", 0, 0)
 
     local highlightNew = CreateOptionCheckbox(
         self,
@@ -1947,63 +2013,49 @@ local function BuildMapPinsSettings(self)
     )
     trivial:SetPoint("TOPLEFT", highlightNew, "BOTTOMLEFT", 0, 0)
 
-    local trivialGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-    trivialGap:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 8, -22)
-    trivialGap:SetSize(240, 16)
-    trivialGap:SetMinMaxValues(TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX)
-    trivialGap:SetValueStep(1)
-    if trivialGap.Low then trivialGap.Low:SetText(tostring(TRIVIAL_GAP_MIN)) end
-    if trivialGap.High then trivialGap.High:SetText(tostring(TRIVIAL_GAP_MAX)) end
-    local trivialGapLabel = trivialGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    trivialGapLabel:SetPoint("BOTTOM", trivialGap, "TOP", 0, 4)
-    trivialGap.ApplySaved = function(control)
-        control.syncing = true
-        local gap = ns.GetOption("trivialLevelGap")
-        control:SetValue(gap)
-        trivialGapLabel:SetText((L["Hide quests %d+ levels below you"]):format(gap))
-        local enabled = not ns.GetOption("showTrivial")
-        control:EnableMouse(enabled)
-        control:SetAlpha(enabled and 1 or 0.5)
-        control.syncing = false
-    end
-    trivialGap:SetScript("OnValueChanged", function(control, value)
-        if control.syncing or NormalizeNumber("trivialLevelGap", value) == ns.GetOption("trivialLevelGap") then
-            return
+    local levelFilter = ns.CreateLevelRangeSlider(self, function()
+        local lowGap = tonumber(ns.GetOption("trivialLevelGap")) or ns.defaults.trivialLevelGap
+        local highGap = tonumber(ns.GetOption("highLevelGap")) or ns.defaults.highLevelGap
+        return -lowGap, highGap
+    end, function(lowValue, highValue)
+        local lowGap = -lowValue
+        if lowGap ~= ns.GetOption("trivialLevelGap") then
+            ns.SetOption("trivialLevelGap", lowGap)
         end
-        ns.SetOption("trivialLevelGap", value)
-        control:ApplySaved()
-    end)
-    optionChecks[#optionChecks + 1] = trivialGap
-
-    local highLevelGap = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-    highLevelGap:SetPoint("TOPLEFT", trivialGap, "BOTTOMLEFT", 0, -26)
-    highLevelGap:SetSize(240, 16)
-    highLevelGap:SetMinMaxValues(HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX)
-    highLevelGap:SetValueStep(1)
-    if highLevelGap.Low then highLevelGap.Low:SetText(tostring(HIGH_LEVEL_GAP_MIN)) end
-    if highLevelGap.High then highLevelGap.High:SetText(L["All"]) end
-    local highLevelGapLabel = highLevelGap:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    highLevelGapLabel:SetPoint("BOTTOM", highLevelGap, "TOP", 0, 4)
-    highLevelGap.ApplySaved = function(control)
-        control.syncing = true
-        local gap = ns.GetOption("highLevelGap")
-        control:SetValue(gap)
-        highLevelGapLabel:SetText(gap == HIGH_LEVEL_GAP_MAX
-            and L["Show all quests above you"]
-            or (L["Hide quests %d+ levels above you"]):format(gap))
-        control.syncing = false
-    end
-    highLevelGap:SetScript("OnValueChanged", function(control, value)
-        if control.syncing or NormalizeNumber("highLevelGap", value) == ns.GetOption("highLevelGap") then
-            return
+        if highValue ~= ns.GetOption("highLevelGap") then
+            ns.SetOption("highLevelGap", highValue)
         end
-        ns.SetOption("highLevelGap", value)
-        control:ApplySaved()
-    end)
-    optionChecks[#optionChecks + 1] = highLevelGap
+    end, {
+        min = -TRIVIAL_GAP_MAX,
+        max = HIGH_LEVEL_GAP_MAX,
+        lowMin = -TRIVIAL_GAP_MAX,
+        lowMax = -TRIVIAL_GAP_MIN,
+        highMin = HIGH_LEVEL_GAP_MIN,
+        highMax = HIGH_LEVEL_GAP_MAX,
+        lowLabel = tostring(-TRIVIAL_GAP_MAX),
+        highLabel = L["All"],
+        zeroLabel = false,
+        formatText = function(low, high)
+            local lowText = ns.GetOption("showTrivial")
+                and L["Show all quests below you"]
+                or (L["Hide quests %d+ levels below you"]):format(-low)
+            local highText = high == HIGH_LEVEL_GAP_MAX
+                and L["Show all quests above you"]
+                or (L["Hide quests %d+ levels above you"]):format(high)
+            return lowText .. "\n" .. highText
+        end,
+    })
+    levelFilter:SetPoint("TOPLEFT", trivial, "BOTTOMLEFT", 12, -30)
+    local applyLevelFilter = levelFilter.ApplySaved
+    levelFilter.ApplySaved = function(control)
+        applyLevelFilter(control)
+        control:SetLowActive(not ns.GetOption("showTrivial"))
+    end
+    levelFilter:ApplySaved()
+    optionChecks[#optionChecks + 1] = levelFilter
 
     local iconScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
-    iconScale:SetPoint("TOPLEFT", highLevelGap, "BOTTOMLEFT", 0, -26)
+    iconScale:SetPoint("TOPLEFT", levelFilter, "BOTTOMLEFT", -12, -26)
     iconScale:SetSize(240, 16)
     iconScale:SetMinMaxValues(50, 150)
     iconScale:SetValueStep(5)

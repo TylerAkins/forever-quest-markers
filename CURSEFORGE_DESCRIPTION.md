@@ -19,7 +19,7 @@ It adds quest-start markers to the world map, quest icons to NPC nameplates, and
 - Tracks a quest start with Blizzard map pins or TomTom when you click a marker.
 - Groups nearby spawn points into one marker. Hover to see the count and every location.
 - Hides a marker for the current character with Shift-click. Restore it in settings or with `/fqp unhide`.
-- Filters by level range, repeatable quests, seasonal events, and AQ war effort.
+- Filters by level range, repeatable quests, collectible library books (off by default), seasonal events, and AQ war effort. Turning book quests on includes their pins, tooltips, nameplate icons, and auto-accept.
 - Auto-accepts and auto-turns in quests when you talk to NPCs. Hold Shift to skip once.
 
 ## Install
@@ -35,7 +35,8 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 | `/fqp on` / `/fqp off` | Toggle quest-start markers |
 | `/fqp nameplates` | Toggle nameplate icons |
 | `/fqp npctooltip` | Toggle NPC quest lines |
-| `/fqp nearest` | Select the closest tracked quest once |
+| `/fqp nearest` | Select the closest tracked quest once (uses the beta tracker's active filter) |
+| `/fqp books` | Toggle collectible book quest markers |
 | `/fqp spawns` | Toggle grouped spawn markers |
 | `/fqp seasonal` | Toggle holiday markers |
 | `/fqp wareffort` | Toggle AQ war effort markers |

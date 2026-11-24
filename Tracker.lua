@@ -284,7 +284,14 @@ function ns.SelectNearestQuest()
     if not C_SuperTrack or type(C_SuperTrack.SetSuperTrackedQuestID) ~= "function" then
         return false
     end
-    local ok, infos = pcall(QuestObjectiveTrackerMixin.BuildQuestWatchInfos, tracker)
+    -- The beta module applies the active tracker filter. With the beta off,
+    -- nearest selection still uses every watched quest.
+    local builder = QuestObjectiveTrackerMixin.BuildQuestWatchInfos
+    if active and module and type(module.BuildQuestWatchInfos) == "function" then
+        builder = module.BuildQuestWatchInfos
+        tracker = module
+    end
+    local ok, infos = pcall(builder, tracker)
     if not ok or type(infos) ~= "table" then
         return false
     end
