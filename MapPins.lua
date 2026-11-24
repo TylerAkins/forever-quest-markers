@@ -6,13 +6,15 @@ local MapPins = ns.MapPins
 
 -- Keep native atlas size off so pins stay PIN_SIZE. Special pins reuse the
 -- QuestNormal silhouette with desaturation + a vertex tint because Forever's
--- QuestDaily atlas can resolve to yellow. Gossip AvailableQuestIcon is not
--- used: it can bind with no pixels.
+-- QuestDaily atlas can resolve to yellow. Book-only pins use the bundled book
+-- icon with a subtle drop shadow. Gossip AvailableQuestIcon is not used: it can
+-- bind with no pixels.
 local NORMAL_ICON_ATLAS = "QuestNormal"
 local NORMAL_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAvailable"
 local REPEATABLE_ICON_ATLAS = "QuestDaily"
 local REPEATABLE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestRepeatable"
 local INSTANCE_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestAttunement"
+local BOOK_ICON_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\QuestBook"
 local PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B = 1.00, 0.65, 0.20
 -- Same look as ForeverQuestTint's map icons: a desaturated teal copy, solid over the
 -- bottom 45% and gone by 75%, leaving the icon's own yellow on top.
@@ -387,6 +389,22 @@ local function IsProfessionOnly(pin)
     return pin.data and pin.data.requireSkill and true or false
 end
 
+local function IsBookOnly(pin)
+    if not ns.IsBookQuest then
+        return false
+    end
+    local quests = pin.quests
+    if quests and #quests > 0 then
+        for i = 1, #quests do
+            if not ns.IsBookQuest(quests[i].id) then
+                return false
+            end
+        end
+        return true
+    end
+    return ns.IsBookQuest(pin.questID)
+end
+
 local function PlayerClassFile()
     local _, classFile = UnitClass("player")
     if type(classFile) == "string" and classFile ~= "" then
@@ -436,6 +454,42 @@ local function ShowRoguePinShadow(fill, pin)
         fill:Show()
     end
     return true
+end
+
+local function ShowBookPinShadow(fill, pin)
+    if not fill or not pin or not fill.SetTexture then
+        return false
+    end
+    local ok = pcall(function()
+        if fill.SetDrawLayer then
+            fill:SetDrawLayer("ARTWORK", 7)
+        end
+        if fill.SetBlendMode then
+            pcall(fill.SetBlendMode, fill, "BLEND")
+        end
+        if fill.SetTexture then
+            fill:SetTexture(BOOK_ICON_FILE)
+        end
+        if fill.SetTexCoord then
+            fill:SetTexCoord(0, 1, 0, 1)
+        end
+        if fill.SetDesaturated then
+            fill:SetDesaturated(true)
+        end
+        if fill.SetVertexColor then
+            fill:SetVertexColor(0, 0, 0, 0.38)
+        end
+        if fill.SetAlpha then
+            fill:SetAlpha(1)
+        end
+        if fill.ClearAllPoints and fill.SetPoint then
+            fill:ClearAllPoints()
+            fill:SetPoint("TOPLEFT", pin, "TOPLEFT", 1, -1)
+            fill:SetPoint("BOTTOMRIGHT", pin, "BOTTOMRIGHT", 1, -1)
+        end
+        fill:Show()
+    end)
+    return ok and true or false
 end
 
 local function EnsurePinTextures(pin)
@@ -636,12 +690,15 @@ local function PaintPinIcon(pin)
     if tex.Hide then
         tex:Hide()
     end
-    -- Priority: instance > class > profession > repeatable > normal.
-    -- Mixed stacks stay on the first matching uniform type, else yellow.
+    -- Priority: instance > class > profession > book > repeatable > normal.
+    -- Uniform stacks use their type; mixed stacks stay yellow.
     local instanceQuest = IsInstanceOnly(pin)
     local classQuest = not instanceQuest and IsClassOnly(pin)
     local profession = not instanceQuest and not classQuest and IsProfessionOnly(pin)
-    local repeatable = not instanceQuest and not classQuest and not profession and IsRepeatableOnly(pin)
+    local bookQuest = not instanceQuest and not classQuest and not profession
+        and ns.GetOption("showBookIcon") and IsBookOnly(pin)
+    local repeatable = not instanceQuest and not classQuest and not profession
+        and not bookQuest and IsRepeatableOnly(pin)
     local fallbackFile = NORMAL_ICON_FILE
     local fallbackName = "QuestAvailable.tga"
     if instanceQuest then
@@ -692,6 +749,23 @@ local function PaintPinIcon(pin)
     elseif profession then
         if TrySetTintedAtlas(tex, NORMAL_ICON_ATLAS, PROFESSION_PIN_R, PROFESSION_PIN_G, PROFESSION_PIN_B) then
             pin.icon = "atlas:" .. NORMAL_ICON_ATLAS .. ":copper" .. (hasFallback and "+fallback" or "")
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetAtlas(tex, NORMAL_ICON_ATLAS) then
+            pin.icon = "atlas:" .. NORMAL_ICON_ATLAS
+            lastStatus.icon = pin.icon
+            return
+        end
+        if TrySetFile(tex, fallbackFile) then
+            pin.icon = fallbackName
+            lastStatus.icon = pin.icon
+            return
+        end
+    elseif bookQuest then
+        if TrySetFile(tex, BOOK_ICON_FILE) then
+            ShowBookPinShadow(fill, pin)
+            pin.icon = BOOK_ICON_FILE
             lastStatus.icon = pin.icon
             return
         end
@@ -820,6 +894,18 @@ local function QuestLineText(questID)
     return title, level
 end
 
+-- A mixed stack stays yellow, so name the repeatable quest in its tooltip.
+local function PinQuestLine(quest, stacked)
+    local text, level = QuestLineText(quest.id)
+    if text and stacked then
+        local data = quest.data or (ns.Quests and ns.Quests[quest.id])
+        if data and data.repeatable then
+            text = text .. " " .. L["(Repeatable)"]
+        end
+    end
+    return text, level
+end
+
 local function QuestLineColor(level)
     if ns.GetQuestDifficultyRGB then
         return ns.GetQuestDifficultyRGB(level)
@@ -873,7 +959,8 @@ local function ShowTooltip(pin, tooltip)
     end
     tooltip:SetOwner(pin, "ANCHOR_RIGHT")
     local debugOn = ns.GetOption("debug")
-    local primaryText, primaryLevel = QuestLineText(quests[1].id)
+    local stacked = #quests > 1
+    local primaryText, primaryLevel = PinQuestLine(quests[1], stacked)
     local pr, pg, pb = QuestLineColor(primaryLevel)
     -- The tooltip shows only level and title, so quests that render the same
     -- line are indistinguishable to the player. List that text once.
@@ -887,7 +974,7 @@ local function ShowTooltip(pin, tooltip)
         tooltip:SetText(L["Quest"], 1, 0.82, 0)
     end
     for i = 2, #quests do
-        local extraText, extraLevel = QuestLineText(quests[i].id)
+        local extraText, extraLevel = PinQuestLine(quests[i], stacked)
         if extraText then
             if not shownText[extraText] then
                 shownText[extraText] = true

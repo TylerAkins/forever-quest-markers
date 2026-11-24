@@ -167,6 +167,7 @@ local function IsTurnInReady(questID)
         and ns.IsQuestReadyForTurnIn(questID)
         and not ns.IsQuestFlaggedCompleted(questID)
         and not (ns.IsQuestHidden and ns.IsQuestHidden(questID))
+        and not (ns.IsBookQuestHidden and ns.IsBookQuestHidden(questID))
 end
 
 function Tooltips:GetTurnInRows(npcID)

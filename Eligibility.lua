@@ -937,6 +937,14 @@ local function IsTrivial(questID, data)
     return false, true
 end
 
+-- Book quests have their own category. When it is off they must not appear in
+-- map pins, NPC tooltips, nameplates, or auto-accept.
+function ns.IsBookQuestHidden(questID)
+    return ns.GetOption("showBooks") == false
+        and ns.IsBookQuest ~= nil
+        and ns.IsBookQuest(questID) == true
+end
+
 --- Conservative availability check. Unknown restrictions keep the pin visible.
 -- @return available boolean
 -- @return reason string
@@ -956,30 +964,36 @@ function ns.IsQuestAvailable(questID, data)
     if ns.ExcludedQuests and ns.ExcludedQuests[questID] then
         return false, "excluded"
     end
+    if ns.IsBookQuestHidden(questID) then
+        return false, "book"
+    end
+    local isBook = ns.IsBookQuest ~= nil and ns.IsBookQuest(questID) == true
     local category
-    if ns.IsInstanceQuest(questID, data) then
-        category = "showDungeon"
-    elseif ns.IsPvPQuest(questID, data) then
-        category = "showPvP"
-    elseif data.classes and #data.classes > 0 then
-        category = "showClass"
-    elseif data.requireSkill then
-        category = "showProfession"
-    elseif not (data.repeatable or data.isYearly or data.event
-        or (ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data))) then
-        category = "showNormal"
+    if not isBook then
+        if ns.IsInstanceQuest(questID, data) then
+            category = "showDungeon"
+        elseif ns.IsPvPQuest(questID, data) then
+            category = "showPvP"
+        elseif data.classes and #data.classes > 0 then
+            category = "showClass"
+        elseif data.requireSkill then
+            category = "showProfession"
+        elseif not (data.repeatable or data.isYearly or data.event
+            or (ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data))) then
+            category = "showNormal"
+        end
     end
     if category and ns.GetOption(category) == false then
         return false, "category-hidden"
     end
-    if data.repeatable and not ns.GetOption("showRepeatable") then
+    if not isBook and data.repeatable and not ns.GetOption("showRepeatable") then
         return false, "repeatable"
     end
     if ns.IsOffered and ns.IsOffered(questID) then
         return true, "npc-offered"
     end
 
-    if data.isYearly or data.event then
+    if not isBook and (data.isYearly or data.event) then
         if not ns.GetOption("showSeasonal") then
             return false, "seasonal"
         end
@@ -992,7 +1006,7 @@ function ns.IsQuestAvailable(questID, data)
         end
     end
 
-    if ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data) then
+    if not isBook and ns.IsWarEffortQuest and ns.IsWarEffortQuest(questID, data) then
         if not ns.GetOption("showWarEffort") then
             return false, "war-effort"
         end

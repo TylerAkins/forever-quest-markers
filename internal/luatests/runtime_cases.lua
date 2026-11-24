@@ -138,6 +138,33 @@ assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
             assert(available == true)
 
 end
+cases["eligibility_runtime.book_quests_ignore_other_category_options"] = function()
+ns = {}; C_QuestLog = {}
+assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+assert(loadfile("Database/BookQuests.lua"))("ForeverQuestPins", ns)
+
+            local options = {
+                showBooks = true, showNormal = false, showClass = false,
+                showProfession = false, showDungeon = false, showPvP = false,
+                showRepeatable = false, showSeasonal = false, showWarEffort = false,
+            }
+            ns.GetOption = function(key)
+                if key == 'trivialLevelGap' then return 9 end
+                if key == 'showTrivial' then return true end
+                return options[key]
+            end
+            C_QuestLog.IsOnQuest = function() return false end
+            C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+            UnitLevel = function() return 60 end
+            local available, reason = ns.IsQuestAvailable(78124, { minLevel = 1 })
+            assert(available == true, reason)
+            available, reason = ns.IsQuestAvailable(2, { minLevel = 1 })
+            assert(available == false and reason == 'category-hidden')
+            options.showBooks = false
+            available, reason = ns.IsQuestAvailable(78124, { minLevel = 1 })
+            assert(available == false and reason == 'book')
+
+end
 cases["eligibility_runtime.test_hidden_quest_is_unavailable_even_when_offered"] = function()
 ns = {}; C_QuestLog = {}
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
@@ -464,7 +491,7 @@ cases["pin_filters_runtime.map_filter_button_builds_its_own_menu"] = function()
     for _, frame in ipairs(frames) do
         if frame.kind == "CheckButton" then rows = rows + 1 end
     end
-    assert(rows == 13, "the list keeps the full filter set")
+    assert(rows == 14, "the list keeps the full filter set")
 
     button.scripts.OnClick(button)
     assert(list.shown == false, "clicking the button again closes the list")
@@ -557,6 +584,28 @@ end
             controls[2]:Show()
             controls[5]:Show()
             assert(controls[1].built, "settings controls must be built on first selection")
+            local levelFilter
+            for _, control in ipairs(controls) do
+                if rawget(control, "isLevelRange") and control.lowValue == -9 and control.highValue == 15 then
+                    levelFilter = control
+                end
+            end
+            assert(levelFilter, "map pins need one combined level filter slider")
+            assert(levelFilter.labelText:find("Hide quests 9+ levels below you", 1, true))
+            assert(levelFilter.labelText:find("Show all quests above you", 1, true))
+            levelFilter:SetUserValue("low", -12)
+            assert(ns.GetOption("trivialLevelGap") == 12)
+            levelFilter:SetUserValue("high", 6)
+            assert(ns.GetOption("highLevelGap") == 6)
+            assert(levelFilter.labelText:find("Hide quests 12+ levels below you", 1, true))
+            assert(levelFilter.labelText:find("Hide quests 6+ levels above you", 1, true))
+            ns.SetOption("showTrivial", true)
+            ns.SyncSettingsCheckboxes()
+            assert(levelFilter.lowActive == false, "the below handle disables while low-level pins show")
+            assert(levelFilter.labelText:find("Show all quests below you", 1, true))
+            ns.SetOption("showTrivial", false)
+            ns.SyncSettingsCheckboxes()
+            assert(levelFilter.lowActive == true)
             local enhance, nearest
             for _, control in ipairs(controls) do
                 if control.optionKey == "enhanceQuestTracker" then enhance = control end
@@ -590,7 +639,8 @@ end
             end
             ns.MapPins.Clear = function() end
             local categories = { showWorldMapPins = true, showNormal = true, showClass = true, showDungeon = true,
-                showPvP = true, showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true }
+                showPvP = true, showProfession = true, showSeasonal = true, showWarEffort = true, showRepeatable = true,
+                showBooks = true }
             ns.SetOption("showClass", false)
             ns.SetOption("enabled", false)
             local count = 0
@@ -601,7 +651,7 @@ end
                     assert(control.checked == ns.GetOption(control.optionKey))
                 end
             end
-            assert(count == 9)
+            assert(count == 10)
             ns.SetOption("enabled", true)
             for _, control in ipairs(controls) do
                 if categories[control.optionKey] then
@@ -2843,7 +2893,10 @@ local function setupPinRendering()
             SetDesaturated = function(self, value) self.desaturated = value end,
             SetVertexColor = function(self, r, g, b, a) self.color = { r, g, b, a } end,
             SetDrawLayer = function() end, SetBlendMode = function() end,
-            SetAlpha = function(self, value) self.alpha = value end, SetTexCoord = function() end,
+            SetAlpha = function(self, value) self.alpha = value end,
+            SetTexCoord = function(self, left, right, top, bottom)
+                self.texCoord = { left, right, top, bottom }
+            end,
         }
     end
     local function fontString()
@@ -3344,6 +3397,107 @@ cases["map_pins_runtime.repeatable_pin_is_blue_and_hidden_when_opted_out"] = fun
     assert(ns.MapPins:GetStatus().paintedIDs[101] == nil)
 end
 
+cases["map_pins_runtime.repeatable_plus_normal_stack_stays_yellow_and_labels_repeatable"] = function()
+    setupPinRendering()
+    ns.Quests = {
+        [101] = { mapID = 1, x = 50, y = 50, title = "Repeatable test quest", repeatable = true },
+        [102] = { mapID = 1, x = 50, y = 50, title = "Normal test quest" },
+    }
+    ns.ByMap = { [1] = { 101, 102 } }
+    ns.MapPins:Refresh("mixed-stack")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(ns.MapPins:GetStatus().icon == "atlas:QuestNormal")
+    pin.scripts.OnEnter(pin)
+    assert(tooltipHas("Repeatable test quest (Repeatable)"), "the repeatable quest must be named in the stack")
+    assert(tooltipHas("Normal test quest"), "the normal quest must keep its plain title")
+end
+
+cases["map_pins_runtime.normal_stack_stays_yellow"] = function()
+    setupPinRendering()
+    ns.Quests = {
+        [102] = { mapID = 1, x = 50, y = 50, title = "Normal test quest" },
+    }
+    ns.ByMap = { [1] = { 102 } }
+    ns.MapPins:Refresh("normal-stack")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(ns.MapPins:GetStatus().icon == "atlas:QuestNormal")
+end
+
+cases["map_pins_runtime.book_quest_pins_honor_show_books"] = function()
+    setupPinRendering()
+    assert(loadfile("Database/BookQuests.lua"))("ForeverQuestPins", ns)
+    ns.Quests = {
+        [78124] = { mapID = 1, x = 50, y = 50, title = "Nar'thalas Almanac", minLevel = 1 },
+    }
+    ns.ByMap = { [1] = { 78124 } }
+    options.showBooks = true
+    options.showBookIcon = true
+    ns.MapPins:Refresh("book-on")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(ns.MapPins:GetStatus().icon == "Interface\\AddOns\\ForeverQuestPins\\Media\\QuestBook")
+    assert(not pin.Texture.texCoord or (pin.Texture.texCoord[1] == 0 and pin.Texture.texCoord[2] == 1),
+        "the bundled book icon must not be cropped")
+    assert(pin.Fill.shown == true, "the book pin must draw its drop shadow")
+    assert(pin.Fill.file == "Interface\\AddOns\\ForeverQuestPins\\Media\\QuestBook")
+    assert(pin.Fill.color[1] == 0 and pin.Fill.color[2] == 0 and pin.Fill.color[3] == 0
+        and pin.Fill.color[4] == 0.38)
+    options.showBooks = false
+    ns.MapPins:Refresh("book-off")
+    assert(ns.MapPins:GetStatus().count == 0)
+    assert(ns.MapPins:GetStatus().paintedIDs[78124] == nil)
+end
+
+cases["map_pins_runtime.book_pin_mixed_with_normal_keeps_quest_icon"] = function()
+    setupPinRendering()
+    assert(loadfile("Database/BookQuests.lua"))("ForeverQuestPins", ns)
+    ns.Quests = {
+        [78124] = { mapID = 1, x = 50, y = 50, title = "Nar'thalas Almanac", minLevel = 1 },
+        [102] = { mapID = 1, x = 50, y = 50, title = "Normal test quest" },
+    }
+    ns.ByMap = { [1] = { 78124, 102 } }
+    options.showBooks = true
+    options.showBookIcon = true
+    ns.MapPins:Refresh("book-mixed")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(ns.MapPins:GetStatus().icon == "atlas:QuestNormal")
+end
+
+cases["map_pins_runtime.book_pin_icon_is_off_by_default"] = function()
+    setupPinRendering()
+    assert(loadfile("Database/BookQuests.lua"))("ForeverQuestPins", ns)
+    ns.Quests = {
+        [78124] = { mapID = 1, x = 50, y = 50, title = "Nar'thalas Almanac", minLevel = 1 },
+    }
+    ns.ByMap = { [1] = { 78124 } }
+    options.showBooks = true
+    ns.MapPins:Refresh("book-default")
+    assert(ns.MapPins:GetStatus().count == 1)
+    assert(ns.MapPins:GetStatus().icon == "atlas:QuestNormal")
+    assert(pin.Fill.shown == false, "the book shadow must stay off without the icon option")
+end
+
+cases["map_pins_runtime.repeatable_does_not_override_special_categories"] = function()
+    setupPinRendering()
+    UnitClass = function() return "Mage", "MAGE", 8 end
+    RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
+    local function RefreshWith(extra)
+        ns.Quests = {
+            [101] = { mapID = 1, x = 50, y = 50, title = "Repeatable test quest", repeatable = true },
+            [103] = extra,
+        }
+        ns.ByMap = { [1] = { 101, 103 } }
+        ns.MapPins:Refresh("special-stack")
+        assert(ns.MapPins:GetStatus().count == 1)
+        local icon = ns.MapPins:GetStatus().icon
+        assert(icon == "atlas:QuestNormal",
+            "repeatable must not mask a special category: " .. tostring(icon))
+        return icon
+    end
+    assert(RefreshWith({ mapID = 1, x = 50, y = 50, title = "Instance", isInstanceQuest = true }))
+    assert(RefreshWith({ mapID = 1, x = 50, y = 50, title = "Class", classes = { 8 } }))
+    assert(RefreshWith({ mapID = 1, x = 50, y = 50, title = "Profession", requireSkill = 171 }))
+end
+
 cases["map_pins_runtime.nearby_spawn_points_share_one_counted_pin_and_hover_cloud"] = function()
     setupPinRendering()
     ns.Quests = {
@@ -3383,6 +3537,38 @@ cases["pin_filters_runtime.spawn_cluster_option_defaults_on_and_persists_off"] =
     ns.db = nil
     ns.InitSettings()
     assert(ns.GetOption("showSpawnClusters") == false)
+end
+
+cases["config_runtime.books_default_off_and_slash_toggle_persists"] = function()
+    ns = {}
+    C_CVar = nil
+    ForeverQuestPinsDB = nil
+    ForeverQuestPinsCharDB = nil
+    ForeverQuestPinsDB_Settings = nil
+    ForeverQuestPinsCharacterSettings = nil
+    GetLocale = function() return "enUS" end
+    local printed = {}
+    print = function(message) printed[#printed + 1] = tostring(message) end
+    assert(loadfile("Localization.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
+    ns.InitSettings()
+    assert(ns.GetOption("showBooks") == false)
+    assert(ns.GetOption("showBookIcon") == false)
+    ns.SlashCommand("books")
+    assert(ns.GetOption("showBooks") == true)
+    assert(printed[#printed]:find("Show collectible book quest pins: on", 1, true),
+        "slash command must print the current state: " .. tostring(printed[#printed]))
+    ns.db = nil
+    ns.InitSettings()
+    assert(ns.GetOption("showBooks") == true)
+    ns.SlashCommand("books")
+    assert(ns.GetOption("showBooks") == false)
+    assert(printed[#printed]:find("Show collectible book quest pins: off", 1, true),
+        "the second toggle must print the off state: " .. tostring(printed[#printed]))
+    ns.SetOption("showBookIcon", true)
+    ns.db = nil
+    ns.InitSettings()
+    assert(ns.GetOption("showBookIcon") == true, "the book icon option must survive a reload")
 end
 
 cases["map_pins_runtime.spawn_cloud_dots_use_map_pixels"] = function()
@@ -3715,6 +3901,18 @@ cases["localization.quest_categories_and_help"] = function()
         assert(loadfile("Localization.lua"))("ForeverQuestPins", localNS)
         assert(localNS.L["Accept quests automatically when you talk to an NPC. Hold Shift to skip."]:find(skip, 1, true), locale)
         assert(localNS.L["Turn in completed quests automatically. Does not pick when there are multiple rewards. Hold Shift to skip."]:find(skip, 1, true), locale)
+    end
+    for _, locale in ipairs({ "esES", "deDE", "frFR", "ptBR", "zhCN", "zhTW", "koKR", "itIT", "ruRU" }) do
+        GetLocale = function() return locale end
+        local localNS = {}
+        assert(loadfile("Localization.lua"))("ForeverQuestPins", localNS)
+        assert(localNS.L["Show collectible book quest pins"] ~= "Show collectible book quest pins", locale)
+        assert(localNS.L["Show book icon for book quest pins"] ~= "Show book icon for book quest pins", locale)
+        assert(localNS.L["Show all quests below you"] ~= "Show all quests below you", locale)
+        assert(localNS.L["Replaces the yellow marker with a book icon when every quest on the pin is a library book pickup."] ~= "Replaces the yellow marker with a book icon when every quest on the pin is a library book pickup.", locale)
+        assert(localNS.L["Collectible book quest"] ~= "Collectible book quest", locale)
+        assert(localNS.L["  /fqp books    Toggle collectible book quest pins (off by default)"]:find("/fqp books", 1, true), locale)
+        assert(localNS.L["(Repeatable)"] ~= "(Repeatable)", locale)
     end
 end
 
@@ -4348,6 +4546,24 @@ cases["auto_quests_runtime.min_level_offset_mirrors_and_clamps"] = function()
     assert(mirror:find("autoAcceptMinLevelOffset=-6", 1, true))
 end
 
+cases["auto_quests_runtime.book_quests_skip_when_option_off"] = function()
+    local options = { showBooks = true, autoAcceptSkipGrey = false }
+    ns = {}
+    ns.GetOption = function(key) return options[key] end
+    CreateFrame = function()
+        return setmetatable({}, { __index = function() return function() end end })
+    end
+    assert(loadfile("AutoQuests.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("Database/BookQuests.lua"))("ForeverQuestPins", ns)
+    ns.IsBookQuestHidden = function(questID)
+        return options.showBooks == false and ns.IsBookQuest(questID) == true
+    end
+    assert(ns.AutoQuests:AllowsQuest(78124, 1))
+    options.showBooks = false
+    assert(not ns.AutoQuests:AllowsQuest(78124, 1))
+    assert(ns.AutoQuests:AllowsQuest(2, 1))
+end
+
 cases["setup_runtime.markers_survive_settings_recovery_without_changing_options"] = function()
     local mirror = ""
     C_CVar = {
@@ -4550,6 +4766,13 @@ assert(loadfile("NPCTooltips.lua"))("ForeverQuestPins", ns)
             ns.IsQuestAvailable = function() return true end
             assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") == "accept")
             assert(ns.NPCTooltips:GetNpcQuestState(101, "nameplate1") == nil)
+
+            ns.GetQuestTitle = function(questID) return "Book " .. questID end
+            ns.IsQuestReadyForTurnIn = function() return true end
+            ns.IsBookQuestHidden = function(questID) return questID == 20 end
+            assert(ns.NPCTooltips:GetNpcQuestState(100, "nameplate1") ~= "turnin")
+            ns.NPCTooltips:InvalidateStarterIndex()
+            assert(#ns.NPCTooltips:GetTurnInRows(100) == 0)
 
 end
 cases["quest_info_runtime.test_nameplate_icons_follow_option_and_quest_state"] = function()
@@ -6379,6 +6602,36 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(empty and empty.HeaderText.text == "No tracked quests match this filter.",
         "a zero-match filter must keep the module header available")
     assert(empty.offsetX == 7, "the empty-filter message aligns with zone headers")
+
+    local function nearestQuest(id)
+        return { GetID = function() return id end }
+    end
+    local selected
+    C_SuperTrack = {
+        SetSuperTrackedQuestID = function(id) selected = id; return true end,
+        GetSuperTrackedQuestID = function() return 0 end,
+    }
+    C_QuestLog.GetDistanceSqToQuest = function(id) return id == 101 and 10 or 100, true end
+    QuestObjectiveTrackerMixin.BuildQuestWatchInfos = function()
+        return { { quest = nearestQuest(101) }, { quest = nearestQuest(102) } }
+    end
+
+    gamepad = false
+    InCombatLockdown = function() return false end
+    options.enhanceQuestTracker = true
+    ns.ApplyTrackerState()
+    ns.EnhanceQuestWatchInfos = function()
+        return { { quest = nearestQuest(102) } }
+    end
+    assert(ns.SelectNearestQuest())
+    assert(selected == 102, "nearest selection must use the beta tracker's filtered list")
+
+    selected = nil
+    options.enhanceQuestTracker = false
+    options.trackerFilter = "current"
+    ns.ApplyTrackerState()
+    assert(ns.SelectNearestQuest())
+    assert(selected == 101, "nearest selection must ignore a saved filter while the beta is off")
 end
 
 cases["tracker_runtime.beta_opt_in_resets_once_then_survives"] = function()

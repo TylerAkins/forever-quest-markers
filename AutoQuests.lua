@@ -58,6 +58,9 @@ function AutoQuests:IsGrey(questID, offeredLevel, trivialFlag)
 end
 
 function AutoQuests:AllowsQuest(questID, offeredLevel, trivialFlag)
+    if ns.IsBookQuestHidden and ns.IsBookQuestHidden(questID) then
+        return false
+    end
     if ns.GetOption("autoAcceptSkipGrey") and self:IsGrey(questID, offeredLevel, trivialFlag) then
         return false
     end

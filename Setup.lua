@@ -18,6 +18,7 @@ local pages = {
         { "showPvP", "Show PvP quest pins" },
         { "showProfession", "Show profession quest pins" },
         { "showWarEffortAlways", "Always show AQ war effort pins" },
+        { "showBooks", "Show collectible book quest pins" },
     } },
     { title = "Navigation", options = {
         { "enablePinTracking", "Click pins to track quest starts" },

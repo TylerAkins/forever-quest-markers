@@ -21,6 +21,7 @@ Database\QuestTagCorrections.lua
 Database\EventPolicy.lua
 Database\ExcludedQuests.lua
 Database\VanillaQuests.lua
+Database\BookQuests.lua
 Localization.lua
 Config.lua
 Sparkle.lua
