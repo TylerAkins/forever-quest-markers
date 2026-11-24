@@ -28,6 +28,10 @@ local pages = {
         { "highlightNewQuests", "Show tint for quests new in WoW Forever" },
         { "sparkleQuestItems", "Show quest item sparkles" },
     } },
+    { title = "Quest tracker", options = {
+        { "enhanceQuestTracker", L["Enhance quest tracker"] .. " (BETA)" },
+        { "selectNearestQuest", "Select nearest quest" },
+    } },
     { title = "Quest automation", options = {
         { "autoAccept", "Auto-accept quests" },
         { "autoAcceptRangeEnabled", "Limit auto-accept quest level" },
@@ -105,6 +109,9 @@ local function CreateSetup()
         box.Text:SetWidth(410)
         box.Text:SetJustifyH("LEFT")
         box:SetScript("OnClick", function(self)
+            if self.disabledForGamepad then
+                return
+            end
             panel.pending[self.key] = not not self:GetChecked()
             if self.key == "autoAccept" or self.key == "autoAcceptRangeEnabled" then
                 UpdateOffsetEnabled()
@@ -119,15 +126,21 @@ local function CreateSetup()
         panel.pending.autoAcceptMinLevelOffset = lowValue
         panel.pending.autoAcceptLevelOffset = highValue
     end)
-    levelRange:SetPoint("TOPLEFT", 50, -230)
+    levelRange:SetPoint("TOPLEFT", 50, -200)
     local back, nextButton
     local function Render()
         local page = panel.page
         local guided = page > 0
+        local gamepad = InputUtil
+            and type(InputUtil.IsGamepadUIEnabled) == "function"
+            and InputUtil.IsGamepadUIEnabled()
+        local trackerPage = guided and pages[page].title == "Quest tracker"
         panel:SetHeight(guided and (page == #pages and 450 or 400) or 200)
         progress:SetText(guided and (page .. " / " .. #pages) or "")
         heading:SetText(guided and L[pages[page].title] or L["Choose your options"])
-        help:SetText(guided and L["Choose what works for you. You can change these later in the addon options."]
+        help:SetText(guided and (trackerPage and gamepad
+                and L["The quest tracker is unavailable in gamepad UI."]
+                or L["Choose what works for you. You can change these later in the addon options."])
             or L["Set up quest pins, use the defaults, or keep your current settings."])
         for i, box in ipairs(checks) do
             local option = guided and pages[page].options[i]
@@ -139,11 +152,13 @@ local function CreateSetup()
                 local compact = #pages[page].options >= 7
                 local firstY = lastPage and -120 or (compact and -128 or -135)
                 local spacing = (lastPage or compact) and 30 or 31
-                local extra = lastPage and i >= 3 and 92 or 0
+                local extra = lastPage and i >= 3 and 74 or 0
                 box:SetPoint("TOPLEFT", 28, firstY - (i - 1) * spacing - extra)
                 box.key = option[1]
-                box:SetEnabled(true)
-                box.Text:SetAlpha(1)
+                local disabled = trackerPage and gamepad and true or false
+                box.disabledForGamepad = disabled
+                box:SetEnabled(not disabled)
+                box.Text:SetAlpha(disabled and 0.5 or 1)
                 box.Text:SetText(L[option[2]])
                 box:SetChecked(panel.pending[box.key])
                 box:Show()
@@ -185,7 +200,14 @@ local function CreateSetup()
             return
         end
         for key, value in pairs(panel.pending) do
-            if value ~= panel.original[key] then ns.SetOption(key, value) end
+            if value ~= panel.original[key] then
+                local gamepad = InputUtil
+                    and type(InputUtil.IsGamepadUIEnabled) == "function"
+                    and InputUtil.IsGamepadUIEnabled()
+                if not (gamepad and (key == "enhanceQuestTracker" or key == "selectNearestQuest")) then
+                    ns.SetOption(key, value)
+                end
+            end
         end
         Complete()
     end)
