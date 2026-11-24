@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.9 - 2026-11-24
+
+- Update the QuestieDB Forever artifact to `4d3e043e3c8d28014ec6f5d4d894d476769e1be99d060a174e14ca46038ebe50` (build `4377c981ac368d1593ec92788218e0a689a6a02b`).
+- Ship 6084 quests with 10472 coordinate pins (678 static instance quests, 220 yearly quests).
+
 ## 1.1.8 - 2026-11-23
 
 - Add an optional beta quest tracker module inside Blizzard's tracker. It groups tracked quests by zone, collapses zone headers, sorts by Blizzard order, distance, level, or title, filters the view, and scrolls with the mouse wheel. It uses Blizzard's own quest blocks, item buttons, POI buttons, and Edit Mode. Off by default.
