@@ -2,10 +2,8 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
-## 1.1.9 - 2026-11-24
+## 1.1.10 - 2026-11-25
 
-- Add a collectible library book pin category, off by default, with an optional bundled book icon for book-only pins. Hidden books are excluded from map pins, NPC tooltips, nameplates, and auto-accept.
-- Make **Select nearest quest** use the active beta tracker filter, so the selection matches the filtered tracker view.
 - Fix quest item icons in the beta tracker so clicking an icon uses the item. The row block now handles wheel and hover input without taking clicks, and the interactive controls sit above the reused row.
 - Keep the beta tracker's quest item buttons clickable on later clicks and stop the scroll viewport from clipping their 42px item frame. The buttons now stay above the row in combat, cached blocks refresh their quest log index, and the content leaves room above and right for the overhang.
 - Drop turned-in quests from the beta tracker. Watched quests that are no longer in the quest log are filtered out, and the tracker refreshes on `QUEST_TURNED_IN` when the custom module's own handler is missing.
@@ -16,6 +14,11 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 - Refresh the beta tracker when you accept, update, or remove a quest. A fallback quest event listener now marks the tracker dirty even if the custom module's own event registration is missed.
 - Show Spoken's Play button on the beta tracker's quest blocks when Spoken and Spoken_Quests are loaded. The bridge checks for Spoken at runtime and stays out of the way when it is not installed.
 - Let the beta tracker follow the Edit Mode height slider. It now fills the source tracker's height instead of shrinking to the content, keeps that viewport when the content is short, and relayouts when the slider changes.
+
+## 1.1.9 - 2026-11-24
+
+- Add a collectible library book pin category, off by default, with an optional bundled book icon for book-only pins. Hidden books are excluded from map pins, NPC tooltips, nameplates, and auto-accept.
+- Make **Select nearest quest** use the active beta tracker filter, so the selection matches the filtered tracker view.
 - Replace the low-level and high-level sliders with one two-handle level filter. Defaults stay at 9 levels below and all levels above.
 
 ## 1.1.8 - 2026-11-23
