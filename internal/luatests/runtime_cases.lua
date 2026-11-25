@@ -3050,6 +3050,39 @@ cases["map_pins_runtime.map_never_post_hooks_world_map_frame"] = function()
     assert(ns.MapPins:GetStatus().count > 0, "the watch still notices an open map")
 end
 
+cases["map_pins_runtime.combat_defers_map_work"] = function()
+    setupPinRendering()
+    local combat = true
+    InCombatLockdown = function() return combat end
+    local originalGetMapID = WorldMapFrame.GetMapID
+    local originalGetCanvas = WorldMapFrame.GetCanvas
+    local originalGetWidth = mapCanvas.GetWidth
+    local originalGetHeight = mapCanvas.GetHeight
+    local function refuseInCombat(name, original)
+        return function(...)
+            if combat then
+                error(name .. " must not run in combat")
+            end
+            return original(...)
+        end
+    end
+    WorldMapFrame.GetMapID = refuseInCombat("GetMapID", originalGetMapID)
+    WorldMapFrame.GetCanvas = refuseInCombat("GetCanvas", originalGetCanvas)
+    WorldMapFrame.GetCanvasScale = refuseInCombat("GetCanvasScale", function() return 1 end)
+    mapCanvas.GetWidth = refuseInCombat("GetWidth", originalGetWidth)
+    mapCanvas.GetHeight = refuseInCombat("GetHeight", originalGetHeight)
+    local refreshReasons = {}
+    ns.RequestRefresh = function(reason) refreshReasons[#refreshReasons + 1] = reason end
+
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(#refreshReasons == 0, "combat must not open or refresh the map")
+
+    combat = false
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(refreshReasons[#refreshReasons] == "map-show",
+        "the deferred map open runs after combat")
+end
+
 cases["map_pins_runtime.shift_click_hides_on_click_through_maps"] = function()
     setupPinRendering()
     local shiftHeld = false

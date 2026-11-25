@@ -2215,6 +2215,8 @@ end
 -- are then refused. Watch the frame from our own OnUpdate instead.
 local mapWatch = CreateFrame("Frame")
 local mapOpen = false
+local pendingMapOpen = false
+local pendingMapClose = false
 local lastStitchedObserved
 local lastViewedMapID
 local lastCanvasScale
@@ -2308,6 +2310,8 @@ end
 
 local function OnMapOpen()
     mapOpen = true
+    pendingMapOpen = false
+    pendingMapClose = false
     lastStitchedObserved = IsOpenMapStitched()
     lastViewedMapID = ns.GetViewedMapID()
     lastCanvasScale = CurrentCanvasScale()
@@ -2328,6 +2332,8 @@ end
 
 local function OnMapClose()
     mapOpen = false
+    pendingMapOpen = false
+    pendingMapClose = false
     lastStitchedObserved = nil
     lastViewedMapID = nil
     lastCanvasScale = nil
@@ -2346,18 +2352,41 @@ local function OnMapClose()
 end
 
 mapWatch:SetScript("OnUpdate", function(_, elapsed)
+    local inCombat = InCombatLockdown and InCombatLockdown() or false
     pollAccum = pollAccum + elapsed
     if pollAccum >= POLL_GAP then
         pollAccum = 0
         local shown = WorldMapFrame and type(WorldMapFrame.IsShown) == "function"
             and WorldMapFrame:IsShown() or false
         if shown ~= mapOpen then
-            if shown then
+            mapOpen = shown
+            if inCombat then
+                -- Calling map methods in combat taints the map's own pin
+                -- placement and blocks its protected SetPassThroughButtons.
+                -- Wait for regen before touching the map.
+                if shown then
+                    pendingMapOpen = true
+                    pendingMapClose = false
+                else
+                    pendingMapClose = true
+                    pendingMapOpen = false
+                end
+            elseif shown then
                 OnMapOpen()
             else
                 OnMapClose()
             end
         end
+    end
+    if inCombat then
+        return
+    end
+    if pendingMapOpen then
+        pendingMapOpen = false
+        OnMapOpen()
+    elseif pendingMapClose then
+        pendingMapClose = false
+        OnMapClose()
     end
     if not mapOpen then
         return
