@@ -6728,6 +6728,95 @@ cases["tracker_runtime.beta_marker_survives_in_cvar_mirror"] = function()
         "the collapse reset marker must be written back to the mirror")
 end
 
+cases["spoken_tracker_runtime.attaches_play_button_to_quest_blocks"] = function()
+    local function fakeButton(parent)
+        local button = { shown = false, points = {} }
+        function button:SetSize(width, height) self.width, self.height = width, height end
+        function button:SetHitRectInsets() end
+        function button:ClearAllPoints() self.points = {} end
+        function button:SetPoint(...) self.points[#self.points + 1] = { ... } end
+        function button:CreateTexture()
+            local texture = {}
+            function texture:SetPoint(...) self.point = { ... } end
+            function texture:SetColorTexture(...) self.color = { ... } end
+            return texture
+        end
+        function button:SetFrameLevel(level) self.frameLevel = level end
+        function button:Show() self.shown = true end
+        function button:Hide() self.shown = false end
+        function button:IsShown() return self.shown end
+        button.parent = parent
+        return button
+    end
+
+    CreateFrame = function()
+        return {
+            RegisterEvent = function() end,
+            SetScript = function() end,
+        }
+    end
+    hooksecurefunc = function(target, key, hook)
+        local original = target[key]
+        target[key] = function(...)
+            local result = original and original(...)
+            hook(...)
+            return result
+        end
+    end
+
+    Spoken = {
+        RegisterCallback = function() end,
+        DressBoxButton = function(_, button)
+            button.SetBox = function(self, atlas, width, height)
+                self.box = { atlas = atlas, width = width, height = height }
+            end
+            button.SetState = function() end
+        end,
+    }
+    local ui
+    ui = {
+        shows = true,
+        FollowQueue = function() end,
+        ShowsTrackerButton = function(self, questID) return self.shows and questID == 123 end,
+        BindPlayButton = function(self, button, questID, title, origin)
+            self.bound = { button = button, questID = questID, title = title, origin = origin }
+            button.questID = questID
+        end,
+        SetPlayButtonState = function() end,
+        UpdateTrackerButtons = function() end,
+    }
+    VoiceOver = {
+        Utils = {
+            CreateDetachedFrame = function(_, _, _, parent) return fakeButton(parent) end,
+        },
+        QuestOverlayUI = ui,
+    }
+
+    local module = { usedBlocks = {} }
+    function module:AddBlock(block)
+        self.usedBlocks["ObjectiveTrackerBlockTemplate"] = self.usedBlocks["ObjectiveTrackerBlockTemplate"] or {}
+        self.usedBlocks["ObjectiveTrackerBlockTemplate"][block.id] = block
+    end
+    local block = { id = 123, GetFrameLevel = function() return 5 end }
+
+    local ns = { GetOption = function() return false end }
+    assert(loadfile("SpokenTracker.lua"))("ForeverQuestPins", ns)
+    ns.InstallSpokenTrackerBridge(module)
+    module:AddBlock(block)
+    assert(ui.bound and ui.bound.questID == 123, "a quest block gets a Spoken play button")
+    assert(ui.bound.button:IsShown(), "the Spoken play button is shown")
+    assert(ui.bound.button.frameLevel == 8, "the play button sits above the quest row")
+    assert(ui.bound.button.box and ui.bound.button.box.atlas == "QuestLog-icon-ticksquare")
+
+    ui.shows = false
+    module:AddBlock(block)
+    assert(not ui.bound.button:IsShown(), "a quest with no Spoken line hides the play button")
+
+    Spoken = nil
+    VoiceOver = nil
+    module:AddBlock({ id = 124, GetFrameLevel = function() return 5 end })
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

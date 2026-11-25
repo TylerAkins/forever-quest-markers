@@ -17,7 +17,7 @@ var rootFiles = []string{
 	"ATTRIBUTION.md", "AutoQuests.lua", "Breadcrumbs.lua", "CHANGELOG.md", "Config.lua", "Core.lua",
 	"Eligibility.lua", "Events.lua", "HiddenQuests.lua", "NPCTooltips.lua", "Nameplates.lua", "QuestLinks.lua",
 	"ForeverQuestPins.toc", "LICENSE", "Localization.lua", "MapPins.lua", "README.md",
-	"RELEASE_NOTES.md", "Setup.lua", "Sparkle.lua", "Tracker.lua", "TrackerData.lua", "WarEffort.lua",
+	"RELEASE_NOTES.md", "Setup.lua", "Sparkle.lua", "SpokenTracker.lua", "Tracker.lua", "TrackerData.lua", "WarEffort.lua",
 	"WhatsNew.lua", "Waypoints.lua",
 }
 

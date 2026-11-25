@@ -275,8 +275,8 @@ test checks that.
 
 The standalone frame copies Blizzard's position and size when it is created. Drag
 the **Quests** header to move it. The frame height is the scroll viewport; the
-module scrolls inside it. Edit Mode no longer moves the custom tracker, so use the
-header drag instead.
+module scrolls inside it. The height follows Edit Mode's height slider, but moving
+the source frame in Edit Mode does not move the standalone tracker.
 
 `Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
 `_trackerBetaSeenV2` marker forces the option off once for installs that had the
@@ -327,8 +327,8 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
 - Edit Mode is Blizzard's existing Objective Tracker system. Moving the tracker,
   changing its height, text size, or opacity needs no custom mover; the viewport
   follows the height setting. The standalone tracker copies the size and position
-  when it is created and does not follow later Edit Mode changes; drag its header
-  to move it.
+  when it is created and follows later height changes, but not later position
+  changes; drag its header to move it.
 - `InputUtil.IsGamepadUIEnabled()` is a hard gate. When gamepad UI is active the
   module is not added, the settings controls are disabled with a note, and the
   setup guide disables the same Quest tracker choices. `/fqp nearest` reports
@@ -358,6 +358,12 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   standalone container in `ObjectiveTrackerManager.moduleToContainerMap` so
   Blizzard's `GetContextMenuParent` returns it and the right-click menu stays on
   Blizzard's handler too.
+- `SpokenTracker.lua` attaches Spoken's Play button to quest blocks when `Spoken`
+  and `VoiceOver.QuestOverlayUI` are present. It hooks the module's `AddBlock`,
+  sweeps the existing `usedBlocks` when Spoken loads and on
+  `VOICE_PACKS_LOADED`, `PART_SWITCHED`, and `UpdateTrackerButtons`, and hides the
+  button when `ShowsTrackerButton` is false. It never writes
+  `block.rightEdgeOffset`, so the item button's click path stays untouched.
 
 Runtime cases cover grouping, every sort and filter, the current-zone match,
 **Other**, missing header and distance APIs, the per-character collapse table,
@@ -371,8 +377,9 @@ Known limits: the module relies on Blizzard's tracker internals; if a client pat
 renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party
 addons that enumerate tracker blocks by the `quest` tag also see zone header blocks;
 those blocks use string IDs and are ignored by normal quest consumers. The standalone
-tracker is not part of Blizzard's Edit Mode system, so moving it uses the header drag
-and its height is fixed to the copied viewport rather than an Edit Mode slider.
+tracker is not part of Blizzard's Edit Mode system, so moving it uses the header drag.
+Its height follows the Edit Mode slider, but moving the source frame in Edit Mode does
+not move the standalone tracker.
 
 ## Quest item sparkles
 

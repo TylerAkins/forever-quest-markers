@@ -98,6 +98,23 @@ local function CopyFrameLayout(target, source)
     target:SetDontSavePosition(false)
 end
 
+-- The standalone frame is not part of Edit Mode. Read the tracker's current
+-- viewport height so the height slider still controls how much it shows.
+local function SourceTrackerHeight()
+    local source = ObjectiveTrackerFrame
+    if not source then
+        return nil
+    end
+    local height = source.editModeHeight
+    if type(height) ~= "number" or height <= 0 then
+        height = source.GetHeight and source:GetHeight()
+    end
+    if type(height) == "number" and height > 0 then
+        return height
+    end
+    return nil
+end
+
 local function CreateStandaloneContainer()
     if standaloneFrame then
         return standaloneFrame
@@ -110,6 +127,7 @@ local function CreateStandaloneContainer()
     -- content so it never covers the row below the tracker, but the module
     -- keeps using the original height as its viewport.
     frame.availableHeight = frame:GetHeight()
+    local sourceHeight = SourceTrackerHeight()
 
     function frame:MarkDirty()
         if self.dirty then
@@ -128,7 +146,7 @@ local function CreateStandaloneContainer()
     end
 
     function frame:GetAvailableHeight()
-        return self.availableHeight or self:GetHeight()
+        return SourceTrackerHeight() or self.availableHeight or self:GetHeight()
     end
 
     function frame:IsCollapsed()
@@ -194,6 +212,21 @@ local function CreateStandaloneContainer()
         self:SetHeight(heightUsed or self:GetHeight())
         self:SetShown(module:IsShown())
     end
+
+    -- Edit Mode changes the source frame's height without an event our tracker
+    -- listens to. Poll it cheaply and relayout when it changes.
+    frame:SetScript("OnUpdate", function(self, elapsed)
+        self.heightCheck = (self.heightCheck or 0) + elapsed
+        if self.heightCheck < 0.25 then
+            return
+        end
+        self.heightCheck = 0
+        local height = SourceTrackerHeight()
+        if height and height ~= sourceHeight then
+            sourceHeight = height
+            self:MarkDirty()
+        end
+    end)
 
     standaloneFrame = frame
     return frame
@@ -655,6 +688,17 @@ function ns.PrintTrackerDebug()
         p("events: " .. table.concat(parts, ", "))
     else
         p("events: none")
+    end
+    if ns.SpokenBridgeStatus then
+        local status = ns.SpokenBridgeStatus()
+        p(("spoken=%s voiceover=%s spokenUI=%s bridgeModule=%s bridgeHooked=%s bridgeButtons=%s bridgeShown=%s"):format(
+            tostring(status.spoken),
+            tostring(status.voiceOver),
+            tostring(status.ui),
+            tostring(status.module),
+            tostring(status.hooked),
+            tostring(status.buttons),
+            tostring(status.shown)))
     end
     local watched = C_QuestLog and C_QuestLog.GetNumQuestWatches and C_QuestLog.GetNumQuestWatches() or "?"
     local ok, infos = pcall(module.BuildQuestWatchInfos, module)
@@ -1162,6 +1206,9 @@ local function CreateModule()
         end)
     end
     HookTrackerMenu(frame.Header)
+    if ns.InstallSpokenTrackerBridge then
+        ns.InstallSpokenTrackerBridge(frame)
+    end
     return frame
 end
 

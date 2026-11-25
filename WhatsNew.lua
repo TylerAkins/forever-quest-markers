@@ -13,6 +13,8 @@ ns.WhatsNew = {
         "Stop quest clicks in the beta tracker from tainting the map. Clicking a tracked quest in combat now opens the quest details without making the map's quest log and scroll container write as ForeverQuestPins, so the map's pins keep working.",
         "Stop the map pin watcher from touching map state during combat. Opening the map in combat could taint the map's protected pin placement and block SetPassThroughButtons.",
         "Refresh the beta tracker when you accept, update, or remove a quest. A fallback quest event listener now marks the tracker dirty even if the custom module's own event registration is missed.",
+        "Show Spoken's Play button on the beta tracker's quest blocks when Spoken and Spoken_Quests are loaded. The bridge checks for Spoken at runtime and stays out of the way when it is not installed.",
+        "Let the beta tracker follow the Edit Mode height slider. It now reads the source tracker's current height and relayouts when the slider changes, instead of keeping the height copied at creation.",
         "Replace the low-level and high-level sliders with one two-handle level filter. Defaults stay at 9 levels below and all levels above.",
     },
 }
