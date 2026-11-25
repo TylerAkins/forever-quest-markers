@@ -6264,13 +6264,40 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetPoint() end
         function frame:ClearAllPoints() end
         function frame:SetParent(parent) self.parent = parent end
+        function frame:GetParent() return self.parent end
         function frame:SetHeight(height) self.height = height end
         function frame:GetHeight() return self.height or 0 end
         function frame:SetWidth(width) self.width = width end
         function frame:GetWidth() return self.width or 0 end
         function frame:SetSize(width, height) self.width, self.height = width, height end
-        function frame:EnableMouse() end
-        function frame:EnableMouseWheel() end
+        function frame:GetPoint() return "TOPRIGHT", UIParent, "TOPRIGHT", -20, -20 end
+        function frame:SetScale() end
+        function frame:GetScale() return 1 end
+        function frame:SetAlpha() end
+        function frame:GetAlpha() return 1 end
+        function frame:SetFrameStrata() end
+        function frame:GetFrameStrata() return "MEDIUM" end
+        function frame:SetFrameLevel(level) self.frameLevel = level end
+        function frame:GetFrameLevel() return self.frameLevel or 1 end
+        function frame:SetClampedToScreen(value) self.clampedToScreen = value end
+        function frame:GetClampedToScreen() return self.clampedToScreen or false end
+        function frame:SetMovable(value) self.movable = value end
+        function frame:SetResizable(value) self.resizable = value end
+        function frame:SetUserPlaced(value) self.userPlaced = value end
+        function frame:SetDontSavePosition(value) self.dontSavePosition = value end
+        function frame:RegisterForDrag() end
+        function frame:StartMoving() end
+        function frame:StopMovingOrSizing() end
+        function frame:EnableMouse(enabled)
+            self.mouseEnabled = enabled ~= false
+            self.mouseClickEnabled = self.mouseEnabled
+        end
+        function frame:SetMouseClickEnabled(enabled)
+            self.mouseClickEnabled = enabled
+        end
+        function frame:EnableMouseWheel(enabled)
+            self.wheelEnabled = enabled ~= false
+        end
         function frame:Show() self.shown = true end
         function frame:Hide() self.shown = false end
         function frame:SetShown(shown) self.shown = shown end
@@ -6329,6 +6356,16 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         OnBlockHeaderClick = function() end,
         OnBlockHeaderEnter = function() end,
         OnBlockHeaderLeave = function() end,
+        SetContainer = function(self, container)
+            self.parentContainer = container
+            self:SetParent(container)
+        end,
+        Update = function(self, availableHeight, dirtyUpdate)
+            self.availableHeight = availableHeight
+            self.dirty = false
+            return self.contentsHeight or 0
+        end,
+        IsCollapsed = function(self) return self.collapsed == true end,
     }
     ObjectiveTrackerModuleMixin = {
         LayoutBlock = function(_, block) block.used = true; return true end,
@@ -6402,26 +6439,70 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(ns.TryRegisterQuestTracker())
     assert(transitionRegistered, "gamepad subscribers must register interface transitions first")
     local ourModule
+    local standaloneTracker
     for _, frame in ipairs(frames) do
         if frame.name == "FQPQuestObjectiveTracker" then ourModule = frame end
+        if frame.name == "FQPStandaloneTracker" then standaloneTracker = frame end
     end
     assert(ourModule, "the addon must create its tracker module")
+    assert(standaloneTracker, "the addon must create its standalone tracker container")
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "the beta starts off with Blizzard's module")
 
     options.enhanceQuestTracker = true
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == ourModule)
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "the standalone tracker removes Blizzard's quest module from its container")
+    assert(standaloneTracker.module == ourModule,
+        "the standalone tracker owns the custom quest module")
     assert(QuestObjectiveTracker.shown == false)
-    assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == ObjectiveTrackerFrame)
+    assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
+        "the standalone module's context menu parent is its own container")
+    assert(ourModule.OnBlockHeaderClick == QuestObjectiveTrackerMixin.OnBlockHeaderClick,
+        "quest clicks stay on Blizzard's handler so the map is not tainted")
     assert(QuestObjectiveTracker.unregisteredEvents
         and QuestObjectiveTracker.unregisteredEvents.QUEST_LOG_UPDATE,
         "Blizzard's quest events are suspended while our module is active")
     ourModule.events.QUEST_LOG_UPDATE = true
 
+    local wheelBlock = fakeFrame("Frame", nil, ourModule)
+    wheelBlock.HeaderButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.ItemButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.poiButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.zoneCollapseButton = fakeFrame("Button", nil, wheelBlock)
+    ourModule:EnableBlockWheel(wheelBlock)
+    assert(wheelBlock.mouseEnabled == true, "the block keeps hover and wheel input")
+    assert(wheelBlock.mouseClickEnabled == false,
+        "the block must not swallow clicks meant for its quest item button")
+    assert(wheelBlock.wheelEnabled == true, "the block still scrolls")
+    assert(wheelBlock.scripts.OnMouseWheel, "the block handles the wheel")
+    for _, child in ipairs({ wheelBlock.HeaderButton, wheelBlock.ItemButton, wheelBlock.poiButton, wheelBlock.zoneCollapseButton }) do
+        assert(child.wheelEnabled == true, "each row control scrolls")
+        assert(child.scripts.OnMouseWheel, "each row control handles the wheel")
+    end
+    local zoneBlock = fakeFrame("Frame", nil, ourModule)
+    zoneBlock.zoneName = "Ashenvale"
+    ourModule:EnableBlockWheel(zoneBlock)
+    assert(zoneBlock.mouseClickEnabled == true,
+        "zone headers keep their row click so the area beside the collapse arrow toggles")
+    local popupBlock = fakeFrame("Frame", nil, ourModule)
+    popupBlock.template = "AutoQuestPopUpBlockTemplate"
+    ourModule:EnableBlockWheel(popupBlock)
+    assert(popupBlock.mouseClickEnabled == true,
+        "auto-quest popups keep their row click so the popup opens")
+    local reusedBlock = fakeFrame("Frame", nil, ourModule)
+    ourModule:EnableBlockWheel(reusedBlock)
+    assert(reusedBlock.mouseClickEnabled == false,
+        "a plain block starts without row clicks")
+    reusedBlock.zoneName = "Darkshore"
+    ourModule:EnableBlockWheel(reusedBlock)
+    assert(reusedBlock.mouseClickEnabled == true,
+        "a pooled block that becomes a zone header gets its row click back")
+
     options.enhanceQuestTracker = false
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker)
+    assert(standaloneTracker.module == nil, "disabling the beta clears the standalone tracker")
     assert(ourModule.shown == false)
     assert(QuestObjectiveTracker.events.QUEST_LOG_UPDATE == true,
         "Blizzard's quest events are restored with its module")
@@ -6433,10 +6514,13 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "gamepad UI must keep Blizzard's tracker")
+    assert(standaloneTracker.module == nil, "gamepad UI hides the standalone tracker")
 
     gamepad = false
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == ourModule)
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "the standalone tracker replaces Blizzard's quest module")
+    assert(standaloneTracker.module == ourModule)
     assert(ourModule.events.QUEST_LOG_UPDATE == true,
         "our module's quest events are restored with the beta")
 
@@ -6445,6 +6529,36 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     gamepadInit()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "gamepad init must restore Blizzard's module even in combat")
+    assert(standaloneTracker.module == nil, "gamepad init hides the standalone tracker")
+
+    gamepad = false
+    InCombatLockdown = function() return false end
+    options.enhanceQuestTracker = true
+    ns.ApplyTrackerState()
+    assert(#ObjectiveTrackerFrame.modules == 0, "the standalone tracker stays active")
+    assert(standaloneTracker.module == ourModule)
+    local eventFrame
+    for _, frame in ipairs(frames) do
+        if frame.events and frame.events.PLAYER_REGEN_DISABLED then eventFrame = frame end
+    end
+    assert(eventFrame, "the tracker registers combat events")
+    assert(eventFrame.events.QUEST_ACCEPTED, "the tracker listens for quest accepts")
+    assert(eventFrame.events.QUEST_LOG_UPDATE, "the tracker listens for quest log updates")
+    assert(eventFrame.events.QUEST_WATCH_LIST_CHANGED, "the tracker listens for watch list changes")
+    local dirtyBefore = ourModule.dirty or 0
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_ACCEPTED", 12345)
+    assert((ourModule.dirty or 0) == dirtyBefore + 1,
+        "a quest event marks the tracker dirty when the module events miss it")
+    InCombatLockdown = function() return true end
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_REGEN_DISABLED")
+    assert(standaloneTracker.module == ourModule,
+        "combat keeps the standalone tracker instead of reverting to Blizzard's")
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "Blizzard's quest module stays removed during combat")
+    InCombatLockdown = function() return false end
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_REGEN_ENABLED")
+    assert(standaloneTracker.module == ourModule,
+        "the standalone tracker remains active after combat")
 
     ourModule.availableHeight = 125
     ourModule.contentsHeight = 425
@@ -6453,7 +6567,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(ourModule.contentsHeight == 110, "the module height leaves room above the action bars")
     assert(ourModule.ScrollFrame.height == 85)
     assert(ourModule.ScrollFrame.shown == true)
-    assert(ourModule.ContentsFrame.height == 408, "content keeps its full height plus scroll padding")
+    assert(ourModule.ContentsFrame.height == 416, "content keeps its full height plus scroll padding")
     ourModule:Scroll(-1)
     assert(ourModule.ScrollFrame.scroll == 36)
     ourModule:Scroll(1)
@@ -6464,7 +6578,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule.ScrollFrame.range = 0
     ourModule:UpdateScrollViewport()
     assert(ourModule.contentsHeight == 125, "short content keeps its natural height")
-    assert(ourModule.ContentsFrame.height == 108, "short content still gets bottom padding")
+    assert(ourModule.ContentsFrame.height == 116, "short content still gets bottom padding")
 
     local zoneInfos = {
         { zoneName = "Ashenvale", quest = { id = 102 } },
@@ -6473,7 +6587,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     }
     ourModule.ScrollFrame.width = 260
     ourModule:UpdateScrollContentSize()
-    assert(ourModule.ContentsFrame.width == 260, "content width is set before block layout")
+    assert(ourModule.ContentsFrame.width == 252, "content width leaves room for the item button overhang")
     local autoBlock = { offsetX = -20 }
     ourModule:AnchorBlock(autoBlock)
     assert(autoBlock.offsetX == 0, "auto quest popup offset is clamped inside the scroll content")
@@ -6508,6 +6622,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(#seen == 3)
     assert(headers["zone:Ashenvale"] and headers["zone:Darkshore"])
     assert(headers["zone:Ashenvale"].offsetX == 7, "zone headers align with the Quests header")
+    assert(headers["zone:Ashenvale"].OnHeaderClick,
+        "zone headers own their click instead of the module's quest handler")
     collapsed["Darkshore"] = true
     seen = {}
     ourModule:EnumQuestWatchData(function(_, quest)

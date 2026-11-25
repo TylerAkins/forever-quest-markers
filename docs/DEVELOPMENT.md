@@ -183,13 +183,13 @@ Normal map pins call `SetAtlas("QuestNormal", false)` at a fixed 24px size. Spec
 
 Addon map pins are ordinary buttons parented to the map canvas and never enter Blizzard's MapCanvas pin pools. Calling `WorldMapFrame:AcquirePin` from addon code adds our template to the canvas `pinPools` table, which is shared Blizzard state that addon code should not write. Keep pin creation on our frames and add a regression case that fails if `AcquirePin` is called.
 
-Never post-hook `WorldMapFrame`. A `hooksecurefunc` post-hook runs inside Blizzard's map execution, so the rest of that execution inherits the addon's taint. In 1.1.1 the `Show`, `Hide`, `OnMapChanged`, `OnCanvasScaleChanged`, and `SynchronizeDisplayState` hooks made `SetDisplayState` write the quest log list and scroll container fields after `ShowUIPanel` as ForeverQuestPins. The next map opened in combat read those fields while placing its pins, and the client refused `SetPassThroughButtons` and `SetPropagateMouseClicks` with this addon named. Open, close, map changes, and canvas scale changes are watched from `mapWatch`'s `OnUpdate`, which runs in the addon's own execution.
+Never post-hook `WorldMapFrame`. A `hooksecurefunc` post-hook runs inside Blizzard's map execution, so the rest of that execution inherits the addon's taint. In 1.1.1 the `Show`, `Hide`, `OnMapChanged`, `OnCanvasScaleChanged`, and `SynchronizeDisplayState` hooks made `SetDisplayState` write the quest log list and scroll container fields after `ShowUIPanel` as ForeverQuestPins. The next map opened in combat read those fields while placing its pins, and the client refused `SetPassThroughButtons` and `SetPropagateMouseClicks` with this addon named. Open, close, map changes, and canvas scale changes are watched from `mapWatch`'s `OnUpdate`, which runs in the addon's own execution. The watch skips map calls during combat and replays a pending open or close after combat, so opening the map in combat cannot taint Blizzard's pin placement.
 
 Do not register `Menu.ModifyMenu` callbacks for menus the world map generates, and do not open a game menu over the map. `WorldMapTrackingOptionsButtonMixin:OnShow` calls `SetupMenu`, which generates the menu while the map opens, so an addon callback runs inside that execution and taints everything Blizzard writes afterwards. The map also reads the frame under the pointer every frame, so addon entries in a game menu taint the map while the menu is open. Leatrix Maps avoids both with its own pop-up lists. The pin filters use the addon's own button and list of addon frames (`Config.lua`), built only on click, and remain in the settings panel and the `/fqp` commands.
 
 `/fqp taint` scans the map, quest log, and tracker frames with `issecurevariable` and names the addon that last wrote each tainted field; run it before `/reload` after a block, and check that no map field is tainted.
 
-The skipped-breadcrumb dialog's **Abandon Quest** action calls `C_QuestLog.SetSelectedQuest`, so the quest log writes `DetailsFrame.questID` and the related fields under the addon's taint. That is the one remaining path that can block map pins in combat until a reload. The feature is kept deliberately; if it becomes a problem, remove the action or require the player to abandon from the quest log.
+The skipped-breadcrumb dialog no longer abandons the quest from addon code. Selecting a quest with `C_QuestLog.SetSelectedQuest` makes the quest log write `DetailsFrame.questID` and related fields under the addon's taint; the map reads them while placing pins in combat and refuses `SetPassThroughButtons`. The dialog tells the player to abandon from the quest log and sets a waypoint to the skipped breadcrumb through `ns.TrackQuest` when the quest disappears. The dialog's **Set Waypoint** action remains. A waypoint failure reports the reason but does not block the dialog.
 
 The addon keeps each pin's center for its own hover lookup and uses a private tooltip while Gamepad UI is active. Verify in game by hovering an addon pin with the controller, then closing the map, and by opening the map in combat; confirm the tooltip works and no blocked-action popup appears. Do not test with `/console taintLog` on: on Forever it breaks post-hooked methods and does not produce a usable log.
 
@@ -261,16 +261,22 @@ require client verification.
 
 ## Quest tracker beta
 
-`Tracker.lua` creates a second quest module inside Blizzard's
-`ObjectiveTrackerFrame`. It uses `ObjectiveTrackerModuleTemplate`, mixes in
-`QuestObjectiveTrackerMixin`, and registers through
-`ObjectiveTrackerManager:SetModuleContainer`. Blizzard's `QuestObjectiveTracker`
-is removed from the frame and hidden while ours is active. Its quest events are
+`Tracker.lua` creates a standalone quest module frame, `FQPStandaloneTracker`,
+parented to `UIParent` and positioned from Blizzard's `ObjectiveTrackerFrame`. It
+uses `ObjectiveTrackerModuleTemplate`, mixes in `QuestObjectiveTrackerMixin`, and
+owns its own container. Blizzard's `QuestObjectiveTracker` is removed from
+`ObjectiveTrackerFrame` and hidden while ours is active. Its quest events are
 unregistered for that time so auto-quest popups and turn-in updates are handled
 once by our module; they are registered again when Blizzard's module is restored.
-Disabling the option restores it. The addon never assigns Blizzard's `BuildQuestWatchInfos`,
-`EnumQuestWatchData`, `SetTrackerTargetButton`, `SelectFirstButton`, or
-`UpdateSmartNavigationOverrides`; the repository contract test checks that.
+Disabling the option restores it. The addon never assigns Blizzard's
+`BuildQuestWatchInfos`, `EnumQuestWatchData`, `SetTrackerTargetButton`,
+`SelectFirstButton`, or `UpdateSmartNavigationOverrides`; the repository contract
+test checks that.
+
+The standalone frame copies Blizzard's position and size when it is created. Drag
+the **Quests** header to move it. The frame height is the scroll viewport; the
+module scrolls inside it. Edit Mode no longer moves the custom tracker, so use the
+header drag instead.
 
 `Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
 `_trackerBetaSeenV2` marker forces the option off once for installs that had the
@@ -299,7 +305,11 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   viewport in `UpdateScrollViewport`. The scroll child keeps the full content
   height, and `SetCollapsed` hides and resets the viewport. Mouse wheel handlers
   are attached to the module, scroll frame, content, zone headers, quest blocks,
-  item buttons, and POI buttons. The bottom inset is configurable as
+  item buttons, and POI buttons. Quest blocks keep wheel and hover input but do
+  not take clicks, so their header, item, and POI buttons keep working when a
+  block is reused. Zone headers keep their row click so the area beside the
+  collapse arrow still toggles, and auto-quest popups keep it so their row opens
+  the quest. The bottom inset is configurable as
   `trackerBottomInset`, default 15px and adjustable from 0 to 60px, so the last row
   can clear the action bars without the old large gap.
 - Auto-quest popup blocks use a negative offset in Blizzard's module. The
@@ -316,7 +326,9 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   updates preserve it and clamp it when the content shrinks.
 - Edit Mode is Blizzard's existing Objective Tracker system. Moving the tracker,
   changing its height, text size, or opacity needs no custom mover; the viewport
-  follows the height setting.
+  follows the height setting. The standalone tracker copies the size and position
+  when it is created and does not follow later Edit Mode changes; drag its header
+  to move it.
 - `InputUtil.IsGamepadUIEnabled()` is a hard gate. When gamepad UI is active the
   module is not added, the settings controls are disabled with a note, and the
   setup guide disables the same Quest tracker choices. `/fqp nearest` reports
@@ -332,20 +344,35 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
 - Registration waits for `QuestObjectiveTracker.uiOrder` and the manager's
   container mapping. If the client is not ready, it retries on a one-second
   timer instead of adding a duplicate module before `ObjectiveTrackerManager.Init`.
-- During combat, module add/remove changes are deferred. Gamepad activation is the exception
-  because leaving our module active would disrupt Blizzard's gamepad targeting.
+- During combat, the standalone module stays active. It no longer lives inside
+  Blizzard's tracker container, so its layout does not taint the container or quest
+  log when the map places pins. Gamepad activation still restores Blizzard's module
+  immediately because leaving our module active would disrupt Blizzard's gamepad
+  targeting.
+- Quest blocks keep Blizzard's `OnBlockHeaderClick`. The module must not override
+  it: a click on a quest opens the quest details, and addon code in that click
+  makes the map write the quest log details and scroll container fields as
+  `ForeverQuestPins`, which blocks `SetPassThroughButtons` in combat. Zone headers
+  shadow the block's `OnHeaderClick` in `AddZoneHeader` so they still toggle
+  without putting the module in the quest click path. The module registers its
+  standalone container in `ObjectiveTrackerManager.moduleToContainerMap` so
+  Blizzard's `GetContextMenuParent` returns it and the right-click menu stays on
+  Blizzard's handler too.
 
 Runtime cases cover grouping, every sort and filter, the current-zone match,
 **Other**, missing header and distance APIs, the per-character collapse table,
-combat caching, module registration and restoration, gamepad fallback, zone
-header insertion, collapse skipping, and the scroll viewport math. In-game checks
-still cover the side-by-side look, Edit Mode, scrolling over every control,
-animations, combat, taint, and the gamepad transition.
+combat caching, combat retention of the standalone tracker, module registration and
+restoration, gamepad fallback, zone header insertion, collapse skipping, and the
+scroll viewport math. In-game checks still cover the side-by-side look, the header
+drag, scrolling over every control, animations, combat, taint, and the gamepad
+transition.
 
 Known limits: the module relies on Blizzard's tracker internals; if a client patch
 renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party
 addons that enumerate tracker blocks by the `quest` tag also see zone header blocks;
-those blocks use string IDs and are ignored by normal quest consumers.
+those blocks use string IDs and are ignored by normal quest consumers. The standalone
+tracker is not part of Blizzard's Edit Mode system, so moving it uses the header drag
+and its height is fixed to the copied viewport rather than an Edit Mode slider.
 
 ## Quest item sparkles
 

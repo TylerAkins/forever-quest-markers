@@ -154,7 +154,8 @@ func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 		"SetScrollChild",
 		"QuestObjectiveTrackerMixin.LayoutContents",
 		"AddFilterEmptyBlock",
-		"moduleEventsSuspended",
+		"RegisterModuleEvents",
+		"UnregisterModuleEvents",
 		"UnregisterEvent(QuestObjectiveTracker.events[i])",
 		"RegisterEvent(QuestObjectiveTracker.events[i])",
 	} {
