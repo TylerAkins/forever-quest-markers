@@ -2,11 +2,6 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
-## 1.1.11 - 2026-11-25
-
-- Update the QuestieDB Forever artifact to `4d3e043e3c8d28014ec6f5d4d894d476769e1be99d060a174e14ca46038ebe50` (build `4377c981ac368d1593ec92788218e0a689a6a02b`).
-- Ship 6084 quests with 10472 coordinate pins (678 static instance quests, 220 yearly quests).
-
 ## 1.1.10 - 2026-11-25
 
 - Fix quest item icons in the beta tracker so clicking an icon uses the item. The row block now handles wheel and hover input without taking clicks, and the interactive controls sit above the reused row.
@@ -19,6 +14,8 @@ Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds f
 - Refresh the beta tracker when you accept, update, or remove a quest. A fallback quest event listener now marks the tracker dirty even if the custom module's own event registration is missed.
 - Show Spoken's Play button on the beta tracker's quest blocks when Spoken and Spoken_Quests are loaded. The bridge checks for Spoken at runtime and stays out of the way when it is not installed.
 - Let the beta tracker follow the Edit Mode height slider. It now fills the source tracker's height instead of shrinking to the content, keeps that viewport when the content is short, and relayouts when the slider changes.
+- Update the QuestieDB Forever artifact to `4d3e043e3c8d28014ec6f5d4d894d476769e1be99d060a174e14ca46038ebe50` (build `4377c981ac368d1593ec92788218e0a689a6a02b`).
+- Ship 6084 quests with 10472 coordinate pins (678 static instance quests, 220 yearly quests).
 
 ## 1.1.9 - 2026-11-24
 
