@@ -6577,8 +6577,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule.contentsHeight = 125
     ourModule.ScrollFrame.range = 0
     ourModule:UpdateScrollViewport()
-    assert(ourModule.contentsHeight == 125, "short content keeps its natural height")
-    assert(ourModule.ContentsFrame.height == 116, "short content still gets bottom padding")
+    assert(ourModule.contentsHeight == 485, "short content fills the available height")
+    assert(ourModule.ContentsFrame.height == 460, "the scroll viewport fills the available height")
 
     local zoneInfos = {
         { zoneName = "Ashenvale", quest = { id = 102 } },

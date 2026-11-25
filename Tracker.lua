@@ -105,9 +105,11 @@ local function SourceTrackerHeight()
     if not source then
         return nil
     end
-    local height = source.editModeHeight
-    if type(height) ~= "number" or height <= 0 then
-        height = source.GetHeight and source:GetHeight()
+    local height = source.GetHeight and source:GetHeight()
+    local editHeight = source.editModeHeight
+    if type(editHeight) == "number" and editHeight > 0
+        and (type(height) ~= "number" or editHeight > height) then
+        height = editHeight
     end
     if type(height) == "number" and height > 0 then
         return height
@@ -123,9 +125,8 @@ local function CreateStandaloneContainer()
     CopyFrameLayout(frame, ObjectiveTrackerFrame)
     frame.module = nil
     frame.dirty = false
-    -- The module scrolls inside this height. The frame itself shrinks to the
-    -- content so it never covers the row below the tracker, but the module
-    -- keeps using the original height as its viewport.
+    -- The frame fills the source tracker's height. The module scrolls inside
+    -- it, using the same height as its viewport.
     frame.availableHeight = frame:GetHeight()
     local sourceHeight = SourceTrackerHeight()
 
@@ -208,8 +209,9 @@ local function CreateStandaloneContainer()
             return
         end
         module:SetWidth(self:GetWidth())
-        local heightUsed = module:Update(self:GetAvailableHeight(), true)
-        self:SetHeight(heightUsed or self:GetHeight())
+        local available = self:GetAvailableHeight()
+        module:Update(available, true)
+        self:SetHeight(available)
         self:SetShown(module:IsShown())
     end
 
@@ -956,7 +958,7 @@ local function BuildTrackerMixin()
         local fullHeight = self.contentsHeight or headerHeight
         local contentHeight = math.max(0, fullHeight - headerHeight)
         local available = self.availableHeight or 0
-        local viewport = math.min(contentHeight, math.max(0, available - headerHeight - BottomViewportInset()))
+        local viewport = math.max(0, available - headerHeight - BottomViewportInset())
         if self:IsCollapsed() then
             viewport = 0
         end

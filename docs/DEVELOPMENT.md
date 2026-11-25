@@ -274,9 +274,9 @@ Disabling the option restores it. The addon never assigns Blizzard's
 test checks that.
 
 The standalone frame copies Blizzard's position and size when it is created. Drag
-the **Quests** header to move it. The frame height is the scroll viewport; the
-module scrolls inside it. The height follows Edit Mode's height slider, but moving
-the source frame in Edit Mode does not move the standalone tracker.
+the **Quests** header to move it. The frame fills the Edit Mode height; the module
+scrolls inside it. The height follows Edit Mode's height slider, but moving the
+source frame in Edit Mode does not move the standalone tracker.
 
 `Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
 `_trackerBetaSeenV2` marker forces the option off once for installs that had the
