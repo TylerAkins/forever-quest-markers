@@ -2,14 +2,9 @@ local ADDON_NAME, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local MAX_QUEUE = 5
--- The client can keep reporting an abandoned quest for about a second before
--- QUEST_REMOVED catches up, so confirm over a short window rather than
--- flashing a failure.
-local ABANDON_CONFIRM_DELAYS = { 0.3, 0.7, 1.0 }
 local PADDING = 28
 local BUTTON_HEIGHT = 24
 local BUTTON_GAP = 8
-local DESTRUCTIVE_GAP = 16
 local BUTTON_MIN_WIDTH = 120
 local BUTTON_MAX_WIDTH = 240
 local MIN_FRAME_WIDTH = 440
@@ -23,9 +18,8 @@ local queue = {}
 local visible
 local panel
 local dismissing = false
-local pendingAbandon
 
-local ShowNext, Dismiss, HandleAbandon, HandleWaypoint
+local ShowNext, Dismiss, HandleWaypoint
 
 local function Report(message)
     print("|cff33ff99Forever Quest Pins:|r " .. tostring(message))
@@ -225,19 +219,17 @@ local function Layout()
     if not panel then
         return
     end
-    -- One equal-width row: destructive action on the left, primary on the
+    -- One equal-width row: secondary action on the left, primary on the
     -- right. Equal widths keep the group symmetrical.
     local buttonWidth = math.max(
         MeasureButton(panel.waypointButton),
-        MeasureButton(panel.ignoreButton),
-        MeasureButton(panel.abandonButton)
+        MeasureButton(panel.ignoreButton)
     )
     panel.waypointButton:SetWidth(buttonWidth)
     panel.ignoreButton:SetWidth(buttonWidth)
-    panel.abandonButton:SetWidth(buttonWidth)
 
     local width = math.max(MIN_FRAME_WIDTH,
-        buttonWidth * 3 + BUTTON_GAP + DESTRUCTIVE_GAP + PADDING * 2)
+        buttonWidth * 2 + BUTTON_GAP + PADDING * 2)
     panel:SetWidth(width)
     panel.body:SetWidth(width - PADDING * 2)
     panel.status:SetWidth(width - PADDING * 2)
@@ -269,8 +261,6 @@ local function Layout()
     panel.waypointButton:SetPoint("TOPRIGHT", -PADDING, rowTop)
     panel.ignoreButton:ClearAllPoints()
     panel.ignoreButton:SetPoint("TOPRIGHT", panel.waypointButton, "TOPLEFT", -BUTTON_GAP, 0)
-    panel.abandonButton:ClearAllPoints()
-    panel.abandonButton:SetPoint("TOPRIGHT", panel.ignoreButton, "TOPLEFT", -DESTRUCTIVE_GAP, 0)
 
     -- Height follows the content. A floor larger than the content would show up
     -- as dead space under the buttons.
@@ -293,8 +283,6 @@ local function UpdateActions(entry)
         local reason = L["Preview only. Accept a quest that skips its breadcrumb to use this action."]
         panel.waypointButton.disabledReason = reason
         panel.waypointButton:SetEnabled(false)
-        panel.abandonButton.disabledReason = reason
-        panel.abandonButton:SetEnabled(false)
         return
     end
     local data = entry.data or (ns.Quests and ns.Quests[entry.breadcrumb])
@@ -305,16 +293,6 @@ local function UpdateActions(entry)
         panel.waypointButton.disabledReason = trackMessage or L["No waypoint is available for this quest."]
     end
     panel.waypointButton:SetEnabled(canTrack and true or false)
-
-    local onQuest = ns.IsOnQuest(entry.followUp)
-    local abandonReason
-    if not onQuest then
-        abandonReason = L["This quest is no longer in your log."]
-    elseif ns.IsQuestReadyForTurnIn(entry.followUp) then
-        abandonReason = L["This quest is ready to turn in. Abandon it from the quest log instead."]
-    end
-    panel.abandonButton.disabledReason = abandonReason
-    panel.abandonButton:SetEnabled((onQuest and abandonReason == nil) and true or false)
 end
 
 local function RenderNotice(entry)
@@ -331,7 +309,7 @@ local function RenderNotice(entry)
     panel.body:SetText((L["You accepted %s without completing its breadcrumb quest %s."]):format(
         Gold(followUpTitle),
         breadcrumbTitle
-    ))
+    ) .. "\n" .. L["Abandon it from the quest log to set a waypoint to the breadcrumb."])
 
     panel.status:SetText("")
     UpdateActions(entry)
@@ -404,7 +382,6 @@ local function EnsurePanel()
         return button
     end
 
-    panel.abandonButton = MakeButton(L["Abandon Quest"], function() HandleAbandon() end)
     panel.ignoreButton = MakeButton(L["Ignore"], function() Dismiss(true) end)
     panel.waypointButton = MakeButton(L["Set Waypoint"], function() HandleWaypoint() end)
 
@@ -561,6 +538,21 @@ local function ClearBreadcrumb(questID)
     end
 end
 
+-- After abandoning the follow-up, point the player at the breadcrumb they
+-- skipped. The breadcrumb is not in the log, so TrackQuest resolves its start
+-- location from the quest database. A waypoint failure never undoes the
+-- abandon or blocks the dialog.
+local function SetBreadcrumbWaypoint(entry)
+    if not entry or entry.preview then
+        return
+    end
+    local data = entry.data or (ns.Quests and ns.Quests[entry.breadcrumb])
+    local ok, message = ns.TrackQuest(entry.breadcrumb, data, true)
+    if not ok and message then
+        Report(message)
+    end
+end
+
 function ns.Breadcrumbs.OnQuestAccepted(questID)
     if not questID then
         return
@@ -584,13 +576,13 @@ function ns.Breadcrumbs.OnQuestEnded(questID)
     if not questID then
         return
     end
-    if pendingAbandon and pendingAbandon.questID == questID then
-        -- QUEST_REMOVED is the authoritative confirmation; the poll below may
-        -- never see the log clear before the dialog closes.
-        pendingAbandon = nil
-        Report((L["Abandoned %s."]):format(
-            QuestTitle(questID, ns.Quests and ns.Quests[questID])
-        ))
+    -- The dialog no longer abandons the quest itself: selecting a quest from
+    -- addon code taints the quest log and blocks the map's pins in combat.
+    -- When the player abandons from the quest log, point them at the
+    -- breadcrumb before dismissing the notice.
+    local completed = ns.IsQuestFlaggedCompleted and ns.IsQuestFlaggedCompleted(questID)
+    if visible and not visible.preview and visible.followUp == questID and not completed then
+        SetBreadcrumbWaypoint(visible)
     end
     local kept = {}
     for i = 1, #queue do
@@ -619,81 +611,6 @@ function ns.Breadcrumbs.ShowPreview()
     })
 end
 
-local function ClientQuestInLog(questID)
-    if C_QuestLog and type(C_QuestLog.IsOnQuest) == "function" then
-        local ok, onQuest = pcall(C_QuestLog.IsOnQuest, questID)
-        if ok and onQuest ~= nil then
-            return onQuest and true or false
-        end
-    end
-    if C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
-        local ok, index = pcall(C_QuestLog.GetLogIndexForQuestID, questID)
-        if ok and index ~= nil then
-            return index > 0
-        end
-    end
-    if type(GetQuestLogIndexByID) == "function" then
-        local ok, index = pcall(GetQuestLogIndexByID, questID)
-        if ok and index ~= nil then
-            return index > 0
-        end
-    end
-    return nil
-end
-
-local function TryAbandonOnce(questID)
-    if C_QuestLog and type(C_QuestLog.SetSelectedQuest) == "function"
-        and type(C_QuestLog.SetAbandonQuest) == "function"
-        and type(C_QuestLog.AbandonQuest) == "function" then
-        local ok = pcall(function()
-            C_QuestLog.SetSelectedQuest(questID)
-            C_QuestLog.SetAbandonQuest()
-            C_QuestLog.AbandonQuest()
-        end)
-        if ok then
-            return true
-        end
-    end
-    if type(SelectQuestLogEntry) == "function" and type(AbandonQuest) == "function" then
-        local index
-        if C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
-            local ok, value = pcall(C_QuestLog.GetLogIndexForQuestID, questID)
-            if ok then index = value end
-        elseif type(GetQuestLogIndexByID) == "function" then
-            local ok, value = pcall(GetQuestLogIndexByID, questID)
-            if ok then index = value end
-        end
-        if index and index > 0 then
-            local ok = pcall(function()
-                SelectQuestLogEntry(index)
-                if type(SetAbandonQuest) == "function" then
-                    SetAbandonQuest()
-                end
-                AbandonQuest()
-            end)
-            if ok then
-                return true
-            end
-        end
-    end
-    return false
-end
-
---- Abandons one quest and verifies with the client quest log.
--- The session log overrides in Eligibility.lua report a fresh accept before the
--- client updates, so this check reads the client API directly.
--- Returns ok plus whether the abandon call was actually issued. A issued call
--- with the quest still in the log means the client may simply be behind.
-function ns.Breadcrumbs.AbandonQuest(questID)
-    if not TryAbandonOnce(questID) then
-        return false, false
-    end
-    local inLog = ClientQuestInLog(questID)
-    -- A client without any quest-log query still reports an abandon error when
-    -- it fails, so a clean call is the only available evidence there.
-    return inLog ~= true, true
-end
-
 HandleWaypoint = function()
     local entry = visible
     if not entry or entry.preview then
@@ -712,71 +629,4 @@ HandleWaypoint = function()
     end
 end
 
-HandleAbandon = function()
-    local entry = visible
-    if not entry or entry.preview or pendingAbandon then
-        return
-    end
-    if not ns.IsOnQuest(entry.followUp) then
-        SetStatus(L["This quest is no longer in your log."])
-        UpdateActions(entry)
-        return
-    end
-    if ns.IsQuestReadyForTurnIn(entry.followUp) then
-        SetStatus(L["This quest is ready to turn in. Abandon it from the quest log instead."])
-        UpdateActions(entry)
-        return
-    end
-    panel.abandonButton:SetEnabled(false)
 
-    local function Finish()
-        pendingAbandon = nil
-        DropFollowUp(entry.followUp)
-        local title = QuestTitle(entry.followUp, ns.Quests and ns.Quests[entry.followUp])
-        if visible == entry then
-            Dismiss(false)
-        end
-        Report((L["Abandoned %s."]):format(title))
-    end
-
-    local function Fail()
-        pendingAbandon = nil
-        if visible == entry then
-            SetStatus(L["Could not abandon this quest."])
-            UpdateActions(entry)
-        end
-    end
-
-    local ok, attempted = ns.Breadcrumbs.AbandonQuest(entry.followUp)
-    if ok then
-        Finish()
-        return
-    end
-    if not attempted or not (C_Timer and C_Timer.After) then
-        Fail()
-        return
-    end
-
-    -- The abandon call went out but the client still lists the quest. Wait for
-    -- QUEST_REMOVED or for the log to catch up before reporting a failure.
-    pendingAbandon = { entry = entry, questID = entry.followUp }
-    local function Confirm(step)
-        if not pendingAbandon then
-            return
-        end
-        if ClientQuestInLog(entry.followUp) == false then
-            Finish()
-            return
-        end
-        if step >= #ABANDON_CONFIRM_DELAYS then
-            Fail()
-            return
-        end
-        C_Timer.After(ABANDON_CONFIRM_DELAYS[step + 1], function()
-            Confirm(step + 1)
-        end)
-    end
-    C_Timer.After(ABANDON_CONFIRM_DELAYS[1], function()
-        Confirm(1)
-    end)
-end

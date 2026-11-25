@@ -5261,8 +5261,8 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             local panel=_G.ForeverQuestPinsBreadcrumb
             assert(panel and panel.shown)
             assert(FindWidget(created,"Button","Set Waypoint"))
-            assert(FindWidget(created,"Button","Abandon Quest"))
             assert(FindWidget(created,"Button","Ignore"))
+            assert(not FindWidget(created,"Button","Abandon Quest"))
             assert(HasWidgetText(created,"fontstring","You accepted"))
             assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
             assert(HasWidgetText(created,"fontstring","Follow-up A"))
@@ -5273,10 +5273,9 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
 
             local waypoint=FindWidget(created,"Button","Set Waypoint")
             local ignore=FindWidget(created,"Button","Ignore")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(waypoint.width==ignore.width and ignore.width==abandon.width,
+            assert(waypoint.width==ignore.width,
                 "the actions share one width")
-            assert(ignore.points[2]==waypoint and abandon.points[2]==ignore,
+            assert(ignore.points[2]==waypoint,
                 "the actions share one row")
             assert(panel.height and panel.height<220,
                 "an empty status line must not pad the dialog")
@@ -5319,7 +5318,7 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(#UISpecialFrames==1, "the dialog name is registered once")
 
 end
-cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
+cases["breadcrumbs_runtime.test_dialog_waypoint_and_quest_log_abandon"] = function()
 
             created={}
             ns={Quests={
@@ -5327,18 +5326,14 @@ cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
                 [1796]={title="Components for the Enchanted Gold Bloodrobe",mapID=1413},
                 [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
             }}
-            onQuest=true
-            readyForTurnIn=false
             canTrack=true
             trackMessage=nil
-            messages={}
-            print=function(message) table.insert(messages,message) end
             ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
             ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
             ns.IsQuestFlaggedCompleted=function() return false end
             ns.IsQuestHidden=function() return false end
-            ns.IsOnQuest=function(questID) return onQuest and questID==800 end
-            ns.IsQuestReadyForTurnIn=function() return readyForTurnIn end
+            ns.IsOnQuest=function(questID) return questID==800 end
+            ns.IsQuestReadyForTurnIn=function() return false end
             ns.GetPlayerRaceID=function() return 2 end
             ns.GetPlayerClassID=function() return 9 end
             ns.GetPlayerFaction=function() return "Horde" end
@@ -5347,23 +5342,15 @@ cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
             ns.TrackQuest=function(questID) tracked=questID; return true end
             UnitLevel=function() return 40 end
             InstallDialogStubs(ns, created)
-            local function RunTimers()
-                local guard=0
-                while #timers>0 and guard<12 do
-                    local queued=timers
-                    timers={}
-                    for i=1,#queued do queued[i]() end
-                    guard=guard+1
-                end
-            end
 
 assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
 
             ns.Breadcrumbs.HandleAccepted(800)
             local panel=_G.ForeverQuestPinsBreadcrumb
             local waypoint=FindWidget(created,"Button","Set Waypoint")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(panel.shown and waypoint and abandon)
+            assert(panel.shown and waypoint)
+            assert(not FindWidget(created,"Button","Abandon Quest"),
+                "the dialog no longer abandons the quest from addon code")
             assert(waypoint.enabled==true)
             assert(waypoint.disabledReason==nil,
                 "an enabled waypoint must not carry a disabled tooltip")
@@ -5378,101 +5365,17 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(waypoint.disabledReason=="No quest location is available yet.")
             canTrack=true
             trackMessage=nil
+            tracked=nil
             ns.Breadcrumbs.OnQuestEnded(800)
             assert(not panel.shown, "ending the follow-up closes the notice")
+            assert(tracked==4736, "the quest log abandon sets a waypoint to the breadcrumb")
 
-            onQuest=false
+            tracked=nil
             ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==false)
-            assert(abandon.disabledReason=="This quest is no longer in your log.")
-            abandon:GetScript("OnClick")()
-            assert(HasWidgetText(created,"fontstring","This quest is no longer in your log."))
-            assert(panel.status.points[3]>panel.divider.points[3],
-                "the failure message sits above the divider")
-            ns.Breadcrumbs.OnQuestEnded(800)
-
-            onQuest=true
-            readyForTurnIn=true
-            ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==false)
-            assert(abandon.disabledReason=="This quest is ready to turn in. Abandon it from the quest log instead.")
-            readyForTurnIn=false
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            C_QuestLog={IsOnQuest=function() return true end}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==true)
-            abandon:GetScript("OnClick")()
-            assert(#timers==0, "a missing abandon API fails without waiting")
             assert(panel.shown)
-            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
-
             ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            timers={}
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() abandonCalls=abandonCalls+1 end,
-                IsOnQuest=function() return clientInLog end,
-            }
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            RunTimers()
-            assert(abandonCalls==1, "the dialog must not abandon a second time")
-            assert(panel.shown)
-            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."),
-                "the failure appears only after the client has had time to catch up")
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            messages={}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            clientInLog=false
-            ns.Breadcrumbs.OnQuestEnded(800)
-            assert(not panel.shown)
-            RunTimers()
-            assert(HasMessage(messages,"Abandoned Follow-up."),
-                "QUEST_REMOVED confirms the abandon after the dialog closes")
-            local reports=0
-            for i=1,#messages do
-                if messages[i]:find("Abandoned Follow-up.",1,true) then reports=reports+1 end
-            end
-            assert(reports==1, "success is reported once")
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            messages={}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            clientInLog=false
-            RunTimers()
-            assert(not panel.shown and HasMessage(messages,"Abandoned Follow-up."),
-                "the poll confirms an abandon that arrives without QUEST_REMOVED")
-
-            clientInLog=true
-            abandonCalls=0
-            messages={}
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() abandonCalls=abandonCalls+1; clientInLog=false end,
-                IsOnQuest=function() return clientInLog end,
-            }
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and not panel.shown)
-            assert(HasMessage(messages,"Abandoned Follow-up."))
+            assert(not panel.shown and tracked==4736,
+                "the quest log abandon path sets a waypoint")
 
 end
 cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
@@ -5483,7 +5386,6 @@ cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
                 [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
             }}
             tracked=nil
-            clientAbandons=0
             ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
             ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
             ns.IsQuestFlaggedCompleted=function() return false end
@@ -5497,12 +5399,6 @@ cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
             ns.CanTrackQuest=function() return true end
             ns.TrackQuest=function(questID) tracked=questID; return true end
             UnitLevel=function() return 40 end
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() clientAbandons=clientAbandons+1 end,
-                IsOnQuest=function() return true end,
-            }
             InstallDialogStubs(ns, created)
 
 assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
@@ -5510,22 +5406,19 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             ns.Breadcrumbs.ShowPreview()
             local panel=_G.ForeverQuestPinsBreadcrumb
             local waypoint=FindWidget(created,"Button","Set Waypoint")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(panel.shown and waypoint and abandon)
-            assert(waypoint.enabled==false and abandon.enabled==false)
-            assert(waypoint.disabledReason==abandon.disabledReason)
+            assert(panel.shown and waypoint)
+            assert(not FindWidget(created,"Button","Abandon Quest"))
+            assert(waypoint.enabled==false)
             assert(waypoint.disabledReason:find("Preview only.",1,true))
 
             waypoint:GetScript("OnClick")()
-            abandon:GetScript("OnClick")()
             assert(tracked==nil, "a preview never creates a waypoint")
-            assert(clientAbandons==0, "a preview never abandons a quest")
             assert(panel.shown)
 
             ns.Breadcrumbs.HandleAccepted(1796)
-            assert(panel.shown and waypoint.enabled==true and abandon.enabled==true,
+            assert(panel.shown and waypoint.enabled==true,
                 "a real notice replaces an inert preview with the same breadcrumb")
-            assert(waypoint.disabledReason==nil and abandon.disabledReason==nil)
+            assert(waypoint.disabledReason==nil)
             assert(HasWidgetText(created,"fontstring","Components for the Enchanted Gold Bloodrobe"))
 
             panel:Hide()

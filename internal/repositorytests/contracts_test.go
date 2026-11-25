@@ -616,7 +616,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		"function ns.Breadcrumbs.ShowPreview",
 		"isBreadcrumb",
 		"altQuests",
-		"C_QuestLog.AbandonQuest",
+		"SetBreadcrumbWaypoint",
 		"ns.CanTrackQuest",
 		"ns.TrackQuest",
 	} {
@@ -626,6 +626,10 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	}
 	if strings.Contains(breadcrumbs, "C_Map.SetUserWaypoint") {
 		t.Fatal("Breadcrumbs.lua must create waypoints through ns.TrackQuest")
+	}
+	if strings.Contains(breadcrumbs, "C_QuestLog.SetSelectedQuest") ||
+		strings.Contains(breadcrumbs, "C_QuestLog.AbandonQuest") {
+		t.Fatal("Breadcrumbs.lua must not select or abandon quests from addon code")
 	}
 	tooltips := read(t, base, "NPCTooltips.lua")
 	for _, contract := range []string{"function Tooltips:GetTurnInRows(npcID)", "turnIns", "marker = \"?\"", "fqpQuestRows"} {
