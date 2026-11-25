@@ -2,6 +2,11 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.11 - 2026-11-25
+
+- Update the QuestieDB Forever artifact to `4d3e043e3c8d28014ec6f5d4d894d476769e1be99d060a174e14ca46038ebe50` (build `4377c981ac368d1593ec92788218e0a689a6a02b`).
+- Ship 6084 quests with 10472 coordinate pins (678 static instance quests, 220 yearly quests).
+
 ## 1.1.10 - 2026-11-25
 
 - Fix quest item icons in the beta tracker so clicking an icon uses the item. The row block now handles wheel and hover input without taking clicks, and the interactive controls sit above the reused row.
