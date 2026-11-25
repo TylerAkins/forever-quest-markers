@@ -1,5 +1,4 @@
-## 1.1.9 - 2026-11-24
+## 1.1.10 - 2026-11-25
 
-- Add a collectible library book pin category, off by default, with an optional bundled book icon for book-only pins. Hidden books are excluded from map pins, NPC tooltips, nameplates, and auto-accept.
-- Make **Select nearest quest** use the active beta tracker filter, so the selection matches the filtered tracker view.
-- Replace the low-level and high-level sliders with one two-handle level filter. Defaults stay at 9 levels below and all levels above.
+- Update the QuestieDB Forever artifact to `4d3e043e3c8d28014ec6f5d4d894d476769e1be99d060a174e14ca46038ebe50` (build `4377c981ac368d1593ec92788218e0a689a6a02b`).
+- Ship 6084 quests with 10472 coordinate pins (678 static instance quests, 220 yearly quests).
