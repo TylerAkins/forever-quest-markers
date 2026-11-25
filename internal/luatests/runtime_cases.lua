@@ -3050,6 +3050,39 @@ cases["map_pins_runtime.map_never_post_hooks_world_map_frame"] = function()
     assert(ns.MapPins:GetStatus().count > 0, "the watch still notices an open map")
 end
 
+cases["map_pins_runtime.combat_defers_map_work"] = function()
+    setupPinRendering()
+    local combat = true
+    InCombatLockdown = function() return combat end
+    local originalGetMapID = WorldMapFrame.GetMapID
+    local originalGetCanvas = WorldMapFrame.GetCanvas
+    local originalGetWidth = mapCanvas.GetWidth
+    local originalGetHeight = mapCanvas.GetHeight
+    local function refuseInCombat(name, original)
+        return function(...)
+            if combat then
+                error(name .. " must not run in combat")
+            end
+            return original(...)
+        end
+    end
+    WorldMapFrame.GetMapID = refuseInCombat("GetMapID", originalGetMapID)
+    WorldMapFrame.GetCanvas = refuseInCombat("GetCanvas", originalGetCanvas)
+    WorldMapFrame.GetCanvasScale = refuseInCombat("GetCanvasScale", function() return 1 end)
+    mapCanvas.GetWidth = refuseInCombat("GetWidth", originalGetWidth)
+    mapCanvas.GetHeight = refuseInCombat("GetHeight", originalGetHeight)
+    local refreshReasons = {}
+    ns.RequestRefresh = function(reason) refreshReasons[#refreshReasons + 1] = reason end
+
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(#refreshReasons == 0, "combat must not open or refresh the map")
+
+    combat = false
+    mapWatch.scripts.OnUpdate(mapWatch, 0.1)
+    assert(refreshReasons[#refreshReasons] == "map-show",
+        "the deferred map open runs after combat")
+end
+
 cases["map_pins_runtime.shift_click_hides_on_click_through_maps"] = function()
     setupPinRendering()
     local shiftHeld = false
@@ -5261,8 +5294,8 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             local panel=_G.ForeverQuestPinsBreadcrumb
             assert(panel and panel.shown)
             assert(FindWidget(created,"Button","Set Waypoint"))
-            assert(FindWidget(created,"Button","Abandon Quest"))
             assert(FindWidget(created,"Button","Ignore"))
+            assert(not FindWidget(created,"Button","Abandon Quest"))
             assert(HasWidgetText(created,"fontstring","You accepted"))
             assert(HasWidgetText(created,"fontstring","Breadcrumb A"))
             assert(HasWidgetText(created,"fontstring","Follow-up A"))
@@ -5273,10 +5306,9 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
 
             local waypoint=FindWidget(created,"Button","Set Waypoint")
             local ignore=FindWidget(created,"Button","Ignore")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(waypoint.width==ignore.width and ignore.width==abandon.width,
+            assert(waypoint.width==ignore.width,
                 "the actions share one width")
-            assert(ignore.points[2]==waypoint and abandon.points[2]==ignore,
+            assert(ignore.points[2]==waypoint,
                 "the actions share one row")
             assert(panel.height and panel.height<220,
                 "an empty status line must not pad the dialog")
@@ -5319,7 +5351,7 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(#UISpecialFrames==1, "the dialog name is registered once")
 
 end
-cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
+cases["breadcrumbs_runtime.test_dialog_waypoint_and_quest_log_abandon"] = function()
 
             created={}
             ns={Quests={
@@ -5327,18 +5359,14 @@ cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
                 [1796]={title="Components for the Enchanted Gold Bloodrobe",mapID=1413},
                 [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
             }}
-            onQuest=true
-            readyForTurnIn=false
             canTrack=true
             trackMessage=nil
-            messages={}
-            print=function(message) table.insert(messages,message) end
             ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
             ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
             ns.IsQuestFlaggedCompleted=function() return false end
             ns.IsQuestHidden=function() return false end
-            ns.IsOnQuest=function(questID) return onQuest and questID==800 end
-            ns.IsQuestReadyForTurnIn=function() return readyForTurnIn end
+            ns.IsOnQuest=function(questID) return questID==800 end
+            ns.IsQuestReadyForTurnIn=function() return false end
             ns.GetPlayerRaceID=function() return 2 end
             ns.GetPlayerClassID=function() return 9 end
             ns.GetPlayerFaction=function() return "Horde" end
@@ -5347,23 +5375,15 @@ cases["breadcrumbs_runtime.test_dialog_waypoint_and_abandon"] = function()
             ns.TrackQuest=function(questID) tracked=questID; return true end
             UnitLevel=function() return 40 end
             InstallDialogStubs(ns, created)
-            local function RunTimers()
-                local guard=0
-                while #timers>0 and guard<12 do
-                    local queued=timers
-                    timers={}
-                    for i=1,#queued do queued[i]() end
-                    guard=guard+1
-                end
-            end
 
 assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
 
             ns.Breadcrumbs.HandleAccepted(800)
             local panel=_G.ForeverQuestPinsBreadcrumb
             local waypoint=FindWidget(created,"Button","Set Waypoint")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(panel.shown and waypoint and abandon)
+            assert(panel.shown and waypoint)
+            assert(not FindWidget(created,"Button","Abandon Quest"),
+                "the dialog no longer abandons the quest from addon code")
             assert(waypoint.enabled==true)
             assert(waypoint.disabledReason==nil,
                 "an enabled waypoint must not carry a disabled tooltip")
@@ -5378,101 +5398,17 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             assert(waypoint.disabledReason=="No quest location is available yet.")
             canTrack=true
             trackMessage=nil
+            tracked=nil
             ns.Breadcrumbs.OnQuestEnded(800)
             assert(not panel.shown, "ending the follow-up closes the notice")
+            assert(tracked==4736, "the quest log abandon sets a waypoint to the breadcrumb")
 
-            onQuest=false
+            tracked=nil
             ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==false)
-            assert(abandon.disabledReason=="This quest is no longer in your log.")
-            abandon:GetScript("OnClick")()
-            assert(HasWidgetText(created,"fontstring","This quest is no longer in your log."))
-            assert(panel.status.points[3]>panel.divider.points[3],
-                "the failure message sits above the divider")
-            ns.Breadcrumbs.OnQuestEnded(800)
-
-            onQuest=true
-            readyForTurnIn=true
-            ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==false)
-            assert(abandon.disabledReason=="This quest is ready to turn in. Abandon it from the quest log instead.")
-            readyForTurnIn=false
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            C_QuestLog={IsOnQuest=function() return true end}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            assert(abandon.enabled==true)
-            abandon:GetScript("OnClick")()
-            assert(#timers==0, "a missing abandon API fails without waiting")
             assert(panel.shown)
-            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."))
-
             ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            timers={}
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() abandonCalls=abandonCalls+1 end,
-                IsOnQuest=function() return clientInLog end,
-            }
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            RunTimers()
-            assert(abandonCalls==1, "the dialog must not abandon a second time")
-            assert(panel.shown)
-            assert(HasWidgetText(created,"fontstring","Could not abandon this quest."),
-                "the failure appears only after the client has had time to catch up")
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            messages={}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            clientInLog=false
-            ns.Breadcrumbs.OnQuestEnded(800)
-            assert(not panel.shown)
-            RunTimers()
-            assert(HasMessage(messages,"Abandoned Follow-up."),
-                "QUEST_REMOVED confirms the abandon after the dialog closes")
-            local reports=0
-            for i=1,#messages do
-                if messages[i]:find("Abandoned Follow-up.",1,true) then reports=reports+1 end
-            end
-            assert(reports==1, "success is reported once")
-
-            ns.Breadcrumbs.OnQuestEnded(800)
-            abandonCalls=0
-            clientInLog=true
-            messages={}
-            timers={}
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and #timers==1)
-            clientInLog=false
-            RunTimers()
-            assert(not panel.shown and HasMessage(messages,"Abandoned Follow-up."),
-                "the poll confirms an abandon that arrives without QUEST_REMOVED")
-
-            clientInLog=true
-            abandonCalls=0
-            messages={}
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() abandonCalls=abandonCalls+1; clientInLog=false end,
-                IsOnQuest=function() return clientInLog end,
-            }
-            ns.Breadcrumbs.HandleAccepted(800)
-            abandon:GetScript("OnClick")()
-            assert(abandonCalls==1 and not panel.shown)
-            assert(HasMessage(messages,"Abandoned Follow-up."))
+            assert(not panel.shown and tracked==4736,
+                "the quest log abandon path sets a waypoint")
 
 end
 cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
@@ -5483,7 +5419,6 @@ cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
                 [4736]={isBreadcrumb=true,mapID=1455,title="In Search of Menara Voidrender"},
             }}
             tracked=nil
-            clientAbandons=0
             ns.GetOption=function(key) return key=="warnSkippedBreadcrumb" and true or false end
             ns.GetQuestTitle=function(questID) return ns.Quests[questID] and ns.Quests[questID].title end
             ns.IsQuestFlaggedCompleted=function() return false end
@@ -5497,12 +5432,6 @@ cases["breadcrumbs_runtime.test_preview_is_inert"] = function()
             ns.CanTrackQuest=function() return true end
             ns.TrackQuest=function(questID) tracked=questID; return true end
             UnitLevel=function() return 40 end
-            C_QuestLog={
-                SetSelectedQuest=function() end,
-                SetAbandonQuest=function() end,
-                AbandonQuest=function() clientAbandons=clientAbandons+1 end,
-                IsOnQuest=function() return true end,
-            }
             InstallDialogStubs(ns, created)
 
 assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
@@ -5510,22 +5439,19 @@ assert(loadfile("Breadcrumbs.lua"))("ForeverQuestPins", ns)
             ns.Breadcrumbs.ShowPreview()
             local panel=_G.ForeverQuestPinsBreadcrumb
             local waypoint=FindWidget(created,"Button","Set Waypoint")
-            local abandon=FindWidget(created,"Button","Abandon Quest")
-            assert(panel.shown and waypoint and abandon)
-            assert(waypoint.enabled==false and abandon.enabled==false)
-            assert(waypoint.disabledReason==abandon.disabledReason)
+            assert(panel.shown and waypoint)
+            assert(not FindWidget(created,"Button","Abandon Quest"))
+            assert(waypoint.enabled==false)
             assert(waypoint.disabledReason:find("Preview only.",1,true))
 
             waypoint:GetScript("OnClick")()
-            abandon:GetScript("OnClick")()
             assert(tracked==nil, "a preview never creates a waypoint")
-            assert(clientAbandons==0, "a preview never abandons a quest")
             assert(panel.shown)
 
             ns.Breadcrumbs.HandleAccepted(1796)
-            assert(panel.shown and waypoint.enabled==true and abandon.enabled==true,
+            assert(panel.shown and waypoint.enabled==true,
                 "a real notice replaces an inert preview with the same breadcrumb")
-            assert(waypoint.disabledReason==nil and abandon.disabledReason==nil)
+            assert(waypoint.disabledReason==nil)
             assert(HasWidgetText(created,"fontstring","Components for the Enchanted Gold Bloodrobe"))
 
             panel:Hide()
@@ -6338,13 +6264,40 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetPoint() end
         function frame:ClearAllPoints() end
         function frame:SetParent(parent) self.parent = parent end
+        function frame:GetParent() return self.parent end
         function frame:SetHeight(height) self.height = height end
         function frame:GetHeight() return self.height or 0 end
         function frame:SetWidth(width) self.width = width end
         function frame:GetWidth() return self.width or 0 end
         function frame:SetSize(width, height) self.width, self.height = width, height end
-        function frame:EnableMouse() end
-        function frame:EnableMouseWheel() end
+        function frame:GetPoint() return "TOPRIGHT", UIParent, "TOPRIGHT", -20, -20 end
+        function frame:SetScale() end
+        function frame:GetScale() return 1 end
+        function frame:SetAlpha() end
+        function frame:GetAlpha() return 1 end
+        function frame:SetFrameStrata() end
+        function frame:GetFrameStrata() return "MEDIUM" end
+        function frame:SetFrameLevel(level) self.frameLevel = level end
+        function frame:GetFrameLevel() return self.frameLevel or 1 end
+        function frame:SetClampedToScreen(value) self.clampedToScreen = value end
+        function frame:GetClampedToScreen() return self.clampedToScreen or false end
+        function frame:SetMovable(value) self.movable = value end
+        function frame:SetResizable(value) self.resizable = value end
+        function frame:SetUserPlaced(value) self.userPlaced = value end
+        function frame:SetDontSavePosition(value) self.dontSavePosition = value end
+        function frame:RegisterForDrag() end
+        function frame:StartMoving() end
+        function frame:StopMovingOrSizing() end
+        function frame:EnableMouse(enabled)
+            self.mouseEnabled = enabled ~= false
+            self.mouseClickEnabled = self.mouseEnabled
+        end
+        function frame:SetMouseClickEnabled(enabled)
+            self.mouseClickEnabled = enabled
+        end
+        function frame:EnableMouseWheel(enabled)
+            self.wheelEnabled = enabled ~= false
+        end
         function frame:Show() self.shown = true end
         function frame:Hide() self.shown = false end
         function frame:SetShown(shown) self.shown = shown end
@@ -6403,6 +6356,16 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         OnBlockHeaderClick = function() end,
         OnBlockHeaderEnter = function() end,
         OnBlockHeaderLeave = function() end,
+        SetContainer = function(self, container)
+            self.parentContainer = container
+            self:SetParent(container)
+        end,
+        Update = function(self, availableHeight, dirtyUpdate)
+            self.availableHeight = availableHeight
+            self.dirty = false
+            return self.contentsHeight or 0
+        end,
+        IsCollapsed = function(self) return self.collapsed == true end,
     }
     ObjectiveTrackerModuleMixin = {
         LayoutBlock = function(_, block) block.used = true; return true end,
@@ -6476,26 +6439,70 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(ns.TryRegisterQuestTracker())
     assert(transitionRegistered, "gamepad subscribers must register interface transitions first")
     local ourModule
+    local standaloneTracker
     for _, frame in ipairs(frames) do
         if frame.name == "FQPQuestObjectiveTracker" then ourModule = frame end
+        if frame.name == "FQPStandaloneTracker" then standaloneTracker = frame end
     end
     assert(ourModule, "the addon must create its tracker module")
+    assert(standaloneTracker, "the addon must create its standalone tracker container")
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "the beta starts off with Blizzard's module")
 
     options.enhanceQuestTracker = true
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == ourModule)
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "the standalone tracker removes Blizzard's quest module from its container")
+    assert(standaloneTracker.module == ourModule,
+        "the standalone tracker owns the custom quest module")
     assert(QuestObjectiveTracker.shown == false)
-    assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == ObjectiveTrackerFrame)
+    assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
+        "the standalone module's context menu parent is its own container")
+    assert(ourModule.OnBlockHeaderClick == QuestObjectiveTrackerMixin.OnBlockHeaderClick,
+        "quest clicks stay on Blizzard's handler so the map is not tainted")
     assert(QuestObjectiveTracker.unregisteredEvents
         and QuestObjectiveTracker.unregisteredEvents.QUEST_LOG_UPDATE,
         "Blizzard's quest events are suspended while our module is active")
     ourModule.events.QUEST_LOG_UPDATE = true
 
+    local wheelBlock = fakeFrame("Frame", nil, ourModule)
+    wheelBlock.HeaderButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.ItemButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.poiButton = fakeFrame("Button", nil, wheelBlock)
+    wheelBlock.zoneCollapseButton = fakeFrame("Button", nil, wheelBlock)
+    ourModule:EnableBlockWheel(wheelBlock)
+    assert(wheelBlock.mouseEnabled == true, "the block keeps hover and wheel input")
+    assert(wheelBlock.mouseClickEnabled == false,
+        "the block must not swallow clicks meant for its quest item button")
+    assert(wheelBlock.wheelEnabled == true, "the block still scrolls")
+    assert(wheelBlock.scripts.OnMouseWheel, "the block handles the wheel")
+    for _, child in ipairs({ wheelBlock.HeaderButton, wheelBlock.ItemButton, wheelBlock.poiButton, wheelBlock.zoneCollapseButton }) do
+        assert(child.wheelEnabled == true, "each row control scrolls")
+        assert(child.scripts.OnMouseWheel, "each row control handles the wheel")
+    end
+    local zoneBlock = fakeFrame("Frame", nil, ourModule)
+    zoneBlock.zoneName = "Ashenvale"
+    ourModule:EnableBlockWheel(zoneBlock)
+    assert(zoneBlock.mouseClickEnabled == true,
+        "zone headers keep their row click so the area beside the collapse arrow toggles")
+    local popupBlock = fakeFrame("Frame", nil, ourModule)
+    popupBlock.template = "AutoQuestPopUpBlockTemplate"
+    ourModule:EnableBlockWheel(popupBlock)
+    assert(popupBlock.mouseClickEnabled == true,
+        "auto-quest popups keep their row click so the popup opens")
+    local reusedBlock = fakeFrame("Frame", nil, ourModule)
+    ourModule:EnableBlockWheel(reusedBlock)
+    assert(reusedBlock.mouseClickEnabled == false,
+        "a plain block starts without row clicks")
+    reusedBlock.zoneName = "Darkshore"
+    ourModule:EnableBlockWheel(reusedBlock)
+    assert(reusedBlock.mouseClickEnabled == true,
+        "a pooled block that becomes a zone header gets its row click back")
+
     options.enhanceQuestTracker = false
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker)
+    assert(standaloneTracker.module == nil, "disabling the beta clears the standalone tracker")
     assert(ourModule.shown == false)
     assert(QuestObjectiveTracker.events.QUEST_LOG_UPDATE == true,
         "Blizzard's quest events are restored with its module")
@@ -6507,10 +6514,13 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "gamepad UI must keep Blizzard's tracker")
+    assert(standaloneTracker.module == nil, "gamepad UI hides the standalone tracker")
 
     gamepad = false
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == ourModule)
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "the standalone tracker replaces Blizzard's quest module")
+    assert(standaloneTracker.module == ourModule)
     assert(ourModule.events.QUEST_LOG_UPDATE == true,
         "our module's quest events are restored with the beta")
 
@@ -6519,6 +6529,36 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     gamepadInit()
     assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
         "gamepad init must restore Blizzard's module even in combat")
+    assert(standaloneTracker.module == nil, "gamepad init hides the standalone tracker")
+
+    gamepad = false
+    InCombatLockdown = function() return false end
+    options.enhanceQuestTracker = true
+    ns.ApplyTrackerState()
+    assert(#ObjectiveTrackerFrame.modules == 0, "the standalone tracker stays active")
+    assert(standaloneTracker.module == ourModule)
+    local eventFrame
+    for _, frame in ipairs(frames) do
+        if frame.events and frame.events.PLAYER_REGEN_DISABLED then eventFrame = frame end
+    end
+    assert(eventFrame, "the tracker registers combat events")
+    assert(eventFrame.events.QUEST_ACCEPTED, "the tracker listens for quest accepts")
+    assert(eventFrame.events.QUEST_LOG_UPDATE, "the tracker listens for quest log updates")
+    assert(eventFrame.events.QUEST_WATCH_LIST_CHANGED, "the tracker listens for watch list changes")
+    local dirtyBefore = ourModule.dirty or 0
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_ACCEPTED", 12345)
+    assert((ourModule.dirty or 0) == dirtyBefore + 1,
+        "a quest event marks the tracker dirty when the module events miss it")
+    InCombatLockdown = function() return true end
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_REGEN_DISABLED")
+    assert(standaloneTracker.module == ourModule,
+        "combat keeps the standalone tracker instead of reverting to Blizzard's")
+    assert(#ObjectiveTrackerFrame.modules == 0,
+        "Blizzard's quest module stays removed during combat")
+    InCombatLockdown = function() return false end
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_REGEN_ENABLED")
+    assert(standaloneTracker.module == ourModule,
+        "the standalone tracker remains active after combat")
 
     ourModule.availableHeight = 125
     ourModule.contentsHeight = 425
@@ -6527,7 +6567,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(ourModule.contentsHeight == 110, "the module height leaves room above the action bars")
     assert(ourModule.ScrollFrame.height == 85)
     assert(ourModule.ScrollFrame.shown == true)
-    assert(ourModule.ContentsFrame.height == 408, "content keeps its full height plus scroll padding")
+    assert(ourModule.ContentsFrame.height == 416, "content keeps its full height plus scroll padding")
     ourModule:Scroll(-1)
     assert(ourModule.ScrollFrame.scroll == 36)
     ourModule:Scroll(1)
@@ -6537,8 +6577,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule.contentsHeight = 125
     ourModule.ScrollFrame.range = 0
     ourModule:UpdateScrollViewport()
-    assert(ourModule.contentsHeight == 125, "short content keeps its natural height")
-    assert(ourModule.ContentsFrame.height == 108, "short content still gets bottom padding")
+    assert(ourModule.contentsHeight == 485, "short content fills the available height")
+    assert(ourModule.ContentsFrame.height == 460, "the scroll viewport fills the available height")
 
     local zoneInfos = {
         { zoneName = "Ashenvale", quest = { id = 102 } },
@@ -6547,7 +6587,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     }
     ourModule.ScrollFrame.width = 260
     ourModule:UpdateScrollContentSize()
-    assert(ourModule.ContentsFrame.width == 260, "content width is set before block layout")
+    assert(ourModule.ContentsFrame.width == 252, "content width leaves room for the item button overhang")
     local autoBlock = { offsetX = -20 }
     ourModule:AnchorBlock(autoBlock)
     assert(autoBlock.offsetX == 0, "auto quest popup offset is clamped inside the scroll content")
@@ -6582,6 +6622,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(#seen == 3)
     assert(headers["zone:Ashenvale"] and headers["zone:Darkshore"])
     assert(headers["zone:Ashenvale"].offsetX == 7, "zone headers align with the Quests header")
+    assert(headers["zone:Ashenvale"].OnHeaderClick,
+        "zone headers own their click instead of the module's quest handler")
     collapsed["Darkshore"] = true
     seen = {}
     ourModule:EnumQuestWatchData(function(_, quest)
@@ -6684,6 +6726,95 @@ cases["tracker_runtime.beta_marker_survives_in_cvar_mirror"] = function()
         "the beta marker must be written back to the mirror")
     assert(mirrorText:find("trackerCollapseReset=1", 1, true),
         "the collapse reset marker must be written back to the mirror")
+end
+
+cases["spoken_tracker_runtime.attaches_play_button_to_quest_blocks"] = function()
+    local function fakeButton(parent)
+        local button = { shown = false, points = {} }
+        function button:SetSize(width, height) self.width, self.height = width, height end
+        function button:SetHitRectInsets() end
+        function button:ClearAllPoints() self.points = {} end
+        function button:SetPoint(...) self.points[#self.points + 1] = { ... } end
+        function button:CreateTexture()
+            local texture = {}
+            function texture:SetPoint(...) self.point = { ... } end
+            function texture:SetColorTexture(...) self.color = { ... } end
+            return texture
+        end
+        function button:SetFrameLevel(level) self.frameLevel = level end
+        function button:Show() self.shown = true end
+        function button:Hide() self.shown = false end
+        function button:IsShown() return self.shown end
+        button.parent = parent
+        return button
+    end
+
+    CreateFrame = function()
+        return {
+            RegisterEvent = function() end,
+            SetScript = function() end,
+        }
+    end
+    hooksecurefunc = function(target, key, hook)
+        local original = target[key]
+        target[key] = function(...)
+            local result = original and original(...)
+            hook(...)
+            return result
+        end
+    end
+
+    Spoken = {
+        RegisterCallback = function() end,
+        DressBoxButton = function(_, button)
+            button.SetBox = function(self, atlas, width, height)
+                self.box = { atlas = atlas, width = width, height = height }
+            end
+            button.SetState = function() end
+        end,
+    }
+    local ui
+    ui = {
+        shows = true,
+        FollowQueue = function() end,
+        ShowsTrackerButton = function(self, questID) return self.shows and questID == 123 end,
+        BindPlayButton = function(self, button, questID, title, origin)
+            self.bound = { button = button, questID = questID, title = title, origin = origin }
+            button.questID = questID
+        end,
+        SetPlayButtonState = function() end,
+        UpdateTrackerButtons = function() end,
+    }
+    VoiceOver = {
+        Utils = {
+            CreateDetachedFrame = function(_, _, _, parent) return fakeButton(parent) end,
+        },
+        QuestOverlayUI = ui,
+    }
+
+    local module = { usedBlocks = {} }
+    function module:AddBlock(block)
+        self.usedBlocks["ObjectiveTrackerBlockTemplate"] = self.usedBlocks["ObjectiveTrackerBlockTemplate"] or {}
+        self.usedBlocks["ObjectiveTrackerBlockTemplate"][block.id] = block
+    end
+    local block = { id = 123, GetFrameLevel = function() return 5 end }
+
+    local ns = { GetOption = function() return false end }
+    assert(loadfile("SpokenTracker.lua"))("ForeverQuestPins", ns)
+    ns.InstallSpokenTrackerBridge(module)
+    module:AddBlock(block)
+    assert(ui.bound and ui.bound.questID == 123, "a quest block gets a Spoken play button")
+    assert(ui.bound.button:IsShown(), "the Spoken play button is shown")
+    assert(ui.bound.button.frameLevel == 8, "the play button sits above the quest row")
+    assert(ui.bound.button.box and ui.bound.button.box.atlas == "QuestLog-icon-ticksquare")
+
+    ui.shows = false
+    module:AddBlock(block)
+    assert(not ui.bound.button:IsShown(), "a quest with no Spoken line hides the play button")
+
+    Spoken = nil
+    VoiceOver = nil
+    module:AddBlock({ id = 124, GetFrameLevel = function() return 5 end })
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

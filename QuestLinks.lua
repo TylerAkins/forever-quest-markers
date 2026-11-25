@@ -82,7 +82,8 @@ function ns.TryRegisterQuestLinks()
         return false
     end
     Menu.ModifyMenu("MENU_QUEST_OBJECTIVE_TRACKER", function(owner, root)
-        if owner ~= tracker:GetContextMenuParent() then
+        local ownTracker = ns.GetTrackerContextMenuParent and ns.GetTrackerContextMenuParent()
+        if owner ~= tracker:GetContextMenuParent() and owner ~= ownTracker then
             return
         end
         local questID = hoveredBlock and hoveredBlock.id

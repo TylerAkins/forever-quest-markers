@@ -12,7 +12,7 @@
 ## SavedVariables: ForeverQuestPinsDB, ForeverQuestPinsDB_Settings
 ## SavedVariablesPerCharacter: ForeverQuestPinsCharDB, ForeverQuestPinsCharacterSettings
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
-## OptionalDeps: TomTom
+## OptionalDeps: TomTom, Spoken, Spoken_Quests
 ## DefaultState: enabled
 
 Database\Metadata.lua
@@ -41,3 +41,4 @@ QuestLinks.lua
 TrackerData.lua
 Tracker.lua
 Core.lua
+SpokenTracker.lua

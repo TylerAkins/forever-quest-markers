@@ -24,6 +24,11 @@ local FILTER_LABELS = ns.TrackerFilterLabels or {
 local MODULE_NAME = "FQPQuestObjectiveTracker"
 local SCROLL_STEP = 36
 local CONTENT_BOTTOM_PADDING = 8
+-- The quest item button's normal texture is 42px on a 26px button, so it
+-- overhangs the block by 8px. The scroll child clips at its own edge, so keep
+-- that much room above and right of the content for the overhang.
+local CONTENT_TOP_PADDING = 8
+local CONTENT_RIGHT_PADDING = 8
 local DEFAULT_BOTTOM_INSET = 15
 local SCROLL_LEFT_INSET = 0
 
@@ -49,7 +54,185 @@ local gamepadRegistered = false
 local eventFrame
 local registerRetries = 0
 local blizzardEventsSuspended = false
-local moduleEventsSuspended = false
+local standaloneFrame
+
+local function CopyFrameLayout(target, source)
+    if not source then
+        return
+    end
+    local point, relativeTo, relativePoint, x, y
+    if source.GetPoint then
+        point, relativeTo, relativePoint, x, y = source:GetPoint(1)
+    end
+    if point then
+        target:ClearAllPoints()
+        target:SetPoint(point, relativeTo or UIParent, relativePoint or point, x or 0, y or 0)
+    else
+        target:ClearAllPoints()
+        target:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -20)
+    end
+    local sourceHeight = source.editModeHeight
+    if not sourceHeight and source.GetHeight then
+        sourceHeight = source:GetHeight()
+    end
+    local sourceWidth = source.GetWidth and source:GetWidth() or 0
+    target:SetSize(math.max(sourceWidth or 0, 200), math.max(sourceHeight or 0, 300))
+    if source.GetScale and target.SetScale then
+        target:SetScale(source:GetScale())
+    end
+    if source.GetAlpha and target.SetAlpha then
+        target:SetAlpha(source:GetAlpha())
+    end
+    if source.GetFrameStrata and target.SetFrameStrata then
+        target:SetFrameStrata(source:GetFrameStrata())
+    end
+    if source.GetFrameLevel and target.SetFrameLevel then
+        target:SetFrameLevel((source:GetFrameLevel() or 0) + 1)
+    end
+    if source.GetClampedToScreen and target.SetClampedToScreen then
+        target:SetClampedToScreen(source:GetClampedToScreen())
+    end
+    target:SetMovable(true)
+    target:SetResizable(true)
+    target:SetUserPlaced(true)
+    target:SetDontSavePosition(false)
+end
+
+-- The standalone frame is not part of Edit Mode. Read the tracker's current
+-- viewport height so the height slider still controls how much it shows.
+local function SourceTrackerHeight()
+    local source = ObjectiveTrackerFrame
+    if not source then
+        return nil
+    end
+    local height = source.GetHeight and source:GetHeight()
+    local editHeight = source.editModeHeight
+    if type(editHeight) == "number" and editHeight > 0
+        and (type(height) ~= "number" or editHeight > height) then
+        height = editHeight
+    end
+    if type(height) == "number" and height > 0 then
+        return height
+    end
+    return nil
+end
+
+local function CreateStandaloneContainer()
+    if standaloneFrame then
+        return standaloneFrame
+    end
+    local frame = CreateFrame("Frame", "FQPStandaloneTracker", UIParent)
+    CopyFrameLayout(frame, ObjectiveTrackerFrame)
+    frame.module = nil
+    frame.dirty = false
+    -- The frame fills the source tracker's height. The module scrolls inside
+    -- it, using the same height as its viewport.
+    frame.availableHeight = frame:GetHeight()
+    local sourceHeight = SourceTrackerHeight()
+
+    function frame:MarkDirty()
+        if self.dirty then
+            return
+        end
+        self.dirty = true
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0, function()
+                if self.dirty then
+                    self:Update()
+                end
+            end)
+        else
+            self:Update()
+        end
+    end
+
+    function frame:GetAvailableHeight()
+        return SourceTrackerHeight() or self.availableHeight or self:GetHeight()
+    end
+
+    function frame:IsCollapsed()
+        return false
+    end
+
+    function frame:SetCollapsed()
+    end
+
+    function frame:ToggleCollapsed()
+    end
+
+    function frame:ForceExpand()
+        self:MarkDirty()
+    end
+
+    function frame:OnAdded()
+        self:MarkDirty()
+    end
+
+    function frame:Init()
+    end
+
+    function frame:AddModule(module)
+        self.module = module
+        module:SetContainer(self)
+        self:MarkDirty()
+    end
+
+    function frame:RemoveModule(module)
+        if self.module == module then
+            self.module = nil
+        end
+        self:MarkDirty()
+    end
+
+    function frame:HasAnyModule()
+        return self.module ~= nil
+    end
+
+    function frame:HasAnyModules()
+        return self.module ~= nil
+    end
+
+    function frame:ForEachModule(fn)
+        if self.module then
+            fn(self.module)
+        end
+    end
+
+    function frame:SetBackgroundAlpha(alpha)
+    end
+
+    function frame:Update()
+        self.dirty = false
+        local module = self.module
+        if not module then
+            self:Hide()
+            return
+        end
+        module:SetWidth(self:GetWidth())
+        local available = self:GetAvailableHeight()
+        module:Update(available, true)
+        self:SetHeight(available)
+        self:SetShown(module:IsShown())
+    end
+
+    -- Edit Mode changes the source frame's height without an event our tracker
+    -- listens to. Poll it cheaply and relayout when it changes.
+    frame:SetScript("OnUpdate", function(self, elapsed)
+        self.heightCheck = (self.heightCheck or 0) + elapsed
+        if self.heightCheck < 0.25 then
+            return
+        end
+        self.heightCheck = 0
+        local height = SourceTrackerHeight()
+        if height and height ~= sourceHeight then
+            sourceHeight = height
+            self:MarkDirty()
+        end
+    end)
+
+    standaloneFrame = frame
+    return frame
+end
 
 local function InCombat()
     if InCombatLockdown then
@@ -496,6 +679,29 @@ function ns.PrintTrackerDebug()
             tostring(module.ContentsFrame:GetHeight()),
             tostring(UIParent and UIParent:GetHeight())))
     end
+    local moduleEvents = module.events
+    if type(moduleEvents) == "table" and #moduleEvents > 0 then
+        local parts = {}
+        for i = 1, #moduleEvents do
+            local event = moduleEvents[i]
+            local isRegistered = module.IsEventRegistered and module:IsEventRegistered(event) or "?"
+            parts[#parts + 1] = event .. "=" .. tostring(isRegistered)
+        end
+        p("events: " .. table.concat(parts, ", "))
+    else
+        p("events: none")
+    end
+    if ns.SpokenBridgeStatus then
+        local status = ns.SpokenBridgeStatus()
+        p(("spoken=%s voiceover=%s spokenUI=%s bridgeModule=%s bridgeHooked=%s bridgeButtons=%s bridgeShown=%s"):format(
+            tostring(status.spoken),
+            tostring(status.voiceOver),
+            tostring(status.ui),
+            tostring(status.module),
+            tostring(status.hooked),
+            tostring(status.buttons),
+            tostring(status.shown)))
+    end
     local watched = C_QuestLog and C_QuestLog.GetNumQuestWatches and C_QuestLog.GetNumQuestWatches() or "?"
     local ok, infos = pcall(module.BuildQuestWatchInfos, module)
     if not ok or type(infos) ~= "table" then
@@ -562,6 +768,15 @@ local function AddZoneHeader(self, zone)
             self:ToggleZoneCollapse(clicked)
         end
     end)
+    -- The header button's OnClick calls the block's OnHeaderClick. Blizzard's
+    -- version forwards to the module's OnBlockHeaderClick, which opens the
+    -- quest details. A zone header has no quest, so it owns its click here
+    -- and the module leaves Blizzard's quest handler in the secure path.
+    block.OnHeaderClick = function(clicked, button)
+        if button == "LeftButton" then
+            self:ToggleZoneCollapse(clicked)
+        end
+    end
     block:SetHeader(zone)
     local headerColor = OBJECTIVE_TRACKER_COLOR
         and (OBJECTIVE_TRACKER_COLOR.HeaderHighlight or OBJECTIVE_TRACKER_COLOR.Header)
@@ -604,6 +819,23 @@ local function BuildTrackerMixin()
 
     function mixin:BuildQuestWatchInfos()
         local infos = QuestObjectiveTrackerMixin.BuildQuestWatchInfos(self)
+        -- A turned-in quest can linger in the watch list for a frame or more.
+        -- Keep only quests that are still in the quest log so the tracker
+        -- drops them as soon as the client reports the turn-in.
+        if C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
+            local inLog = {}
+            for i = 1, #infos do
+                local quest = infos[i].quest
+                local questID = quest and quest.GetID and quest:GetID()
+                if type(questID) == "number" then
+                    local logIndex = C_QuestLog.GetLogIndexForQuestID(questID)
+                    if type(logIndex) == "number" and logIndex > 0 then
+                        inLog[#inLog + 1] = infos[i]
+                    end
+                end
+            end
+            infos = inLog
+        end
         return ns.EnhanceQuestWatchInfos(self, infos)
     end
 
@@ -704,13 +936,13 @@ local function BuildTrackerMixin()
             return
         end
         content:ClearAllPoints()
-        content:SetPoint("TOPLEFT", scroll, "TOPLEFT", SCROLL_LEFT_INSET, 0)
-        local contentWidth = (scroll:GetWidth() or 0) - SCROLL_LEFT_INSET
+        content:SetPoint("TOPLEFT", scroll, "TOPLEFT", SCROLL_LEFT_INSET, -CONTENT_TOP_PADDING)
+        local contentWidth = (scroll:GetWidth() or 0) - SCROLL_LEFT_INSET - CONTENT_RIGHT_PADDING
         if contentWidth <= 1 then
-            contentWidth = (self:GetWidth() or 0) - SCROLL_LEFT_INSET
+            contentWidth = (self:GetWidth() or 0) - SCROLL_LEFT_INSET - CONTENT_RIGHT_PADDING
         end
         if contentWidth <= 1 and self.Header then
-            contentWidth = (self.Header:GetWidth() or 0) - SCROLL_LEFT_INSET
+            contentWidth = (self.Header:GetWidth() or 0) - SCROLL_LEFT_INSET - CONTENT_RIGHT_PADDING
         end
         content:SetWidth(math.max(contentWidth, 1))
     end
@@ -726,11 +958,14 @@ local function BuildTrackerMixin()
         local fullHeight = self.contentsHeight or headerHeight
         local contentHeight = math.max(0, fullHeight - headerHeight)
         local available = self.availableHeight or 0
-        local viewport = math.min(contentHeight, math.max(0, available - headerHeight - BottomViewportInset()))
+        local viewport = math.max(0, available - headerHeight - BottomViewportInset())
+        if self:IsCollapsed() then
+            viewport = 0
+        end
         self.contentsHeight = headerHeight + viewport
         scroll:SetHeight(math.max(viewport, 1))
         scroll:SetShown(viewport > 0)
-        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING, viewport, 1))
+        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING, viewport, 1))
         scroll:UpdateScrollChildRect()
         local range = scroll:GetVerticalScrollRange() or 0
         local offset = scroll:GetVerticalScroll() or 0
@@ -740,6 +975,12 @@ local function BuildTrackerMixin()
     end
 
     function mixin:LayoutContents()
+        if self.Header and self.Header.SetWidth then
+            local width = self:GetWidth() or 0
+            if width > 1 then
+                self.Header:SetWidth(width)
+            end
+        end
         self:UpdateScrollContentSize()
         QuestObjectiveTrackerMixin.LayoutContents(self)
         self:UpdateScrollViewport()
@@ -769,6 +1010,43 @@ local function BuildTrackerMixin()
             block:SetScript("OnMouseWheel", function(_, delta)
                 self:Scroll(delta)
             end)
+        end
+        -- Quest blocks span the whole row. Keep their wheel and hover
+        -- handling, but let the header, item, and POI buttons own clicks.
+        -- Otherwise a reused block can sit above the quest item button and
+        -- swallow the click that uses the item. Zone headers and auto-quest
+        -- popups keep their row click for the collapse and popup handlers.
+        -- This runs on every layout so a pooled block that changes roles gets
+        -- the right click behavior.
+        if block.SetMouseClickEnabled then
+            local keepRowClick = block.zoneName ~= nil
+                or block.template == "AutoQuestPopUpBlockTemplate"
+            block:SetMouseClickEnabled(keepRowClick)
+        end
+        -- The quest row and its header button can sit above the item and POI
+        -- buttons after a block is reused. Raise the interactive controls so
+        -- clicks reach them instead of the row. These frames are ours, so the
+        -- level change is safe in combat as well.
+        if block.GetFrameLevel then
+            local base = block:GetFrameLevel() or 0
+            if block.HeaderButton and block.HeaderButton.SetFrameLevel then
+                block.HeaderButton:SetFrameLevel(base + 1)
+            end
+            for _, child in ipairs({ block.ItemButton, block.poiButton, block.zoneCollapseButton }) do
+                if child and child.SetFrameLevel then
+                    child:SetFrameLevel(base + 2)
+                end
+            end
+        end
+        -- Cached blocks skip UpdateSingle, so their item button can keep a
+        -- stale quest log index after the log reorders. Refresh it here so a
+        -- later click uses the current index.
+        if block.ItemButton and block.ItemButton.SetUp and type(block.id) == "number"
+            and C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
+            local logIndex = C_QuestLog.GetLogIndexForQuestID(block.id)
+            if type(logIndex) == "number" and logIndex > 0 then
+                block.ItemButton:SetUp(logIndex)
+            end
         end
         for _, child in ipairs({ block.HeaderButton, block.ItemButton, block.poiButton, block.zoneCollapseButton }) do
             if child and child.EnableMouseWheel and not child.fqpWheel then
@@ -821,16 +1099,10 @@ local function BuildTrackerMixin()
         self:MarkDirty()
     end
 
-    function mixin:OnBlockHeaderClick(block, mouseButton)
-        if block.zoneName then
-            if mouseButton == "LeftButton" then
-                self:ToggleZoneCollapse(block)
-            end
-            return
-        end
-        QuestObjectiveTrackerMixin.OnBlockHeaderClick(self, block, mouseButton)
-    end
-
+    -- Quest blocks keep Blizzard's OnBlockHeaderClick. Overriding it would put
+    -- addon code in the click that opens the quest details, and the map would
+    -- record the quest log and scroll fields as tainted by ForeverQuestPins.
+    -- Zone headers own their click in AddZoneHeader instead.
     function mixin:OnBlockHeaderEnter(block)
         if block.zoneName then
             GameTooltip:SetOwner(block, "ANCHOR_RIGHT")
@@ -874,11 +1146,18 @@ local function CreateModule()
     if not trackerMixin then
         return nil
     end
-    local ok, frame = pcall(CreateFrame, "Frame", MODULE_NAME, ObjectiveTrackerFrame, "ObjectiveTrackerModuleTemplate")
+    local container = CreateStandaloneContainer()
+    local ok, frame = pcall(CreateFrame, "Frame", MODULE_NAME, container, "ObjectiveTrackerModuleTemplate")
     if not ok or not frame or not frame.Header then
         return nil
     end
     Mixin(frame, trackerMixin)
+    -- Blizzard's GetContextMenuParent asks the manager which container owns the
+    -- module. Register the standalone container so the quest context menu is
+    -- created from Blizzard's own handler instead of an addon override.
+    if ObjectiveTrackerManager.moduleToContainerMap then
+        ObjectiveTrackerManager.moduleToContainerMap[frame] = container
+    end
     frame:SetHeader(TRACKER_HEADER_QUESTS or "Quests")
     frame:EnableMouse(true)
 
@@ -914,8 +1193,59 @@ local function CreateModule()
     frame.Header:HookScript("OnMouseWheel", function(_, delta)
         frame:Scroll(delta)
     end)
+    local container = frame:GetParent()
+    if frame.Header.RegisterForDrag then
+        frame.Header:RegisterForDrag("LeftButton")
+        frame.Header:SetScript("OnDragStart", function()
+            if container and container.StartMoving then
+                container:StartMoving()
+            end
+        end)
+        frame.Header:SetScript("OnDragStop", function()
+            if container and container.StopMovingOrSizing then
+                container:StopMovingOrSizing()
+            end
+        end)
+    end
     HookTrackerMenu(frame.Header)
+    if ns.InstallSpokenTrackerBridge then
+        ns.InstallSpokenTrackerBridge(frame)
+    end
     return frame
+end
+
+-- The quest module's events table normally comes from Blizzard's
+-- QuestObjectiveTrackerMixin. Keep a local copy so a missing or empty table
+-- cannot leave the tracker without quest update events.
+local DEFAULT_MODULE_EVENTS = {
+    "QUEST_LOG_UPDATE",
+    "QUEST_WATCH_LIST_CHANGED",
+    "QUEST_AUTOCOMPLETE",
+    "SUPER_TRACKING_CHANGED",
+    "QUEST_TURNED_IN",
+    "QUEST_POI_UPDATE",
+    "SUPER_TRACKING_PATH_UPDATED",
+}
+
+local function ModuleEvents()
+    if type(module.events) == "table" and #module.events > 0 then
+        return module.events
+    end
+    return DEFAULT_MODULE_EVENTS
+end
+
+local function RegisterModuleEvents()
+    local events = ModuleEvents()
+    for i = 1, #events do
+        module:RegisterEvent(events[i])
+    end
+end
+
+local function UnregisterModuleEvents()
+    local events = ModuleEvents()
+    for i = 1, #events do
+        module:UnregisterEvent(events[i])
+    end
 end
 
 local function AddTrackerModule()
@@ -939,13 +1269,13 @@ local function AddTrackerModule()
             QuestObjectiveTracker:UnregisterEvent(QuestObjectiveTracker.events[i])
         end
     end
-    ObjectiveTrackerManager:SetModuleContainer(module, ObjectiveTrackerFrame)
-    if moduleEventsSuspended and type(module.events) == "table" then
-        moduleEventsSuspended = false
-        for i = 1, #module.events do
-            module:RegisterEvent(module.events[i])
-        end
-    end
+    local container = CreateStandaloneContainer()
+    container:AddModule(module)
+    container:Show()
+    -- SetContainer only registers events on the module's first container. The
+    -- standalone container is created after the module and may not be that
+    -- first container, so register explicitly whenever the module is active.
+    RegisterModuleEvents()
     if ns.HookQuestLinkModule then
         ns.HookQuestLinkModule(module)
     end
@@ -961,14 +1291,12 @@ local function RemoveTrackerModule()
     if not active or not module then
         return
     end
-    ObjectiveTrackerFrame:RemoveModule(module)
-    module:Hide()
-    if not moduleEventsSuspended and type(module.events) == "table" then
-        moduleEventsSuspended = true
-        for i = 1, #module.events do
-            module:UnregisterEvent(module.events[i])
-        end
+    if standaloneFrame then
+        standaloneFrame:RemoveModule(module)
+        standaloneFrame:Hide()
     end
+    module:Hide()
+    UnregisterModuleEvents()
     ObjectiveTrackerManager:SetModuleContainer(QuestObjectiveTracker, ObjectiveTrackerFrame)
     if blizzardEventsSuspended and type(QuestObjectiveTracker.events) == "table" then
         blizzardEventsSuspended = false
@@ -1039,6 +1367,10 @@ local function RegisterGamepadCallbacks()
     end
 end
 
+function ns.GetTrackerContextMenuParent()
+    return standaloneFrame
+end
+
 function ns.TryRegisterQuestTracker()
     if registered then
         ns.ApplyTrackerState()
@@ -1081,6 +1413,11 @@ eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("ADDON_LOADED")
+eventFrame:RegisterEvent("QUEST_ACCEPTED")
+eventFrame:RegisterEvent("QUEST_LOG_UPDATE")
+eventFrame:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
+eventFrame:RegisterEvent("QUEST_TURNED_IN")
+eventFrame:RegisterEvent("QUEST_REMOVED")
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
@@ -1090,6 +1427,26 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if not registered then
+        return
+    end
+    if event == "QUEST_ACCEPTED" or event == "QUEST_LOG_UPDATE"
+        or event == "QUEST_WATCH_LIST_CHANGED" or event == "QUEST_REMOVED" then
+        if active and module and module.MarkDirty then
+            module:MarkDirty()
+        end
+        return
+    end
+    if event == "QUEST_TURNED_IN" then
+        -- The module's own handler plays the turn-in animation and removes
+        -- the block when it finishes. Only force a refresh when that handler
+        -- is missing.
+        if active and module and module.MarkDirty then
+            local handled = module.IsEventRegistered
+                and module:IsEventRegistered("QUEST_TURNED_IN")
+            if not handled then
+                module:MarkDirty()
+            end
+        end
         return
     end
     if event == "ZONE_CHANGED" then
