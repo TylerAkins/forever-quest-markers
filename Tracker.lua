@@ -642,6 +642,7 @@ function ns.PrintTrackerDebug()
         tostring(ns.GetOption("trackerFilter")),
         tostring(ns.GetOption("trackerSort")),
         tostring(ns.GetOption("selectNearestQuest"))))
+    p(("quest click=%s"):format(ns.trackerClickSecured or "blizzard handler"))
     if not module then
         return
     end
@@ -810,12 +811,46 @@ local function AddZoneHeader(self, zone)
     return self:LayoutBlock(block)
 end
 
+-- Quest blocks and this module are addon-created frames. Calling Blizzard's
+-- click handler from one opens the quest log in addon execution, which leaves
+-- the quest log layout tainted; the next in-combat map open is then refused.
+-- A secure delegate (or a secure call) runs Blizzard's handler as secure code,
+-- so the quest log refresh stays untouched.
+local function SecureQuestClickHandler(handler)
+    if type(handler) ~= "function" then
+        return nil
+    end
+    if type(CreateSecureDelegate) == "function" then
+        local ok, delegate = pcall(CreateSecureDelegate, handler)
+        if ok and type(delegate) == "function" then
+            return delegate, "delegate"
+        end
+        if type(securecallfunction) == "function" then
+            ok, delegate = pcall(securecallfunction, CreateSecureDelegate, handler)
+            if ok and type(delegate) == "function" then
+                return delegate, "delegate"
+            end
+        end
+    end
+    if type(securecallfunction) == "function" then
+        return function(self, block, button)
+            return securecallfunction(handler, self, block, button)
+        end, "secure call"
+    end
+    return nil
+end
+
 local function BuildTrackerMixin()
     local mixin = CreateFromMixins(QuestObjectiveTrackerMixin)
     -- Blizzard draws the quest POI icon just left of the block text. Inside a
     -- scroll frame that overhang would be clipped, so indent quest blocks enough
     -- to keep the visible icon inside the content.
     mixin.blockOffsetX = 30
+    local secureClick, clickMode = SecureQuestClickHandler(QuestObjectiveTrackerMixin.OnBlockHeaderClick)
+    if secureClick then
+        mixin.OnBlockHeaderClick = secureClick
+    end
+    ns.trackerClickSecured = clickMode
 
     function mixin:BuildQuestWatchInfos()
         local infos = QuestObjectiveTrackerMixin.BuildQuestWatchInfos(self)
@@ -1099,9 +1134,9 @@ local function BuildTrackerMixin()
         self:MarkDirty()
     end
 
-    -- Quest blocks keep Blizzard's OnBlockHeaderClick. Overriding it would put
-    -- addon code in the click that opens the quest details, and the map would
-    -- record the quest log and scroll fields as tainted by ForeverQuestPins.
+    -- Quest blocks use Blizzard's OnBlockHeaderClick through a secure delegate
+    -- from BuildTrackerMixin. An addon-defined click handler would taint the
+    -- quest log and map, so the delegate keeps the Blizzard code secure.
     -- Zone headers own their click in AddZoneHeader instead.
     function mixin:OnBlockHeaderEnter(block)
         if block.zoneName then

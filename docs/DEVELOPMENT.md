@@ -349,10 +349,12 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   log when the map places pins. Gamepad activation still restores Blizzard's module
   immediately because leaving our module active would disrupt Blizzard's gamepad
   targeting.
-- Quest blocks keep Blizzard's `OnBlockHeaderClick`. The module must not override
-  it: a click on a quest opens the quest details, and addon code in that click
-  makes the map write the quest log details and scroll container fields as
-  `ForeverQuestPins`, which blocks `SetPassThroughButtons` in combat. Zone headers
+- Quest blocks route Blizzard's `OnBlockHeaderClick` through `CreateSecureDelegate`
+  when the client provides it, with a `securecallfunction` fallback. The module
+  and blocks are addon frames, so calling the handler directly opens the quest
+  log in addon execution and makes the map write the quest log details and scroll
+  container fields as `ForeverQuestPins`, which blocks `SetPassThroughButtons` in
+  combat. The secure delegate keeps the quest log refresh secure. Zone headers
   shadow the block's `OnHeaderClick` in `AddZoneHeader` so they still toggle
   without putting the module in the quest click path. The module registers its
   standalone container in `ObjectiveTrackerManager.moduleToContainerMap` so
@@ -368,10 +370,10 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
 Runtime cases cover grouping, every sort and filter, the current-zone match,
 **Other**, missing header and distance APIs, the per-character collapse table,
 combat caching, combat retention of the standalone tracker, module registration and
-restoration, gamepad fallback, zone header insertion, collapse skipping, and the
-scroll viewport math. In-game checks still cover the side-by-side look, the header
-drag, scrolling over every control, animations, combat, taint, and the gamepad
-transition.
+restoration, secure quest-click delegation, gamepad fallback, zone header insertion,
+collapse skipping, and the scroll viewport math. In-game checks still cover the
+side-by-side look, the header drag, scrolling over every control, animations,
+combat, taint, and the gamepad transition.
 
 Known limits: the module relies on Blizzard's tracker internals; if a client patch
 renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party

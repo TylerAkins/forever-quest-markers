@@ -6349,11 +6349,21 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         end
         return target
     end
+    local questClicks = 0
+    local secureDelegates = 0
+    local secureClickCalls = 0
+    CreateSecureDelegate = function(handler)
+        secureDelegates = secureDelegates + 1
+        return function(...)
+            secureClickCalls = secureClickCalls + 1
+            return handler(...)
+        end
+    end
     QuestObjectiveTrackerMixin = {
         events = { "QUEST_LOG_UPDATE" },
         BuildQuestWatchInfos = function() return {} end,
         LayoutContents = function() end,
-        OnBlockHeaderClick = function() end,
+        OnBlockHeaderClick = function() questClicks = questClicks + 1 end,
         OnBlockHeaderEnter = function() end,
         OnBlockHeaderLeave = function() end,
         SetContainer = function(self, container)
@@ -6458,8 +6468,13 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(QuestObjectiveTracker.shown == false)
     assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
         "the standalone module's context menu parent is its own container")
-    assert(ourModule.OnBlockHeaderClick == QuestObjectiveTrackerMixin.OnBlockHeaderClick,
-        "quest clicks stay on Blizzard's handler so the map is not tainted")
+    assert(secureDelegates == 1, "the tracker builds one secure quest-click delegate")
+    assert(ns.trackerClickSecured == "delegate", "the client's secure delegate is used for quest clicks")
+    assert(ourModule.OnBlockHeaderClick ~= QuestObjectiveTrackerMixin.OnBlockHeaderClick,
+        "quest clicks run through a secure delegate rather than a tainted direct call")
+    ourModule.OnBlockHeaderClick(ourModule, {}, "LeftButton")
+    assert(secureClickCalls == 1 and questClicks == 1,
+        "the secure delegate still calls Blizzard's quest click handler")
     assert(QuestObjectiveTracker.unregisteredEvents
         and QuestObjectiveTracker.unregisteredEvents.QUEST_LOG_UPDATE,
         "Blizzard's quest events are suspended while our module is active")
