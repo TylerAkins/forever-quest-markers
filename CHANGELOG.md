@@ -2,6 +2,10 @@
 
 Notable changes to Forever Quest Pins. Numbered releases use `v*` tags. Builds from `main` are available as commit-specific GitHub Actions artifacts for testing.
 
+## 1.1.11 - 2026-11-26
+
+- Fix clicking a tracked quest not opening the quest log. The beta tracker now runs Blizzard's quest click through a secure delegate, so opening the quest log no longer writes the map's quest log and scroll fields as ForeverQuestPins and the map keeps working in combat. `/fqp trackerdebug` reports the active click path.
+
 ## 1.1.10 - 2026-11-25
 
 - Fix quest item icons in the beta tracker so clicking an icon uses the item. The row block now handles wheel and hover input without taking clicks, and the interactive controls sit above the reused row.
