@@ -818,6 +818,52 @@ local function IsDungeonQuestAvailable(questID, data, quest)
     return true
 end
 
+-- The full dungeon view keeps quests that are locked behind progression, but
+-- opposite-faction, wrong-race, and wrong-class steps are never relevant.
+local function PlayerMatches(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 and ns.GetPlayerRaceID then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 and ns.GetPlayerClassID then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 local function DungeonNamesForQuest(questID)
     local info = ns.DungeonChains
         and ns.DungeonChains.quests
@@ -839,8 +885,18 @@ end
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
+    if not PlayerMatches(data, quest.faction) then
+        return
+    end
     if not includeUnavailable and not IsDungeonQuestAvailable(questID, data, quest) then
         return
+    end
+    local visibleChain = {}
+    for _, step in ipairs(quest.chain or {}) do
+        local stepData = ns.Quests and ns.Quests[step.id]
+        if PlayerMatches(stepData, step.faction or quest.faction) then
+            visibleChain[#visibleChain + 1] = { step = step, data = stepData }
+        end
     end
     local locations = QuestLocations(questID, data)
     if #locations == 0 and quest.mapID then
@@ -850,7 +906,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
     local insideDungeon = StartsInsideDungeon(questID, location)
     local level = quest.level or QuestLevel(questID, data)
     local status, statusR, statusG, statusB, statusReason = QuestStatus(questID, data, includeUnavailable)
-    local total = #(quest.chain or {}) + 1
+    local total = #visibleChain + 1
     local subtitle = ColorText(status, statusR, statusG, statusB)
     if level then
         subtitle = "[" .. level .. "] " .. subtitle
@@ -861,8 +917,9 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
     if quest.faction and quest.faction ~= "Both" then
         subtitle = subtitle .. "  |cff9d9d9d" .. quest.faction .. "|r"
     end
-    if #(quest.chain or {}) > 0 then
-        subtitle = subtitle .. "  |cff9d9d9d" .. string.format(L["%d pre-quests"], #quest.chain) .. "|r"
+    if #visibleChain > 0 then
+        subtitle = subtitle .. "  |cff9d9d9d"
+            .. string.format(L["%d pre-quests"], #visibleChain) .. "|r"
     end
     if insideDungeon then
         subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
@@ -870,7 +927,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
     local tooltip = insideDungeon
         and L["This quest starts inside the dungeon, so a map pin is not available."]
         or (statusReason and UnavailableReason(statusReason))
-        or (#(quest.chain or {}) > 0
+        or (#visibleChain > 0
             and string.format(L["Dungeon chain step %d of %d."], total, total)
             or L["Dungeon quest."])
     AddEntry(entries, {
@@ -886,9 +943,10 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
     if not includeChains then
         return
     end
-    for index, step in ipairs(quest.chain or {}) do
+    for index, item in ipairs(visibleChain) do
+        local step = item.step
+        local stepData = item.data
         local stepID = step.id
-        local stepData = ns.Quests and ns.Quests[stepID]
         local stepLocations = QuestLocations(stepID, stepData)
         if #stepLocations == 0 and step.mapID then
             stepLocations[1] = { mapID = step.mapID, x = step.x, y = step.y }
@@ -927,7 +985,6 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
         })
     end
 end
-
 local function DungeonHeader(dungeonName, dungeon, availableCount)
     local total = #(dungeon.quests or {})
     local subtitle

@@ -7077,10 +7077,15 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns.IsPvPQuest = function() return false end
     ns.IsBookQuest = function() return false end
     ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.GetPlayerRaceID = function() return 2 end
+    ns.GetPlayerClassID = function() return 1 end
     ns.Quests = {
         [200] = { mapID = 1, x = 10, y = 10, title = "Dungeon Quest" },
         [201] = { mapID = 1, x = 20, y = 20, title = "Pre One" },
         [203] = { mapID = 1, x = 30, y = 30, title = "Unavailable Quest" },
+        [204] = { title = "Alliance Step", faction = "Alliance" },
+        [205] = { title = "Alliance Quest", faction = "Alliance" },
     }
     ns.DungeonChains = {
         order = { "Test Dungeon" },
@@ -7097,6 +7102,7 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
                         chain = {
                             { id = 201, name = "Pre One", level = 10, mapID = 1, x = 20, y = 20 },
                             { id = 202, name = "Pre Two", level = 12 },
+                            { id = 204, name = "Alliance Step", level = 10 },
                         },
                     },
                     {
@@ -7105,13 +7111,28 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
                         level = 20,
                         mapID = 1, x = 30, y = 30,
                     },
+                    {
+                        id = 205,
+                        name = "Alliance Quest",
+                        level = 20,
+                        faction = "Alliance",
+                        mapID = 1, x = 40, y = 40,
+                    },
                 },
             },
         },
     }
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
     local entries = ns.QuestFinder.DungeonQuestEntries("Test Dungeon")
-    assert(#entries == 5, "header, available quest, two chain steps, and the unavailable quest")
+    assert(#entries == 5, "opposite-faction steps and quests are hidden")
+    local ids = {}
+    for i = 1, #entries do
+        if entries[i].questID then
+            ids[entries[i].questID] = true
+        end
+    end
+    assert(not ids[204], "an Alliance chain step is hidden from a Horde player")
+    assert(not ids[205], "an Alliance dungeon quest is hidden from a Horde player")
     assert(entries[2].title == "Dungeon Quest")
     assert(entries[3].subtitle:find("Chain #1 of 3", 1, true))
     assert(entries[4].subtitle:find("Chain #2 of 3", 1, true))
