@@ -7118,6 +7118,51 @@ cases["quest_finder_runtime.zone_list_prefers_leatrix_levels"] = function()
     assert(ranges[3] == "10", "unlisted maps keep the computed fallback")
 end
 
+cases["quest_finder_runtime.tags_quests_that_start_inside_a_dungeon"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Blackrock Depths", mapType = 4 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 56 end }
+    ns.GetOption = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return true end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [82062] = { title = "Ever After", minLevel = 56 },
+    }
+    ns.DungeonChains = {
+        order = { "Blackrock Depths" },
+        dungeons = {
+            ["Blackrock Depths"] = {
+                name = "Blackrock Depths",
+                level = "52-60",
+                quests = {
+                    { id = 82062, name = "Ever After", level = 56 },
+                },
+            },
+        },
+        quests = {
+            [82062] = { dungeons = { "Blackrock Depths" }, chains = {} },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.DungeonQuestEntries("Blackrock Depths")
+    assert(#entries == 2, "header and the dungeon-start quest")
+    local quest = entries[2]
+    assert(quest.title == "Ever After")
+    assert(quest.location == nil)
+    assert(quest.insideDungeon == true, "a quest with no start map but a dungeon is tagged")
+    assert(quest.subtitle:find("In dungeon", 1, true))
+end
+
 cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
     ns = {}
     C_QuestLog = {

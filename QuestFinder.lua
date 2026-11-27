@@ -55,6 +55,11 @@ local function MapName(mapID)
     return L["Unknown zone"]
 end
 
+local function IsDungeonMap(mapID)
+    local info = MapInfo(mapID)
+    return info ~= nil and info.mapType == 4
+end
+
 local function CurrentMapID()
     if C_Map and type(C_Map.GetBestMapForUnit) == "function" then
         local ok, mapID = pcall(C_Map.GetBestMapForUnit, "player")
@@ -344,6 +349,11 @@ local function SetPin(entry)
     if not entry or not entry.questID then
         return
     end
+    if entry.insideDungeon then
+        SetStatus((L["%s starts inside the dungeon, so a map pin is not available."]):format(
+            entry.title or tostring(entry.questID)), true)
+        return
+    end
     local location = entry.location
     if not location then
         SetStatus((L["No map location is available for %s."]):format(entry.title or tostring(entry.questID)), true)
@@ -463,6 +473,8 @@ local function CreateRow(index)
             if entry.dungeon then
                 GameTooltip:AddLine(L["Click to show this dungeon's full chains."], 0.8, 0.8, 0.8, true)
             end
+        elseif entry.insideDungeon then
+            -- The reason is already in entry.tooltip.
         elseif entry.location then
             GameTooltip:AddLine(L["Click to set a Blizzard map pin."], 0.8, 0.8, 0.8)
         else
@@ -515,6 +527,7 @@ local function BreadcrumbEntries(mapID)
                 end
                 if #usable > 0 then
                     local location = PickLocation(usable, mapID)
+                    local insideDungeon = IsDungeonMap(location.mapID)
                     local level = QuestLevel(questID, data)
                     local parts = QuestTagParts(questID, data)
                     local subtitle = MapName(location.mapID)
@@ -527,6 +540,14 @@ local function BreadcrumbEntries(mapID)
                     if #parts > 0 then
                         subtitle = subtitle .. "  " .. TagText(parts)
                     end
+                    if insideDungeon then
+                        subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
+                    end
+                    local tooltip = ChainText(questID)
+                    if insideDungeon then
+                        local reason = L["This quest starts inside the dungeon, so a map pin is not available."]
+                        tooltip = tooltip and (tooltip .. "\n" .. reason) or reason
+                    end
                     AddEntry(entries, {
                         kind = "quest",
                         questID = questID,
@@ -534,7 +555,8 @@ local function BreadcrumbEntries(mapID)
                         subtitle = subtitle,
                         level = level,
                         location = location,
-                        tooltip = ChainText(questID),
+                        insideDungeon = insideDungeon,
+                        tooltip = tooltip,
                     })
                 end
             end
@@ -564,6 +586,7 @@ local function AvailableEntries(mapID)
             end
             if #usable > 0 then
                 local location = PickLocation(usable, mapID)
+                local insideDungeon = IsDungeonMap(location.mapID)
                 local level = QuestLevel(questID, data)
                 local parts = QuestTagParts(questID, data)
                 local subtitle = MapName(location.mapID)
@@ -577,6 +600,9 @@ local function AvailableEntries(mapID)
                 if chain then
                     subtitle = subtitle .. "  " .. chain
                 end
+                if insideDungeon then
+                    subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
+                end
                 AddEntry(entries, {
                     kind = "quest",
                     questID = questID,
@@ -584,6 +610,10 @@ local function AvailableEntries(mapID)
                     subtitle = subtitle,
                     level = level,
                     location = location,
+                    insideDungeon = insideDungeon,
+                    tooltip = insideDungeon
+                        and L["This quest starts inside the dungeon, so a map pin is not available."]
+                        or nil,
                 })
                 scanned = scanned + 1
                 if mapID == nil and scanned >= MAX_ALL_ZONE_ROWS then
@@ -619,6 +649,24 @@ local function IsDungeonQuestAvailable(questID, data, quest)
     return true
 end
 
+local function DungeonNamesForQuest(questID)
+    local info = ns.DungeonChains
+        and ns.DungeonChains.quests
+        and ns.DungeonChains.quests[questID]
+    return info and info.dungeons
+end
+
+local function StartsInsideDungeon(questID, location)
+    if location and IsDungeonMap(location.mapID) then
+        return true
+    end
+    if location then
+        return false
+    end
+    local dungeons = DungeonNamesForQuest(questID)
+    return dungeons ~= nil and #dungeons > 0
+end
+
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
@@ -630,6 +678,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
         locations[1] = { mapID = quest.mapID, x = quest.x, y = quest.y }
     end
     local location = PickLocation(locations, CurrentMapID())
+    local insideDungeon = StartsInsideDungeon(questID, location)
     local level = quest.level or QuestLevel(questID, data)
     local status = QuestStatus(questID, data)
     local total = #(quest.chain or {}) + 1
@@ -646,6 +695,9 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
     if #(quest.chain or {}) > 0 then
         subtitle = subtitle .. "  |cff9d9d9d" .. string.format(L["%d pre-quests"], #quest.chain) .. "|r"
     end
+    if insideDungeon then
+        subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
+    end
     AddEntry(entries, {
         kind = "quest",
         questID = questID,
@@ -653,9 +705,12 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
         subtitle = subtitle,
         level = level,
         location = location,
-        tooltip = #(quest.chain or {}) > 0
-            and string.format(L["Dungeon chain step %d of %d."], total, total)
-            or L["Dungeon quest."],
+        insideDungeon = insideDungeon,
+        tooltip = insideDungeon
+            and L["This quest starts inside the dungeon, so a map pin is not available."]
+            or (#(quest.chain or {}) > 0
+                and string.format(L["Dungeon chain step %d of %d."], total, total)
+                or L["Dungeon quest."]),
     })
     if not includeChains then
         return
@@ -668,6 +723,9 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
             stepLocations[1] = { mapID = step.mapID, x = step.x, y = step.y }
         end
         local stepLocation = PickLocation(stepLocations, CurrentMapID())
+        local stepInsideDungeon = step.startsInDungeon
+            or (stepLocation and IsDungeonMap(stepLocation.mapID))
+            or (not stepLocation and step.needsDungeon)
         local stepLevel = step.level or QuestLevel(stepID, stepData)
         local stepStatus = QuestStatus(stepID, stepData)
         local stepSubtitle = string.format(L["Chain #%d of %d"], index, total)
@@ -678,8 +736,8 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
         if stepLocation then
             stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. MapName(stepLocation.mapID) .. "|r"
         end
-        if step.startsInDungeon then
-            stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. L["starts in dungeon"] .. "|r"
+        if stepInsideDungeon then
+            stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
         end
         AddEntry(entries, {
             kind = "quest",
@@ -688,8 +746,11 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
             subtitle = stepSubtitle,
             level = stepLevel,
             location = stepLocation,
+            insideDungeon = stepInsideDungeon,
             indent = 18,
-            tooltip = string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or ""),
+            tooltip = stepInsideDungeon
+                and L["This quest starts inside the dungeon, so a map pin is not available."]
+                or string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or ""),
         })
     end
 end
