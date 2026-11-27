@@ -25,7 +25,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
 - Questie's plain-text chat links, such as `[[53] Chasing A-Me 01 (4243)]`, become the game's own clickable quest links. Existing hyperlinks and clients with Questie loaded are left alone, and the conversion can be turned off in Interface settings or with `/fqp chatlinks`.
 - A keybind under **Key Bindings > AddOns > Forever Quest Pins** uses the special item on the tracked quest the tracker highlights, including the quest chosen by **Select nearest quest**. It does nothing when the selected quest has no usable item.
-- A minimap button opens **Quest Finder** on left-click and addon settings on right-click. Drag it around the minimap; hide it in **Interface** settings.
+- A minimap button opens **Quest Finder** on left-click and addon settings on right-click. Drag it around the minimap; hide it in **Interface** settings. The Quest Finder header is also draggable, and its position is remembered.
 - **Quest Finder** lists breadcrumbs for the current or selected zone, quests available in a zone, and available dungeon quests with their required pre-quest chains. Zone selectors use Leatrix Maps' zone levels, dungeon selectors use the journal's dungeon levels, and every row shows the quest level, start zone, and type tags such as Dungeon, Repeatable, Profession, Class, PvP, Breadcrumb, or Book. Click a row to set a Blizzard map pin from any zone. The breadcrumb and available-quest lists use the same eligibility and display filters as the map pins.
 - Optional **beta** quest tracker layout with zone groups, collapsible zone headers, sort options (Blizzard order, distance, level, title), view filters, and mouse-wheel scrolling. It uses Blizzard's own tracker header, quest blocks, item buttons, and POI buttons, and Edit Mode moves and resizes it normally. Off by default.
 - Pins stay on the map art in windowed and fullscreen layouts
@@ -117,6 +117,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 |---------|--------|
 | `/fqp` | Help |
 | `/fqp finder` | Open Quest Finder |
+| `/fqp finderreset` | Reset Quest Finder to the screen center |
 | `/fqp finderdebug` | Print Quest Finder counts and active filters |
 | `/fqp options` | Open the addon settings |
 | `/fqp on` / `/fqp off` | Enable or disable pins |

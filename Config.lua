@@ -34,6 +34,8 @@ ns.defaults = {
     bookIconScale = 75,
     showMinimapButton = true,
     minimapButtonPosition = 200,
+    questFinderX = 0,
+    questFinderY = 0,
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
@@ -111,6 +113,9 @@ local function NormalizeNumber(key, value)
         end
         return value
     end
+    if key == "questFinderX" or key == "questFinderY" then
+        return math.max(-5000, math.min(5000, math.floor(value + 0.5)))
+    end
     if key == "trivialLevelGap" then
         return math.max(TRIVIAL_GAP_MIN, math.min(TRIVIAL_GAP_MAX, math.floor(value + 0.5)))
     end
@@ -186,6 +191,12 @@ local function DecodeMirror()
     local minimapButtonPosition = tonumber(text:match("minimapButtonPosition=(%d+)"))
     if minimapButtonPosition and minimapButtonPosition >= 0 and minimapButtonPosition <= 359 then
         mirror.minimapButtonPosition = minimapButtonPosition
+    end
+    local questFinderX = tonumber(text:match("questFinderX=([%-]?%d+)"))
+    local questFinderY = tonumber(text:match("questFinderY=([%-]?%d+)"))
+    if questFinderX and questFinderY then
+        mirror.questFinderX = questFinderX
+        mirror.questFinderY = questFinderY
     end
     local trivialLevelGap = tonumber(text:match("trivialLevelGap=(%d+)"))
     if trivialLevelGap and trivialLevelGap >= TRIVIAL_GAP_MIN and trivialLevelGap <= TRIVIAL_GAP_MAX then
@@ -317,6 +328,8 @@ local function SaveMirror(db)
     parts[#parts + 1] = "bookIconScale=" .. tostring(db.bookIconScale or ns.defaults.bookIconScale)
     parts[#parts + 1] = "minimapButtonPosition="
         .. tostring(math.floor((db.minimapButtonPosition or ns.defaults.minimapButtonPosition) % 360))
+    parts[#parts + 1] = "questFinderX=" .. tostring(db.questFinderX or 0)
+    parts[#parts + 1] = "questFinderY=" .. tostring(db.questFinderY or 0)
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
     parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
@@ -835,6 +848,11 @@ function ns.SlashCommand(msg)
         ns.QuestFinder.Debug()
         return
     end
+    if msg == "finderreset" and ns.QuestFinder and ns.QuestFinder.ResetPosition then
+        ns.QuestFinder.ResetPosition()
+        Print(L["Quest Finder position reset."])
+        return
+    end
     if msg == "options" and ns.OpenSettings then
         ns.OpenSettings()
         return
@@ -843,6 +861,7 @@ function ns.SlashCommand(msg)
         Print(L["Commands:"])
         print(L["  /fqp setup   Open the setup guide"])
         print(L["  /fqp finder  Open Quest Finder"])
+        print(L["  /fqp finderreset Reset Quest Finder to the screen center"])
         print(L["  /fqp finderdebug Print Quest Finder counts and active filters"])
         print(L["  /fqp options Open addon settings"])
         print(L["  /fqp track <id> Track a quest start, objective, or turn-in"])

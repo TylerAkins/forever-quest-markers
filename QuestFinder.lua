@@ -975,15 +975,43 @@ local function ShowTab(index)
     RefreshRows()
 end
 
+local function SavedPosition()
+    local db = ns.db
+    if type(db) ~= "table" then
+        return 0, 0
+    end
+    return tonumber(db.questFinderX) or 0, tonumber(db.questFinderY) or 0
+end
+
+local function SavePosition(panel)
+    local centerX, centerY = panel:GetCenter()
+    local uiX, uiY = UIParent:GetCenter()
+    local scale = UIParent:GetEffectiveScale() or 1
+    if not centerX or not centerY or not uiX or not uiY then
+        return
+    end
+    local x = math.floor(((centerX - uiX) / scale) + 0.5)
+    local y = math.floor(((centerY - uiY) / scale) + 0.5)
+    if ns.SetOption then
+        ns.SetOption("questFinderX", x)
+        ns.SetOption("questFinderY", y)
+    elseif type(ns.db) == "table" then
+        ns.db.questFinderX = x
+        ns.db.questFinderY = y
+    end
+end
+
 local function EnsureFrame()
     if frame then
         return frame
     end
     local panel = CreateFrame("Frame", "ForeverQuestPinsQuestFinder", UIParent, "BackdropTemplate")
     panel:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-    panel:SetPoint("CENTER")
+    local savedX, savedY = SavedPosition()
+    panel:SetPoint("CENTER", UIParent, "CENTER", savedX, savedY)
     panel:SetFrameStrata("DIALOG")
     panel:SetClampedToScreen(true)
+    panel:SetMovable(true)
     panel:EnableMouse(true)
     panel:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -1008,6 +1036,21 @@ local function EnsureFrame()
     local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -5, -5)
     close:SetScript("OnClick", function() panel:Hide() end)
+
+    local drag = CreateFrame("Frame", nil, panel)
+    drag:SetPoint("TOPLEFT", 14, -14)
+    drag:SetPoint("TOPRIGHT", close, "TOPLEFT", -4, 0)
+    drag:SetHeight(48)
+    drag:EnableMouse(true)
+    drag:RegisterForDrag("LeftButton")
+    drag:SetScript("OnDragStart", function()
+        panel:StartMoving()
+    end)
+    drag:SetScript("OnDragStop", function()
+        panel:StopMovingOrSizing()
+        SavePosition(panel)
+    end)
+    panel.dragHandle = drag
 
     local tabNames = { L["Breadcrumbs"], L["Available quests"], L["Dungeon quests"] }
     for i = 1, #tabNames do
@@ -1166,6 +1209,16 @@ ns.QuestFinder = {
     AllDungeonEntries = AllDungeonEntries,
     DungeonQuestEntries = DungeonQuestEntries,
     QuestLocations = QuestLocations,
+    ResetPosition = function()
+        if frame then
+            frame:ClearAllPoints()
+            frame:SetPoint("CENTER")
+        end
+        if ns.SetOption then
+            ns.SetOption("questFinderX", 0)
+            ns.SetOption("questFinderY", 0)
+        end
+    end,
 }
 
 function ns.QuestFinder.Debug()
