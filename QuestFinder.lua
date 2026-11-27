@@ -488,20 +488,7 @@ local function SetStatus(message, isError)
     end
 end
 
-local function SetPin(entry)
-    if not entry or not entry.questID then
-        return
-    end
-    if entry.insideDungeon then
-        SetStatus((L["%s starts inside the dungeon, so a map pin is not available."]):format(
-            entry.title or tostring(entry.questID)), true)
-        return
-    end
-    local location = entry.location
-    if not location then
-        SetStatus((L["No map location is available for %s."]):format(entry.title or tostring(entry.questID)), true)
-        return
-    end
+local function SetPinAt(entry, location)
     local data = {
         mapID = location.mapID,
         x = location.x,
@@ -514,6 +501,65 @@ local function SetPin(entry)
     else
         SetStatus(message or L["Could not create a map pin for this quest."], true)
     end
+end
+
+local function UniqueLocationsByMap(locations)
+    local choices = {}
+    local seen = {}
+    for i = 1, #locations do
+        local location = locations[i]
+        if not seen[location.mapID] then
+            seen[location.mapID] = true
+            choices[#choices + 1] = location
+        end
+    end
+    local current = CurrentMapID()
+    table.sort(choices, function(a, b)
+        if a.mapID == current then
+            return true
+        end
+        if b.mapID == current then
+            return false
+        end
+        return MapName(a.mapID) < MapName(b.mapID)
+    end)
+    return choices
+end
+
+local function SetPin(entry, owner)
+    if not entry or not entry.questID then
+        return
+    end
+    if entry.insideDungeon then
+        SetStatus((L["%s starts inside the dungeon, so a map pin is not available."]):format(
+            entry.title or tostring(entry.questID)), true)
+        return
+    end
+    local locations = entry.locations
+    if not locations or #locations == 0 then
+        locations = entry.location and { entry.location } or {}
+    end
+    if #locations == 0 then
+        SetStatus((L["No map location is available for %s."]):format(entry.title or tostring(entry.questID)), true)
+        return
+    end
+    local choices = UniqueLocationsByMap(locations)
+    if #choices > 1 and owner and MenuUtil
+        and type(MenuUtil.CreateContextMenu) == "function" then
+        local ok = pcall(MenuUtil.CreateContextMenu, owner, function(_, root)
+            root:CreateTitle(entry.title or "")
+            for i = 1, #choices do
+                local location = choices[i]
+                root:CreateButton(string.format(L["Set pin: %s"], MapName(location.mapID)), function()
+                    SetPinAt(entry, location)
+                end)
+            end
+        end)
+        if ok then
+            return
+        end
+    end
+    SetPinAt(entry, entry.location or choices[1])
 end
 
 local function ScrollBy(delta)
@@ -590,7 +636,7 @@ local function CreateRow(index)
             return
         end
         if entry.kind == "quest" then
-            SetPin(entry)
+            SetPin(entry, self)
         end
     end)
     row:SetScript("OnMouseWheel", function(_, delta)
@@ -618,6 +664,8 @@ local function CreateRow(index)
             end
         elseif entry.insideDungeon then
             -- The reason is already in entry.tooltip.
+        elseif entry.multiLocation then
+            GameTooltip:AddLine(L["Click to choose a start zone."], 0.8, 0.8, 0.8)
         elseif entry.location then
             GameTooltip:AddLine(L["Click to set a Blizzard map pin."], 0.8, 0.8, 0.8)
         else
@@ -808,6 +856,8 @@ local function BreadcrumbEntries(mapID)
             subtitle = subtitle,
             level = group.level,
             location = location,
+            locations = group.startLocations,
+            multiLocation = #UniqueLocationsByMap(group.startLocations) > 1,
             insideDungeon = insideDungeon,
             tooltip = #tooltipParts > 0 and table.concat(tooltipParts, "\n") or nil,
         }
@@ -859,6 +909,8 @@ local function AvailableEntries(mapID)
                     subtitle = subtitle,
                     level = level,
                     location = location,
+                    locations = usable,
+                    multiLocation = #UniqueLocationsByMap(usable) > 1,
                     insideDungeon = insideDungeon,
                     tooltip = insideDungeon
                         and L["This quest starts inside the dungeon, so a map pin is not available."]

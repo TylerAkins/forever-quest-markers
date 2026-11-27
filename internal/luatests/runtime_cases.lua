@@ -7105,6 +7105,8 @@ cases["quest_finder_runtime.groups_alternate_breadcrumbs"] = function()
     assert(#entries == 1, "alternate capital versions become one row")
     local entry = entries[1]
     assert(#entry.questIDs == 3, "all alternate quest IDs are grouped")
+    assert(#entry.locations == 3, "all start locations are kept for the chooser")
+    assert(entry.multiLocation == true, "multiple start zones open a chooser")
     assert(entry.location.mapID == 2, "the pin prefers the player's current city")
     assert(entry.subtitle:find("Stormwind City", 1, true))
     assert(entry.subtitle:find("Ironforge", 1, true))
