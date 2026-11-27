@@ -7718,88 +7718,7 @@ cases["eligibility_runtime.player_matches_checks_faction_race_and_class"] = func
     assert(ns.PlayerMatches({ faction = "Both" }))
 end
 
-cases["dungeon_route_runtime.orders_shared_chains_and_filters_faction"] = function()
-    ns = {}
-    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
-    C_Map = {
-        GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end,
-        GetBestMapForUnit = function() return 1 end,
-    }
-    UnitFactionGroup = function() return "Horde" end
-    UnitRace = function() return "Orc", "Orc", 2 end
-    UnitClass = function() return "Warrior", "WARRIOR", 1 end
-    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
-
-    ns.IsQuestFlaggedCompleted = function() return false end
-    ns.IsOnQuest = function() return false end
-    ns.IsQuestReadyForTurnIn = function() return false end
-    ns.IsQuestAcceptable = function() return true end
-    C_QuestLog.GetNextWaypoint = function() return 2, 0.5, 0.5 end
-    ns.Quests = {}
-    ns.DungeonChains = {
-        order = { "Test Dungeon" },
-        dungeons = {
-            ["Test Dungeon"] = {
-                name = "Test Dungeon",
-                quests = {
-                    {
-                        id = 300, name = "Main A", faction = "Horde",
-                        mapID = 1, x = 30, y = 30,
-                        chain = {
-                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
-                            { id = 302, name = "Two", mapID = 1, x = 20, y = 20 },
-                        },
-                    },
-                    {
-                        id = 310, name = "Main B", faction = "Horde",
-                        mapID = 1, x = 40, y = 40,
-                        chain = {
-                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
-                            { id = 302, name = "Two", mapID = 1, x = 20, y = 20 },
-                        },
-                    },
-                    {
-                        id = 320, name = "Main C", faction = "Horde",
-                        mapID = 1, x = 50, y = 50,
-                        chain = {
-                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
-                        },
-                    },
-                    {
-                        id = 330, name = "Alliance Only", faction = "Alliance",
-                        mapID = 1, x = 60, y = 60,
-                    },
-                },
-            },
-        },
-    }
-    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
-
-    local route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.total == 5, "shared chain steps count once and opposite-faction quests are excluded")
-    assert(#route.steps == 5)
-    local order = {}
-    for i = 1, #route.steps do
-        order[i] = route.steps[i].id
-    end
-    assert(table.concat(order, ",") == "301,302,320,300,310",
-        "chain depth orders the steps and shared chain steps are deduplicated")
-
-    ns.IsOnQuest = function(questID) return questID == 301 end
-    ns.IsQuestReadyForTurnIn = function(questID) return questID == 301 end
-    route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].action == "turnin", "an on-log ready quest is a turn-in step")
-    assert(route.steps[2].action == "accept", "the next quest is still an accept step")
-    assert(route.steps[1].locationMapID == 2, "objective and turn-in points follow the client waypoint")
-
-    ns.IsOnQuest = function(questID) return questID == 301 end
-    ns.IsQuestReadyForTurnIn = function() return false end
-    route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].id == 301 and route.steps[1].action == "complete",
-        "an on-log quest without a completed objective is a complete step")
-end
-
-cases["dungeon_route_runtime.skips_completed_and_manual_steps"] = function()
+cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
     UnitFactionGroup = function() return "Horde" end
@@ -7807,98 +7726,69 @@ cases["dungeon_route_runtime.skips_completed_and_manual_steps"] = function()
     UnitClass = function() return "Warrior", "WARRIOR", 1 end
     assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
 
-    local completed = { [302] = true }
+    local completed, onQuest, ready = {}, {}, {}
     ns.IsQuestFlaggedCompleted = function(questID) return completed[questID] or false end
-    ns.IsOnQuest = function() return false end
-    ns.IsQuestReadyForTurnIn = function() return false end
-    ns.IsQuestAcceptable = function() return true end
-    ns.Quests = {}
-    ns.DungeonChains = {
-        order = { "Test Dungeon" },
-        dungeons = {
-            ["Test Dungeon"] = {
-                name = "Test Dungeon",
-                quests = {
-                    {
-                        id = 300, name = "Main A", faction = "Horde",
-                        chain = {
-                            { id = 301, name = "One" },
-                            { id = 302, name = "Two" },
-                        },
-                    },
-                    {
-                        id = 310, name = "Main B", faction = "Horde",
-                        chain = {
-                            { id = 301, name = "One" },
-                            { id = 302, name = "Two" },
-                        },
-                    },
-                },
-            },
-        },
-    }
-    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
-
-    local route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.total == 4 and route.completed == 1)
-    for i = 1, #route.steps do
-        assert(route.steps[i].id ~= 302, "a completed chain step leaves the route")
-    end
-
-    route = ns.QuestRoute.Build("Test Dungeon", { [301] = true })
-    assert(#route.steps == 2, "a skipped step leaves the route")
-    for i = 1, #route.steps do
-        assert(route.steps[i].id ~= 301, "the skipped step stays out")
-    end
-end
-
-cases["dungeon_route_runtime.picks_up_nearby_quests_before_turn_ins"] = function()
-    ns = {}
-    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
-    C_Map = {
-        GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end,
-        GetBestMapForUnit = function() return 1 end,
-        GetPlayerMapPosition = function()
-            return { GetXY = function() return 0.5, 0.5 end }
-        end,
-    }
-    UnitFactionGroup = function() return "Horde" end
-    UnitRace = function() return "Orc", "Orc", 2 end
-    UnitClass = function() return "Warrior", "WARRIOR", 1 end
-    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
-
-    ns.IsQuestFlaggedCompleted = function() return false end
-    local onQuest = { [303] = true }
-    local ready = { [303] = true }
     ns.IsOnQuest = function(questID) return onQuest[questID] or false end
     ns.IsQuestReadyForTurnIn = function(questID) return ready[questID] or false end
-    ns.IsQuestAcceptable = function() return true end
-    ns.Quests = {
-        [301] = { mapID = 1, x = 52, y = 52, title = "Nearby", minLevel = 50 },
-        [302] = { mapID = 1, x = 10, y = 10, title = "Far Away", minLevel = 50 },
-        [303] = { mapID = 1, x = 50, y = 50, title = "Turn In", minLevel = 50 },
-    }
-    ns.DungeonChains = {
-        order = { "Test Dungeon" },
-        dungeons = {
-            ["Test Dungeon"] = {
-                name = "Test Dungeon",
-                quests = {
-                    { id = 301, name = "Nearby" },
-                    { id = 302, name = "Far Away" },
-                    { id = 303, name = "Turn In" },
-                },
+    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
+    ns.DungeonRoutes = {
+        ["Test Dungeon"] = {
+            steps = {
+                { type = "accept", quest = 100, npc = "n1" },
+                { type = "do", quest = 100, text = "Do the thing.", targets = { "n2" } },
+                { type = "turnin", quest = 100, npc = "n3" },
+                { type = "accept", quest = 101, npc = "n1", faction = "Alliance" },
             },
+            npcs = {
+                n1 = { id = 1, name = "Giver", map = 1, x = 10, y = 10 },
+                n2 = { id = 2, name = "Target", map = 1, x = 20, y = 20 },
+                n3 = { id = 3, name = "Turn In", map = 1, x = 30, y = 30 },
+            },
+            titles = { [100] = "Guide Quest" },
         },
     }
     assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+
     local route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].id == 301 and route.steps[1].action == "accept",
-        "the nearby quest is picked up before the turn-in")
-    assert(route.steps[2].id == 303 and route.steps[2].action == "turnin",
-        "the ready turn-in is next")
-    assert(route.steps[3].id == 302,
-        "a same-map quest outside the pickup radius stays later")
+    assert(route.total == 3 and route.unit == "steps")
+    assert(route.steps[1].action == "accept" and route.steps[1].quest == 100)
+    assert(route.steps[1].title == "Guide Quest")
+    assert(route.steps[1].locationName == "Giver")
+    assert(route.steps[2].action == "do" and route.steps[2].text == "Do the thing.")
+    assert(route.steps[2].locationName == "Target")
+    assert(route.steps[3].action == "turnin")
+
+    onQuest[100] = true
+    route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].action == "do", "an accepted quest skips the accept step")
+    assert(route.completed == 1)
+
+    ready[100] = true
+    route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].action == "turnin", "a ready quest skips the do step")
+    assert(route.completed == 2)
+
+    completed[100] = true
+    route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(#route.steps == 0, "a turned-in quest leaves the guide")
+    assert(route.completed == 3)
+
+    completed[100] = false
+    onQuest[100] = true
+    route = ns.QuestRoute.Build("Test Dungeon", { ["2:do:100"] = true })
+    assert(route.steps[1].action == "turnin", "a skipped guide step stays out")
+end
+
+cases["dungeon_route_runtime.no_guide_route"] = function()
+    ns = {}
+    ns.DungeonRoutes = {}
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+    local route = ns.QuestRoute.Build("No Such Dungeon", {})
+    assert(#route.steps == 0 and route.total == 0)
 end
 
 cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
@@ -8020,6 +7910,16 @@ cases["zone_route_runtime.finishes_objectives_before_turning_in"] = function()
         "zone routes finish the remaining objective first")
     assert(route.steps[2].id == 400 and route.steps[2].action == "turnin",
         "the ready turn-in waits until the other objective is done")
+end
+
+cases["dungeon_route_runtime.brd_guide_data_is_present"] = function()
+    ns = {}
+    assert(loadfile("Database/DungeonRoutes.lua"))("ForeverQuestPins", ns)
+    local route = ns.DungeonRoutes and ns.DungeonRoutes["Blackrock Depths"]
+    assert(route, "Blackrock Depths guide data is missing")
+    assert(#route.steps == 176, "the BRD guide step count changed")
+    assert(route.npcs.n9536 and route.npcs.n9536.name == "Maxwort Uberglint")
+    assert(route.titles[4123] == "The Heart of the Mountain")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

@@ -20,6 +20,7 @@ Database\ForeverQuests.lua
 Database\QuestTagCorrections.lua
 Database\EventPolicy.lua
 Database\DungeonChains.lua
+Database\DungeonRoutes.lua
 Database\ExcludedQuests.lua
 Database\VanillaQuests.lua
 Database\BookQuests.lua

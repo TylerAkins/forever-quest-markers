@@ -1538,6 +1538,8 @@ local function UpdateRouteButton()
     local enabled = false
     if activeTab == 3 then
         enabled = dungeonSelection ~= nil
+            and ns.DungeonRoutes ~= nil
+            and ns.DungeonRoutes[dungeonSelection] ~= nil
     elseif activeTab == 2 then
         local mapID = CurrentZoneID()
         enabled = mapID ~= nil
@@ -1545,6 +1547,7 @@ local function UpdateRouteButton()
             and ns.QuestFinder.ZoneQuestIDs ~= nil
             and #ns.QuestFinder.ZoneQuestIDs(mapID) > 0
     end
+    button:SetText(activeTab == 3 and L["Guide route"] or L["Auto route"])
     button:SetShown(visible)
     button:SetEnabled(enabled)
 end
@@ -1971,8 +1974,8 @@ local function EnsureFrame()
             return
         end
         if activeTab == 3 then
-            if dungeonSelection then
-                ns.QuestRoute.ShowDungeon(dungeonSelection)
+            if dungeonSelection and not ns.QuestRoute.ShowDungeon(dungeonSelection) then
+                SetStatus(L["No guide route for this dungeon yet."], true)
             end
         elseif activeTab == 2 then
             local mapID = CurrentZoneID()
@@ -1986,17 +1989,21 @@ local function EnsureFrame()
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["Auto route"], 1, 0.82, 0)
-        GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
+        GameTooltip:SetText(self:GetText() or L["Auto route"], 1, 0.82, 0)
         if activeTab == 3 then
-            if dungeonSelection then
+            if not dungeonSelection then
+                GameTooltip:AddLine(L["Choose a dungeon first."], 1, 1, 1, true)
+            elseif not (ns.DungeonRoutes and ns.DungeonRoutes[dungeonSelection]) then
                 GameTooltip:AddLine(
-                    L["Builds a step-by-step route through this dungeon's quests and follows it as you play."],
+                    L["No guide route for this dungeon yet."],
                     1, 1, 1, true)
             else
-                GameTooltip:AddLine(L["Choose a dungeon first."], 1, 1, 1, true)
+                GameTooltip:AddLine(
+                    L["Follows the curated guide route for this dungeon."],
+                    1, 1, 1, true)
             end
         elseif activeTab == 2 then
+            GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
             local mapID = CurrentZoneID()
             if not mapID then
                 GameTooltip:AddLine(L["Choose a zone first."], 1, 1, 1, true)
@@ -2009,10 +2016,10 @@ local function EnsureFrame()
                     L["Builds a step-by-step route through this zone's quests and follows it as you play."],
                     1, 1, 1, true)
             end
+            GameTooltip:AddLine(
+                L["This is not an optimal route. It is lazy questing only."],
+                0.8, 0.8, 0.8, true)
         end
-        GameTooltip:AddLine(
-            L["This is not an optimal route. It is lazy questing only."],
-            0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     routeButton:SetScript("OnLeave", function()

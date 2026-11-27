@@ -19,6 +19,7 @@ local currentLabel
 local steps = {}
 local totalSteps = 0
 local completedSteps = 0
+local stepUnit
 local skipped = {}
 local autoPinnedKey
 local pendingPinKey
@@ -28,12 +29,16 @@ local ACTION_LABELS = {
     accept = L["Accept"],
     complete = L["Complete"],
     turnin = L["Turn in"],
+    ["do"] = L["Do"],
+    talk = L["Talk"],
 }
 
 local ACTION_COLORS = {
     accept = { 1.00, 0.82, 0.00 },
     complete = { 0.35, 0.95, 0.45 },
     turnin = { 0.25, 0.75, 1.00 },
+    ["do"] = { 1.00, 0.45, 0.20 },
+    talk = { 0.90, 0.90, 0.90 },
 }
 
 local function MapName(mapID)
@@ -59,21 +64,6 @@ local function PlayerMapID()
         end
     end
     return nil
-end
-
-local function PlayerPosition(mapID)
-    if not mapID or not C_Map or type(C_Map.GetPlayerMapPosition) ~= "function" then
-        return nil
-    end
-    local ok, position = pcall(C_Map.GetPlayerMapPosition, mapID, "player")
-    if not ok or not position or type(position.GetXY) ~= "function" then
-        return nil
-    end
-    local x, y = position:GetXY()
-    if type(x) ~= "number" or type(y) ~= "number" then
-        return nil
-    end
-    return x, y
 end
 
 local function MapOpen()
@@ -139,16 +129,22 @@ local function StepLocation(node, action)
     return nil
 end
 
-local function SetLocationMapName(panel, action, mapID, x, y)
+local function SetLocationMapName(panel, action, mapID, x, y, name)
     local prefix
     if action == "accept" then
         prefix = L["Start: "]
     elseif action == "turnin" then
         prefix = L["Turn in: "]
+    elseif action == "talk" then
+        prefix = L["Talk: "]
     else
         prefix = L["Objective: "]
     end
-    panel.location:SetText(string.format("%s%s (%.1f, %.1f)", prefix, MapName(mapID), x, y))
+    local label = MapName(mapID)
+    if name then
+        label = name .. " - " .. label
+    end
+    panel.location:SetText(string.format("%s%s (%.1f, %.1f)", prefix, label, x, y))
 end
 
 local function BuildOrder(nodes, orderList, skipSet)
@@ -279,63 +275,93 @@ local function AddNode(nodes, orderList, quest, depth, prereqID)
     return node
 end
 
-local function BuildDungeon(dungeonName, skipSet)
-    local dungeon = ns.DungeonChains
-        and ns.DungeonChains.dungeons
-        and ns.DungeonChains.dungeons[dungeonName]
-    if not dungeon then
-        return { steps = {}, total = 0, completed = 0 }
+local function GuideStepSatisfied(step)
+    local questID = step.quest
+    if step.type == "accept" then
+        return ns.IsOnQuest(questID) or ns.IsQuestFlaggedCompleted(questID)
+    elseif step.type == "do" then
+        return ns.IsQuestFlaggedCompleted(questID) or ns.IsQuestReadyForTurnIn(questID)
+    elseif step.type == "turnin" then
+        return ns.IsQuestFlaggedCompleted(questID)
+    elseif step.type == "talk" then
+        return ns.IsOnQuest(questID) or ns.IsQuestFlaggedCompleted(questID)
     end
+    return false
+end
 
-    local nodes, orderList = {}, {}
-    for _, quest in ipairs(dungeon.quests or {}) do
-        local chain = quest.chain or {}
-        local previousID
-        for i = 1, #chain do
-            local node = AddNode(nodes, orderList, chain[i], i, previousID)
-            if node then
-                previousID = node.id
-            end
-        end
-        AddNode(nodes, orderList, quest, #chain + 1, previousID)
+local function GuideStepAllowed(step, playerFaction)
+    if step.faction and step.faction ~= "Both" and playerFaction
+        and playerFaction ~= step.faction then
+        return false
     end
+    return true
+end
 
-    -- Dungeon routes batch acceptable quests that start on the player's
-    -- current map and are close by, so an NPC in front of the player is not
-    -- skipped in favor of a turn-in elsewhere.
-    local playerMapID = PlayerMapID()
-    local playerX, playerY = PlayerPosition(playerMapID)
-    if playerMapID and playerX and playerY then
-        local radiusSquared = 0.15 * 0.15
-        for i = 1, #orderList do
-            local node = nodes[orderList[i]]
-            if node.action == "accept" and node.acceptable ~= false
-                and node.mapID == playerMapID and node.x and node.y then
-                local dx = (node.x / 100) - playerX
-                local dy = (node.y / 100) - playerY
-                if dx * dx + dy * dy <= radiusSquared then
-                    node.batchPickup = true
-                end
-            end
+local function GuideLocation(route, step)
+    local npc = step.npc and route.npcs and route.npcs[step.npc]
+    if npc and npc.map and npc.x and npc.y then
+        return npc.map, npc.x, npc.y, npc.name
+    end
+    for _, targetKey in ipairs(step.targets or {}) do
+        local target = route.npcs and route.npcs[targetKey]
+        if target and target.map and target.x and target.y then
+            return target.map, target.x, target.y, target.name
         end
     end
+    return nil
+end
 
-    local total = #orderList
+local function BuildDungeonGuide(dungeonName, skipSet)
+    local route = ns.DungeonRoutes and ns.DungeonRoutes[dungeonName]
+    if not route then
+        return { steps = {}, total = 0, completed = 0, unit = "steps", guide = true }
+    end
+    local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction() or nil
+    local all = {}
     local completed = 0
-    for i = 1, total do
-        if ns.IsQuestFlaggedCompleted(orderList[i]) then
-            completed = completed + 1
+    for index, raw in ipairs(route.steps or {}) do
+        if GuideStepAllowed(raw, playerFaction) then
+            local step = {
+                key = tostring(index) .. ":" .. tostring(raw.type) .. ":" .. tostring(raw.quest),
+                skipKey = tostring(index) .. ":" .. tostring(raw.type) .. ":" .. tostring(raw.quest),
+                id = raw.quest,
+                quest = raw.quest,
+                action = raw.type,
+                type = raw.type,
+                title = (route.titles and route.titles[raw.quest])
+                    or (ns.GetQuestTitle and ns.GetQuestTitle(raw.quest, true))
+                    or (L["Quest "] .. tostring(raw.quest)),
+                text = raw.text,
+                npcKey = raw.npc,
+                targetKeys = raw.targets,
+                guide = true,
+            }
+            step.mapID, step.x, step.y, step.locationName = GuideLocation(route, raw)
+            step.locationMapID, step.locationX, step.locationY = step.mapID, step.x, step.y
+            step.data = step.mapID and {
+                mapID = step.mapID, x = step.x, y = step.y,
+            } or nil
+            step.satisfied = GuideStepSatisfied(step)
+            if step.satisfied then
+                completed = completed + 1
+            end
+            all[#all + 1] = step
         end
     end
-
-    local ordered = BuildOrder(nodes, orderList, skipSet)
-    for i = 1, #ordered do
-        local node = ordered[i]
-        node.action = StepAction(node)
-        node.locationMapID, node.locationX, node.locationY = StepLocation(node, node.action)
+    local remaining = {}
+    for i = 1, #all do
+        local step = all[i]
+        if not step.satisfied and not (skipSet and skipSet[step.skipKey]) then
+            remaining[#remaining + 1] = step
+        end
     end
-
-    return { steps = ordered, total = total, completed = completed }
+    return {
+        steps = remaining,
+        total = #all,
+        completed = completed,
+        unit = "steps",
+        guide = true,
+    }
 end
 
 local function ZonePrereqs(questID, data, nodes)
@@ -498,12 +524,12 @@ local function BuildCurrent(skipSet)
     if currentKind == "zone" then
         return BuildZone(currentTarget, skipSet)
     end
-    return BuildDungeon(currentTarget, skipSet)
+    return BuildDungeonGuide(currentTarget, skipSet)
 end
 
 local function StepKey(step)
     return tostring(currentKind) .. ":" .. tostring(currentTarget) .. ":"
-        .. tostring(step.id) .. ":" .. step.action
+        .. tostring(step.key or step.id) .. ":" .. step.action
 end
 
 local function TrackStep(step, report)
@@ -524,7 +550,9 @@ local function TrackStep(step, report)
             ns.ClearWaypoint()
         end
         if report and frame and frame.location then
-            if currentKind == "dungeon" then
+            if step.text then
+                frame.location:SetText(step.text)
+            elseif currentKind == "dungeon" then
                 frame.location:SetText(string.format(
                     L["No world start location. Check inside %s."], currentLabel))
             else
@@ -582,9 +610,13 @@ local function Render()
         action:SetTextColor(color[1], color[2], color[3])
         panel.quest:SetText(step.title)
         panel.quest:SetTextColor(1, 0.82, 0)
-        if step.locationMapID then
+        if step.guide and step.action == "do" then
+            panel.location:SetText(step.text or L["Complete the quest objective."])
+        elseif step.locationMapID then
             SetLocationMapName(panel, step.action, step.locationMapID,
-                step.locationX, step.locationY)
+                step.locationX, step.locationY, step.locationName)
+        elseif step.text then
+            panel.location:SetText(step.text)
         elseif step.action == "accept" then
             if currentKind == "dungeon" then
                 panel.location:SetText(string.format(
@@ -607,10 +639,13 @@ local function Render()
         panel.pin:SetEnabled(false)
         panel.skip:SetEnabled(false)
     end
+    if panel.copy then
+        panel.copy:SetShown(step ~= nil and step.quest ~= nil)
+    end
 
     panel.progress:SetMinMaxValues(0, math.max(totalSteps, 1))
     panel.progress:SetValue(completedSteps)
-    local unit = totalSteps == 1 and L["quest"] or L["quests"]
+    local unit = stepUnit or (totalSteps == 1 and L["quest"] or L["quests"])
     panel.progress.label:SetText(("%d / %d %s"):format(completedSteps, totalSteps, unit))
     panel.progress:SetShown(totalSteps > 0)
     panel.reset:SetEnabled(next(skipped) ~= nil)
@@ -624,6 +659,7 @@ local function Refresh(force)
     steps = route.steps
     totalSteps = route.total
     completedSteps = route.completed
+    stepUnit = route.unit
     Render()
 
     local step = steps[1]
@@ -720,7 +756,7 @@ local function EnsureFrame()
 
     local quest = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     quest:SetPoint("TOPLEFT", PADDING, -84)
-    quest:SetPoint("TOPRIGHT", -PADDING, -84)
+    quest:SetPoint("TOPRIGHT", -(PADDING + 22), -84)
     quest:SetJustifyH("LEFT")
     quest:SetWordWrap(false)
     panel.quest = quest
@@ -730,7 +766,45 @@ local function EnsureFrame()
     location:SetPoint("TOPRIGHT", -PADDING, -102)
     location:SetJustifyH("LEFT")
     location:SetTextColor(0.72, 0.72, 0.72)
+    location:SetWordWrap(true)
+    location:SetHeight(24)
     panel.location = location
+
+    local copy = CreateFrame("Button", nil, panel)
+    copy:SetSize(18, 18)
+    copy:SetPoint("TOPRIGHT", -PADDING, -82)
+    copy:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+    local copyIcon = copy:CreateTexture(nil, "ARTWORK")
+    copyIcon:SetAllPoints(copy)
+    copyIcon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
+    copy:SetScript("OnClick", function()
+        local step = steps[1]
+        if step and step.quest and ns.ShowWowheadQuestURL then
+            ns.ShowWowheadQuestURL(step.quest)
+        end
+    end)
+    copy:SetScript("OnEnter", function(self)
+        if not GameTooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Copy Wowhead URL"], 1, 0.82, 0)
+        local step = steps[1]
+        if step and step.text then
+            GameTooltip:AddLine(step.text, 1, 1, 1, true)
+        end
+        if step and step.locationName then
+            GameTooltip:AddLine(step.locationName, 0.8, 0.8, 0.8)
+        end
+        GameTooltip:Show()
+    end)
+    copy:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    copy:Hide()
+    panel.copy = copy
 
     local progress = CreateFrame("StatusBar", nil, panel, "BackdropTemplate")
     progress:SetPoint("TOPLEFT", PADDING, -130)
@@ -768,7 +842,7 @@ local function EnsureFrame()
                 1, 1, 1, true)
         else
             GameTooltip:AddLine(
-                L["Picks up nearby quests before turning in."],
+                L["Follows the guide steps for this dungeon."],
                 1, 1, 1, true)
         end
         GameTooltip:Show()
@@ -816,7 +890,7 @@ local function EnsureFrame()
         if not step then
             return
         end
-        skipped[step.id] = true
+        skipped[step.skipKey or step.id] = true
         autoPinnedKey = nil
         Refresh(true)
     end)
@@ -878,7 +952,7 @@ end
 
 local function RouteTitle(kind)
     return kind == "dungeon"
-        and "|cffffd100Dungeon|r |cff65b9ffRoute|r"
+        and "|cffffd100Dungeon|r |cff65b9ffGuide|r"
         or "|cffffd100Zone|r |cff65b9ffRoute|r"
 end
 
@@ -903,10 +977,8 @@ local function ShowRoute(kind, target, label)
 end
 
 function ns.QuestRoute.ShowDungeon(dungeonName)
-    local dungeon = ns.DungeonChains
-        and ns.DungeonChains.dungeons
-        and ns.DungeonChains.dungeons[dungeonName]
-    if not dungeon then
+    local route = ns.DungeonRoutes and ns.DungeonRoutes[dungeonName]
+    if not route then
         return false
     end
     return ShowRoute("dungeon", dungeonName, dungeonName)
@@ -967,8 +1039,8 @@ function ns.QuestRoute.Current()
     return steps[1]
 end
 
-ns.QuestRoute.Build = BuildDungeon
-ns.QuestRoute.BuildDungeon = BuildDungeon
+ns.QuestRoute.Build = BuildDungeonGuide
+ns.QuestRoute.BuildDungeon = BuildDungeonGuide
 ns.QuestRoute.BuildZone = BuildZone
 
 -- The route frame is intentionally not added to UISpecialFrames. Escape must

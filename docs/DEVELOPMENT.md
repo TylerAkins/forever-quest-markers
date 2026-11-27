@@ -32,6 +32,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
 | `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
 | `Database/DungeonChains.lua` | Generated dungeon quests and required pre-quest chains from ForeverDungeonJournal |
+| `Database/DungeonRoutes.lua` | Generated curated dungeon guide steps from Dungeon_Quests_Forever |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
 | `Database/BookQuests.lua` | Hand-maintained library book pickup quest IDs for the collectible book category |
 | `Database/ZoneLevels.lua` | Hand-maintained zone level ranges copied from Leatrix Maps |
@@ -90,6 +91,16 @@ luajit tools/generate-dungeon-chains.lua \
 ```
 
 The addon marks chain quests as dungeon quests, so a normal outdoor pre-quest that unlocks a dungeon step uses the dungeon pin color and the **Show dungeon / raid quest pins** filter.
+
+`Database/DungeonRoutes.lua` comes from the Dungeon_Quests_Forever dungeon guides. Blackrock Depths is generated first; other dungeons stay disabled in the route button until their guides are added. Regenerate it after a guide update:
+
+```bash
+luajit tools/generate-dungeon-routes.lua \
+  "/path/to/Dungeon_Quests_Forever" \
+  Database/DungeonRoutes.lua
+```
+
+Zone routes remain automatic. Dungeon Guide routes use these curated Accept, Do, and Turn in steps.
 
 Optional parity review against an older database:
 
