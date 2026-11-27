@@ -14,7 +14,7 @@ QuestieDB and Questie are licensed under **GPL-3.0**. The generated database fil
 
 ## Dungeon guide routes
 
-`Database/DungeonRoutes.lua` uses the step order, quest IDs, NPC identifiers and coordinates, and faction flags from the Dungeon Quests (Forever) addon by Daeler. The objective summaries in that file are original text written for this project, not copied from the guide. The source addon does not declare a license in its TOC; confirm permission before redistributing its data.
+`Database/DungeonRoutes.lua` uses the step order, quest IDs, NPC identifiers and coordinates, and faction flags from the Dungeon Quests (Forever) addon by Daeler, including its dungeon and attunement guides. The objective summaries in that file are original text written for this project, not copied from the guide. The source addon does not declare a license in its TOC; confirm permission before redistributing its data.
 
 ## World of Warcraft
 

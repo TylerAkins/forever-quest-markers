@@ -7818,6 +7818,30 @@ cases["dungeon_route_runtime.handles_inside_steps_without_locations"] = function
     assert(route.steps[3].action == "turnin" and route.steps[3].mapID == 1428)
 end
 
+cases["dungeon_route_runtime.all_guides_and_attunements_are_present"] = function()
+    ns = {}
+    assert(loadfile("Database/DungeonRoutes.lua"))("ForeverQuestPins", ns)
+    local count = 0
+    for _ in pairs(ns.DungeonRoutes) do
+        count = count + 1
+    end
+    assert(count == 36, "expected 36 dungeon and attunement routes")
+    assert(ns.DungeonRoutes["Ragefire Chasm"])
+    assert(ns.DungeonRoutes["Onyxia Attunement"])
+    assert(ns.DungeonRoutes["Stratholme: Living"])
+    assert(ns.DungeonRoutes["Stratholme: Undead"])
+    local ubrs = ns.DungeonRoutes["Upper Blackrock Spire"]
+    assert(ubrs.steps[1].quest == 4742, "the UBRS key steps are first")
+    for _, route in pairs(ns.DungeonRoutes) do
+        for _, step in ipairs(route.steps) do
+            if step.text then
+                assert(not step.text:find("return the items to", 1, true))
+                assert(not step.text:find("Venture to", 1, true))
+            end
+        end
+    end
+end
+
 cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }

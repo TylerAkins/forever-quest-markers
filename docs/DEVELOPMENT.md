@@ -92,7 +92,7 @@ luajit tools/generate-dungeon-chains.lua \
 
 The addon marks chain quests as dungeon quests, so a normal outdoor pre-quest that unlocks a dungeon step uses the dungeon pin color and the **Show dungeon / raid quest pins** filter.
 
-`Database/DungeonRoutes.lua` comes from the Dungeon_Quests_Forever dungeon guides. Blackrock Depths is generated first; other dungeons stay disabled in the route button until their guides are added. Regenerate it after a guide update:
+`Database/DungeonRoutes.lua` comes from the Dungeon_Quests_Forever dungeon and attunement guides. All dungeon guides are included, plus the UBRS key and Onyxia attunement guides. Cozy Sleeping Bag and Mallet of Zul'Farrak have no guide. Regenerate it after a guide update:
 
 ```bash
 luajit tools/generate-dungeon-routes.lua \
@@ -100,7 +100,7 @@ luajit tools/generate-dungeon-routes.lua \
   Database/DungeonRoutes.lua
 ```
 
-Zone routes remain automatic. Dungeon Guide routes use these curated Accept, Do, and Turn in steps.
+Zone routes remain automatic. Dungeon Guide routes use these curated Accept, Do, and Turn in steps. Objective text is summarized by this project; step order, NPC coordinates, and faction flags come from the guide.
 
 Optional parity review against an older database:
 

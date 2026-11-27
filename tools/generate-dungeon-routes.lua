@@ -1,10 +1,12 @@
--- Regenerate Database/DungeonRoutes.lua from a Dungeon_Quests_Forever guide.
+-- Regenerate Database/DungeonRoutes.lua from the Dungeon_Quests_Forever
+-- dungeon and attunement guides.
 --
 -- Usage:
 --   luajit tools/generate-dungeon-routes.lua <Dungeon_Quests_Forever path> [output]
 --
--- Only Blackrock Depths is generated for now. More dungeon guides can be added
--- here as they are ready.
+-- The guide supplies step order, quest IDs, NPC coordinates, and faction flags.
+-- Quest titles come from Database/ForeverQuests.lua. Objective text is
+-- summarized by this project so the generated route does not copy guide prose.
 
 local guideRoot = assert(arg[1], "Dungeon_Quests_Forever path is required")
 local outputPath = arg[2] or "Database/DungeonRoutes.lua"
@@ -12,29 +14,89 @@ if guideRoot:sub(-1) ~= "/" then
     guideRoot = guideRoot .. "/"
 end
 
-local guidePath = guideRoot .. "Guides/Dungeons/52-60_BlackrockDepths.lua"
-
-local ns = { NPCS = {} }
-ns.L = function(_, english) return english end
 local function Make(kind, quest, npcKey, text, opts)
     local step = opts or {}
     step.type, step.quest, step.npc, step.text = kind, quest, npcKey, text or step.text
     return step
 end
-ns.Accept = function(quest, npc, opts) return Make("accept", quest, npc, nil, opts) end
-ns.TurnIn = function(quest, npc, opts) return Make("turnin", quest, npc, nil, opts) end
-ns.Talk = function(quest, npc, text, opts) return Make("talk", quest, npc, text, opts) end
-ns.Do = function(quest, text, opts) return Make("do", quest, nil, text, opts) end
 
-local data
-ns.RegisterDungeon = function(_, _, build)
-    data = build()
+local function NewNamespace()
+    local ns = { NPCS = {} }
+    setmetatable(ns, {
+        __index = function(target, key)
+            local value = {}
+            rawset(target, key, value)
+            return value
+        end,
+    })
+    ns.L = function(_, english) return english end
+    ns.Accept = function(quest, npc, opts) return Make("accept", quest, npc, nil, opts) end
+    ns.TurnIn = function(quest, npc, opts) return Make("turnin", quest, npc, nil, opts) end
+    ns.Talk = function(quest, npc, text, opts) return Make("talk", quest, npc, text, opts) end
+    ns.Do = function(quest, text, opts) return Make("do", quest, nil, text, opts) end
+    return ns
 end
 
-assert(loadfile(guidePath))("DungeonQuestsForever", ns)
+local sharedPath = guideRoot .. "Guides/Dungeons/30-46_ScarletMonasteryShared.lua"
+local guidePaths = {}
+local pipe = assert(io.popen('ls "' .. guideRoot .. 'Guides/Dungeons"/*.lua'))
+for line in pipe:lines() do
+    if not line:match("ScarletMonasteryShared") then
+        guidePaths[#guidePaths + 1] = line
+    end
+end
+pipe:close()
+guidePaths[#guidePaths + 1] = guideRoot .. "Guides/Attunements/1_UpperBlackrockSpire.lua"
+guidePaths[#guidePaths + 1] = guideRoot .. "Guides/Attunements/3_OnyxiasLair.lua"
 
--- Short objective summaries written for this addon. They are intentionally
--- paraphrased so the generated route does not copy the source guide's prose.
+-- Load all guides into one namespace, matching the source addon. Shared NPC
+-- keys such as varimathras are defined by one guide and used by another.
+local ns = NewNamespace()
+ns.RegisterDungeon = function() end
+assert(loadfile(sharedPath))("DungeonQuestsForever", ns)
+
+local guides = {}
+for _, path in ipairs(guidePaths) do
+    local captured
+    ns.RegisterDungeon = function(_, key, build)
+        local ok, data = pcall(build)
+        captured = { key = key, ok = ok, data = data }
+    end
+    assert(loadfile(path))("DungeonQuestsForever", ns)
+    if not captured or not captured.ok then
+        error("guide failed to build: " .. path .. ": " .. tostring(captured and captured.data))
+    end
+    guides[#guides + 1] = {
+        path = path,
+        key = captured.key,
+        name = captured.data.name,
+        steps = captured.data.steps or {},
+    }
+end
+
+local aliases = {
+    ["The Hall of Thanes"] = { "Hall of Thanes" },
+    ["Dire Maul - East"] = { "Dire Maul: East" },
+    ["Dire Maul - North"] = { "Dire Maul: North" },
+    ["Dire Maul - West"] = { "Dire Maul: West" },
+    ["Scarlet Monastery - Graveyard"] = { "Scarlet Monastery: Graveyard" },
+    ["Scarlet Monastery - Library"] = { "Scarlet Monastery: Library" },
+    ["Scarlet Monastery - Armory"] = { "Scarlet Monastery: Armory" },
+    ["Scarlet Monastery - Cathedral"] = { "Scarlet Monastery: Cathedral" },
+    ["Stratholme"] = { "Stratholme: Living", "Stratholme: Undead" },
+    ["Onyxia's Lair"] = { "Onyxia Attunement" },
+    ["Upper Blackrock Spire key"] = { "Upper Blackrock Spire" },
+}
+
+local chains = {}
+assert(loadfile("Database/DungeonChains.lua"))("ForeverQuestPins", chains)
+local known = {}
+for _, name in ipairs(chains.DungeonChains.order) do
+    known[name] = true
+end
+
+-- Short objective summaries written for this addon. BRD has hand-written
+-- summaries; every other Do step gets a short generated summary below.
 local ROUTE_TEXT = {
     [3442] = "Gather 4 Hearts of Flame and 4 Golem Oil globes.",
     [3443] = "Gather 8 Thorium Plated Daggers.",
@@ -74,20 +136,90 @@ local ROUTE_TEXT = {
     [4362] = "Rescue Princess Moira Bronzebeard in Blackrock Depths.",
 }
 
-local function SimplifyItemText(text)
-    if not text then
-        return nil
+local function FirstTargetName(step, npcs)
+    for _, key in ipairs(step.targets or {}) do
+        local npc = npcs[key]
+        if npc and npc.name then
+            return npc.name
+        end
     end
-    text = text:gsub("^Object:%s*", ""):gsub("^Quest item:%s*", "")
-    return text
+    return nil
 end
 
-for _, step in ipairs(data.steps) do
-    if step.type == "do" and not ROUTE_TEXT[step.quest] then
-        error("missing route text for quest " .. tostring(step.quest))
+local function StepText(step, npcs)
+    if step.type == "do" then
+        local summary = ROUTE_TEXT[step.quest]
+        if summary then
+            return summary
+        end
+        local target = FirstTargetName(step, npcs)
+        if target then
+            return "Complete the objective near " .. target .. "."
+        end
+        return "Complete the quest objective."
+    end
+    if step.type == "accept" and step.text then
+        return "Use or find the quest starter."
+    end
+    if step.type == "turnin" and step.text then
+        return "Use the quest object to turn in."
+    end
+    return nil
+end
+
+local routes = {}
+local function Route(target)
+    local route = routes[target]
+    if not route then
+        route = { steps = {}, sources = {} }
+        routes[target] = route
+    end
+    return route
+end
+
+local function AddGuide(guide, target, prepend)
+    local route = Route(target)
+    route.sources[#route.sources + 1] = guide.path:match("[^/]+$")
+    local function usable(step)
+        return type(step.quest) == "number" and step.quest > 0
+    end
+    if prepend then
+        local combined = {}
+        for _, step in ipairs(guide.steps) do
+            if usable(step) then
+                combined[#combined + 1] = step
+            end
+        end
+        for _, step in ipairs(route.steps) do
+            combined[#combined + 1] = step
+        end
+        route.steps = combined
+    else
+        for _, step in ipairs(guide.steps) do
+            if usable(step) then
+                route.steps[#route.steps + 1] = step
+            end
+        end
     end
 end
 
+for _, guide in ipairs(guides) do
+    local targets = aliases[guide.name]
+    if not targets then
+        if known[guide.name] then
+            targets = { guide.name }
+        else
+            error("no dungeon mapping for guide " .. guide.name .. " (" .. guide.path .. ")")
+        end
+    end
+    local prepend = guide.name == "Upper Blackrock Spire key"
+    for _, target in ipairs(targets) do
+        if not known[target] then
+            error("unknown DungeonChains name " .. target .. " for guide " .. guide.name)
+        end
+        AddGuide(guide, target, prepend)
+    end
+end
 
 local function Quote(value)
     if value == nil then
@@ -101,96 +233,101 @@ local function Quote(value)
     return '"' .. text .. '"'
 end
 
-local referenced = {}
-local function Mark(key)
-    if key then
-        referenced[key] = true
+local function SortedKeys(source)
+    local keys = {}
+    for key in pairs(source) do
+        keys[#keys + 1] = key
     end
-end
-for _, step in ipairs(data.steps) do
-    Mark(step.npc)
-    for _, target in ipairs(step.targets or {}) do
-        Mark(target)
-    end
+    table.sort(keys)
+    return keys
 end
 
 local lines = {
     "-- AUTO-GENERATED FILE",
     "-- DO NOT EDIT MANUALLY",
-    "-- Source: Dungeon_Quests_Forever Guides/Dungeons/52-60_BlackrockDepths.lua",
+    "-- Source: Dungeon_Quests_Forever Guides/Dungeons and Guides/Attunements (UBRS key, Onyxia)",
     "-- Generated by tools/generate-dungeon-routes.lua",
     "--",
-    "-- Blackrock Depths guide steps. Other dungeons are not generated yet.",
-    "-- Step order and NPC coordinates come from the guide. Quest titles come from the addon quest database.",
+    "-- Step order, NPC coordinates, and faction flags come from the guide.",
+    "-- Quest titles come from the addon quest database.",
     "-- Objective text is summarized by this project, not copied from the guide.",
     "",
     "local ADDON_NAME, ns = ...",
     "ns.DungeonRoutes = {",
-    '    ["Blackrock Depths"] = {',
-    '        source = "Dungeon_Quests_Forever",',
-    "        steps = {",
 }
-for _, step in ipairs(data.steps) do
-    local parts = {
-        "type = " .. Quote(step.type),
-        "quest = " .. Quote(step.quest),
-    }
-    if step.npc then
-        parts[#parts + 1] = "npc = " .. Quote(step.npc)
+for _, target in ipairs(SortedKeys(routes)) do
+    local route = routes[target]
+    lines[#lines + 1] = "    [" .. Quote(target) .. "] = {"
+    lines[#lines + 1] = '        source = "Dungeon_Quests_Forever",'
+    lines[#lines + 1] = "        sources = {"
+    for _, source in ipairs(route.sources) do
+        lines[#lines + 1] = "            " .. Quote(source) .. ","
     end
-    if step.faction then
-        parts[#parts + 1] = "faction = " .. Quote(step.faction)
-    end
-    local text
-    if step.type == "do" then
-        text = ROUTE_TEXT[step.quest]
-    else
-        text = SimplifyItemText(step.text)
-    end
-    if text then
-        parts[#parts + 1] = "text = " .. Quote(text)
-    end
-    if step.targets and #step.targets > 0 then
-        local targets = {}
-        for _, target in ipairs(step.targets) do
-            targets[#targets + 1] = Quote(target)
-        end
-        parts[#parts + 1] = "targets = { " .. table.concat(targets, ", ") .. " }"
-    end
-    lines[#lines + 1] = "            { " .. table.concat(parts, ", ") .. " },"
-end
-lines[#lines + 1] = "        },"
-lines[#lines + 1] = "        npcs = {"
-local npcKeys = {}
-for key in pairs(referenced) do
-    npcKeys[#npcKeys + 1] = key
-end
-table.sort(npcKeys)
-for _, key in ipairs(npcKeys) do
-    local npc = ns.NPCS[key]
-    if npc then
+    lines[#lines + 1] = "        },"
+    lines[#lines + 1] = "        steps = {"
+    local referenced = {}
+    for _, step in ipairs(route.steps) do
         local parts = {
-            "id = " .. Quote(npc.id),
-            "name = " .. Quote(npc.name),
+            "type = " .. Quote(step.type),
+            "quest = " .. Quote(step.quest),
         }
-        if npc.map then
-            parts[#parts + 1] = "map = " .. Quote(npc.map)
+        if step.npc then
+            parts[#parts + 1] = "npc = " .. Quote(step.npc)
+            referenced[step.npc] = true
         end
-        if npc.x then
-            parts[#parts + 1] = "x = " .. Quote(npc.x)
+        if step.faction then
+            parts[#parts + 1] = "faction = " .. Quote(step.faction)
         end
-        if npc.y then
-            parts[#parts + 1] = "y = " .. Quote(npc.y)
+        local text = StepText(step, ns.NPCS)
+        if text then
+            parts[#parts + 1] = "text = " .. Quote(text)
         end
-        lines[#lines + 1] = "            " .. key .. " = { " .. table.concat(parts, ", ") .. " },"
+        if step.targets and #step.targets > 0 then
+            local targets = {}
+            for _, key in ipairs(step.targets) do
+                targets[#targets + 1] = Quote(key)
+                referenced[key] = true
+            end
+            parts[#parts + 1] = "targets = { " .. table.concat(targets, ", ") .. " }"
+        end
+        if step.map and step.x and step.y then
+            parts[#parts + 1] = "map = " .. Quote(step.map)
+            parts[#parts + 1] = "x = " .. Quote(step.x)
+            parts[#parts + 1] = "y = " .. Quote(step.y)
+        end
+        lines[#lines + 1] = "            { " .. table.concat(parts, ", ") .. " },"
     end
+    lines[#lines + 1] = "        },"
+    lines[#lines + 1] = "        npcs = {"
+    for _, key in ipairs(SortedKeys(referenced)) do
+        local npc = ns.NPCS[key]
+        if npc then
+            local parts = {
+                "id = " .. Quote(npc.id),
+                "name = " .. Quote(npc.name),
+            }
+            if npc.map then
+                parts[#parts + 1] = "map = " .. Quote(npc.map)
+            end
+            if npc.x then
+                parts[#parts + 1] = "x = " .. Quote(npc.x)
+            end
+            if npc.y then
+                parts[#parts + 1] = "y = " .. Quote(npc.y)
+            end
+            lines[#lines + 1] = "            " .. key .. " = { " .. table.concat(parts, ", ") .. " },"
+        end
+    end
+    lines[#lines + 1] = "        },"
+    lines[#lines + 1] = "    },"
 end
-lines[#lines + 1] = "        },"
-lines[#lines + 1] = "    },"
 lines[#lines + 1] = "}"
 lines[#lines + 1] = ""
 
 local file = assert(io.open(outputPath, "w"))
 file:write(table.concat(lines, "\n"))
 file:close()
-print("Wrote " .. outputPath .. " from " .. guidePath)
+
+local routeCount = 0
+for _ in pairs(routes) do routeCount = routeCount + 1 end
+print(("Wrote %s with %d dungeon routes"):format(outputPath, routeCount))

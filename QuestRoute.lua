@@ -298,6 +298,9 @@ local function GuideStepAllowed(step, playerFaction)
 end
 
 local function GuideLocation(route, step)
+    if step.map and step.x and step.y then
+        return step.map, step.x, step.y, nil
+    end
     local npc = step.npc and route.npcs and route.npcs[step.npc]
     if npc and npc.map and npc.x and npc.y then
         return npc.map, npc.x, npc.y, npc.name
@@ -320,7 +323,8 @@ local function BuildDungeonGuide(dungeonName, skipSet)
     local all = {}
     local completed = 0
     for index, raw in ipairs(route.steps or {}) do
-        if GuideStepAllowed(raw, playerFaction) then
+        if type(raw.quest) == "number" and raw.quest > 0
+            and GuideStepAllowed(raw, playerFaction) then
             local step = {
                 key = tostring(index) .. ":" .. tostring(raw.type) .. ":" .. tostring(raw.quest),
                 skipKey = tostring(index) .. ":" .. tostring(raw.type) .. ":" .. tostring(raw.quest),
