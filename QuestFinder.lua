@@ -76,6 +76,56 @@ local function IsZoneMap(mapID)
     return mapType == nil or mapType >= 3
 end
 
+local zoneRanges
+
+local function BuildZoneRanges()
+    local ranges = {}
+    for _, data in pairs(ns.Quests or {}) do
+        local level = data.minLevel
+        if type(level) == "number" and level > 0 then
+            local seen = {}
+            local function add(mapID)
+                if type(mapID) ~= "number" or seen[mapID] then
+                    return
+                end
+                seen[mapID] = true
+                local range = ranges[mapID]
+                if not range then
+                    ranges[mapID] = { min = level, max = level }
+                else
+                    if level < range.min then range.min = level end
+                    if level > range.max then range.max = level end
+                end
+            end
+            add(data.mapID)
+            for _, coord in ipairs(data.coords or {}) do
+                add(coord[3])
+            end
+        end
+    end
+    return ranges
+end
+
+local function ZoneLevelRange(mapID)
+    if type(mapID) ~= "number" then
+        return nil
+    end
+    if not zoneRanges then
+        zoneRanges = BuildZoneRanges()
+    end
+    return zoneRanges[mapID]
+end
+
+local function FormatRange(range)
+    if not range then
+        return nil
+    end
+    if range.min == range.max then
+        return tostring(range.min)
+    end
+    return range.min .. "-" .. range.max
+end
+
 local function AddMap(mapID, seen, list)
     if type(mapID) ~= "number" or seen[mapID] or not IsZoneMap(mapID) then
         return
@@ -86,6 +136,7 @@ local function AddMap(mapID, seen, list)
         id = mapID,
         name = MapName(mapID),
         mapType = info and info.mapType,
+        levelRange = FormatRange(ZoneLevelRange(mapID)),
     }
 end
 
@@ -548,9 +599,25 @@ local function AvailableEntries(mapID)
     return entries
 end
 
+local function IsDungeonQuestAvailable(questID, data, quest)
+    if data then
+        return IsFinderAvailable(questID, data)
+    end
+    if ns.IsQuestFlaggedCompleted and ns.IsQuestFlaggedCompleted(questID) then
+        return false
+    end
+    if ns.IsOnQuest and ns.IsOnQuest(questID) then
+        return false
+    end
+    return true
+end
+
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
+    if not IsDungeonQuestAvailable(questID, data, quest) then
+        return
+    end
     local locations = QuestLocations(questID, data)
     if #locations == 0 and quest.mapID then
         locations[1] = { mapID = quest.mapID, x = quest.x, y = quest.y }
@@ -624,7 +691,7 @@ local function DungeonHeader(dungeonName, dungeon)
     local count = #(dungeon.quests or {})
     local subtitle = count .. " " .. (count == 1 and L["quest"] or L["quests"])
     if dungeon.level then
-        subtitle = "[" .. dungeon.level .. "] " .. subtitle
+        subtitle = string.format(L["Level %s"], dungeon.level) .. "  |cff6b6b6b·|r  " .. subtitle
     end
     return {
         kind = "header",
@@ -645,9 +712,15 @@ local function AllDungeonEntries()
         local name = order[i]
         local dungeon = dungeons[name]
         if dungeon then
-            AddEntry(entries, DungeonHeader(name, dungeon))
+            local questEntries = {}
             for _, quest in ipairs(dungeon.quests or {}) do
-                AddDungeonQuestRows(entries, dungeon, quest, false)
+                AddDungeonQuestRows(questEntries, dungeon, quest, false)
+            end
+            if #questEntries > 0 then
+                AddEntry(entries, DungeonHeader(name, dungeon))
+                for j = 1, #questEntries do
+                    entries[#entries + 1] = questEntries[j]
+                end
             end
         end
     end
@@ -703,13 +776,25 @@ local function UpdateCount(entries)
     end
 end
 
+local function ZoneHeaderEntry()
+    local zone = CurrentZoneID()
+    local title = zone and MapName(zone) or L["All zones"]
+    local range = zone and FormatRange(ZoneLevelRange(zone))
+    return {
+        kind = "header",
+        title = title,
+        subtitle = range and string.format(L["Level %s"], range) or L["All levels"],
+        r = 1, g = 0.82, b = 0,
+    }
+end
+
 local function EmptyEntry()
     local zone = CurrentZoneID()
-    local zoneName = zone and MapName(zone) or L["All zones"]
+    local zoneName = zone and MapName(zone) or nil
     if activeTab == 1 then
         return {
             kind = "header",
-            title = string.format(L["No breadcrumbs in %s."], zoneName),
+            title = zoneName and string.format(L["No breadcrumbs in %s."], zoneName) or L["No breadcrumbs match these filters."],
             subtitle = L["Choose another zone or check Map pins settings."],
             r = 0.7, g = 0.7, b = 0.7,
         }
@@ -717,15 +802,15 @@ local function EmptyEntry()
     if activeTab == 2 then
         return {
             kind = "header",
-            title = string.format(L["No available quests in %s."], zoneName),
+            title = zoneName and string.format(L["No available quests in %s."], zoneName) or L["No available quests match these filters."],
             subtitle = L["Choose another zone or check Map pins settings."],
             r = 0.7, g = 0.7, b = 0.7,
         }
     end
     return {
         kind = "header",
-        title = L["No dungeon quests are available."],
-        subtitle = L["Check the Dungeon chains database."],
+        title = L["No available dungeon quests."],
+        subtitle = L["Check the Dungeon chains database or choose another dungeon."],
         r = 0.7, g = 0.7, b = 0.7,
     }
 end
@@ -735,8 +820,17 @@ local function RenderRows()
         return
     end
     local entries = BuildEntries()
-    if #entries == 0 then
-        entries[1] = EmptyEntry()
+    local hasQuest = false
+    for i = 1, #entries do
+        if entries[i].kind == "quest" then
+            hasQuest = true
+            break
+        end
+    end
+    if not hasQuest then
+        entries = { EmptyEntry() }
+    elseif activeTab ~= 3 then
+        table.insert(entries, 1, ZoneHeaderEntry())
     end
     local y = 0
     for i = 1, #entries do
@@ -782,19 +876,38 @@ RefreshRows = function()
     end
 end
 
+local function ZoneLabel(mapID)
+    local name = MapName(mapID)
+    local range = FormatRange(ZoneLevelRange(mapID))
+    if range then
+        return name .. " (" .. range .. ")"
+    end
+    return name
+end
+
+local function DungeonLabel(name)
+    local dungeon = ns.DungeonChains
+        and ns.DungeonChains.dungeons
+        and ns.DungeonChains.dungeons[name]
+    if dungeon and dungeon.level then
+        return name .. " (" .. dungeon.level .. ")"
+    end
+    return name
+end
+
 local function UpdateZoneText()
     local dropdown = frame and frame.zoneDropdown
     if not dropdown then
         return
     end
     if type(zoneSelection) == "number" then
-        dropdown:SetDefaultText(MapName(zoneSelection))
+        dropdown:SetDefaultText(ZoneLabel(zoneSelection))
     elseif zoneSelection == "all" then
         dropdown:SetDefaultText(L["All zones"])
     else
         local current = CurrentMapID()
         if current then
-            dropdown:SetDefaultText(L["Current zone"] .. ": " .. MapName(current))
+            dropdown:SetDefaultText(L["Current zone"] .. ": " .. ZoneLabel(current))
         else
             dropdown:SetDefaultText(L["Current zone"])
         end
@@ -807,7 +920,7 @@ local function UpdateDungeonText()
     if not dropdown then
         return
     end
-    dropdown:SetDefaultText(dungeonSelection or L["All dungeons"])
+    dropdown:SetDefaultText(dungeonSelection and DungeonLabel(dungeonSelection) or L["All dungeons"])
     dropdown:GenerateMenu()
 end
 
@@ -932,7 +1045,8 @@ local function EnsureFrame()
             function() SelectZone("all") end, "all")
         for i = 1, #(zoneList or {}) do
             local zone = zoneList[i]
-            root:CreateRadio(zone.name, function() return zoneSelection == zone.id end,
+            local label = zone.levelRange and (zone.name .. " (" .. zone.levelRange .. ")") or zone.name
+            root:CreateRadio(label, function() return zoneSelection == zone.id end,
                 function() SelectZone(zone.id) end, zone.id)
         end
     end)
@@ -945,7 +1059,7 @@ local function EnsureFrame()
         root:CreateRadio(L["All dungeons"], function() return dungeonSelection == nil end,
             function() SelectDungeon(nil) end, "all")
         for _, name in ipairs((ns.DungeonChains and ns.DungeonChains.order) or {}) do
-            root:CreateRadio(name, function() return dungeonSelection == name end,
+            root:CreateRadio(DungeonLabel(name), function() return dungeonSelection == name end,
                 function() SelectDungeon(name) end, name)
         end
     end)

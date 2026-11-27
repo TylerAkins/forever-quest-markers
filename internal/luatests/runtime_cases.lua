@@ -7013,6 +7013,7 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns.GetOption = function() return true end
     ns.IsQuestFlaggedCompleted = function() return false end
     ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function(questID) return questID ~= 203 end
     ns.IsInstanceQuest = function() return true end
     ns.IsPvPQuest = function() return false end
     ns.IsBookQuest = function() return false end
@@ -7020,6 +7021,7 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns.Quests = {
         [200] = { mapID = 1, x = 10, y = 10, title = "Dungeon Quest" },
         [201] = { mapID = 1, x = 20, y = 20, title = "Pre One" },
+        [203] = { mapID = 1, x = 30, y = 30, title = "Unavailable Quest" },
     }
     ns.DungeonChains = {
         order = { "Test Dungeon" },
@@ -7037,6 +7039,12 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
                             { id = 201, name = "Pre One", level = 10, mapID = 1, x = 20, y = 20 },
                             { id = 202, name = "Pre Two", level = 12 },
                         },
+                    },
+                    {
+                        id = 203,
+                        name = "Unavailable Quest",
+                        level = 20,
+                        mapID = 1, x = 30, y = 30,
                     },
                 },
             },
