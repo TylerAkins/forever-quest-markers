@@ -225,6 +225,94 @@ local function IsFinderAvailable(questID, data)
     return ns.IsQuestAvailable(questID, data, { skipLevelRequest = true })
 end
 
+local followUpsBySource
+
+local function BuildFollowUps()
+    local index = {}
+    local function add(source, followUp)
+        local list = index[source]
+        if not list then
+            list = {}
+            index[source] = list
+        end
+        list[#list + 1] = followUp
+    end
+    for questID, data in pairs(ns.Quests or {}) do
+        for _, source in ipairs(data.sourceQuestSingle or {}) do
+            add(source, questID)
+        end
+        for _, source in ipairs(data.sourceQuestGroup or {}) do
+            add(source, questID)
+        end
+    end
+    return index
+end
+
+local function FollowUpsFor(questID)
+    if not followUpsBySource then
+        followUpsBySource = BuildFollowUps()
+    end
+    return followUpsBySource[questID] or {}
+end
+
+local function TargetMapIDs(questID)
+    local maps = {}
+    local seen = {}
+    local function add(mapID)
+        if type(mapID) ~= "number" or seen[mapID] then
+            return
+        end
+        seen[mapID] = true
+        maps[#maps + 1] = mapID
+    end
+    local override = ns.BreadcrumbTargets and ns.BreadcrumbTargets[questID]
+    if type(override) == "number" then
+        add(override)
+    elseif type(override) == "table" then
+        for i = 1, #override do
+            add(override[i])
+        end
+    end
+    local followUps = FollowUpsFor(questID)
+    for i = 1, #followUps do
+        local data = ns.Quests and ns.Quests[followUps[i]]
+        if data then
+            add(data.mapID)
+            for _, coord in ipairs(data.coords or {}) do
+                add(coord[3])
+            end
+        end
+    end
+    return maps
+end
+
+local function TargetZoneNames(questID)
+    local maps = TargetMapIDs(questID)
+    local names = {}
+    local seen = {}
+    for i = 1, #maps do
+        local name = MapName(maps[i])
+        if name and name ~= L["Unknown zone"] and not seen[name] then
+            seen[name] = true
+            names[#names + 1] = name
+        end
+    end
+    return names
+end
+
+local function StartZoneNames(locations)
+    local names = {}
+    local seen = {}
+    for i = 1, #locations do
+        local name = MapName(locations[i].mapID)
+        if name and name ~= L["Unknown zone"] and not seen[name] then
+            seen[name] = true
+            names[#names + 1] = name
+        end
+    end
+    return names
+end
+
 local function PickLocation(locations, mapID)
     if not locations or #locations == 0 then
         return nil
@@ -558,21 +646,40 @@ local function BreadcrumbEntries(mapID)
             end
             if not altActive and IsFinderAvailable(questID, data) then
                 local locations = QuestLocations(questID, data)
-                local usable = {}
+                local startLocations = {}
                 for i = 1, #locations do
-                    local location = locations[i]
-                    if (mapID == nil or location.mapID == mapID) and LocationExplored(location) then
-                        usable[#usable + 1] = location
+                    if LocationExplored(locations[i]) then
+                        startLocations[#startLocations + 1] = locations[i]
                     end
                 end
-                if #usable > 0 then
-                    local location = PickLocation(usable, mapID)
-                    local insideDungeon = IsDungeonMap(location.mapID)
+                local targetMaps = TargetMapIDs(questID)
+                local matchesStart, matchesTarget
+                if mapID == nil then
+                    matchesStart = #startLocations > 0
+                    matchesTarget = #targetMaps > 0
+                else
+                    for i = 1, #startLocations do
+                        if startLocations[i].mapID == mapID then
+                            matchesStart = true
+                            break
+                        end
+                    end
+                    for i = 1, #targetMaps do
+                        if targetMaps[i] == mapID then
+                            matchesTarget = true
+                            break
+                        end
+                    end
+                end
+                if matchesStart or matchesTarget then
+                    local location = PickLocation(startLocations, mapID)
+                    local insideDungeon = location and IsDungeonMap(location.mapID) or false
                     local level = QuestLevel(questID, data)
                     local parts = QuestTagParts(questID, data)
-                    local subtitle = MapName(location.mapID)
-                    if #usable > 1 then
-                        subtitle = subtitle .. " |cff9d9d9d(" .. (#usable) .. " " .. L["locations"] .. ")|r"
+                    local startNames = StartZoneNames(startLocations)
+                    local subtitle = #startNames > 0 and table.concat(startNames, ", ") or L["No start map"]
+                    if #startLocations > 1 then
+                        subtitle = subtitle .. " |cff9d9d9d(" .. (#startLocations) .. " " .. L["locations"] .. ")|r"
                     end
                     if level then
                         subtitle = "[" .. level .. "] " .. subtitle
@@ -580,13 +687,36 @@ local function BreadcrumbEntries(mapID)
                     if #parts > 0 then
                         subtitle = subtitle .. "  " .. TagText(parts)
                     end
+                    local targetNames = TargetZoneNames(questID)
+                    local visibleTargets = {}
+                    local startNameSet = {}
+                    for i = 1, #startNames do
+                        startNameSet[startNames[i]] = true
+                    end
+                    for i = 1, #targetNames do
+                        if not startNameSet[targetNames[i]] then
+                            visibleTargets[#visibleTargets + 1] = targetNames[i]
+                        end
+                    end
+                    if #visibleTargets > 0 then
+                        subtitle = subtitle .. "  |cff9d9d9d"
+                            .. string.format(L["Leads to %s"], table.concat(visibleTargets, ", ")) .. "|r"
+                    end
                     if insideDungeon then
                         subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
                     end
-                    local tooltip = ChainText(questID)
+                    local tooltipParts = {}
+                    local chain = ChainText(questID)
+                    if chain then
+                        tooltipParts[#tooltipParts + 1] = chain
+                    end
+                    if #targetNames > 0 then
+                        tooltipParts[#tooltipParts + 1] = string.format(L["Leads to %s."],
+                            table.concat(targetNames, ", "))
+                    end
                     if insideDungeon then
-                        local reason = L["This quest starts inside the dungeon, so a map pin is not available."]
-                        tooltip = tooltip and (tooltip .. "\n" .. reason) or reason
+                        tooltipParts[#tooltipParts + 1] =
+                            L["This quest starts inside the dungeon, so a map pin is not available."]
                     end
                     AddEntry(entries, {
                         kind = "quest",
@@ -596,7 +726,7 @@ local function BreadcrumbEntries(mapID)
                         level = level,
                         location = location,
                         insideDungeon = insideDungeon,
-                        tooltip = tooltip,
+                        tooltip = #tooltipParts > 0 and table.concat(tooltipParts, "\n") or nil,
                     })
                 end
             end
@@ -610,7 +740,6 @@ local function BreadcrumbEntries(mapID)
     end)
     return entries
 end
-
 local function AvailableEntries(mapID)
     local entries = {}
     local scanned = 0

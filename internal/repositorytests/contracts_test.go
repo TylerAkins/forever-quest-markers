@@ -43,6 +43,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\DungeonChains.lua`,
 		`Database\BookQuests.lua`,
 		`Database\ZoneLevels.lua`,
+		`Database\BreadcrumbTargets.lua`,
 		"MinimapButton.lua",
 		"QuestFinder.lua",
 		"ChatQuestLinks.lua",

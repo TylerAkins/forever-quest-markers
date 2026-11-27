@@ -7001,6 +7001,65 @@ cases["quest_finder_runtime.breadcrumbs_respect_alt_quests_and_locations"] = fun
     assert(entries[1].subtitle:find("Zone Two", 1, true))
 end
 
+cases["quest_finder_runtime.breadcrumbs_use_the_target_zone"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Stormwind City", mapType = 3 },
+                [2] = { name = "Western Plaguelands", mapType = 3 },
+                [3] = { name = "Unrelated Zone", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 50 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [5066] = {
+            title = "A Call to Arms: The Plaguelands!",
+            isBreadcrumb = true,
+            mapID = 1, x = 56.39, y = 74.09,
+            minLevel = 50,
+        },
+        [5092] = {
+            title = "Clear the Way",
+            mapID = 2, x = 42.70, y = 84.03,
+            sourceQuestSingle = { 5066 },
+            sourceQuestNumRequired = 1,
+            minLevel = 50,
+        },
+        [5000] = {
+            title = "Override Target Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 20,
+            minLevel = 10,
+        },
+    }
+    ns.BreadcrumbTargets = { [5000] = 2 }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+
+    local entries = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#entries == 2, "both the derived and override breadcrumbs target this zone")
+    local byID = {}
+    for i = 1, #entries do byID[entries[i].questID] = entries[i] end
+    assert(byID[5066], "the capital breadcrumb is listed under its target zone")
+    assert(byID[5066].location.mapID == 1, "the pin still points at the breadcrumb's start")
+    assert(byID[5066].subtitle:find("Stormwind City", 1, true))
+    assert(byID[5066].subtitle:find("Leads to Western Plaguelands", 1, true))
+    assert(byID[5000], "the override target is honored")
+
+    assert(#ns.QuestFinder.BreadcrumbEntries(3) == 0, "unrelated zones stay empty")
+end
+
 cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns = {}
     C_Map = {

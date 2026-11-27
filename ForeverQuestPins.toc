@@ -24,6 +24,7 @@ Database\ExcludedQuests.lua
 Database\VanillaQuests.lua
 Database\BookQuests.lua
 Database\ZoneLevels.lua
+Database\BreadcrumbTargets.lua
 Localization.lua
 Config.lua
 Sparkle.lua
