@@ -689,7 +689,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		}
 	}
 	config := read(t, base, "Config.lua")
-	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showWarEffortAlways = false", "warnSkippedBreadcrumb = true", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
+	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showMinimapButton = true", "Show minimap button", "showWarEffortAlways = false", "warnSkippedBreadcrumb = true", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
 		if !strings.Contains(config, contract) {
 			t.Errorf("Config.lua missing %q", contract)
 		}

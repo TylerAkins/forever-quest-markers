@@ -2221,13 +2221,20 @@ local function BuildInterfaceSettings(self)
     local heading = self:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     heading:SetPoint("TOPLEFT", 16, -16)
     heading:SetText(L["Interface"])
+    local minimap = CreateOptionCheckbox(
+        self,
+        "showMinimapButton",
+        L["Show minimap button"],
+        L["The minimap button opens Quest Finder on left-click, toggles the last route on shift-left-click, and opens addon settings on right-click."]
+    )
+    minimap:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", -4, -12)
     local npcTooltips = CreateOptionCheckbox(
         self,
         "showNPCTooltips",
         L["Show quests on NPC tooltips"],
         L["List quests you can accept or turn in from this NPC (accept eligibility matches start pins; turn-ins require an active, complete quest)."]
     )
-    npcTooltips:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", -4, -12)
+    npcTooltips:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, 0)
     local nameplateIcons = CreateOptionCheckbox(
         self,
         "showNameplateIcons",
@@ -2242,20 +2249,13 @@ local function BuildInterfaceSettings(self)
         L["Keeps the game's quest item sparkle on. The same setting also makes quest givers sparkle. Turning it off requires a full game restart; /reload is not enough."]
     )
     sparkles:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 0, 0)
-    local minimap = CreateOptionCheckbox(
-        self,
-        "showMinimapButton",
-        L["Show minimap button"],
-        L["The minimap button opens Quest Finder on left-click and addon settings on right-click."]
-    )
-    minimap:SetPoint("TOPLEFT", sparkles, "BOTTOMLEFT", 0, 0)
     local chatLinks = CreateOptionCheckbox(
         self,
         "translateQuestieLinks",
         L["Make Questie chat links clickable"],
         L["Turns Questie's plain-text quest links into the game's own clickable quest links. Does nothing while Questie is loaded."]
     )
-    chatLinks:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, 0)
+    chatLinks:SetPoint("TOPLEFT", sparkles, "BOTTOMLEFT", 0, 0)
 end
 
 function ns.TryRegisterSettings()
