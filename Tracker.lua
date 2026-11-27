@@ -75,6 +75,9 @@ local function SecureCall(handler, ...)
     if type(securecallfunction) == "function" then
         return securecallfunction(handler, ...)
     end
+    -- The target client exposes both secure call paths. This fallback keeps
+    -- the tracker usable on a client that exposes neither, but the handler then
+    -- runs as ordinary addon code and can taint protected frames.
     return handler(...)
 end
 
@@ -305,20 +308,26 @@ local function CreateStandaloneContainer()
         local professionsHeight = 0
 
         if professions then
-            professions:SetWidth(width)
-            if professions.Header and professions.Header.SetWidth and width > 1 then
-                professions.Header:SetWidth(width)
-            end
-            local maxProfessions = contentHeight
-            if quest then
-                local questHeaderHeight = quest.headerHeight or 0
-                maxProfessions = math.min(
-                    math.max(0, contentHeight - questHeaderHeight - spacing),
-                    math.floor(contentHeight * PROFESSIONS_MAX_SHARE))
-            end
-            professions:Update(maxProfessions, true)
-            if professions:IsShown() then
-                professionsHeight = professions:GetHeight() or 0
+            -- ProfessionsRecipeTracker is a protected Blizzard module. Run its
+            -- layout writes through a secure delegate so a combat map open does
+            -- not see ForeverQuestPins as the taint source.
+            local shown, height = SecureCall(function()
+                professions:SetWidth(width)
+                if professions.Header and professions.Header.SetWidth and width > 1 then
+                    professions.Header:SetWidth(width)
+                end
+                local maxProfessions = contentHeight
+                if quest then
+                    local questHeaderHeight = quest.headerHeight or 0
+                    maxProfessions = math.min(
+                        math.max(0, contentHeight - questHeaderHeight - spacing),
+                        math.floor(contentHeight * PROFESSIONS_MAX_SHARE))
+                end
+                professions:Update(maxProfessions, true)
+                return professions:IsShown(), professions:GetHeight() or 0
+            end)
+            if shown then
+                professionsHeight = height or 0
             end
         end
 
@@ -334,20 +343,22 @@ local function CreateStandaloneContainer()
         end
 
         if professions and professions:IsShown() then
-            professions:ClearAllPoints()
-            if quest and quest:IsShown() then
-                if quest.IsCollapsed and quest:IsCollapsed() then
-                    local headerHeight = quest.headerHeight or 0
-                    professions:SetPoint("TOPLEFT", quest, "TOPLEFT", 0, -headerHeight - spacing)
-                    professions:SetPoint("TOPRIGHT", quest, "TOPRIGHT", 0, -headerHeight - spacing)
+            SecureCall(function()
+                professions:ClearAllPoints()
+                if quest and quest:IsShown() then
+                    if quest.IsCollapsed and quest:IsCollapsed() then
+                        local headerHeight = quest.headerHeight or 0
+                        professions:SetPoint("TOPLEFT", quest, "TOPLEFT", 0, -headerHeight - spacing)
+                        professions:SetPoint("TOPRIGHT", quest, "TOPRIGHT", 0, -headerHeight - spacing)
+                    else
+                        professions:SetPoint("TOPLEFT", quest, "BOTTOMLEFT", 0, -spacing)
+                        professions:SetPoint("TOPRIGHT", quest, "BOTTOMRIGHT", 0, -spacing)
+                    end
                 else
-                    professions:SetPoint("TOPLEFT", quest, "BOTTOMLEFT", 0, -spacing)
-                    professions:SetPoint("TOPRIGHT", quest, "BOTTOMRIGHT", 0, -spacing)
+                    professions:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+                    professions:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
                 end
-            else
-                professions:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
-                professions:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
-            end
+            end)
         end
 
         self:SetHeight(available)
