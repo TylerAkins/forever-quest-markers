@@ -963,7 +963,6 @@ local function StartsInsideDungeon(questID, location)
 end
 
 local zoneQuestIndex
-local loremasterCriteria
 
 local function BuildZoneQuestIndex()
     local index = {}
@@ -1013,82 +1012,10 @@ local function ZoneQuestProgress(mapID)
             completed = completed + 1
         end
     end
-    return { completed = completed, total = #questIDs, estimated = true }
-end
-
-local function BuildLoremasterCriteria()
-    local criteria = {}
-    if type(GetCategoryList) ~= "function"
-        or type(GetCategoryNumAchievements) ~= "function"
-        or type(GetAchievementInfo) ~= "function"
-        or type(GetAchievementNumCriteria) ~= "function"
-        or type(GetAchievementCriteriaInfo) ~= "function" then
-        return criteria
-    end
-    local okCategories, categories = pcall(GetCategoryList)
-    if not okCategories or type(categories) ~= "table" then
-        return criteria
-    end
-    for _, categoryID in ipairs(categories) do
-        local okCount, count, categoryName = pcall(GetCategoryNumAchievements, categoryID, true)
-        local questCategory = type(categoryName) ~= "string"
-            or categoryName:lower():find("quest", 1, true) ~= nil
-        if okCount and type(count) == "number" and questCategory then
-            for i = 1, count do
-                local okInfo, achievementID, name = pcall(GetAchievementInfo, categoryID, i)
-                if okInfo and achievementID and type(name) == "string"
-                    and name:lower():find("loremaster", 1, true) then
-                    local okCriteria, criteriaCount = pcall(GetAchievementNumCriteria, achievementID)
-                    if okCriteria and type(criteriaCount) == "number" then
-                        for index = 1, criteriaCount do
-                            local okCrit, text, _, _, _, required =
-                                pcall(GetAchievementCriteriaInfo, achievementID, index)
-                            if okCrit and type(text) == "string"
-                                and type(required) == "number" and required > 0 then
-                                local plain = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-                                criteria[plain] = {
-                                    achievementID = achievementID,
-                                    criteriaIndex = index,
-                                    total = required,
-                                }
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return criteria
+    return { completed = completed, total = #questIDs }
 end
 
 local function ZoneProgress(mapID)
-    local zoneName = MapName(mapID)
-    if not loremasterCriteria then
-        loremasterCriteria = BuildLoremasterCriteria()
-    end
-    local substringMatch
-    for text, info in pairs(loremasterCriteria) do
-        if text == zoneName then
-            substringMatch = { text = text, info = info, exact = true }
-            break
-        end
-        if not substringMatch and text:find(zoneName, 1, true) then
-            substringMatch = { text = text, info = info }
-        end
-    end
-    if substringMatch then
-        local info = substringMatch.info
-        local ok, _, _, _, quantity, required =
-            pcall(GetAchievementCriteriaInfo, info.achievementID, info.criteriaIndex)
-        if ok then
-            return {
-                completed = tonumber(quantity) or 0,
-                total = tonumber(required) or info.total,
-                official = true,
-                text = substringMatch.text,
-            }
-        end
-    end
     return ZoneQuestProgress(mapID)
 end
 
@@ -1405,13 +1332,10 @@ local function UpdateZoneProgress()
     bar:SetValue(progress.completed)
     local percent = math.floor((progress.completed / progress.total) * 100 + 0.5)
     bar.label:SetText(string.format("%s: %d / %d (%d%%)",
-        progress.official and L["Loremaster"] or L["Zone quests"],
-        progress.completed, progress.total, percent))
-    bar.tooltip = progress.official
-        and string.format(L["Loremaster progress for %s. %d of %d quests completed."],
-            MapName(mapID), progress.completed, progress.total)
-        or string.format(L["Estimated zone quest progress for %s. %d of %d quests completed. This counts quests that start in the zone and match your faction, race, and class."],
-            MapName(mapID), progress.completed, progress.total)
+        L["Loremaster"], progress.completed, progress.total, percent))
+    bar.tooltip = string.format(
+        L["Loremaster progress for %s. %d of %d quests completed. This counts quests that start in the zone and match your faction, race, and class."],
+        MapName(mapID), progress.completed, progress.total)
     bar:Show()
 end
 

@@ -7112,28 +7112,6 @@ cases["quest_finder_runtime.groups_alternate_breadcrumbs"] = function()
     assert(entry.subtitle:find("Leads to Western Plaguelands", 1, true))
 end
 
-cases["quest_finder_runtime.zone_progress_prefers_achievement_criteria"] = function()
-    ns = {}
-    C_Map = {
-        GetMapInfo = function(mapID)
-            return ({ [1] = { name = "Western Plaguelands", mapType = 3 } })[mapID]
-        end,
-    }
-    GetCategoryList = function() return { 1 } end
-    GetCategoryNumAchievements = function() return 1, "Quests" end
-    GetAchievementInfo = function() return 167, "Loremaster of Eastern Kingdoms" end
-    GetAchievementNumCriteria = function() return 1 end
-    GetAchievementCriteriaInfo = function()
-        return "Western Plaguelands", "quest", true, 45, 120
-    end
-    ns.Quests = { [1] = { mapID = 1, title = "A" } }
-    ns.IsQuestFlaggedCompleted = function() return false end
-    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
-    local progress = ns.QuestFinder.ZoneProgress(1)
-    assert(progress.official == true, "official zone criteria win")
-    assert(progress.completed == 45 and progress.total == 120)
-end
-
 cases["quest_finder_runtime.zone_quest_progress_uses_eligible_quests"] = function()
     ns = {}
     ns.GetPlayerFaction = function() return "Horde" end
