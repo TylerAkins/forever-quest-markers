@@ -1191,10 +1191,11 @@ local function BuildTrackerMixin()
         if self:IsCollapsed() then
             viewport = 0
         end
-        self.contentsHeight = headerHeight + viewport
-        scroll:SetHeight(math.max(viewport, 1))
-        scroll:SetShown(viewport > 0)
-        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING, viewport, 1))
+        local visibleHeight = math.min(viewport, contentHeight)
+        self.contentsHeight = headerHeight + visibleHeight
+        scroll:SetHeight(math.max(visibleHeight, 1))
+        scroll:SetShown(visibleHeight > 0)
+        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING, visibleHeight, 1))
         scroll:UpdateScrollChildRect()
         local range = scroll:GetVerticalScrollRange() or 0
         local offset = scroll:GetVerticalScroll() or 0
