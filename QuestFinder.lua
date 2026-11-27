@@ -1963,8 +1963,8 @@ local function EnsureFrame()
     panel.showAll = showAllButton
 
     local routeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    routeButton:SetSize(130, 20)
-    routeButton:SetPoint("TOPRIGHT", -PADDING, -153)
+    routeButton:SetSize(120, 22)
+    routeButton:SetPoint("LEFT", search, "RIGHT", 8, 0)
     routeButton:SetText(L["Auto route"])
     routeButton:SetScript("OnClick", function()
         if not ns.QuestRoute then
