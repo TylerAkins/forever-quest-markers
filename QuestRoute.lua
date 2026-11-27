@@ -770,21 +770,14 @@ local function EnsureFrame()
     panel.reset = reset
 
     panel:Hide()
-    if UISpecialFrames and type(UISpecialFrames) == "table" then
-        local name = "ForeverQuestPinsQuestRoute"
-        local found = false
-        for i = 1, #UISpecialFrames do
-            if UISpecialFrames[i] == name then
-                found = true
-                break
-            end
-        end
-        if not found then
-            table.insert(UISpecialFrames, name)
-        end
-    end
     frame = panel
     return panel
+end
+
+local function RouteTitle(kind)
+    return kind == "dungeon"
+        and "|cffffd100Dungeon|r |cff65b9ffRoute|r"
+        or "|cffffd100Zone|r |cff65b9ffRoute|r"
 end
 
 local function ShowRoute(kind, target, label)
@@ -797,9 +790,7 @@ local function ShowRoute(kind, target, label)
     skipped = {}
     autoPinnedKey = nil
     EnsureFrame()
-    frame.title:SetText(kind == "dungeon"
-        and "|cffffd100Dungeon|r |cff65b9ffRoute|r"
-        or "|cffffd100Zone|r |cff65b9ffRoute|r")
+    frame.title:SetText(RouteTitle(kind))
     frame.subtitle:SetText(label)
     frame:Show()
     if frame.Raise then
@@ -843,6 +834,29 @@ function ns.QuestRoute.Hide()
     end
 end
 
+function ns.QuestRoute.HasRoute()
+    return currentKind ~= nil and currentTarget ~= nil
+end
+
+function ns.QuestRoute.Toggle()
+    if not ns.QuestRoute.HasRoute() then
+        return false
+    end
+    EnsureFrame()
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        frame.title:SetText(RouteTitle(currentKind))
+        frame.subtitle:SetText(currentLabel or "")
+        frame:Show()
+        if frame.Raise then
+            frame:Raise()
+        end
+        Refresh(true)
+    end
+    return true
+end
+
 function ns.QuestRoute.IsShown()
     return frame and frame:IsShown() or false
 end
@@ -854,6 +868,16 @@ end
 ns.QuestRoute.Build = BuildDungeon
 ns.QuestRoute.BuildDungeon = BuildDungeon
 ns.QuestRoute.BuildZone = BuildZone
+
+-- Escape must not close the route window. Keep it out of UISpecialFrames so
+-- the close button and the minimap toggle are the only ways to dismiss it.
+if type(UISpecialFrames) == "table" then
+    for i = #UISpecialFrames, 1, -1 do
+        if UISpecialFrames[i] == "ForeverQuestPinsQuestRoute" then
+            table.remove(UISpecialFrames, i)
+        end
+    end
+end
 
 if type(CreateFrame) == "function" then
     local events = CreateFrame("Frame")

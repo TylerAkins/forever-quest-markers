@@ -59,6 +59,9 @@ local function ShowTooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:SetText("Forever Quest Pins", 1, 0.82, 0)
     GameTooltip:AddLine(L["Left-click: Quest Finder"], 1, 1, 1)
+    if ns.QuestRoute and ns.QuestRoute.HasRoute and ns.QuestRoute.HasRoute() then
+        GameTooltip:AddLine(L["Shift-left-click: show or hide the route"], 1, 1, 1)
+    end
     GameTooltip:AddLine(L["Right-click: addon settings"], 1, 1, 1)
     GameTooltip:AddLine(L["Drag to move around the minimap."], 0.8, 0.8, 0.8)
     GameTooltip:Show()
@@ -98,7 +101,14 @@ local function CreateButton()
             if ns.OpenSettings then
                 ns.OpenSettings()
             end
-        elseif ns.ShowQuestFinder then
+            return
+        end
+        if IsShiftKeyDown and IsShiftKeyDown()
+            and ns.QuestRoute and ns.QuestRoute.Toggle
+            and ns.QuestRoute.Toggle() then
+            return
+        end
+        if ns.ShowQuestFinder then
             ns.ShowQuestFinder()
         end
     end)

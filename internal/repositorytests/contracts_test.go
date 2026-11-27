@@ -711,6 +711,8 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	for _, contract := range []string{
 		"function ns.QuestRoute.ShowDungeon(dungeonName)",
 		"function ns.QuestRoute.ShowZone(mapID)",
+		"function ns.QuestRoute.HasRoute()",
+		"function ns.QuestRoute.Toggle()",
 		"local function BuildDungeon(dungeonName, skipSet)",
 		"local function BuildZone(mapID, skipSet)",
 		"ns.QuestRoute.BuildDungeon = BuildDungeon",
@@ -722,6 +724,18 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	} {
 		if !strings.Contains(questRoute, contract) {
 			t.Errorf("QuestRoute.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(questRoute, "table.insert(UISpecialFrames") {
+		t.Error("QuestRoute.lua adds the route window to UISpecialFrames, so Escape would close it")
+	}
+	minimap := read(t, base, "MinimapButton.lua")
+	for _, contract := range []string{
+		"ns.QuestRoute.Toggle()",
+		`"Shift-left-click: show or hide the route"`,
+	} {
+		if !strings.Contains(minimap, contract) {
+			t.Errorf("MinimapButton.lua missing %q", contract)
 		}
 	}
 	for _, forbidden := range []string{
