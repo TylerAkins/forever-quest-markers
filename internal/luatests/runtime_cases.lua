@@ -6314,7 +6314,12 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetVerticalScroll(value) self.scroll = value end
         function frame:GetVerticalScroll() return self.scroll or 0 end
         function frame:GetVerticalScrollRange() return self.range or 0 end
-        function frame:UpdateScrollChildRect() end
+        function frame:UpdateScrollChildRect()
+            local child = self.scrollChild
+            if child and child.GetHeight then
+                self.range = math.max(0, (child:GetHeight() or 0) - (self.height or 0))
+            end
+        end
         function frame:SetScrollChild(child) self.scrollChild = child end
         function frame:SetHeader(text) self.headerText = text end
         function frame:CreateFontString()
@@ -6647,7 +6652,6 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule.bottomInset = nil
     ourModule.availableHeight = 125
     ourModule.contentsHeight = 425
-    ourModule.ScrollFrame.range = 400
     ourModule:UpdateScrollViewport()
     assert(ourModule.contentsHeight == 110, "the module height leaves room above the action bars")
     assert(ourModule.ScrollFrame.height == 85)
@@ -6669,10 +6673,11 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
 
     ourModule.availableHeight = 500
     ourModule.contentsHeight = 125
-    ourModule.ScrollFrame.range = 0
     ourModule:UpdateScrollViewport()
-    assert(ourModule.contentsHeight == 485, "short content fills the available height")
-    assert(ourModule.ContentsFrame.height == 460, "the scroll viewport fills the available height")
+    assert(ourModule.contentsHeight == 133, "short content keeps the module near its content height")
+    assert(ourModule.ScrollFrame.height == 108, "the scroll viewport follows short content")
+    assert(ourModule.ContentsFrame.height == 108, "short content has no scroll range")
+    assert(ourModule.ScrollFrame.range == 0, "short content does not scroll")
 
     ourModule.collapsed = true
     ourModule.shown = true

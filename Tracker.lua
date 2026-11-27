@@ -1191,11 +1191,23 @@ local function BuildTrackerMixin()
         if self:IsCollapsed() then
             viewport = 0
         end
-        local visibleHeight = math.min(viewport, contentHeight)
-        self.contentsHeight = headerHeight + visibleHeight
-        scroll:SetHeight(math.max(visibleHeight, 1))
-        scroll:SetShown(visibleHeight > 0)
-        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING, visibleHeight, 1))
+        local fits = contentHeight <= viewport
+        local scrollHeight = math.min(viewport, contentHeight)
+        if fits then
+            -- The scroll child starts below the top padding. Cover that offset
+            -- so a short list has no scroll range at all.
+            scrollHeight = math.min(contentHeight + CONTENT_TOP_PADDING, viewport)
+        end
+        self.contentsHeight = headerHeight + scrollHeight
+        scroll:SetHeight(math.max(scrollHeight, 1))
+        scroll:SetShown(scrollHeight > 0)
+        local contentFrameHeight = contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING
+        if fits then
+            -- Keep the child inside the scroll frame; padding is only needed
+            -- while the list actually scrolls.
+            contentFrameHeight = scrollHeight
+        end
+        content:SetHeight(math.max(contentFrameHeight, scrollHeight, 1))
         scroll:UpdateScrollChildRect()
         local range = scroll:GetVerticalScrollRange() or 0
         local offset = scroll:GetVerticalScroll() or 0
