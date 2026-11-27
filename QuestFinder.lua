@@ -891,15 +891,24 @@ local function EnsureFrame()
 
     local tabNames = { L["Breadcrumbs"], L["Available quests"], L["Dungeon quests"] }
     for i = 1, #tabNames do
-        local tab = CreateFrame("Button", "ForeverQuestPinsQuestFinderTab" .. i, panel, "CharacterFrameTabButtonTemplate")
+        local created, tab = pcall(CreateFrame, "Button", "ForeverQuestPinsQuestFinderTab" .. i, panel, "PanelTabButtonTemplate")
+        if not created or not tab then
+            tab = CreateFrame("Button", "ForeverQuestPinsQuestFinderTab" .. i, panel, "UIPanelButtonTemplate")
+            tab:SetSize(TAB_WIDTH, TAB_HEIGHT)
+        end
         tab:SetPoint("TOPLEFT", PADDING + (i - 1) * (TAB_WIDTH + 4), -68)
-        tab:SetText(tabNames[i])
+        if tab.Text then
+            tab.Text:SetText(tabNames[i])
+        else
+            tab:SetText(tabNames[i])
+        end
         tab:SetScript("OnLoad", nil)
         tab:SetScript("OnShow", nil)
         tab:SetScript("OnClick", function() ShowTab(i) end)
         if PanelTemplates_TabResize then
             pcall(PanelTemplates_TabResize, tab, 0, TAB_WIDTH)
-        else
+        end
+        if not tab:GetWidth() or tab:GetWidth() < 1 then
             tab:SetSize(TAB_WIDTH, TAB_HEIGHT)
         end
         tabs[i] = tab
