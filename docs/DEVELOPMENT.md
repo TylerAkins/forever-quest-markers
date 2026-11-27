@@ -33,6 +33,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Database/DungeonChains.lua` | Generated dungeon quests and required pre-quest chains from ForeverDungeonJournal |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
 | `Database/BookQuests.lua` | Hand-maintained library book pickup quest IDs for the collectible book category |
+| `Database/ZoneLevels.lua` | Hand-maintained zone level ranges copied from Leatrix Maps |
 | `Database/ExcludedQuests.lua` | Hand-maintained quest IDs that should never show map pins |
 | `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
@@ -69,6 +70,8 @@ go run ./cmd/fqp build-db \
 `Database/EventPolicy.lua` is generated from Questie's Era event data. It carries year-less `{ month, day, hour, minute }` windows, per-quest overrides such as the Winter Veil presents, Questie's Lunar Festival year table, and the `AQWarEffortQuests` IDs. The build fails if a yearly quest has no event name or a referenced event has neither a window nor a disabled marker. Darkmoon Faire is emitted as disabled: Questie skips it on Forever, it has no importable faire window, and most of its records mix Mulgore and Elwynn coordinates. Lunar Festival windows end at Questie's pinned year; later years hide with `lunar-year-unknown` instead of failing the build.
 
 `Database/BookQuests.lua` is hand-maintained. The generated artifact has no objective text, so the build cannot reliably identify the library pickup quests. The list matches the quests whose objective is "Collect '<book title>' and bring it to ..." and excludes the Friend of the Library turn-ins (78150, 79536, 82208, 84394). `TestBookQuestListMatchesGeneratedDatabase` pins the 40 IDs, checks that each exists in `Database/ForeverQuests.lua`, and fails when the list or generated data diverges.
+
+`Database/ZoneLevels.lua` is hand-maintained from Leatrix Maps' "Level range table" under **Show zone levels**. Quest Finder prefers these ranges. City entries are `false`, which suppresses a computed range. Maps Leatrix does not list fall back to the minimum levels of quests with starts in that zone.
 
 The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
 

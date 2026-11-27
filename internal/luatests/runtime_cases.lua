@@ -7088,6 +7088,36 @@ cases["quest_finder_runtime.zone_list_includes_quest_level_ranges"] = function()
     assert(ranges[2] == "10", "a secondary coordinate zone gets the same range")
 end
 
+cases["quest_finder_runtime.zone_list_prefers_leatrix_levels"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Leatrix Zone", mapType = 3 },
+                [2] = { name = "Leatrix City", mapType = 3 },
+                [3] = { name = "Fallback Zone", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    ns.ZoneLevels = {
+        [1] = { min = 35, max = 45 },
+        [2] = false,
+    }
+    ns.Quests = {
+        [1] = { mapID = 1, minLevel = 10 },
+        [2] = { mapID = 2, minLevel = 10 },
+        [3] = { mapID = 3, minLevel = 10 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local list = ns.QuestFinder.BuildZoneList()
+    local ranges = {}
+    for i = 1, #list do ranges[list[i].id] = list[i].levelRange end
+    assert(ranges[1] == "35-45", "Leatrix levels win over computed levels")
+    assert(ranges[2] == nil, "a Leatrix city entry suppresses a computed range")
+    assert(ranges[3] == "10", "unlisted maps keep the computed fallback")
+end
+
 cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
     ns = {}
     C_QuestLog = {

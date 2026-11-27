@@ -110,6 +110,13 @@ local function ZoneLevelRange(mapID)
     if type(mapID) ~= "number" then
         return nil
     end
+    local leatrix = ns.ZoneLevels and ns.ZoneLevels[mapID]
+    if leatrix ~= nil then
+        if leatrix and leatrix.min and leatrix.max then
+            return { min = leatrix.min, max = leatrix.max }
+        end
+        return nil
+    end
     if not zoneRanges then
         zoneRanges = BuildZoneRanges()
     end

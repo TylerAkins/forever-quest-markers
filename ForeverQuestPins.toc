@@ -23,6 +23,7 @@ Database\DungeonChains.lua
 Database\ExcludedQuests.lua
 Database\VanillaQuests.lua
 Database\BookQuests.lua
+Database\ZoneLevels.lua
 Localization.lua
 Config.lua
 Sparkle.lua
