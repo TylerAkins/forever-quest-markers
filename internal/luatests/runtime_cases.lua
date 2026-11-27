@@ -7755,9 +7755,9 @@ cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = functio
     assert(route.total == 3 and route.unit == "steps")
     assert(route.steps[1].action == "accept" and route.steps[1].quest == 100)
     assert(route.steps[1].title == "Quest 100")
-    assert(route.steps[1].locationName == "Giver")
+    assert(route.steps[1].locationNPCID == 1)
     assert(route.steps[2].action == "do" and route.steps[2].text == "Do the thing.")
-    assert(route.steps[2].locationName == "Target")
+    assert(route.steps[2].locationNPCID == 2)
     assert(route.steps[3].action == "turnin")
 
     onQuest[100] = true
@@ -7972,8 +7972,9 @@ cases["dungeon_route_runtime.brd_guide_data_is_present"] = function()
     local route = ns.DungeonRoutes and ns.DungeonRoutes["Blackrock Depths"]
     assert(route, "Blackrock Depths guide data is missing")
     assert(#route.steps == 176, "the BRD guide step count changed")
-    assert(route.npcs.n9536 and route.npcs.n9536.name == "Maxwort Uberglint")
-    assert(route.npcs.n8479 and route.npcs.n8479.name == "Velarok Windblade")
+    assert(route.npcs.n9536 and route.npcs.n9536.id == 9536)
+    assert(route.npcs.n8479 and route.npcs.n8479.id == 8479)
+    assert(route.npcs.n8479.name == nil, "guide NPC names are not bundled")
     local quests = {}
     assert(loadfile("Database/ForeverQuests.lua"))("ForeverQuestPins", quests)
     assert(quests.Quests[4123].title == "The Heart of the Mountain")

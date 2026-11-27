@@ -136,32 +136,9 @@ local ROUTE_TEXT = {
     [4362] = "Rescue Princess Moira Bronzebeard in Blackrock Depths.",
 }
 
--- Client names that differ from the source guide.
-local NPC_NAME_CORRECTIONS = {
-    [8479] = "Velarok Windblade",
-}
-
-local function FirstTargetName(step, npcs)
-    for _, key in ipairs(step.targets or {}) do
-        local npc = npcs[key]
-        if npc and npc.name then
-            return npc.name
-        end
-    end
-    return nil
-end
-
-local function StepText(step, npcs)
+local function StepText(step)
     if step.type == "do" then
-        local summary = ROUTE_TEXT[step.quest]
-        if summary then
-            return summary
-        end
-        local target = FirstTargetName(step, npcs)
-        if target then
-            return "Complete the objective near " .. target .. "."
-        end
-        return "Complete the quest objective."
+        return ROUTE_TEXT[step.quest] or "Complete the quest objective."
     end
     if step.type == "accept" and step.text then
         return "Use or find the quest starter."
@@ -255,6 +232,7 @@ local lines = {
     "--",
     "-- Step order, NPC coordinates, and faction flags come from the guide.",
     "-- Quest titles come from the addon quest database.",
+    "-- NPC names are resolved from the client at runtime.",
     "-- Objective text is summarized by this project, not copied from the guide.",
     "",
     "local ADDON_NAME, ns = ...",
@@ -283,7 +261,7 @@ for _, target in ipairs(SortedKeys(routes)) do
         if step.faction then
             parts[#parts + 1] = "faction = " .. Quote(step.faction)
         end
-        local text = StepText(step, ns.NPCS)
+        local text = StepText(step)
         if text then
             parts[#parts + 1] = "text = " .. Quote(text)
         end
@@ -309,7 +287,6 @@ for _, target in ipairs(SortedKeys(routes)) do
         if npc then
             local parts = {
                 "id = " .. Quote(npc.id),
-                "name = " .. Quote(NPC_NAME_CORRECTIONS[npc.id] or npc.name),
             }
             if npc.map then
                 parts[#parts + 1] = "map = " .. Quote(npc.map)

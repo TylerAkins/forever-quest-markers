@@ -304,40 +304,38 @@ local function GuideLocation(route, step)
     if step.map and step.x and step.y then
         local npc = targetFor(step.npc)
         if npc then
-            return step.map, step.x, step.y, npc.name, npc.id
+            return step.map, step.x, step.y, npc.id
         end
         for _, targetKey in ipairs(step.targets or {}) do
             local target = targetFor(targetKey)
             if target then
-                return step.map, step.x, step.y, target.name, target.id
+                return step.map, step.x, step.y, target.id
             end
         end
-        return step.map, step.x, step.y, nil, nil
+        return step.map, step.x, step.y, nil
     end
     local npc = targetFor(step.npc)
     if npc and npc.map and npc.x and npc.y then
-        return npc.map, npc.x, npc.y, npc.name, npc.id
+        return npc.map, npc.x, npc.y, npc.id
     end
     for _, targetKey in ipairs(step.targets or {}) do
         local target = targetFor(targetKey)
         if target and target.map and target.x and target.y then
-            return target.map, target.x, target.y, target.name, target.id
+            return target.map, target.x, target.y, target.id
         end
     end
     return nil
 end
 
 local function DisplayLocationName(step)
-    if not step then
+    if not step or not step.locationNPCID or not ns.GetNPCName then
         return nil
     end
-    if step.locationNPCID and ns.GetNPCName then
-        local name = ns.GetNPCName(step.locationNPCID)
-        if name and name ~= "" then
-            return name
-        end
+    local name = ns.GetNPCName(step.locationNPCID)
+    if name and name ~= "" then
+        return name
     end
-    return step.locationName
+    return nil
 end
 
 local function BuildDungeonGuide(dungeonName, skipSet)
@@ -365,7 +363,7 @@ local function BuildDungeonGuide(dungeonName, skipSet)
                 targetKeys = raw.targets,
                 guide = true,
             }
-            step.mapID, step.x, step.y, step.locationName, step.locationNPCID =
+            step.mapID, step.x, step.y, step.locationNPCID =
                 GuideLocation(route, raw)
             step.locationMapID, step.locationX, step.locationY = step.mapID, step.x, step.y
             step.data = step.mapID and {
