@@ -3,7 +3,7 @@ name: Update QuestieDB database
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 6 * * 3,5,6,0"
 
 permissions:
   contents: write
@@ -14,25 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-window:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    outputs:
-      enabled: ${{ steps.window.outputs.enabled }}
-    steps:
-      - name: Check scheduled update window
-        id: window
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(date -u +%F)" > "2026-11-01" ]]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
-
   update:
-    needs: update-window
-    if: needs.update-window.outputs.enabled == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

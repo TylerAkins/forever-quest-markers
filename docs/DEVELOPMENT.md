@@ -79,7 +79,7 @@ This adds recovered/lost starts, coordinate changes, flag changes, and conflicts
 
 Workflow **Update QuestieDB database** (`.github/workflows/update-questie-db.yml`):
 
-- Daily at 06:00 UTC and on manual **Run workflow**
+- Wednesday, Friday, Saturday, and Sunday at 06:00 UTC and on manual **Run workflow**
 - Resolves the latest non-prerelease QuestieDB release and fails when none exists
 - Downloads that stable `v*` Forever artifact and records its tag and SHA-256 in the PR
 - Checks out Questie at the policy commit already pinned in `Database/Metadata.lua`
