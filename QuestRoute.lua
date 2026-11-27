@@ -674,7 +674,7 @@ local function EnsureFrame()
     panel.progress = progress
 
     local pin = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    pin:SetSize(88, 22)
+    pin:SetSize(100, 22)
     pin:SetPoint("BOTTOMLEFT", PADDING, 14)
     pin:SetText(L["Pin"])
     pin:SetScript("OnClick", function()
@@ -701,8 +701,8 @@ local function EnsureFrame()
     panel.pin = pin
 
     local skip = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    skip:SetSize(88, 22)
-    skip:SetPoint("LEFT", pin, "RIGHT", 6, 0)
+    skip:SetSize(100, 22)
+    skip:SetPoint("LEFT", pin, "RIGHT", 12, 0)
     skip:SetText(L["Skip"])
     skip:SetScript("OnClick", function()
         local step = steps[1]
@@ -730,8 +730,8 @@ local function EnsureFrame()
     panel.skip = skip
 
     local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    reset:SetSize(88, 22)
-    reset:SetPoint("LEFT", skip, "RIGHT", 6, 0)
+    reset:SetSize(100, 22)
+    reset:SetPoint("LEFT", skip, "RIGHT", 12, 0)
     reset:SetText(L["Reset"])
     reset:SetScript("OnClick", function()
         skipped = {}
@@ -849,6 +849,9 @@ ns.QuestRoute.BuildZone = BuildZone
 
 if type(CreateFrame) == "function" then
     local events = CreateFrame("Frame")
+    -- Quest events, NPC interaction, and zone changes cover every case where
+    -- the next step can change. A position poll would not change the route and
+    -- would re-pin while the player is just walking past something.
     local watched = {
         "QUEST_ACCEPTED",
         "QUEST_REMOVED",
@@ -857,6 +860,9 @@ if type(CreateFrame) == "function" then
         "PLAYER_REGEN_ENABLED",
         "ZONE_CHANGED_NEW_AREA",
         "PLAYER_ENTERING_WORLD",
+        "GOSSIP_SHOW",
+        "QUEST_GREETING",
+        "QUEST_DETAIL",
     }
     for i = 1, #watched do
         pcall(events.RegisterEvent, events, watched[i])

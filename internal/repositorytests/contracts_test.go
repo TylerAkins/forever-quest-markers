@@ -715,11 +715,25 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		"local function BuildZone(mapID, skipSet)",
 		"ns.QuestRoute.BuildDungeon = BuildDungeon",
 		"ns.QuestRoute.BuildZone = BuildZone",
+		"ns.AddOnActionsRestricted",
 		"ns.TrackQuest(step.id, step.data, true)",
 		`"PLAYER_REGEN_ENABLED"`,
+		`"GOSSIP_SHOW"`,
 	} {
 		if !strings.Contains(questRoute, contract) {
 			t.Errorf("QuestRoute.lua missing %q", contract)
+		}
+	}
+	for _, forbidden := range []string{
+		"C_Map.SetUserWaypoint",
+		"C_Map.ClearUserWaypoint",
+		"C_SuperTrack.SetSuperTracked",
+		"AcceptQuest",
+		"CompleteQuest",
+		"SelectGossip",
+	} {
+		if strings.Contains(questRoute, forbidden) {
+			t.Errorf("QuestRoute.lua calls %q directly instead of the guarded waypoint layer", forbidden)
 		}
 	}
 	core := read(t, base, "Core.lua")
