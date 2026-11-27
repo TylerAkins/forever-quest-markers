@@ -9,6 +9,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | Path | Role |
 |------|------|
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
+| `Bindings.xml` | Key binding for using the tracked quest's special item |
 | `Config.lua` | Saved variables, slash commands, settings panel |
 | `Sparkle.lua` | Native quest item sparkle CVar, login and graphics-change reapply, combat deferral |
 | `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Surname"]`; pre-1.1.0 realm-keyed buckets are adopted on first access |
@@ -17,6 +18,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `MapPins.lua` | World-map start pins |
 | `Nameplates.lua` | Quest start, turn-in, and objective icons on NPC nameplates |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
+| `QuestItemKeybind.lua` | Keybind that uses the special item on the tracked quest |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `QuestLinks.lua` | Copy Wowhead URL menu entry for tracked quest blocks |
 | `TrackerData.lua` | Quest-log zone headers, current-zone chain, distance, and the tracker sort/filter view |

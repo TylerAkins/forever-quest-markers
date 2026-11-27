@@ -22,6 +22,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
+- A keybind under **Key Bindings > AddOns > Forever Quest Pins** uses the special item on the tracked quest the tracker highlights, including the quest chosen by **Select nearest quest**. It does nothing when the selected quest has no usable item.
 - Optional **beta** quest tracker layout with zone groups, collapsible zone headers, sort options (Blizzard order, distance, level, title), view filters, and mouse-wheel scrolling. It uses Blizzard's own tracker header, quest blocks, item buttons, and POI buttons, and Edit Mode moves and resizes it normally. Off by default.
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead

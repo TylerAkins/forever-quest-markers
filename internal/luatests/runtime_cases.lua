@@ -6901,6 +6901,47 @@ cases["spoken_tracker_runtime.attaches_play_button_to_quest_blocks"] = function(
     module:AddBlock({ id = 124, GetFrameLevel = function() return 5 end })
 end
 
+cases["quest_item_runtime.uses_the_super_tracked_quest_item"] = function()
+    ns = {}
+    C_SuperTrack = {
+        GetSuperTrackedQuestID = function() return 42 end,
+    }
+    C_QuestLog = {
+        GetLogIndexForQuestID = function(questID)
+            assert(questID == 42, "the super-tracked quest wins")
+            return 3
+        end,
+    }
+    local used
+    GetQuestLogSpecialItemInfo = function(index)
+        assert(index == 3)
+        return 123, "texture", 1, nil, true
+    end
+    UseQuestLogSpecialItem = function(index) used = index end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == true)
+    assert(used == 3, "the quest log item is used")
+end
+
+cases["quest_item_runtime.ignores_missing_items_and_quests"] = function()
+    ns = {}
+    C_SuperTrack = { GetSuperTrackedQuestID = function() return 0 end }
+    C_QuestLog = {
+        GetSelectedQuest = function() return 7 end,
+        GetQuestIDForLogIndex = function() return 0 end,
+        GetLogIndexForQuestID = function() return 4 end,
+    }
+    local used = false
+    GetQuestLogSpecialItemInfo = function() return nil end
+    UseQuestLogSpecialItem = function() used = true end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == false)
+    assert(used == false, "a quest without a special item is ignored")
+
+    C_QuestLog.GetSelectedQuest = function() return 0 end
+    assert(ns.UseTrackedQuestItem() == false, "no selected quest is a quiet false")
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="FOREVERQUESTPINS_USE_TRACKED_ITEM" category="Forever Quest Pins">
+        ForeverQuestPins_UseTrackedQuestItem()
+    </Binding>
+</Bindings>
