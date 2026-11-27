@@ -46,9 +46,9 @@ ns.defaults = {
 }
 
 ns.TRACKER_SORT_VALUES = { blizzard = true, distance = true, level = true, title = true }
-ns.TRACKER_FILTER_VALUES = { all = true, current = true, instance = true, completed = true }
+ns.TRACKER_FILTER_VALUES = { all = true, tracked = true, current = true, instance = true, completed = true }
 ns.TrackerSortOrder = { "blizzard", "distance", "level", "title" }
-ns.TrackerFilterOrder = { "all", "current", "instance", "completed" }
+ns.TrackerFilterOrder = { "all", "tracked", "current", "instance", "completed" }
 ns.TrackerSortLabels = {
     blizzard = L["Blizzard order"],
     distance = L["Distance"],
@@ -56,7 +56,8 @@ ns.TrackerSortLabels = {
     title = L["Title"],
 }
 ns.TrackerFilterLabels = {
-    all = L["All tracked quests"],
+    all = L["All quests"],
+    tracked = L["Tracked only"],
     current = L["Current zone only"],
     instance = L["Instance quests"],
     completed = L["Completed quests only"],

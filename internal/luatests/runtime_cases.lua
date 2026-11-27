@@ -6088,6 +6088,10 @@ cases["tracker_runtime.zone_groups_sorts_and_filters"] = function()
     assert(trackerIDs(data.EnhanceQuestWatchInfos(nil, infos)) == "105")
     options.trackerFilter = "all"
     assert(#data.EnhanceQuestWatchInfos(nil, infos) == 5)
+    infos[1].isTracked = false
+    options.trackerFilter = "tracked"
+    assert(trackerIDs(data.EnhanceQuestWatchInfos(nil, infos)) == "102,103,104,105")
+    infos[1].isTracked = nil
 end
 
 cases["tracker_runtime.completed_filter_shows_only_complete_quests"] = function()
@@ -6725,7 +6729,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end)
     assert(#seen == 0)
     local empty = headers["fqp-filter-empty"]
-    assert(empty and empty.HeaderText.text == "No tracked quests match this filter.",
+    assert(empty and empty.HeaderText.text == "No quests match this filter.",
         "a zero-match filter must keep the module header available")
     assert(empty.offsetX == 7, "the empty-filter message aligns with zone headers")
 

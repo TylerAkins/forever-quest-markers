@@ -259,6 +259,9 @@ local function QuestMatchesZone(info, zoneChain)
 end
 
 local function TrackerFilterMatch(entry, filter)
+    if filter == "tracked" then
+        return entry.isTracked == true
+    end
     if filter == "current" then
         return entry.isCurrentZone == true
     end
@@ -440,6 +443,7 @@ function ns.EnhanceQuestWatchInfos(tracker, infos)
                     distanceSq = cached.distanceSq,
                     onContinent = cached.onContinent,
                     isCurrentZone = cached.isCurrentZone,
+                    isTracked = info.isTracked ~= false,
                 }
             else
                 local title = quest.title
@@ -459,6 +463,7 @@ function ns.EnhanceQuestWatchInfos(tracker, infos)
                         distanceSq = nil,
                         onContinent = nil,
                         isCurrentZone = false,
+                        isTracked = info.isTracked ~= false,
                     }
                 else
                     local distanceSq, onContinent = QuestDistance(questID)
@@ -494,6 +499,7 @@ function ns.EnhanceQuestWatchInfos(tracker, infos)
                         title = type(title) == "string" and title or tostring(questID),
                         distanceSq = distanceSq,
                         onContinent = onContinent,
+                        isTracked = info.isTracked ~= false,
                     }
                     entry.isCurrentZone = QuestMatchesZone(entry, zoneChain)
                     annotationCache[questID] = {
