@@ -986,9 +986,15 @@ local function BuildZoneQuestIndex()
                 end
                 list[#list + 1] = questID
             end
-            addMap(data.mapID)
-            for _, coord in ipairs(data.coords or {}) do
-                addMap(coord[3])
+            if type(data.zone) == "number" and data.zone > 0 then
+                -- Questie's assigned quest zone is authoritative for Loremaster
+                -- counting, even when the quest has no start coordinates.
+                addMap(data.zone)
+            else
+                addMap(data.mapID)
+                for _, coord in ipairs(data.coords or {}) do
+                    addMap(coord[3])
+                end
             end
         end
     end

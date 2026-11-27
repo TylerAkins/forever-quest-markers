@@ -7123,11 +7123,15 @@ cases["quest_finder_runtime.zone_quest_progress_uses_eligible_quests"] = functio
         [4] = { mapID = 1, title = "Repeatable", repeatable = true },
         [5] = { mapID = 1, title = "Profession", requireSkill = 164 },
         [6] = { mapID = 1, title = "Same zone again", coords = { { 10, 20, 1 } } },
+        [7] = { zone = 1, title = "No pin but in the zone" },
+        [8] = { zone = 2, title = "Assigned elsewhere", coords = { { 10, 20, 1 } } },
     }
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
     local progress = ns.QuestFinder.ZoneQuestProgress(1)
-    assert(progress.total == 3, "eligible quests count once per zone")
+    assert(progress.total == 4, "eligible quests count once per zone")
     assert(progress.completed == 1)
+    local other = ns.QuestFinder.ZoneQuestProgress(2)
+    assert(other.total == 1, "an assigned zone wins over a coordinate map")
 end
 
 cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] = function()
