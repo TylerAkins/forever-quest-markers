@@ -12,8 +12,7 @@ local PADDING = 24
 local TAB_HEIGHT = 28
 local TAB_WIDTH = 150
 local ROW_HEIGHT = 44
-local HEADER_HEIGHT = 30
-local DUNGEON_HEIGHT = 36
+local HEADER_HEIGHT = 38
 local MAX_ALL_ZONE_ROWS = 800
 
 local DUNGEON_R, DUNGEON_G, DUNGEON_B = 1.00, 0.32, 0.08
@@ -154,6 +153,13 @@ local function LocationExplored(location)
         return true
     end
     return ns.IsMapPositionExplored(location.mapID, location.x, location.y)
+end
+
+-- The finder lists thousands of quests at once. Do not ask the client to load
+-- a difficulty record for every one of them; use the database minimum level
+-- and the same category and prerequisite filters.
+local function IsFinderAvailable(questID, data)
+    return ns.IsQuestAvailable(questID, data, { skipLevelRequest = true })
 end
 
 local function PickLocation(locations, mapID)
@@ -316,18 +322,18 @@ local function SetRowText(row, entry)
     row.subtitle:ClearAllPoints()
     row.title:SetText(title)
     row.subtitle:SetText(entry.subtitle or "")
-    row.title:SetPoint("TOPLEFT", 12 + indent, -7)
-    row.title:SetPoint("TOPRIGHT", -12, -7)
-    row.subtitle:SetPoint("TOPLEFT", row.title, "BOTTOMLEFT", 0, -2)
-    row.subtitle:SetPoint("TOPRIGHT", row.title, "BOTTOMRIGHT", 0, -2)
     row.bg:SetColorTexture(entry.bgR or 0, entry.bgG or 0, entry.bgB or 0, entry.bgA or 0)
     if entry.kind == "header" then
         row.title:SetTextColor(entry.r or 1, entry.g or 0.82, entry.b or 0)
-        row.title:ClearAllPoints()
-        row.title:SetPoint("LEFT", 12, 0)
-        row.title:SetPoint("RIGHT", -12, 0)
-        row.subtitle:SetText("")
+        row.title:SetPoint("TOPLEFT", 12, -5)
+        row.title:SetPoint("TOPRIGHT", -12, -5)
+        row.subtitle:SetPoint("TOPLEFT", row.title, "BOTTOMLEFT", 0, -1)
+        row.subtitle:SetPoint("TOPRIGHT", row.title, "BOTTOMRIGHT", 0, -1)
     else
+        row.title:SetPoint("TOPLEFT", 12 + indent, -7)
+        row.title:SetPoint("TOPRIGHT", -12, -7)
+        row.subtitle:SetPoint("TOPLEFT", row.title, "BOTTOMLEFT", 0, -2)
+        row.subtitle:SetPoint("TOPRIGHT", row.title, "BOTTOMRIGHT", 0, -2)
         local r, g, b = ns.GetQuestDifficultyRGB(entry.level)
         if entry.kind == "dungeon" then
             r, g, b = DUNGEON_R, DUNGEON_G, DUNGEON_B
@@ -366,8 +372,10 @@ local function CreateRow(index)
         if not entry then
             return
         end
-        if entry.kind == "dungeon" then
-            SelectDungeon(entry.dungeon)
+        if entry.kind == "header" then
+            if entry.dungeon then
+                SelectDungeon(entry.dungeon)
+            end
             return
         end
         if entry.kind == "quest" then
@@ -382,7 +390,7 @@ local function CreateRow(index)
         if not entry or not GameTooltip then
             return
         end
-        if entry.kind == "header" then
+        if entry.kind == "header" and not entry.dungeon then
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -393,8 +401,10 @@ local function CreateRow(index)
         if entry.tooltip then
             GameTooltip:AddLine(entry.tooltip, 1, 1, 1, true)
         end
-        if entry.kind == "dungeon" then
-            GameTooltip:AddLine(L["Click to open this dungeon's quest chain."], 0.8, 0.8, 0.8, true)
+        if entry.kind == "header" then
+            if entry.dungeon then
+                GameTooltip:AddLine(L["Click to show this dungeon's full chains."], 0.8, 0.8, 0.8, true)
+            end
         elseif entry.location then
             GameTooltip:AddLine(L["Click to set a Blizzard map pin."], 0.8, 0.8, 0.8)
         else
@@ -436,7 +446,7 @@ local function BreadcrumbEntries(mapID)
                     break
                 end
             end
-            if not altActive and ns.IsQuestAvailable(questID, data) then
+            if not altActive and IsFinderAvailable(questID, data) then
                 local locations = QuestLocations(questID, data)
                 local usable = {}
                 for i = 1, #locations do
@@ -485,7 +495,7 @@ local function AvailableEntries(mapID)
     local entries = {}
     local scanned = 0
     for questID, data in pairs(ns.Quests or {}) do
-        if ns.IsQuestAvailable(questID, data) then
+        if IsFinderAvailable(questID, data) then
             local locations = QuestLocations(questID, data)
             local usable = {}
             for i = 1, #locations do
@@ -538,7 +548,96 @@ local function AvailableEntries(mapID)
     return entries
 end
 
-local function DungeonSummaryEntries()
+local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
+    local questID = quest.id
+    local data = ns.Quests and ns.Quests[questID]
+    local locations = QuestLocations(questID, data)
+    if #locations == 0 and quest.mapID then
+        locations[1] = { mapID = quest.mapID, x = quest.x, y = quest.y }
+    end
+    local location = PickLocation(locations, CurrentMapID())
+    local level = quest.level or QuestLevel(questID, data)
+    local status = QuestStatus(questID, data)
+    local total = #(quest.chain or {}) + 1
+    local subtitle = status
+    if level then
+        subtitle = "[" .. level .. "] " .. subtitle
+    end
+    if location then
+        subtitle = subtitle .. "  |cff9d9d9d" .. MapName(location.mapID) .. "|r"
+    end
+    if quest.faction and quest.faction ~= "Both" then
+        subtitle = subtitle .. "  |cff9d9d9d" .. quest.faction .. "|r"
+    end
+    if #(quest.chain or {}) > 0 then
+        subtitle = subtitle .. "  |cff9d9d9d" .. string.format(L["%d pre-quests"], #quest.chain) .. "|r"
+    end
+    AddEntry(entries, {
+        kind = "quest",
+        questID = questID,
+        title = quest.name or tostring(questID),
+        subtitle = subtitle,
+        level = level,
+        location = location,
+        tooltip = #(quest.chain or {}) > 0
+            and string.format(L["Dungeon chain step %d of %d."], total, total)
+            or L["Dungeon quest."],
+    })
+    if not includeChains then
+        return
+    end
+    for index, step in ipairs(quest.chain or {}) do
+        local stepID = step.id
+        local stepData = ns.Quests and ns.Quests[stepID]
+        local stepLocations = QuestLocations(stepID, stepData)
+        if #stepLocations == 0 and step.mapID then
+            stepLocations[1] = { mapID = step.mapID, x = step.x, y = step.y }
+        end
+        local stepLocation = PickLocation(stepLocations, CurrentMapID())
+        local stepLevel = step.level or QuestLevel(stepID, stepData)
+        local stepStatus = QuestStatus(stepID, stepData)
+        local stepSubtitle = string.format(L["Chain #%d of %d"], index, total)
+        stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. stepStatus .. "|r"
+        if stepLevel then
+            stepSubtitle = stepSubtitle .. "  [" .. stepLevel .. "]"
+        end
+        if stepLocation then
+            stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. MapName(stepLocation.mapID) .. "|r"
+        end
+        if step.startsInDungeon then
+            stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. L["starts in dungeon"] .. "|r"
+        end
+        AddEntry(entries, {
+            kind = "quest",
+            questID = stepID,
+            title = step.name or tostring(stepID),
+            subtitle = stepSubtitle,
+            level = stepLevel,
+            location = stepLocation,
+            indent = 18,
+            tooltip = string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or ""),
+        })
+    end
+end
+
+local function DungeonHeader(dungeonName, dungeon)
+    local count = #(dungeon.quests or {})
+    local subtitle = count .. " " .. (count == 1 and L["quest"] or L["quests"])
+    if dungeon.level then
+        subtitle = "[" .. dungeon.level .. "] " .. subtitle
+    end
+    return {
+        kind = "header",
+        dungeon = dungeonName,
+        title = dungeonName,
+        subtitle = subtitle,
+        r = DUNGEON_R, g = DUNGEON_G, b = DUNGEON_B,
+        bgR = DUNGEON_R, bgG = DUNGEON_G, bgB = DUNGEON_B, bgA = 0.08,
+        tooltip = L["Click to show this dungeon's full chains."],
+    }
+end
+
+local function AllDungeonEntries()
     local entries = {}
     local dungeons = ns.DungeonChains and ns.DungeonChains.dungeons or {}
     local order = ns.DungeonChains and ns.DungeonChains.order or {}
@@ -546,19 +645,10 @@ local function DungeonSummaryEntries()
         local name = order[i]
         local dungeon = dungeons[name]
         if dungeon then
-            local count = #(dungeon.quests or {})
-            local subtitle = count .. " " .. (count == 1 and L["quest"] or L["quests"])
-            if dungeon.level then
-                subtitle = "[" .. dungeon.level .. "] " .. subtitle
+            AddEntry(entries, DungeonHeader(name, dungeon))
+            for _, quest in ipairs(dungeon.quests or {}) do
+                AddDungeonQuestRows(entries, dungeon, quest, false)
             end
-            AddEntry(entries, {
-                kind = "dungeon",
-                dungeon = name,
-                title = name,
-                subtitle = subtitle,
-                bgR = DUNGEON_R, bgG = DUNGEON_G, bgB = DUNGEON_B, bgA = 0.08,
-                tooltip = L["Open the quest list and required chain."],
-            })
         end
     end
     return entries
@@ -572,78 +662,12 @@ local function DungeonQuestEntries(dungeonName)
         return {}
     end
     local entries = {}
-    AddEntry(entries, {
-        kind = "header",
-        title = dungeonName,
-        subtitle = "",
-        r = DUNGEON_R, g = DUNGEON_G, b = DUNGEON_B,
-    })
+    AddEntry(entries, DungeonHeader(dungeonName, dungeon))
     for _, quest in ipairs(dungeon.quests or {}) do
-        local questID = quest.id
-        local data = ns.Quests and ns.Quests[questID]
-        local locations = QuestLocations(questID, data)
-        if #locations == 0 and quest.mapID then
-            locations[1] = { mapID = quest.mapID, x = quest.x, y = quest.y }
-        end
-        local location = PickLocation(locations, CurrentMapID())
-        local level = quest.level or QuestLevel(questID, data)
-        local status, sr, sg, sb = QuestStatus(questID, data)
-        local total = #(quest.chain or {}) + 1
-        local subtitle = status
-        if level then
-            subtitle = "[" .. level .. "] " .. subtitle
-        end
-        if quest.faction and quest.faction ~= "Both" then
-            subtitle = subtitle .. "  |cff9d9d9d" .. quest.faction .. "|r"
-        end
-        if #(quest.chain or {}) > 0 then
-            subtitle = subtitle .. "  |cff9d9d9d" .. string.format(L["%d pre-quests"], #quest.chain) .. "|r"
-        end
-        AddEntry(entries, {
-            kind = "quest",
-            questID = questID,
-            title = quest.name or tostring(questID),
-            subtitle = subtitle,
-            level = level,
-            location = location,
-            tooltip = #(quest.chain or {}) > 0
-                and string.format(L["Dungeon chain step %d of %d."], total, total)
-                or L["Dungeon quest."],
-            statusR = sr, statusG = sg, statusB = sb,
-        })
-        for index, step in ipairs(quest.chain or {}) do
-            local stepID = step.id
-            local stepData = ns.Quests and ns.Quests[stepID]
-            local stepLocations = QuestLocations(stepID, stepData)
-            if #stepLocations == 0 and step.mapID then
-                stepLocations[1] = { mapID = step.mapID, x = step.x, y = step.y }
-            end
-            local stepLocation = PickLocation(stepLocations, CurrentMapID())
-            local stepLevel = step.level or QuestLevel(stepID, stepData)
-            local stepStatus = QuestStatus(stepID, stepData)
-            local stepSubtitle = string.format(L["Chain #%d of %d"], index, total)
-            stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. stepStatus .. "|r"
-            if stepLevel then
-                stepSubtitle = stepSubtitle .. "  [" .. stepLevel .. "]"
-            end
-            if step.startsInDungeon then
-                stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. L["starts in dungeon"] .. "|r"
-            end
-            AddEntry(entries, {
-                kind = "quest",
-                questID = stepID,
-                title = step.name or tostring(stepID),
-                subtitle = stepSubtitle,
-                level = stepLevel,
-                location = stepLocation,
-                indent = 18,
-                tooltip = string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or ""),
-            })
-        end
+        AddDungeonQuestRows(entries, dungeon, quest, true)
     end
     return entries
 end
-
 local function CurrentZoneID()
     if zoneSelection == "all" then
         return nil
@@ -661,42 +685,58 @@ local function BuildEntries()
     if activeTab == 2 then
         return AvailableEntries(CurrentZoneID())
     end
-    if dungeonSelection then
+    if dungeonSelection and dungeonSelection ~= "all" then
         return DungeonQuestEntries(dungeonSelection)
     end
-    return DungeonSummaryEntries()
+    return AllDungeonEntries()
 end
 
 local function UpdateCount(entries)
     local quests = 0
-    local dungeons = 0
     for i = 1, #entries do
         if entries[i].kind == "quest" then
             quests = quests + 1
-        elseif entries[i].kind == "dungeon" then
-            dungeons = dungeons + 1
         end
     end
     if frame and frame.count then
-        if activeTab == 3 and not dungeonSelection then
-            frame.count:SetText(dungeons .. " " .. (dungeons == 1 and L["dungeon"] or L["dungeons"]))
-        else
-            frame.count:SetText(quests .. " " .. (quests == 1 and L["quest"] or L["quests"]))
-        end
+        frame.count:SetText(quests .. " " .. (quests == 1 and L["quest"] or L["quests"]))
     end
 end
 
-RefreshRows = function()
+local function EmptyEntry()
+    local zone = CurrentZoneID()
+    local zoneName = zone and MapName(zone) or L["All zones"]
+    if activeTab == 1 then
+        return {
+            kind = "header",
+            title = string.format(L["No breadcrumbs in %s."], zoneName),
+            subtitle = L["Choose another zone or check Map pins settings."],
+            r = 0.7, g = 0.7, b = 0.7,
+        }
+    end
+    if activeTab == 2 then
+        return {
+            kind = "header",
+            title = string.format(L["No available quests in %s."], zoneName),
+            subtitle = L["Choose another zone or check Map pins settings."],
+            r = 0.7, g = 0.7, b = 0.7,
+        }
+    end
+    return {
+        kind = "header",
+        title = L["No dungeon quests are available."],
+        subtitle = L["Check the Dungeon chains database."],
+        r = 0.7, g = 0.7, b = 0.7,
+    }
+end
+
+local function RenderRows()
     if not frame then
         return
     end
     local entries = BuildEntries()
     if #entries == 0 then
-        entries[1] = {
-            kind = "header",
-            title = activeTab == 3 and L["No dungeon quests are available."] or L["No quests match these filters."],
-            r = 0.7, g = 0.7, b = 0.7,
-        }
+        entries[1] = EmptyEntry()
     end
     local y = 0
     for i = 1, #entries do
@@ -709,9 +749,6 @@ RefreshRows = function()
         if entry.kind == "header" then
             row:SetHeight(HEADER_HEIGHT)
             y = y + HEADER_HEIGHT + 4
-        elseif entry.kind == "dungeon" then
-            row:SetHeight(DUNGEON_HEIGHT)
-            y = y + DUNGEON_HEIGHT + 2
         else
             row:SetHeight(ROW_HEIGHT)
             y = y + ROW_HEIGHT + 2
@@ -732,6 +769,16 @@ RefreshRows = function()
     end
     if frame.zoneCaption then
         frame.zoneCaption:SetText(activeTab == 3 and L["Dungeon"] or L["Zone"])
+    end
+end
+
+RefreshRows = function()
+    local ok, err = pcall(RenderRows)
+    if not ok then
+        SetStatus(L["Quest Finder error: "] .. tostring(err), true)
+        if ns.GetOption("debug") then
+            print("|cffffd100Forever Quest Pins:|r Quest Finder: " .. tostring(err))
+        end
     end
 end
 
@@ -789,15 +836,19 @@ local function ShowTab(index)
     for i = 1, #tabs do
         local tab = tabs[i]
         local selected = i == index
-        if tab.SetButtonState then
-            pcall(tab.SetButtonState, tab, selected and "PUSHED" or "NORMAL", true)
-        end
-        local text = tab:GetFontString()
-        if text then
-            if selected then
-                text:SetTextColor(1, 0.82, 0)
-            else
-                text:SetTextColor(0.9, 0.9, 0.9)
+        if PanelTemplates_SelectTab and PanelTemplates_DeselectTab then
+            pcall(selected and PanelTemplates_SelectTab or PanelTemplates_DeselectTab, tab)
+        else
+            if tab.SetButtonState then
+                pcall(tab.SetButtonState, tab, selected and "PUSHED" or "NORMAL", true)
+            end
+            local text = tab:GetFontString()
+            if text then
+                if selected then
+                    text:SetTextColor(1, 0.82, 0)
+                else
+                    text:SetTextColor(0.9, 0.9, 0.9)
+                end
             end
         end
     end
@@ -840,11 +891,17 @@ local function EnsureFrame()
 
     local tabNames = { L["Breadcrumbs"], L["Available quests"], L["Dungeon quests"] }
     for i = 1, #tabNames do
-        local tab = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-        tab:SetSize(TAB_WIDTH, TAB_HEIGHT)
-        tab:SetPoint("TOPLEFT", PADDING + (i - 1) * (TAB_WIDTH + 6), -70)
+        local tab = CreateFrame("Button", "ForeverQuestPinsQuestFinderTab" .. i, panel, "CharacterFrameTabButtonTemplate")
+        tab:SetPoint("TOPLEFT", PADDING + (i - 1) * (TAB_WIDTH + 4), -68)
         tab:SetText(tabNames[i])
+        tab:SetScript("OnLoad", nil)
+        tab:SetScript("OnShow", nil)
         tab:SetScript("OnClick", function() ShowTab(i) end)
+        if PanelTemplates_TabResize then
+            pcall(PanelTemplates_TabResize, tab, 0, TAB_WIDTH)
+        else
+            tab:SetSize(TAB_WIDTH, TAB_HEIGHT)
+        end
         tabs[i] = tab
     end
 
@@ -941,9 +998,13 @@ end
 function ns.ShowQuestFinder()
     EnsureFrame()
     if frame then
+        local wasShown = frame:IsShown()
         frame:Show()
         if frame.Raise then
             frame:Raise()
+        end
+        if wasShown then
+            RefreshRows()
         end
     end
 end
@@ -969,7 +1030,7 @@ ns.QuestFinder = {
     BuildZoneList = BuildZoneList,
     BreadcrumbEntries = BreadcrumbEntries,
     AvailableEntries = AvailableEntries,
-    DungeonSummaryEntries = DungeonSummaryEntries,
+    AllDungeonEntries = AllDungeonEntries,
     DungeonQuestEntries = DungeonQuestEntries,
     QuestLocations = QuestLocations,
 }

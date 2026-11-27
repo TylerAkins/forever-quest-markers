@@ -7049,6 +7049,11 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     assert(entries[3].subtitle:find("Chain #1 of 3", 1, true))
     assert(entries[4].subtitle:find("Chain #2 of 3", 1, true))
     assert(entries[4].location == nil, "a chain step without a map has no pin")
+
+    local all = ns.QuestFinder.AllDungeonEntries()
+    assert(#all == 2, "the all-dungeons view lists the header and direct quests only")
+    assert(all[1].kind == "header" and all[1].dungeon == "Test Dungeon")
+    assert(all[2].title == "Dungeon Quest")
 end
 
 cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
@@ -7139,6 +7144,25 @@ cases["minimap_button_runtime.left_click_opens_finder_and_right_click_opens_sett
     shown = false
     ns.RefreshMinimapButton()
     assert(button.shown == false, "the button can be hidden from settings")
+end
+
+cases["eligibility_runtime.finder_availability_skips_level_loads"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.GetOption = function(key)
+        if key == "showTrivial" then return false end
+        if key == "trivialLevelGap" then return 9 end
+        if key == "highLevelGap" then return 15 end
+        return true
+    end
+    UnitLevel = function() return 60 end
+    local requests = 0
+    C_QuestLog.RequestLoadQuestByID = function() requests = requests + 1 end
+    C_QuestLog.GetQuestDifficultyLevel = function() return nil end
+    local available = ns.IsQuestAvailable(123, { minLevel = 55 }, { skipLevelRequest = true })
+    assert(available == true)
+    assert(requests == 0, "Quest Finder must not request a difficulty load for every quest")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

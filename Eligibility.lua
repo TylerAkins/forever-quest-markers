@@ -755,10 +755,12 @@ function ns.CaptureOfferContext()
     ns.SetLastOfferNPC(qg, mapID, x, y)
 end
 
-local function QuestLevelForTrivial(questID, data)
-    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
-    if type(level) == "number" and level > 0 then
-        return level, true
+local function QuestLevelForTrivial(questID, data, skipRequest)
+    if not skipRequest then
+        local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        if type(level) == "number" and level > 0 then
+            return level, true
+        end
     end
     local minLevel = data and data.minLevel
     if minLevel then
@@ -935,8 +937,8 @@ function ns.InvalidatePvPQuestCache(questID)
     end
 end
 
-local function IsTrivial(questID, data)
-    local questLevel, reliable = QuestLevelForTrivial(questID, data)
+local function IsTrivial(questID, data, skipRequest)
+    local questLevel, reliable = QuestLevelForTrivial(questID, data, skipRequest)
     if not reliable or not questLevel then
         return false, false
     end
@@ -958,10 +960,11 @@ end
 --- Conservative availability check. Unknown restrictions keep the pin visible.
 -- @return available boolean
 -- @return reason string
-function ns.IsQuestAvailable(questID, data)
+function ns.IsQuestAvailable(questID, data, options)
     if not questID or not data then
         return false, "bad-data"
     end
+    local skipLevelRequest = type(options) == "table" and options.skipLevelRequest == true
     if ns.IsQuestFlaggedCompleted(questID) then
         return false, "completed"
     end
@@ -1095,7 +1098,7 @@ function ns.IsQuestAvailable(questID, data)
     end
 
     if not ns.GetOption("showTrivial") then
-        local trivial, reliable = IsTrivial(questID, data)
+        local trivial, reliable = IsTrivial(questID, data, skipLevelRequest)
         if reliable and trivial then
             return false, "trivial"
         end
@@ -1103,7 +1106,12 @@ function ns.IsQuestAvailable(questID, data)
 
     local highLevelGap = ns.GetOption("highLevelGap") or HIGH_LEVEL_GAP_MAX
     if type(highLevelGap) == "number" and highLevelGap < HIGH_LEVEL_GAP_MAX then
-        local questLevel = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        local questLevel
+        if skipLevelRequest then
+            questLevel = data.minLevel
+        else
+            questLevel = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        end
         if questLevel and (questLevel - playerLevel) >= highLevelGap then
             return false, "high-level"
         end

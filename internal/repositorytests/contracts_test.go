@@ -573,7 +573,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	base := root(t)
 	eligibility := read(t, base, "Eligibility.lua")
 	for _, contract := range []string{
-		"function ns.IsQuestAvailable(questID, data)",
+		"function ns.IsQuestAvailable(questID, data, options)",
 		"function ns.IsSourceSatisfied(questID)",
 		"function ns.HasQuestGiver(data)",
 		"function ns.HasRequiredSkill(requiredSkill)",
