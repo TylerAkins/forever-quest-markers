@@ -92,13 +92,16 @@ local function StepAction(node)
 end
 
 local function NodePriority(node)
-    if node.action == "turnin" then
+    if node.batchPickup then
         return 1
     end
-    if node.batchPickup then
-        return 2
+    if node.action == "turnin" and not node.batchTurnIn then
+        return 1
     end
     if node.action == "complete" then
+        return 2
+    end
+    if node.batchTurnIn then
         return 3
     end
     if node.action == "accept" then
@@ -424,6 +427,15 @@ local function BuildZone(mapID, skipSet)
                 and node.mapID == playerMapID
         end
     end
+    -- Zone routes finish in-log objectives before turning in, so a hub route
+    -- does not send the player back after every quest. Dungeon routes keep
+    -- turn-ins ahead of objectives.
+    for i = 1, #orderList do
+        local node = nodes[orderList[i]]
+        if node.action == "turnin" then
+            node.batchTurnIn = true
+        end
+    end
 
     local total = #orderList
     local completed = 0
@@ -725,7 +737,7 @@ local function EnsureFrame()
             1, 1, 1, true)
         if currentKind == "zone" then
             GameTooltip:AddLine(
-                L["Picks up same-map quests before objectives."],
+                L["Picks up same-map quests and finishes objectives before turning in."],
                 1, 1, 1, true)
         end
         GameTooltip:Show()

@@ -7942,6 +7942,37 @@ cases["zone_route_runtime.batches_same_map_pickups_before_objectives"] = functio
         "same-map pickups come before the in-log objective, and other-map pickups stay later")
 end
 
+cases["zone_route_runtime.finishes_objectives_before_turning_in"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    C_Map = { GetBestMapForUnit = function() return 1 end }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    ns.IsQuestFlaggedCompleted = function() return false end
+    local onQuest = { [400] = true, [401] = true }
+    local ready = { [400] = true }
+    ns.IsOnQuest = function(questID) return onQuest[questID] or false end
+    ns.IsQuestReadyForTurnIn = function(questID) return ready[questID] or false end
+    ns.IsQuestAcceptable = function() return true end
+    ns.Quests = {
+        [400] = { mapID = 1, x = 10, y = 10, title = "Ready", minLevel = 10 },
+        [401] = { mapID = 1, x = 20, y = 20, title = "Objective", minLevel = 11 },
+    }
+    ns.QuestFinder = {
+        ZoneQuestIDs = function() return { 400, 401 } end,
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.QuestRoute.BuildZone(1, {})
+    assert(route.steps[1].id == 401 and route.steps[1].action == "complete",
+        "zone routes finish the remaining objective first")
+    assert(route.steps[2].id == 400 and route.steps[2].action == "turnin",
+        "the ready turn-in waits until the other objective is done")
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)
