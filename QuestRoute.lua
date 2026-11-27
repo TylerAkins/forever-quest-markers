@@ -442,20 +442,20 @@ local function TrackStep(step, report)
         if ns.ClearWaypoint then
             ns.ClearWaypoint()
         end
-        if report and frame and frame.hint then
+        if report and frame and frame.location then
             if currentKind == "dungeon" then
-                frame.hint:SetText(string.format(
+                frame.location:SetText(string.format(
                     L["No world start location. Check inside %s."], currentLabel))
             else
-                frame.hint:SetText(L["This quest has no world start location."])
+                frame.location:SetText(L["This quest has no world start location."])
             end
         end
         return
     end
     if ns.TrackQuest then
         local ok, message = ns.TrackQuest(step.id, step.data, true)
-        if not ok and report and message and frame and frame.hint then
-            frame.hint:SetText(message)
+        if not ok and report and message and frame and frame.location then
+            frame.location:SetText(message)
         end
     end
 end
@@ -489,7 +489,6 @@ local function Render()
     local step = steps[1]
     local action = frame.action
     local panel = frame
-    panel.hint:SetText(L["Auto-updates."])
 
     if step then
         local label = ACTION_LABELS[step.action] or step.action
@@ -671,6 +670,22 @@ local function EnsureFrame()
     progress.label:SetJustifyH("CENTER")
     progress.label:SetShadowColor(0, 0, 0, 0.85)
     progress.label:SetShadowOffset(1, -1)
+    progress:SetScript("OnEnter", function(self)
+        if not GameTooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Route progress"], 1, 0.82, 0)
+        GameTooltip:AddLine(
+            L["Updates when quests, zones, or quest givers change."],
+            1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    progress:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
     panel.progress = progress
 
     local pin = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -753,13 +768,6 @@ local function EnsureFrame()
         end
     end)
     panel.reset = reset
-
-    local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hint:SetPoint("BOTTOMRIGHT", -PADDING, 37)
-    hint:SetJustifyH("RIGHT")
-    hint:SetText(L["Auto-updates."])
-    hint:SetTextColor(0.55, 0.55, 0.55)
-    panel.hint = hint
 
     panel:Hide()
     if UISpecialFrames and type(UISpecialFrames) == "table" then
