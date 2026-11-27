@@ -41,7 +41,6 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\QuestTagCorrections.lua`,
 		`Database\EventPolicy.lua`,
 		`Database\DungeonChains.lua`,
-		`Database\DungeonRoutes.lua`,
 		`Database\BookQuests.lua`,
 		`Database\ZoneLevels.lua`,
 		`Database\BreadcrumbTargets.lua`,
@@ -69,8 +68,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"Database\\ForeverQuests.lua":       "Database\\QuestTagCorrections.lua",
 		"Database\\QuestTagCorrections.lua": "Database\\EventPolicy.lua",
 		"Database\\EventPolicy.lua":         "Config.lua",
-		"Database\\DungeonChains.lua":       "Database\\DungeonRoutes.lua",
-		"Database\\DungeonRoutes.lua":       "Database\\ExcludedQuests.lua",
+		"Database\\DungeonChains.lua":       "Database\\ExcludedQuests.lua",
 		"Database\\VanillaQuests.lua":       "Database\\BookQuests.lua",
 		"Database\\BookQuests.lua":          "Localization.lua",
 		"Localization.lua":                  "Config.lua",
@@ -707,32 +705,40 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	if strings.Contains(questFinder, "local showAll = CreateFrame") {
 		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
 	}
-	if !strings.Contains(questFinder, "ns.QuestRoute.ShowDungeon(dungeonSelection)") || !strings.Contains(questFinder, "ns.QuestRoute.ShowZone(mapID)") {
-		t.Fatal("QuestFinder.lua does not open the route for the selected dungeon or zone")
+	if !strings.Contains(questFinder, "ns.QuestRoute.ShowZone(mapID)") ||
+		!strings.Contains(questFinder, `L["Zone checklist"]`) {
+		t.Fatal("QuestFinder.lua does not open the zone checklist")
+	}
+	if strings.Contains(questFinder, "ShowDungeon") {
+		t.Fatal("QuestFinder.lua still opens the removed dungeon guide route")
 	}
 	questRoute := read(t, base, "QuestRoute.lua")
 	for _, contract := range []string{
-		"function ns.QuestRoute.ShowDungeon(dungeonName)",
 		"function ns.QuestRoute.ShowZone(mapID)",
 		"function ns.QuestRoute.HasRoute()",
 		"function ns.QuestRoute.Toggle()",
-		"local function BuildDungeonGuide(dungeonName, skipSet)",
 		"local function BuildZone(mapID, skipSet)",
-		"ns.QuestRoute.BuildDungeon = BuildDungeonGuide",
+		"local function AcceptBlockReason(step)",
+		"node.acceptReason",
 		"ns.QuestRoute.BuildZone = BuildZone",
 		"ns.AddOnActionsRestricted",
 		"ns.TrackQuest(step.id, step.data, true)",
-		"ns.DungeonRoutes",
 		"node.batchPickup",
 		"node.batchTurnIn = true",
 		"ns.ShowWowheadQuestURL(step.quest)",
 		`panel:SetFrameStrata("LOW")`,
+		`"PLAYER_LEVEL_UP"`,
 		`"PLAYER_REGEN_ENABLED"`,
 		`"GOSSIP_SHOW"`,
 	} {
 		if !strings.Contains(questRoute, contract) {
 			t.Errorf("QuestRoute.lua missing %q", contract)
 		}
+	}
+	if strings.Contains(questRoute, "ns.DungeonRoutes") ||
+		strings.Contains(questRoute, "BuildDungeonGuide") ||
+		strings.Contains(questRoute, "ShowDungeon") {
+		t.Error("QuestRoute.lua still contains the removed dungeon guide route")
 	}
 	if strings.Contains(questRoute, "table.insert(UISpecialFrames") {
 		t.Error("QuestRoute.lua adds the route window to UISpecialFrames, so Escape would close it")
@@ -744,7 +750,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	minimap := read(t, base, "MinimapButton.lua")
 	for _, contract := range []string{
 		"ns.QuestRoute.Toggle()",
-		`"Shift-left-click: show or hide the route"`,
+		`"Shift-left-click: show or hide the zone checklist"`,
 	} {
 		if !strings.Contains(minimap, contract) {
 			t.Errorf("MinimapButton.lua missing %q", contract)

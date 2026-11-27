@@ -1405,10 +1405,17 @@ local function EmptyEntry()
         }
     end
     if activeTab == 2 then
+        local subtitle = L["Choose another zone or check Map pins settings."]
+        if zone then
+            local progress = ZoneProgress(zone)
+            if progress and progress.total and progress.total > 0 then
+                subtitle = L["Turn on Show low-level quests, or use Show all zone quests, to see every quest assigned to this zone."]
+            end
+        end
         return {
             kind = "header",
             title = zoneName and string.format(L["No available quests in %s."], zoneName) or L["No available quests match these filters."],
-            subtitle = L["Choose another zone or check Map pins settings."],
+            subtitle = subtitle,
             r = 0.7, g = 0.7, b = 0.7,
         }
     end
@@ -1534,21 +1541,16 @@ local function UpdateRouteButton()
     if not button then
         return
     end
-    local visible = activeTab == 2 or activeTab == 3
+    local visible = activeTab == 2
     local enabled = false
-    if activeTab == 3 then
-        enabled = dungeonSelection ~= nil
-            and ns.QuestRoute ~= nil
-            and ns.QuestRoute.HasGuide ~= nil
-            and ns.QuestRoute.HasGuide(dungeonSelection)
-    elseif activeTab == 2 then
+    if activeTab == 2 then
         local mapID = CurrentZoneID()
         enabled = mapID ~= nil
             and ns.QuestFinder ~= nil
             and ns.QuestFinder.ZoneQuestIDs ~= nil
             and #ns.QuestFinder.ZoneQuestIDs(mapID) > 0
     end
-    button:SetText(activeTab == 3 and L["Guide route"] or L["Auto route"])
+    button:SetText(L["Zone checklist"])
     button:SetShown(visible)
     button:SetEnabled(enabled)
 end
@@ -1969,24 +1971,14 @@ local function EnsureFrame()
     local routeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     routeButton:SetSize(120, 22)
     routeButton:SetPoint("LEFT", search, "RIGHT", 8, 0)
-    routeButton:SetText(L["Auto route"])
+    routeButton:SetText(L["Zone checklist"])
     routeButton:SetScript("OnClick", function()
-        if not ns.QuestRoute then
+        if not ns.QuestRoute or activeTab ~= 2 then
             return
         end
-        if activeTab == 3 then
-            if dungeonSelection and not ns.QuestRoute.ShowDungeon(dungeonSelection) then
-                if ns.DungeonRoutes and ns.DungeonRoutes[dungeonSelection] then
-                    SetStatus(L["No guide steps for your faction."], true)
-                else
-                    SetStatus(L["No guide route for this dungeon yet."], true)
-                end
-            end
-        elseif activeTab == 2 then
-            local mapID = CurrentZoneID()
-            if mapID and not ns.QuestRoute.ShowZone(mapID) then
-                SetStatus(L["No quests are available for this zone's route."], true)
-            end
+        local mapID = CurrentZoneID()
+        if mapID and not ns.QuestRoute.ShowZone(mapID) then
+            SetStatus(L["No quests are assigned to this zone."], true)
         end
     end)
     routeButton:SetScript("OnEnter", function(self)
@@ -1994,42 +1986,26 @@ local function EnsureFrame()
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self:GetText() or L["Auto route"], 1, 0.82, 0)
-        if activeTab == 3 then
-            if not dungeonSelection then
-                GameTooltip:AddLine(L["Choose a dungeon first."], 1, 1, 1, true)
-            elseif not (ns.DungeonRoutes and ns.DungeonRoutes[dungeonSelection]) then
-                GameTooltip:AddLine(
-                    L["No guide route for this dungeon yet."],
-                    1, 1, 1, true)
-            elseif ns.QuestRoute and ns.QuestRoute.HasGuide
-                and not ns.QuestRoute.HasGuide(dungeonSelection) then
-                GameTooltip:AddLine(
-                    L["No guide steps for your faction."],
-                    1, 1, 1, true)
-            else
-                GameTooltip:AddLine(
-                    L["Follows the curated guide route for this dungeon."],
-                    1, 1, 1, true)
-            end
-        elseif activeTab == 2 then
-            GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
-            local mapID = CurrentZoneID()
-            if not mapID then
-                GameTooltip:AddLine(L["Choose a zone first."], 1, 1, 1, true)
-            elseif #ns.QuestFinder.ZoneQuestIDs(mapID) == 0 then
-                GameTooltip:AddLine(
-                    L["No quests are available for this zone's route."],
-                    1, 1, 1, true)
-            else
-                GameTooltip:AddLine(
-                    L["Builds a step-by-step route through this zone's quests and follows it as you play."],
-                    1, 1, 1, true)
-            end
+        GameTooltip:SetText(self:GetText() or L["Zone checklist"], 1, 0.82, 0)
+        GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
+        local mapID = CurrentZoneID()
+        if not mapID then
+            GameTooltip:AddLine(L["Choose a zone first."], 1, 1, 1, true)
+        elseif #ns.QuestFinder.ZoneQuestIDs(mapID) == 0 then
             GameTooltip:AddLine(
-                L["This is not an optimal route. It is lazy questing only."],
-                0.8, 0.8, 0.8, true)
+                L["No quests are assigned to this zone."],
+                1, 1, 1, true)
+        else
+            GameTooltip:AddLine(
+                L["Lists every Loremaster quest assigned to this zone, including locked and low-level quests."],
+                1, 1, 1, true)
+            GameTooltip:AddLine(
+                L["Picks up quests that start on your current map and turns in after the objectives."],
+                1, 1, 1, true)
         end
+        GameTooltip:AddLine(
+            L["Lazy cleanup, not an optimal route."],
+            0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     routeButton:SetScript("OnLeave", function()

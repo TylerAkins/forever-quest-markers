@@ -7718,133 +7718,6 @@ cases["eligibility_runtime.player_matches_checks_faction_race_and_class"] = func
     assert(ns.PlayerMatches({ faction = "Both" }))
 end
 
-cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = function()
-    ns = {}
-    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
-    UnitFactionGroup = function() return "Horde" end
-    UnitRace = function() return "Orc", "Orc", 2 end
-    UnitClass = function() return "Warrior", "WARRIOR", 1 end
-    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
-
-    local completed, onQuest, ready = {}, {}, {}
-    ns.IsQuestFlaggedCompleted = function(questID) return completed[questID] or false end
-    ns.IsOnQuest = function(questID) return onQuest[questID] or false end
-    ns.IsQuestReadyForTurnIn = function(questID) return ready[questID] or false end
-    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
-    ns.DungeonRoutes = {
-        ["Test Dungeon"] = {
-            steps = {
-                { type = "accept", quest = 100, npc = "n1" },
-                { type = "do", quest = 100, text = "Do the thing.", targets = { "n2" } },
-                { type = "turnin", quest = 100, npc = "n3" },
-                { type = "accept", quest = 101, npc = "n1", faction = "Alliance" },
-            },
-            npcs = {
-                n1 = { id = 1, name = "Giver", map = 1, x = 10, y = 10 },
-                n2 = { id = 2, name = "Target", map = 1, x = 20, y = 20 },
-                n3 = { id = 3, name = "Turn In", map = 1, x = 30, y = 30 },
-            },
-        },
-    }
-    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
-
-    local route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(ns.QuestRoute.HasGuide("Test Dungeon"))
-    assert(not ns.QuestRoute.HasGuide("Alliance Dungeon"),
-        "a route with only opposite-faction steps is not available")
-    assert(route.total == 3 and route.unit == "steps")
-    assert(route.steps[1].action == "accept" and route.steps[1].quest == 100)
-    assert(route.steps[1].title == "Quest 100")
-    assert(route.steps[1].locationNPCID == 1)
-    assert(route.steps[2].action == "do" and route.steps[2].text == "Do the thing.")
-    assert(route.steps[2].locationNPCID == 2)
-    assert(route.steps[3].action == "turnin")
-
-    onQuest[100] = true
-    route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].action == "do", "an accepted quest skips the accept step")
-    assert(route.completed == 1)
-
-    ready[100] = true
-    route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].action == "turnin", "a ready quest skips the do step")
-    assert(route.completed == 2)
-
-    completed[100] = true
-    route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(#route.steps == 0, "a turned-in quest leaves the guide")
-    assert(route.completed == 3)
-
-    completed[100] = false
-    onQuest[100] = true
-    route = ns.QuestRoute.Build("Test Dungeon", { ["2:do:100"] = true })
-    assert(route.steps[1].action == "turnin", "a skipped guide step stays out")
-end
-
-cases["dungeon_route_runtime.no_guide_route"] = function()
-    ns = {}
-    ns.DungeonRoutes = {}
-    ns.IsQuestFlaggedCompleted = function() return false end
-    ns.IsOnQuest = function() return false end
-    ns.IsQuestReadyForTurnIn = function() return false end
-    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
-    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
-    local route = ns.QuestRoute.Build("No Such Dungeon", {})
-    assert(#route.steps == 0 and route.total == 0)
-end
-
-cases["dungeon_route_runtime.handles_inside_steps_without_locations"] = function()
-    ns = {}
-    ns.GetPlayerFaction = function() return "Horde" end
-    ns.IsQuestFlaggedCompleted = function() return false end
-    ns.IsOnQuest = function(questID) return questID == 100 end
-    ns.IsQuestReadyForTurnIn = function() return false end
-    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
-    ns.DungeonRoutes = {
-        ["Test Dungeon"] = {
-            steps = {
-                { type = "accept", quest = 100, npc = "n1" },
-                { type = "do", quest = 100 },
-                { type = "do", quest = 101, targets = { "missing" } },
-                { type = "turnin", quest = 100, npc = "n1" },
-            },
-            npcs = {
-                n1 = { id = 1, name = "Giver", map = 1428, x = 50, y = 50 },
-            },
-            titles = {},
-        },
-    }
-    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
-    local route = ns.QuestRoute.Build("Test Dungeon", {})
-    assert(route.steps[1].action == "do" and route.steps[1].data == nil)
-    assert(route.steps[2].action == "do" and route.steps[2].data == nil)
-    assert(route.steps[3].action == "turnin" and route.steps[3].mapID == 1428)
-end
-
-cases["dungeon_route_runtime.all_guides_and_attunements_are_present"] = function()
-    ns = {}
-    assert(loadfile("Database/DungeonRoutes.lua"))("ForeverQuestPins", ns)
-    local count = 0
-    for _ in pairs(ns.DungeonRoutes) do
-        count = count + 1
-    end
-    assert(count == 36, "expected 36 dungeon and attunement routes")
-    assert(ns.DungeonRoutes["Ragefire Chasm"])
-    assert(ns.DungeonRoutes["Onyxia Attunement"])
-    assert(ns.DungeonRoutes["Stratholme: Living"])
-    assert(ns.DungeonRoutes["Stratholme: Undead"])
-    local ubrs = ns.DungeonRoutes["Upper Blackrock Spire"]
-    assert(ubrs.steps[1].quest == 4742, "the UBRS key steps are first")
-    for _, route in pairs(ns.DungeonRoutes) do
-        for _, step in ipairs(route.steps) do
-            if step.text then
-                assert(not step.text:find("return the items to", 1, true))
-                assert(not step.text:find("Venture to", 1, true))
-            end
-        end
-    end
-end
-
 cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
@@ -7966,18 +7839,30 @@ cases["zone_route_runtime.finishes_objectives_before_turning_in"] = function()
         "the ready turn-in waits until the other objective is done")
 end
 
-cases["dungeon_route_runtime.brd_guide_data_is_present"] = function()
+cases["zone_route_runtime.records_why_an_accept_step_is_unavailable"] = function()
     ns = {}
-    assert(loadfile("Database/DungeonRoutes.lua"))("ForeverQuestPins", ns)
-    local route = ns.DungeonRoutes and ns.DungeonRoutes["Blackrock Depths"]
-    assert(route, "Blackrock Depths guide data is missing")
-    assert(#route.steps == 176, "the BRD guide step count changed")
-    assert(route.npcs.n9536 and route.npcs.n9536.id == 9536)
-    assert(route.npcs.n8479 and route.npcs.n8479.id == 8479)
-    assert(route.npcs.n8479.name == nil, "guide NPC names are not bundled")
-    local quests = {}
-    assert(loadfile("Database/ForeverQuests.lua"))("ForeverQuestPins", quests)
-    assert(quests.Quests[4123].title == "The Heart of the Mountain")
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.IsQuestAcceptable = function(questID)
+        if questID == 401 then
+            return false, "low-level"
+        end
+        return true, "ok"
+    end
+    ns.Quests = {
+        [400] = { mapID = 1, x = 10, y = 10, title = "Open", minLevel = 1 },
+        [401] = { mapID = 1, x = 20, y = 20, title = "Locked", minLevel = 12 },
+    }
+    ns.QuestFinder = {
+        ZoneQuestIDs = function() return { 400, 401 } end,
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.QuestRoute.BuildZone(1, {})
+    assert(route.steps[1].id == 400 and route.steps[1].acceptable == true)
+    assert(route.steps[2].id == 401 and route.steps[2].acceptable == false)
+    assert(route.steps[2].acceptReason == "low-level")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

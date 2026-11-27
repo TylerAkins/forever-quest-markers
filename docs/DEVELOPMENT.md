@@ -26,13 +26,13 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
 | `MinimapButton.lua` | Draggable minimap button that opens Quest Finder and settings |
 | `QuestFinder.lua` | Quest Finder window for breadcrumbs, available quests, and dungeon chains |
+| `QuestRoute.lua` | Zone checklist window, prerequisite order, batch pickup, and turn-in batching |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
 | `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
 | `Database/DungeonChains.lua` | Generated dungeon quests and required pre-quest chains from ForeverDungeonJournal |
-| `Database/DungeonRoutes.lua` | Generated curated dungeon guide steps from Dungeon_Quests_Forever |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
 | `Database/BookQuests.lua` | Hand-maintained library book pickup quest IDs for the collectible book category |
 | `Database/ZoneLevels.lua` | Hand-maintained zone level ranges copied from Leatrix Maps |
@@ -92,15 +92,7 @@ luajit tools/generate-dungeon-chains.lua \
 
 The addon marks chain quests as dungeon quests, so a normal outdoor pre-quest that unlocks a dungeon step uses the dungeon pin color and the **Show dungeon / raid quest pins** filter.
 
-`Database/DungeonRoutes.lua` comes from the Dungeon_Quests_Forever dungeon and attunement guides. All dungeon guides are included, plus the UBRS key and Onyxia attunement guides. Cozy Sleeping Bag and Mallet of Zul'Farrak have no guide. Regenerate it after a guide update:
-
-```bash
-luajit tools/generate-dungeon-routes.lua \
-  "/path/to/Dungeon_Quests_Forever" \
-  Database/DungeonRoutes.lua
-```
-
-Zone routes remain automatic. Dungeon Guide routes use these curated Accept, Do, and Turn in steps. Objective text is summarized by this project; step order, NPC coordinates, and faction flags come from the guide.
+Zone checklists are built at runtime from `ZoneQuestIDs`; there is no route data file to regenerate. They order quests by source prerequisites, pick up acceptable quests that start on the player's current map, and batch turn-ins after the in-log objectives.
 
 Optional parity review against an older database:
 

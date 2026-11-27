@@ -12,10 +12,6 @@ Quest coordinates, quest-giver and turn-in IDs, spawn points, restrictions, and 
 
 QuestieDB and Questie are licensed under **GPL-3.0**. The generated database files are derived from that data and are distributed under the same license. The addon code is **GPL-3.0-or-later**.
 
-## Dungeon guide routes
-
-`Database/DungeonRoutes.lua` uses the step order, quest IDs, NPC identifiers and coordinates, and faction flags from the Dungeon Quests (Forever) addon by Daeler, including its dungeon and attunement guides. The objective summaries in that file are original text written for this project, not copied from the guide. The source addon does not declare a license in its TOC; confirm permission before redistributing its data.
-
 ## World of Warcraft
 
 World of Warcraft, its quests, and related names are trademarks and copyrights of Blizzard Entertainment, Inc.
