@@ -57,6 +57,9 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 	if strings.Contains(toc, "QuestRoute.lua") {
 		t.Error("TOC still loads the removed QuestRoute.lua")
 	}
+	if strings.Contains(toc, "DungeonRoutes.lua") {
+		t.Error("TOC still loads the removed Database/DungeonRoutes.lua")
+	}
 	if _, err := os.Stat(filepath.Join(base, "Bindings.xml")); err != nil {
 		t.Errorf("Bindings.xml is missing: %v", err)
 	}
@@ -712,6 +715,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	}
 	for _, contract := range []string{
 		`row:RegisterForClicks("LeftButtonUp", "RightButtonUp")`,
+		`mouseButton == "RightButton"`,
 		"ns.ShowWowheadQuestURL(entry.questID)",
 		`L["Right-click to open the Wowhead URL."]`,
 	} {
@@ -721,6 +725,9 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(base, "QuestRoute.lua")); err == nil {
 		t.Error("QuestRoute.lua should be removed")
+	}
+	if _, err := os.Stat(filepath.Join(base, "Database", "DungeonRoutes.lua")); err == nil {
+		t.Error("Database/DungeonRoutes.lua should be removed")
 	}
 	minimap := read(t, base, "MinimapButton.lua")
 	for _, contract := range []string{
