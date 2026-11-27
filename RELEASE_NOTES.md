@@ -1,4 +1,10 @@
-## 1.1.12 - 2026-11-26
+## 1.2.0 - 2026-11-27
 
-- Keep tracked professions in a separate section below the quest list in the standalone tracker. When the quest module is collapsed, the professions section sits just below the quest header. Short quest lists now size to their content, so the professions section moves up and the list does not scroll when everything fits.
-- Run the professions module's layout writes through a secure delegate and add the module to the `/fqp taint` scan. This keeps a combat map open from seeing ForeverQuestPins as the taint source.
+- Add a draggable minimap button. Left-click opens Quest Finder; right-click opens addon settings. Hide it in **Interface** settings.
+- Add **Quest Finder** with breadcrumbs for the current or selected zone, quests available in a zone, and dungeon quests with their full required pre-quest chains. Click a row to set a Blizzard map pin from any zone. The breadcrumb and available-quest lists use the same filters as the map pins.
+- Mark dungeon chain pre-quests as dungeon quests from ForeverDungeonJournal data, so outdoor steps that unlock a dungeon use the dungeon pin color and filter.
+- Add a keybind that uses the special item on the tracked quest.
+- The beta tracker's **All quests** view now includes every quest in the log, not only Blizzard's watched quests. **Tracked only** keeps the old view.
+- Move pin filters back into Blizzard's world map tracking menu.
+- Give book-only pins their own size slider, defaulting to 75% of a quest pin.
+- Run QuestieDB updates Wednesday, Friday, Saturday, and Sunday.
