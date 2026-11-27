@@ -721,8 +721,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		"ns.TrackQuest(step.id, step.data, true)",
 		"node.batchPickup",
 		"node.batchTurnIn = true",
-		"local function SyncWorldMapStrata()",
-		"WorldMapFrame:HookScript",
+		`panel:SetFrameStrata("LOW")`,
 		`"PLAYER_REGEN_ENABLED"`,
 		`"GOSSIP_SHOW"`,
 	} {

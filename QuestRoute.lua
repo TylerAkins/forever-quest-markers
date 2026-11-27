@@ -520,20 +520,6 @@ local function SavedPosition()
     return ns.db.dungeonRouteX or 0, ns.db.dungeonRouteY or 0
 end
 
-local function SyncWorldMapStrata()
-    if not frame then
-        return
-    end
-    local mapShown = WorldMapFrame and WorldMapFrame.IsShown and WorldMapFrame:IsShown()
-    local strata = mapShown and "BACKGROUND" or "DIALOG"
-    if frame:GetFrameStrata() ~= strata then
-        frame:SetFrameStrata(strata)
-    end
-    if not mapShown and frame:IsShown() and frame.Raise then
-        frame:Raise()
-    end
-end
-
 local function Render()
     if not frame then
         return
@@ -641,14 +627,12 @@ local function EnsureFrame()
     else
         panel:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     end
-    panel:SetFrameStrata("DIALOG")
+    -- Keep the route on a low strata so the map, quest log, character pane,
+    -- and other Blizzard windows always cover it.
+    panel:SetFrameStrata("LOW")
     panel:SetClampedToScreen(true)
     panel:SetMovable(true)
     panel:EnableMouse(true)
-    if WorldMapFrame and WorldMapFrame.HookScript then
-        WorldMapFrame:HookScript("OnShow", SyncWorldMapStrata)
-        WorldMapFrame:HookScript("OnHide", SyncWorldMapStrata)
-    end
     panel:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -832,7 +816,6 @@ local function EnsureFrame()
 
     panel:Hide()
     frame = panel
-    SyncWorldMapStrata()
     return panel
 end
 
@@ -855,7 +838,6 @@ local function ShowRoute(kind, target, label)
     frame.title:SetText(RouteTitle(kind))
     frame.subtitle:SetText(label)
     frame:Show()
-    SyncWorldMapStrata()
     if frame.Raise then
         frame:Raise()
     end
@@ -912,7 +894,6 @@ function ns.QuestRoute.Toggle()
         frame.title:SetText(RouteTitle(currentKind))
         frame.subtitle:SetText(currentLabel or "")
         frame:Show()
-        SyncWorldMapStrata()
         if frame.Raise then
             frame:Raise()
         end
