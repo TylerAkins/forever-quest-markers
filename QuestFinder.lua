@@ -897,6 +897,9 @@ local function EnsureFrame()
             tab:SetSize(TAB_WIDTH, TAB_HEIGHT)
         end
         tab:SetPoint("TOPLEFT", PADDING + (i - 1) * (TAB_WIDTH + 4), -68)
+        if tab.UnregisterAllEvents then
+            tab:UnregisterAllEvents()
+        end
         if tab.Text then
             tab.Text:SetText(tabNames[i])
         else
