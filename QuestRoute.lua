@@ -51,6 +51,16 @@ local function HasPoint(mapID, x, y)
         and type(x) == "number" and type(y) == "number"
 end
 
+local function PlayerMapID()
+    if C_Map and type(C_Map.GetBestMapForUnit) == "function" then
+        local ok, mapID = pcall(C_Map.GetBestMapForUnit, "player")
+        if ok then
+            return mapID
+        end
+    end
+    return nil
+end
+
 local function NormalizeXY(x, y)
     if type(x) ~= "number" or type(y) ~= "number" then
         return nil, nil
@@ -81,17 +91,20 @@ local function StepAction(node)
     return "accept"
 end
 
-local ACTION_PRIORITY = {
-    turnin = 1,
-    complete = 2,
-    accept = 3,
-}
-
 local function NodePriority(node)
-    if node.action == "accept" and node.acceptable == false then
-        return ACTION_PRIORITY.accept + 1
+    if node.action == "turnin" then
+        return 1
     end
-    return ACTION_PRIORITY[node.action] or 4
+    if node.batchPickup then
+        return 2
+    end
+    if node.action == "complete" then
+        return 3
+    end
+    if node.action == "accept" then
+        return node.acceptable == false and 5 or 4
+    end
+    return 6
 end
 
 local function StepLocation(node, action)
@@ -399,6 +412,19 @@ local function BuildZone(mapID, skipSet)
     end
     ComputeZoneDepths(nodes, orderList)
 
+    -- Zone routes pick up quests that start on the player's current map before
+    -- sending them to objectives. Dungeon routes keep their chain order because
+    -- many dungeon quests have no world start map.
+    local playerMapID = PlayerMapID()
+    if playerMapID then
+        for i = 1, #orderList do
+            local node = nodes[orderList[i]]
+            node.batchPickup = node.action == "accept"
+                and node.acceptable ~= false
+                and node.mapID == playerMapID
+        end
+    end
+
     local total = #orderList
     local completed = 0
     for i = 1, total do
@@ -679,6 +705,11 @@ local function EnsureFrame()
         GameTooltip:AddLine(
             L["Updates when quests, zones, or quest givers change."],
             1, 1, 1, true)
+        if currentKind == "zone" then
+            GameTooltip:AddLine(
+                L["Picks up same-map quests before objectives."],
+                1, 1, 1, true)
+        end
         GameTooltip:Show()
     end)
     progress:SetScript("OnLeave", function()

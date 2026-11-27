@@ -7721,7 +7721,10 @@ end
 cases["dungeon_route_runtime.orders_shared_chains_and_filters_faction"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
-    C_Map = { GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end }
+    C_Map = {
+        GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end,
+        GetBestMapForUnit = function() return 1 end,
+    }
     UnitFactionGroup = function() return "Horde" end
     UnitRace = function() return "Orc", "Orc", 2 end
     UnitClass = function() return "Warrior", "WARRIOR", 1 end
@@ -7903,6 +7906,40 @@ cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = functio
     end
     assert(table.concat(order, ",") == "403,401,404,402",
         "a completed prerequisite leaves the route and stops gating its dependents")
+end
+
+cases["zone_route_runtime.batches_same_map_pickups_before_objectives"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    C_Map = { GetBestMapForUnit = function() return 1 end }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    ns.IsQuestFlaggedCompleted = function() return false end
+    local onQuest = { [405] = true }
+    ns.IsOnQuest = function(questID) return onQuest[questID] or false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.IsQuestAcceptable = function() return true end
+    ns.Quests = {
+        [400] = { mapID = 1, x = 10, y = 10, title = "Pickup One", minLevel = 10 },
+        [401] = { mapID = 1, x = 20, y = 20, title = "Pickup Two", minLevel = 11 },
+        [402] = { mapID = 2, x = 30, y = 30, title = "Other Map", minLevel = 12 },
+        [405] = { mapID = 1, x = 40, y = 40, title = "In Log", minLevel = 13 },
+    }
+    ns.QuestFinder = {
+        ZoneQuestIDs = function() return { 400, 401, 402, 405 } end,
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.QuestRoute.BuildZone(1, {})
+    local order = {}
+    for i = 1, #route.steps do
+        order[i] = route.steps[i].id
+    end
+    assert(table.concat(order, ",") == "400,401,405,402",
+        "same-map pickups come before the in-log objective, and other-map pickups stay later")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
