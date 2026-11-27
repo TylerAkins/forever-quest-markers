@@ -7061,7 +7061,31 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     local all = ns.QuestFinder.AllDungeonEntries()
     assert(#all == 2, "the all-dungeons view lists the header and direct quests only")
     assert(all[1].kind == "header" and all[1].dungeon == "Test Dungeon")
+    assert(all[1].subtitle:find("Level 1-2", 1, true))
     assert(all[2].title == "Dungeon Quest")
+end
+
+cases["quest_finder_runtime.zone_list_includes_quest_level_ranges"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    ns.Quests = {
+        [1] = { mapID = 1, minLevel = 10, coords = { { 10, 20, 2 } } },
+        [2] = { mapID = 1, minLevel = 20 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local list = ns.QuestFinder.BuildZoneList()
+    local ranges = {}
+    for i = 1, #list do ranges[list[i].id] = list[i].levelRange end
+    assert(ranges[1] == "10-20", "the current zone shows its quest level range")
+    assert(ranges[2] == "10", "a secondary coordinate zone gets the same range")
 end
 
 cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
