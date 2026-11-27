@@ -37,12 +37,15 @@ local function MapInfo(mapID)
         return nil
     end
     local cached = mapInfoCache[mapID]
-    if cached ~= nil then
-        return cached or nil
+    if cached then
+        return cached
     end
     local ok, info = pcall(C_Map.GetMapInfo, mapID)
-    mapInfoCache[mapID] = ok and info or false
-    return ok and info or nil
+    if ok and info then
+        mapInfoCache[mapID] = info
+        return info
+    end
+    return nil
 end
 
 local function MapName(mapID)
@@ -79,10 +82,11 @@ local function AddMap(mapID, seen, list)
         return
     end
     seen[mapID] = true
+    local info = MapInfo(mapID)
     list[#list + 1] = {
         id = mapID,
         name = MapName(mapID),
-        mapType = MapInfo(mapID) and MapInfo(mapID).mapType,
+        mapType = info and info.mapType,
     }
 end
 
