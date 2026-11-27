@@ -719,6 +719,8 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		"ns.QuestRoute.BuildZone = BuildZone",
 		"ns.AddOnActionsRestricted",
 		"ns.TrackQuest(step.id, step.data, true)",
+		"local function SyncWorldMapStrata()",
+		"WorldMapFrame:HookScript",
 		`"PLAYER_REGEN_ENABLED"`,
 		`"GOSSIP_SHOW"`,
 	} {
