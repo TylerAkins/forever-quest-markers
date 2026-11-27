@@ -1314,7 +1314,7 @@ local function UpdateZoneProgress()
         return
     end
     local bar = frame.progressBar
-    if activeTab == 3 then
+    if activeTab ~= 2 then
         bar:Hide()
         return
     end
@@ -1331,7 +1331,7 @@ local function UpdateZoneProgress()
     bar:SetMinMaxValues(0, progress.total)
     bar:SetValue(progress.completed)
     local percent = math.floor((progress.completed / progress.total) * 100 + 0.5)
-    bar.label:SetText(string.format("%s: %d / %d (%d%%)",
+    bar.label:SetText(string.format("%s %d / %d (%d%%)",
         L["Loremaster"], progress.completed, progress.total, percent))
     bar.tooltip = string.format(
         L["Loremaster progress for %s. %d of %d quests completed. This counts quests that start in the zone and match your faction, race, and class."],
@@ -1672,19 +1672,27 @@ local function EnsureFrame()
     end)
     panel.search = search
 
-    local progress = CreateFrame("StatusBar", nil, panel)
-    progress:SetPoint("TOPLEFT", PADDING, -158)
-    progress:SetSize(260, 10)
-    progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    progress:SetStatusBarColor(0.20, 0.75, 0.20)
+    local progress = CreateFrame("StatusBar", nil, panel, "BackdropTemplate")
+    progress:SetPoint("TOPLEFT", PADDING, -156)
+    progress:SetSize(260, 14)
+    progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+    progress:SetStatusBarColor(0.30, 0.62, 0.35)
+    progress:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 8, edgeSize = 8,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+    })
+    progress:SetBackdropColor(0, 0, 0, 0.65)
+    progress:SetBackdropBorderColor(0.8, 0.61, 0.3, 0.55)
     progress:SetMinMaxValues(0, 1)
     progress:SetValue(0)
-    local progressBG = progress:CreateTexture(nil, "BACKGROUND")
-    progressBG:SetAllPoints()
-    progressBG:SetColorTexture(0, 0, 0, 0.65)
-    progress.label = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    progress.label:SetPoint("LEFT", progress, "RIGHT", 8, 0)
-    progress.label:SetJustifyH("LEFT")
+    progress.label = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    progress.label:SetPoint("CENTER", progress, "CENTER", 0, 0)
+    progress.label:SetJustifyH("CENTER")
+    progress.label:SetShadowColor(0, 0, 0, 0.85)
+    progress.label:SetShadowOffset(1, -1)
+    progress.label:SetWordWrap(false)
     progress:SetScript("OnEnter", function(self)
         if not GameTooltip or not self.tooltip then
             return
