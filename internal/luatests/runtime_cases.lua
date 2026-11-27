@@ -7057,6 +7057,11 @@ cases["quest_finder_runtime.breadcrumbs_use_the_target_zone"] = function()
     assert(byID[5066].subtitle:find("Leads to Western Plaguelands", 1, true))
     assert(byID[5000], "the override target is honored")
 
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 5092 end
+    local after = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#after == 1 and after[1].questID == 5000,
+        "a breadcrumb whose follow-up is complete is no longer needed")
+
     assert(#ns.QuestFinder.BreadcrumbEntries(3) == 0, "unrelated zones stay empty")
 end
 

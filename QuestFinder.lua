@@ -255,6 +255,17 @@ local function FollowUpsFor(questID)
     return followUpsBySource[questID] or {}
 end
 
+local function FollowUpSatisfied(questID)
+    local followUps = FollowUpsFor(questID)
+    for i = 1, #followUps do
+        local followUp = followUps[i]
+        if ns.IsQuestFlaggedCompleted(followUp) or ns.IsOnQuest(followUp) then
+            return true
+        end
+    end
+    return false
+end
+
 local function TargetMapIDs(questID)
     local maps = {}
     local seen = {}
@@ -644,7 +655,7 @@ local function BreadcrumbEntries(mapID)
                     break
                 end
             end
-            if not altActive and IsFinderAvailable(questID, data) then
+            if not altActive and not FollowUpSatisfied(questID) and IsFinderAvailable(questID, data) then
                 local locations = QuestLocations(questID, data)
                 local startLocations = {}
                 for i = 1, #locations do
