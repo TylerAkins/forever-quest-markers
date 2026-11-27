@@ -43,5 +43,7 @@ AutoQuests.lua
 QuestLinks.lua
 TrackerData.lua
 Tracker.lua
+MinimapButton.lua
+QuestFinder.lua
 Core.lua
 SpokenTracker.lua

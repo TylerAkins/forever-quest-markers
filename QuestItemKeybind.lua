@@ -43,7 +43,7 @@ local function SelectedLogQuestID()
             end
         end
         if type(GetQuestLogTitle) == "function" then
-            local okTitle, _, _, _, _, _, _, questID = pcall(GetQuestLogTitle, index)
+            local okTitle, _, _, _, _, _, _, _, questID = pcall(GetQuestLogTitle, index)
             if okTitle and type(questID) == "number" and questID > 0 then
                 return questID
             end

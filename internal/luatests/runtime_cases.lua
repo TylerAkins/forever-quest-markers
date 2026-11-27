@@ -6961,6 +6961,186 @@ cases["eligibility_runtime.dungeon_chain_quests_count_as_instance_quests"] = fun
         "quests outside a dungeon chain keep the client tag")
 end
 
+cases["quest_finder_runtime.breadcrumbs_respect_alt_quests_and_locations"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function(questID) return questID == 101 end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [100] = {
+            title = "Shared Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 20,
+            coords = { { 10, 20, 1 }, { 30, 40, 2 } },
+            altQuests = { 101 },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    assert(#ns.QuestFinder.BreadcrumbEntries(nil) == 0,
+        "an alternate breadcrumb already in the log hides the shared breadcrumb")
+    ns.IsOnQuest = function() return false end
+    local entries = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#entries == 1)
+    assert(entries[1].location.mapID == 2, "the selected zone chooses its own location")
+    assert(entries[1].subtitle:find("Zone Two", 1, true))
+end
+
+cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Dungeon", mapType = 4 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetOption = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsInstanceQuest = function() return true end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [200] = { mapID = 1, x = 10, y = 10, title = "Dungeon Quest" },
+        [201] = { mapID = 1, x = 20, y = 20, title = "Pre One" },
+    }
+    ns.DungeonChains = {
+        order = { "Test Dungeon" },
+        dungeons = {
+            ["Test Dungeon"] = {
+                name = "Test Dungeon",
+                level = "1-2",
+                quests = {
+                    {
+                        id = 200,
+                        name = "Dungeon Quest",
+                        level = 20,
+                        mapID = 1, x = 10, y = 10,
+                        chain = {
+                            { id = 201, name = "Pre One", level = 10, mapID = 1, x = 20, y = 20 },
+                            { id = 202, name = "Pre Two", level = 12 },
+                        },
+                    },
+                },
+            },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.DungeonQuestEntries("Test Dungeon")
+    assert(#entries == 4, "header, dungeon quest, and two chain steps")
+    assert(entries[2].title == "Dungeon Quest")
+    assert(entries[3].subtitle:find("Chain #1 of 3", 1, true))
+    assert(entries[4].subtitle:find("Chain #2 of 3", 1, true))
+    assert(entries[4].location == nil, "a chain step without a map has no pin")
+end
+
+cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
+    ns = {}
+    C_QuestLog = {
+        GetLogIndexForQuestID = function(questID)
+            assert(questID == 55, "the selected quest ID comes from the quest log title")
+            return 2
+        end,
+    }
+    GetQuestLogSelection = function() return 4 end
+    GetQuestLogTitle = function(index)
+        assert(index == 4)
+        return "A Quest", 20, 0, false, false, false, 0, 55
+    end
+    local used
+    GetQuestLogSpecialItemInfo = function(index) return 99, "texture", 1, nil, true end
+    UseQuestLogSpecialItem = function(index) used = index end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == true)
+    assert(used == 2)
+end
+
+cases["minimap_button_runtime.left_click_opens_finder_and_right_click_opens_settings"] = function()
+    ns = { db = {} }
+    local shown = true
+    local openedFinder, openedSettings = 0, 0
+    ns.ShowQuestFinder = function() openedFinder = openedFinder + 1 end
+    ns.OpenSettings = function() openedSettings = openedSettings + 1 end
+    ns.GetOption = function(key)
+        if key == "showMinimapButton" then return shown end
+        return true
+    end
+    local function texture()
+        return {
+            SetSize = function() end,
+            SetPoint = function() end,
+            SetTexture = function() end,
+        }
+    end
+    local minimap = {
+        GetWidth = function() return 140 end,
+        GetCenter = function() return 0, 0 end,
+        GetEffectiveScale = function() return 1 end,
+        HookScript = function() end,
+    }
+    Minimap = minimap
+    GetCursorPosition = function() return 0, 0 end
+    GameTooltip = {
+        SetOwner = function() end,
+        SetText = function() end,
+        AddLine = function() end,
+        Show = function() end,
+        Hide = function() end,
+    }
+    local buttons = {}
+    CreateFrame = function(kind, name, parent)
+        local frame = { kind = kind, name = name, parent = parent, scripts = {}, shown = true }
+        function frame:SetSize() end
+        function frame:SetPoint() end
+        function frame:ClearAllPoints() end
+        function frame:SetFrameStrata() end
+        function frame:SetFrameLevel() end
+        function frame:EnableMouse() end
+        function frame:RegisterForClicks() end
+        function frame:RegisterForDrag() end
+        function frame:SetHighlightTexture() end
+        function frame:SetScript(event, callback) self.scripts[event] = callback end
+        function frame:Show() self.shown = true end
+        function frame:Hide() self.shown = false end
+        function frame:IsShown() return self.shown end
+        function frame:CreateTexture() return texture() end
+        function frame:RegisterEvent() end
+        buttons[#buttons + 1] = frame
+        return frame
+    end
+    assert(loadfile("MinimapButton.lua"))("ForeverQuestPins", ns)
+    ns.RefreshMinimapButton()
+    local button
+    for _, frame in ipairs(buttons) do
+        if frame.name == "ForeverQuestPinsMinimapButton" then button = frame end
+    end
+    assert(button and button.shown, "the minimap button is created and shown")
+    button.scripts.OnClick(button, "LeftButton")
+    assert(openedFinder == 1, "left-click opens Quest Finder")
+    button.scripts.OnClick(button, "RightButton")
+    assert(openedSettings == 1, "right-click opens settings")
+    shown = false
+    ns.RefreshMinimapButton()
+    assert(button.shown == false, "the button can be hidden from settings")
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

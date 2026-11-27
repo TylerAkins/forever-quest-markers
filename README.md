@@ -24,6 +24,8 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
 - A keybind under **Key Bindings > AddOns > Forever Quest Pins** uses the special item on the tracked quest the tracker highlights, including the quest chosen by **Select nearest quest**. It does nothing when the selected quest has no usable item.
+- A minimap button opens **Quest Finder** on left-click and addon settings on right-click. Drag it around the minimap; hide it in **Interface** settings.
+- **Quest Finder** lists breadcrumbs for the current or selected zone, quests available in a zone, and every dungeon quest with its required pre-quest chain. Each row shows the quest level, zone, and type tags such as Dungeon, Repeatable, Profession, Class, PvP, Breadcrumb, or Book. Click a row to set a Blizzard map pin from any zone. The breadcrumb and available-quest lists use the same eligibility and display filters as the map pins.
 - Optional **beta** quest tracker layout with zone groups, collapsible zone headers, sort options (Blizzard order, distance, level, title), view filters, and mouse-wheel scrolling. It uses Blizzard's own tracker header, quest blocks, item buttons, and POI buttons, and Edit Mode moves and resizes it normally. Off by default.
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
@@ -90,6 +92,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, the world map's tracking men
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
 | Show quest item sparkles | Off (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
+| Show minimap button | On (left-click opens Quest Finder; right-click opens settings) |
 | Enhance quest tracker (BETA) | Off (zone groups, sorting, filters, and mouse-wheel scrolling; unavailable in gamepad UI) |
 | Sort quests | Blizzard order (distance, level, or title optional) |
 | Show quests | All quests (tracked only, current zone only, instance quests, or completed quests optional) |
@@ -111,6 +114,8 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | Command | Action |
 |---------|--------|
 | `/fqp` | Help |
+| `/fqp finder` | Open Quest Finder |
+| `/fqp options` | Open the addon settings |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |
 | `/fqp trivial <3-15>` | Hide quests this many levels below you |

@@ -40,7 +40,11 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"## X-Website: https://github.com/TylerAkins/forever-quest-markers",
 		`Database\QuestTagCorrections.lua`,
 		`Database\EventPolicy.lua`,
+		`Database\DungeonChains.lua`,
 		`Database\BookQuests.lua`,
+		"Bindings.xml",
+		"MinimapButton.lua",
+		"QuestFinder.lua",
 		"Events.lua",
 		"Localization.lua",
 	} {

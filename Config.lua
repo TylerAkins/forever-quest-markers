@@ -32,6 +32,8 @@ ns.defaults = {
     autoAcceptSkipGrey = false,
     iconScale = 100,
     bookIconScale = 75,
+    showMinimapButton = true,
+    minimapButtonPosition = 200,
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
@@ -100,6 +102,13 @@ local function NormalizeNumber(key, value)
     end
     if key == "bookIconScale" then
         return math.max(25, math.min(150, math.floor(value + 0.5)))
+    end
+    if key == "minimapButtonPosition" then
+        value = value % 360
+        if value < 0 then
+            value = value + 360
+        end
+        return value
     end
     if key == "trivialLevelGap" then
         return math.max(TRIVIAL_GAP_MIN, math.min(TRIVIAL_GAP_MAX, math.floor(value + 0.5)))
@@ -172,6 +181,10 @@ local function DecodeMirror()
     local bookIconScale = tonumber(text:match("bookIconScale=(%d+)"))
     if bookIconScale and bookIconScale >= 25 and bookIconScale <= 150 then
         mirror.bookIconScale = bookIconScale
+    end
+    local minimapButtonPosition = tonumber(text:match("minimapButtonPosition=(%d+)"))
+    if minimapButtonPosition and minimapButtonPosition >= 0 and minimapButtonPosition <= 359 then
+        mirror.minimapButtonPosition = minimapButtonPosition
     end
     local trivialLevelGap = tonumber(text:match("trivialLevelGap=(%d+)"))
     if trivialLevelGap and trivialLevelGap >= TRIVIAL_GAP_MIN and trivialLevelGap <= TRIVIAL_GAP_MAX then
@@ -301,6 +314,8 @@ local function SaveMirror(db)
         .. tostring(db.autoAcceptMinLevelOffset or ns.defaults.autoAcceptMinLevelOffset)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
     parts[#parts + 1] = "bookIconScale=" .. tostring(db.bookIconScale or ns.defaults.bookIconScale)
+    parts[#parts + 1] = "minimapButtonPosition="
+        .. tostring(math.floor((db.minimapButtonPosition or ns.defaults.minimapButtonPosition) % 360))
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
     parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
@@ -712,6 +727,9 @@ function ns.SetOption(key, value)
     if key == "showNameplateIcons" and not value and ns.Nameplates then
         ns.Nameplates:Clear()
     end
+    if key == "showMinimapButton" and ns.RefreshMinimapButton then
+        ns.RefreshMinimapButton()
+    end
     if ns.SyncSettingsCheckboxes then ns.SyncSettingsCheckboxes() end
     if key == "hideQuestTrackerInCombat" and ns.SyncQuestTrackerCombatVisibility then
         ns.SyncQuestTrackerCombatVisibility()
@@ -808,9 +826,19 @@ function ns.SlashCommand(msg)
         ns.ShowSetup()
         return
     end
+    if msg == "finder" and ns.ShowQuestFinder then
+        ns.ShowQuestFinder()
+        return
+    end
+    if msg == "options" and ns.OpenSettings then
+        ns.OpenSettings()
+        return
+    end
     if msg == "" or msg == "help" then
         Print(L["Commands:"])
         print(L["  /fqp setup   Open the setup guide"])
+        print(L["  /fqp finder  Open Quest Finder"])
+        print(L["  /fqp options Open addon settings"])
         print(L["  /fqp track <id> Track a quest start, objective, or turn-in"])
         print(L["  /fqp nearest  Select the nearest tracked quest"])
         print(L["  /fqp clear    Clear the addon waypoint"])
@@ -2184,6 +2212,13 @@ local function BuildInterfaceSettings(self)
         L["Keeps the game's quest item sparkle on. The same setting also makes quest givers sparkle. Turning it off requires a full game restart; /reload is not enough."]
     )
     sparkles:SetPoint("TOPLEFT", nameplateIcons, "BOTTOMLEFT", 0, 0)
+    local minimap = CreateOptionCheckbox(
+        self,
+        "showMinimapButton",
+        L["Show minimap button"],
+        L["The minimap button opens Quest Finder on left-click and addon settings on right-click."]
+    )
+    minimap:SetPoint("TOPLEFT", sparkles, "BOTTOMLEFT", 0, 0)
 end
 
 function ns.TryRegisterSettings()
@@ -2202,6 +2237,7 @@ function ns.TryRegisterSettings()
         return false
     end
     Settings.RegisterAddOnCategory(category)
+    ns.settingsCategory = category
 
     local sections = {
         { L["Map pins"], BuildMapPinsSettings },
@@ -2219,4 +2255,26 @@ function ns.TryRegisterSettings()
     ns.settingsRegistered = true
     ns.settingsMode = "canvas"
     return true
+end
+
+function ns.OpenSettings()
+    ns.TryRegisterSettings()
+    local category = ns.settingsCategory
+    if category and Settings and type(Settings.OpenToCategory) == "function" then
+        local ok = pcall(Settings.OpenToCategory, category:GetID())
+        if ok then
+            return true
+        end
+    end
+    if type(InterfaceOptionsFrame_OpenToCategory) == "function" then
+        local ok = pcall(InterfaceOptionsFrame_OpenToCategory, "Forever Quest Pins")
+        if ok then
+            return true
+        end
+    end
+    if ns.ShowSetup then
+        ns.ShowSetup()
+        return true
+    end
+    return false
 end

@@ -23,6 +23,8 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `QuestLinks.lua` | Copy Wowhead URL menu entry for tracked quest blocks |
 | `TrackerData.lua` | Quest-log zone headers, current-zone chain, distance, and the tracker sort/filter view |
 | `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
+| `MinimapButton.lua` | Draggable minimap button that opens Quest Finder and settings |
+| `QuestFinder.lua` | Quest Finder window for breadcrumbs, available quests, and dungeon chains |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
