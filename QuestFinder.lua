@@ -1401,6 +1401,9 @@ local function RenderRows()
     if not frame then
         return
     end
+    if frame.progressBar and activeTab ~= 2 then
+        frame.progressBar:Hide()
+    end
     local entries = FilterEntries(BuildEntries(), searchText)
     local hasQuest = false
     for i = 1, #entries do
@@ -1543,6 +1546,7 @@ end
 
 local function ShowTab(index)
     activeTab = index
+    UpdateZoneProgress()
     for i = 1, #tabs do
         local tab = tabs[i]
         local selected = i == index
@@ -1660,7 +1664,8 @@ local function EnsureFrame()
         end
         tab:SetScript("OnLoad", nil)
         tab:SetScript("OnShow", nil)
-        tab:SetScript("OnClick", function() ShowTab(i) end)
+        local tabIndex = i
+        tab:SetScript("OnClick", function() ShowTab(tabIndex) end)
         if PanelTemplates_TabResize then
             pcall(PanelTemplates_TabResize, tab, 0, TAB_WIDTH)
         end
