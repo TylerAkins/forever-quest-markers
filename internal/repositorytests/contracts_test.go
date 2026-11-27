@@ -688,6 +688,19 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 			t.Errorf("Config.lua missing %q", contract)
 		}
 	}
+	questFinder := read(t, base, "QuestFinder.lua")
+	for _, contract := range []string{
+		"local showAll = { false, false, false }",
+		`local showAllButton = CreateFrame("CheckButton"`,
+		"showAll[activeTab] = self:GetChecked() and true or false",
+	} {
+		if !strings.Contains(questFinder, contract) {
+			t.Errorf("QuestFinder.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(questFinder, "local showAll = CreateFrame") {
+		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
+	}
 	core := read(t, base, "Core.lua")
 	if !strings.Contains(core, `"SKILL_LINES_CHANGED"`) || !strings.Contains(core, "NPCTooltips:Initialize") || !strings.Contains(core, "InvalidateInstanceQuestCache") {
 		t.Fatal("Core.lua is missing a required refresh, tooltip, or instance-cache hook")

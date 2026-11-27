@@ -1950,23 +1950,23 @@ local function EnsureFrame()
     progress:Hide()
     panel.progressBar = progress
 
-    local showAll = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    showAll:SetSize(24, 24)
-    showAll:SetPoint("TOPLEFT", PADDING + 276, -150)
-    local showAllText = showAll.Text
+    local showAllButton = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    showAllButton:SetSize(24, 24)
+    showAllButton:SetPoint("TOPLEFT", PADDING + 276, -150)
+    local showAllText = showAllButton.Text
     if not showAllText then
-        showAllText = showAll:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        showAllText:SetPoint("LEFT", showAll, "RIGHT", 4, 1)
-        showAll.Text = showAllText
+        showAllText = showAllButton:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        showAllText:SetPoint("LEFT", showAllButton, "RIGHT", 4, 1)
+        showAllButton.Text = showAllText
     else
         showAllText:ClearAllPoints()
-        showAllText:SetPoint("LEFT", showAll, "RIGHT", 4, 1)
+        showAllText:SetPoint("LEFT", showAllButton, "RIGHT", 4, 1)
     end
-    showAll:SetScript("OnClick", function(self)
+    showAllButton:SetScript("OnClick", function(self)
         showAll[activeTab] = self:GetChecked() and true or false
         RefreshRows()
     end)
-    showAll:SetScript("OnEnter", function(self)
+    showAllButton:SetScript("OnEnter", function(self)
         if not GameTooltip then
             return
         end
@@ -1977,13 +1977,13 @@ local function EnsureFrame()
         end
         GameTooltip:Show()
     end)
-    showAll:SetScript("OnLeave", function()
+    showAllButton:SetScript("OnLeave", function()
         if GameTooltip then
             GameTooltip:Hide()
         end
     end)
-    showAll:Hide()
-    panel.showAll = showAll
+    showAllButton:Hide()
+    panel.showAll = showAllButton
 
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", PADDING, -176)
