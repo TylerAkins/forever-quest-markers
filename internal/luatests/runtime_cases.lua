@@ -7852,6 +7852,55 @@ cases["dungeon_route_runtime.skips_completed_and_manual_steps"] = function()
     end
 end
 
+cases["dungeon_route_runtime.picks_up_nearby_quests_before_turn_ins"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    C_Map = {
+        GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end,
+        GetBestMapForUnit = function() return 1 end,
+        GetPlayerMapPosition = function()
+            return { GetXY = function() return 0.5, 0.5 end }
+        end,
+    }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    ns.IsQuestFlaggedCompleted = function() return false end
+    local onQuest = { [303] = true }
+    local ready = { [303] = true }
+    ns.IsOnQuest = function(questID) return onQuest[questID] or false end
+    ns.IsQuestReadyForTurnIn = function(questID) return ready[questID] or false end
+    ns.IsQuestAcceptable = function() return true end
+    ns.Quests = {
+        [301] = { mapID = 1, x = 52, y = 52, title = "Nearby", minLevel = 50 },
+        [302] = { mapID = 1, x = 10, y = 10, title = "Far Away", minLevel = 50 },
+        [303] = { mapID = 1, x = 50, y = 50, title = "Turn In", minLevel = 50 },
+    }
+    ns.DungeonChains = {
+        order = { "Test Dungeon" },
+        dungeons = {
+            ["Test Dungeon"] = {
+                name = "Test Dungeon",
+                quests = {
+                    { id = 301, name = "Nearby" },
+                    { id = 302, name = "Far Away" },
+                    { id = 303, name = "Turn In" },
+                },
+            },
+        },
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+    local route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].id == 301 and route.steps[1].action == "accept",
+        "the nearby quest is picked up before the turn-in")
+    assert(route.steps[2].id == 303 and route.steps[2].action == "turnin",
+        "the ready turn-in is next")
+    assert(route.steps[3].id == 302,
+        "a same-map quest outside the pickup radius stays later")
+end
+
 cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }

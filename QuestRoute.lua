@@ -61,6 +61,21 @@ local function PlayerMapID()
     return nil
 end
 
+local function PlayerPosition(mapID)
+    if not mapID or not C_Map or type(C_Map.GetPlayerMapPosition) ~= "function" then
+        return nil
+    end
+    local ok, position = pcall(C_Map.GetPlayerMapPosition, mapID, "player")
+    if not ok or not position or type(position.GetXY) ~= "function" then
+        return nil
+    end
+    local x, y = position:GetXY()
+    if type(x) ~= "number" or type(y) ~= "number" then
+        return nil
+    end
+    return x, y
+end
+
 local function NormalizeXY(x, y)
     if type(x) ~= "number" or type(y) ~= "number" then
         return nil, nil
@@ -96,18 +111,18 @@ local function NodePriority(node)
         return 1
     end
     if node.action == "turnin" and not node.batchTurnIn then
-        return 1
-    end
-    if node.action == "complete" then
         return 2
     end
-    if node.batchTurnIn then
+    if node.action == "complete" then
         return 3
     end
-    if node.action == "accept" then
-        return node.acceptable == false and 5 or 4
+    if node.batchTurnIn then
+        return 4
     end
-    return 6
+    if node.action == "accept" then
+        return node.acceptable == false and 6 or 5
+    end
+    return 7
 end
 
 local function StepLocation(node, action)
@@ -279,6 +294,26 @@ local function BuildDungeon(dungeonName, skipSet)
             end
         end
         AddNode(nodes, orderList, quest, #chain + 1, previousID)
+    end
+
+    -- Dungeon routes batch acceptable quests that start on the player's
+    -- current map and are close by, so an NPC in front of the player is not
+    -- skipped in favor of a turn-in elsewhere.
+    local playerMapID = PlayerMapID()
+    local playerX, playerY = PlayerPosition(playerMapID)
+    if playerMapID and playerX and playerY then
+        local radiusSquared = 0.15 * 0.15
+        for i = 1, #orderList do
+            local node = nodes[orderList[i]]
+            if node.action == "accept" and node.acceptable ~= false
+                and node.mapID == playerMapID and node.x and node.y then
+                local dx = (node.x / 100) - playerX
+                local dy = (node.y / 100) - playerY
+                if dx * dx + dy * dy <= radiusSquared then
+                    node.batchPickup = true
+                end
+            end
+        end
     end
 
     local total = #orderList
@@ -722,6 +757,10 @@ local function EnsureFrame()
         if currentKind == "zone" then
             GameTooltip:AddLine(
                 L["Picks up same-map quests and finishes objectives before turning in."],
+                1, 1, 1, true)
+        else
+            GameTooltip:AddLine(
+                L["Picks up nearby quests before turning in."],
                 1, 1, 1, true)
         end
         GameTooltip:Show()
