@@ -203,9 +203,22 @@ func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 		"UnregisterModuleEvents",
 		"UnregisterEvent(QuestObjectiveTracker.events[i])",
 		"RegisterEvent(QuestObjectiveTracker.events[i])",
+		"CopyFramePosition",
+		"FramePositionKey",
+		"self.sourcePoint",
 	} {
 		if !strings.Contains(tracker, contract) {
 			t.Errorf("Tracker.lua missing %q", contract)
+		}
+	}
+	for _, forbidden := range []string{
+		"StartMoving",
+		"SetMovable(true)",
+		"SetUserPlaced(true)",
+		"RegisterForDrag",
+	} {
+		if strings.Contains(tracker, forbidden) {
+			t.Errorf("Tracker.lua still makes the tracker movable outside Edit Mode with %q", forbidden)
 		}
 	}
 	if strings.Contains(tracker, "HookTrackerMenu(QuestObjectiveTracker") {

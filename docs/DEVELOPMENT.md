@@ -297,10 +297,10 @@ Disabling the option restores it. The addon never assigns Blizzard's
 `SelectFirstButton`, or `UpdateSmartNavigationOverrides`; the repository contract
 test checks that.
 
-The standalone frame copies Blizzard's position and size when it is created. Drag
-the **Quests** header to move it. The frame fills the Edit Mode height; the module
-scrolls inside it. The height follows Edit Mode's height slider, but moving the
-source frame in Edit Mode does not move the standalone tracker.
+The standalone frame copies Blizzard's position and size when it is created and
+follows later Edit Mode position and height changes. The frame fills the Edit Mode
+height; the module scrolls inside it. It has no separate drag handler, so moving it
+outside Edit Mode does nothing.
 
 `Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
 `_trackerBetaSeenV2` marker forces the option off once for installs that had the
@@ -350,9 +350,8 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   updates preserve it and clamp it when the content shrinks.
 - Edit Mode is Blizzard's existing Objective Tracker system. Moving the tracker,
   changing its height, text size, or opacity needs no custom mover; the viewport
-  follows the height setting. The standalone tracker copies the size and position
-  when it is created and follows later height changes, but not later position
-  changes; drag its header to move it.
+  follows the height setting. The standalone tracker follows the source tracker's
+  Edit Mode position and height; there is no separate header drag.
 - `InputUtil.IsGamepadUIEnabled()` is a hard gate. When gamepad UI is active the
   module is not added, the settings controls are disabled with a note, and the
   setup guide disables the same Quest tracker choices. `/fqp nearest` reports
@@ -396,16 +395,16 @@ Runtime cases cover grouping, every sort and filter, the current-zone match,
 combat caching, combat retention of the standalone tracker, module registration and
 restoration, secure quest-click delegation, gamepad fallback, zone header insertion,
 collapse skipping, and the scroll viewport math. In-game checks still cover the
-side-by-side look, the header drag, scrolling over every control, animations,
+side-by-side look, Edit Mode position and height changes, scrolling over every
+control, animations,
 combat, taint, and the gamepad transition.
 
 Known limits: the module relies on Blizzard's tracker internals; if a client patch
 renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party
 addons that enumerate tracker blocks by the `quest` tag also see zone header blocks;
 those blocks use string IDs and are ignored by normal quest consumers. The standalone
-tracker is not part of Blizzard's Edit Mode system, so moving it uses the header drag.
-Its height follows the Edit Mode slider, but moving the source frame in Edit Mode does
-not move the standalone tracker.
+tracker is not part of Blizzard's Edit Mode system, so it follows the source tracker's
+position and height through a poll instead of owning an Edit Mode layout.
 
 ## Quest item sparkles
 

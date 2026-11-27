@@ -128,18 +128,37 @@ local registerRetries = 0
 local blizzardEventsSuspended = false
 local standaloneFrame
 
+local function CopyFramePosition(target, source)
+    if not target or not source or not source.GetPoint then
+        return false
+    end
+    local point, relativeTo, relativePoint, x, y = source:GetPoint(1)
+    if not point then
+        return false
+    end
+    target:ClearAllPoints()
+    target:SetPoint(point, relativeTo or UIParent, relativePoint or point, x or 0, y or 0)
+    return true
+end
+
+local function FramePositionKey(source)
+    if not source or not source.GetPoint then
+        return nil
+    end
+    local point, relativeTo, relativePoint, x, y = source:GetPoint(1)
+    if not point then
+        return nil
+    end
+    return tostring(point) .. ":" .. tostring(relativeTo) .. ":"
+        .. tostring(relativePoint) .. ":" .. tostring(x or 0) .. ":"
+        .. tostring(y or 0)
+end
+
 local function CopyFrameLayout(target, source)
     if not source then
         return
     end
-    local point, relativeTo, relativePoint, x, y
-    if source.GetPoint then
-        point, relativeTo, relativePoint, x, y = source:GetPoint(1)
-    end
-    if point then
-        target:ClearAllPoints()
-        target:SetPoint(point, relativeTo or UIParent, relativePoint or point, x or 0, y or 0)
-    else
+    if not CopyFramePosition(target, source) then
         target:ClearAllPoints()
         target:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -20)
     end
@@ -164,10 +183,6 @@ local function CopyFrameLayout(target, source)
     if source.GetClampedToScreen and target.SetClampedToScreen then
         target:SetClampedToScreen(source:GetClampedToScreen())
     end
-    target:SetMovable(true)
-    target:SetResizable(true)
-    target:SetUserPlaced(true)
-    target:SetDontSavePosition(false)
 end
 
 -- The standalone frame is not part of Edit Mode. Read the tracker's current
@@ -195,6 +210,7 @@ local function CreateStandaloneContainer()
     end
     local frame = CreateFrame("Frame", "FQPStandaloneTracker", UIParent)
     CopyFrameLayout(frame, ObjectiveTrackerFrame)
+    frame.sourcePoint = FramePositionKey(ObjectiveTrackerFrame)
     frame.module = nil
     frame.professionsModule = nil
     frame.dirty = false
@@ -366,14 +382,19 @@ local function CreateStandaloneContainer()
         self:SetShown((quest and quest:IsShown()) or (professions and professions:IsShown()) or false)
     end
 
-    -- Edit Mode changes the source frame's height without an event our tracker
-    -- listens to. Poll it cheaply and relayout when it changes.
+    -- Edit Mode changes the source frame's position and height without an event
+    -- our tracker listens to. Poll it cheaply and follow both.
     frame:SetScript("OnUpdate", function(self, elapsed)
         self.heightCheck = (self.heightCheck or 0) + elapsed
         if self.heightCheck < 0.25 then
             return
         end
         self.heightCheck = 0
+        local sourcePoint = FramePositionKey(ObjectiveTrackerFrame)
+        if sourcePoint and sourcePoint ~= self.sourcePoint then
+            self.sourcePoint = sourcePoint
+            CopyFramePosition(self, ObjectiveTrackerFrame)
+        end
         local height = SourceTrackerHeight()
         if height and height ~= sourceHeight then
             sourceHeight = height
@@ -1536,20 +1557,6 @@ local function CreateModule()
     frame.Header:HookScript("OnMouseWheel", function(_, delta)
         frame:Scroll(delta)
     end)
-    local container = frame:GetParent()
-    if frame.Header.RegisterForDrag then
-        frame.Header:RegisterForDrag("LeftButton")
-        frame.Header:SetScript("OnDragStart", function()
-            if container and container.StartMoving then
-                container:StartMoving()
-            end
-        end)
-        frame.Header:SetScript("OnDragStop", function()
-            if container and container.StopMovingOrSizing then
-                container:StopMovingOrSizing()
-            end
-        end)
-    end
     HookTrackerMenu(frame.Header)
     if ns.InstallSpokenTrackerBridge then
         ns.InstallSpokenTrackerBridge(frame)

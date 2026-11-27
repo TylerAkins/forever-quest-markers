@@ -6304,7 +6304,10 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetWidth(width) self.width = width end
         function frame:GetWidth() return self.width or 0 end
         function frame:SetSize(width, height) self.width, self.height = width, height end
-        function frame:GetPoint() return "TOPRIGHT", UIParent, "TOPRIGHT", -20, -20 end
+        function frame:GetPoint()
+            return self.point or "TOPRIGHT", self.relativeTo or UIParent,
+                self.relativePoint or "TOPRIGHT", self.x or -20, self.y or -20
+        end
         function frame:SetScale() end
         function frame:GetScale() return 1 end
         function frame:SetAlpha() end
@@ -6319,7 +6322,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetResizable(value) self.resizable = value end
         function frame:SetUserPlaced(value) self.userPlaced = value end
         function frame:SetDontSavePosition(value) self.dontSavePosition = value end
-        function frame:RegisterForDrag() end
+        function frame:RegisterForDrag() self.dragRegistered = true end
         function frame:StartMoving() end
         function frame:StopMovingOrSizing() end
         function frame:EnableMouse(enabled)
@@ -6526,6 +6529,12 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end
     assert(ourModule, "the addon must create its tracker module")
     assert(standaloneTracker, "the addon must create its standalone tracker container")
+    assert(standaloneTracker.movable ~= true,
+        "the standalone tracker must not be movable outside Edit Mode")
+    assert(standaloneTracker.userPlaced ~= true,
+        "the standalone tracker must not save an independent position")
+    assert(ourModule.Header and ourModule.Header.dragRegistered ~= true,
+        "the quest header must not drag the tracker outside Edit Mode")
     assert(#ObjectiveTrackerFrame.modules == 2
         and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
         and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
@@ -6550,6 +6559,14 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(QuestObjectiveTracker.shown == false)
     assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
         "the standalone module's context menu parent is its own container")
+    ObjectiveTrackerFrame.point = "TOPLEFT"
+    ObjectiveTrackerFrame.relativePoint = "TOPLEFT"
+    ObjectiveTrackerFrame.x, ObjectiveTrackerFrame.y = 10, -10
+    standaloneTracker.scripts.OnUpdate(standaloneTracker, 1)
+    local moved = standaloneTracker.points and standaloneTracker.points[#standaloneTracker.points]
+    assert(moved and moved.point == "TOPLEFT"
+        and moved.x == 10 and moved.y == -10,
+        "the standalone tracker follows Edit Mode position changes")
     assert(secureDelegates >= 1, "the tracker builds secure delegates for quest clicks and module moves")
     assert(ns.trackerClickSecured == "delegate", "the client's secure delegate is used for quest clicks")
     assert(ourModule.OnBlockHeaderClick ~= QuestObjectiveTrackerMixin.OnBlockHeaderClick,
