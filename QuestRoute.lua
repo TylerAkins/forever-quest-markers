@@ -76,6 +76,10 @@ local function PlayerPosition(mapID)
     return x, y
 end
 
+local function MapOpen()
+    return WorldMapFrame and WorldMapFrame.IsShown and WorldMapFrame:IsShown() or false
+end
+
 local function NormalizeXY(x, y)
     if type(x) ~= "number" or type(y) ~= "number" then
         return nil, nil
@@ -510,6 +514,10 @@ local function TrackStep(step, report)
         pendingPinKey = StepKey(step)
         return
     end
+    if MapOpen() then
+        pendingPinKey = StepKey(step)
+        return
+    end
     pendingPinKey = nil
     if step.action == "accept" and not step.mapID then
         if ns.ClearWaypoint then
@@ -854,6 +862,16 @@ local function EnsureFrame()
     panel.reset = reset
 
     panel:Hide()
+    panel:SetScript("OnUpdate", function()
+        if not pendingPinKey or MapOpen() then
+            return
+        end
+        if ns.AddOnActionsRestricted and ns.AddOnActionsRestricted() then
+            return
+        end
+        pendingPinKey = nil
+        Refresh(true)
+    end)
     frame = panel
     return panel
 end
@@ -953,15 +971,9 @@ ns.QuestRoute.Build = BuildDungeon
 ns.QuestRoute.BuildDungeon = BuildDungeon
 ns.QuestRoute.BuildZone = BuildZone
 
--- Escape must not close the route window. Keep it out of UISpecialFrames so
--- the close button and the minimap toggle are the only ways to dismiss it.
-if type(UISpecialFrames) == "table" then
-    for i = #UISpecialFrames, 1, -1 do
-        if UISpecialFrames[i] == "ForeverQuestPinsQuestRoute" then
-            table.remove(UISpecialFrames, i)
-        end
-    end
-end
+-- The route frame is intentionally not added to UISpecialFrames. Escape must
+-- not close it, and writing to that Blizzard table can taint the map's secure
+-- panel handling.
 
 if type(CreateFrame) == "function" then
     local events = CreateFrame("Frame")

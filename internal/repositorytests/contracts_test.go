@@ -732,6 +732,10 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	if strings.Contains(questRoute, "table.insert(UISpecialFrames") {
 		t.Error("QuestRoute.lua adds the route window to UISpecialFrames, so Escape would close it")
 	}
+	if strings.Contains(questRoute, "type(UISpecialFrames)") ||
+		strings.Contains(questRoute, "table.remove(UISpecialFrames") {
+		t.Error("QuestRoute.lua touches UISpecialFrames, which can taint secure Blizzard panel handling")
+	}
 	minimap := read(t, base, "MinimapButton.lua")
 	for _, contract := range []string{
 		"ns.QuestRoute.Toggle()",
