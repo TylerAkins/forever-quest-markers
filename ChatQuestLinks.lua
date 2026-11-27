@@ -66,7 +66,49 @@ local function QuestLink(questID, level, name)
         return nil
     end
     level = tonumber(level) or 0
-    return "|Hquest:" .. questID .. ":" .. level .. "|h[" .. name .. "]|h"
+    return "|cffffd100|Hquest:" .. questID .. ":" .. level .. "|h[" .. name .. "]|h|r"
+end
+
+local function PlainText(text)
+    return text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+end
+
+local function TranslateHyperlink(data, text)
+    local questID, level
+    local id, levelText = data:match("^quest:(%d+):(%d+)")
+    if not id then
+        id, levelText = data:match("^questie:(%d+):(%d+)")
+    end
+    if not id then
+        id = data:match("^quest:(%d+)") or data:match("^questie:(%d+)")
+    end
+    if id then
+        questID = tonumber(id)
+        level = tonumber(levelText)
+    end
+    if not questID then
+        return nil
+    end
+
+    local plain = PlainText(text)
+    local _, name = plain:match("^%[%[(%d+)%]%s*(.-)%s*%(%d+%)%]$")
+    if not name then
+        name = plain:match("^%[(.-)%s*%(%d+%)%]$")
+    end
+    if not name then
+        if data:sub(1, 8) ~= "questie:" then
+            return nil
+        end
+        name = KnownTitle(questID)
+    end
+    if not name or name == "" then
+        return nil
+    end
+    if not level or level <= 0 then
+        local db = ns.Quests and ns.Quests[questID]
+        level = db and db.minLevel or 0
+    end
+    return QuestLink(questID, level, name)
 end
 
 local function TranslatePlain(segment)
@@ -95,7 +137,10 @@ local function TranslatePlain(segment)
 end
 
 local function Translate(message)
-    if type(message) ~= "string" or not message:find("%(%d+%)%]") then
+    if type(message) ~= "string" then
+        return message
+    end
+    if not message:find("%(%d+%)%]") and not message:find("|Hquestie:", 1, true) then
         return message
     end
     local out = {}
@@ -117,7 +162,9 @@ local function Translate(message)
             out[#out + 1] = message:sub(hyperlink)
             break
         end
-        out[#out + 1] = message:sub(hyperlink, textEnd + 1)
+        local data = message:sub(hyperlink + 2, textStart - 1)
+        local text = message:sub(textStart + 2, textEnd - 1)
+        out[#out + 1] = TranslateHyperlink(data, text) or message:sub(hyperlink, textEnd + 1)
         position = textEnd + 2
     end
     return table.concat(out)

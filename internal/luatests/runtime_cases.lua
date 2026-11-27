@@ -7369,23 +7369,23 @@ cases["chat_links_runtime.translates_questie_plain_links"] = function()
     ChatFrame_AddMessageEventFilter = function() end
     assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
     local out = ns.ChatQuestLinks.Translate("anyone for [[53] Chasing A-Me 01 (4243)]?")
-    assert(out:find("|Hquest:4243:53|h[Chasing A-Me 01]|h", 1, true))
+    assert(out:find("|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", 1, true))
     assert(not out:find("(4243)", 1, true), "the raw Questie id is replaced")
 
     local questieLink = "|Hquestie:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
     assert(ns.ChatQuestLinks.Translate(questieLink)
-        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "Questie hyperlinks are rewritten")
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "Questie hyperlinks are rewritten")
 
     local rawNative = "|Hquest:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
     assert(ns.ChatQuestLinks.Translate(rawNative)
-        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "raw text inside a quest hyperlink is cleaned")
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "raw text inside a quest hyperlink is cleaned")
 
     local cleanNative = "|Hquest:4243:53|h[Chasing A-Me 01]|h"
     assert(ns.ChatQuestLinks.Translate(cleanNative) == cleanNative)
 
     local cleanQuestie = "|Hquestie:4243:53|h[Chasing A-Me 01]|h"
     assert(ns.ChatQuestLinks.Translate(cleanQuestie)
-        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "clean Questie hyperlinks become native")
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "clean Questie hyperlinks become native")
 end
 
 cases["chat_links_runtime.leaves_hyperlinks_and_unknown_plain_links_alone"] = function()
