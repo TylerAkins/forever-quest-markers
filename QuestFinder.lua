@@ -1340,7 +1340,7 @@ local function UpdateZoneProgress()
     bar.label:SetText(string.format("%s %d / %d (%d%%)",
         L["Loremaster"], progress.completed, progress.total, percent))
     bar.tooltip = string.format(
-        L["Loremaster progress for %s. %d of %d quests completed. This counts quests that start in the zone and match your faction, race, and class."],
+        L["Loremaster progress for %s. %d of %d quests completed. Counts quests assigned to the zone that match your faction, race, and class. Repeatable, monthly, seasonal, and profession quests are excluded."],
         MapName(mapID), progress.completed, progress.total)
     bar:Show()
 end
