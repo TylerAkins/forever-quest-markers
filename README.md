@@ -17,7 +17,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
-- Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker
+- Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker. Book icons have their own size slider and default to 75% of a quest pin.
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
@@ -82,6 +82,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, the world map's tracking men
 | Show in-world destination marker | Uses Blizzard’s current shared navigation setting |
 | Waypoint provider | Blizzard Map Pins (TomTom optional) |
 | Map pin size | 100% (adjustable from 50% to 150%) |
+| Book icon size | 75% (adjustable from 25% to 150%) |
 | Auto-accept quests | Off |
 | Warn on skipped breadcrumbs | On (dialog offers Set Waypoint, Abandon Quest, and Ignore) |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |

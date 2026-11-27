@@ -1272,8 +1272,12 @@ local function GetCanvasScale(parent)
     return 1
 end
 
-local function GetPinSize()
-    return PIN_SIZE * ns.GetOption("iconScale") / 100
+local function GetPinSize(pin)
+    local scale = ns.GetOption("iconScale") or 100
+    if pin and IsBookOnly(pin) then
+        scale = ns.GetOption("bookIconScale") or 75
+    end
+    return PIN_SIZE * scale / 100
 end
 
 local function CanvasOffsets(parent, nx, ny)
@@ -1347,7 +1351,7 @@ local function ApplyPinPoint(pin, parent)
     -- Match MapCanvas ApplyPinPosition: pin scale counters canvas zoom so the
     -- bang stays PIN_SIZE on screen in both windowed and maximized layouts.
     local canvasScale = GetCanvasScale(parent)
-    local pinSize = GetPinSize()
+    local pinSize = GetPinSize(pin)
     if pin.placedParent == parent and pin.placedX == ox and pin.placedY == oy
         and pin.placedScale == canvasScale and pin.placedSize == pinSize then
         return true
@@ -1546,6 +1550,7 @@ local function PlacePin(parent, nx, ny, questID, data, reason, live, spawnPoints
                 AppendSpawnPoints(existing, spawnPoints)
             end
             SetPinTexture(existing)
+            ApplyPinPoint(existing, parent)
             ns.PrefetchQuestInfo(questID, data)
             return true
         end

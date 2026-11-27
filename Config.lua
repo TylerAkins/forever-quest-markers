@@ -31,6 +31,7 @@ ns.defaults = {
     autoAcceptMinLevelOffset = -10,
     autoAcceptSkipGrey = false,
     iconScale = 100,
+    bookIconScale = 75,
     autoTurnIn = false,
     warnSkippedBreadcrumb = true,
     hideQuestTrackerInCombat = false,
@@ -96,6 +97,9 @@ local function NormalizeNumber(key, value)
     end
     if key == "iconScale" then
         return math.max(50, math.min(150, math.floor(value + 0.5)))
+    end
+    if key == "bookIconScale" then
+        return math.max(25, math.min(150, math.floor(value + 0.5)))
     end
     if key == "trivialLevelGap" then
         return math.max(TRIVIAL_GAP_MIN, math.min(TRIVIAL_GAP_MAX, math.floor(value + 0.5)))
@@ -164,6 +168,10 @@ local function DecodeMirror()
     local iconScale = tonumber(text:match("iconScale=(%d+)"))
     if iconScale and iconScale >= 50 and iconScale <= 150 then
         mirror.iconScale = iconScale
+    end
+    local bookIconScale = tonumber(text:match("bookIconScale=(%d+)"))
+    if bookIconScale and bookIconScale >= 25 and bookIconScale <= 150 then
+        mirror.bookIconScale = bookIconScale
     end
     local trivialLevelGap = tonumber(text:match("trivialLevelGap=(%d+)"))
     if trivialLevelGap and trivialLevelGap >= TRIVIAL_GAP_MIN and trivialLevelGap <= TRIVIAL_GAP_MAX then
@@ -292,6 +300,7 @@ local function SaveMirror(db)
     parts[#parts + 1] = "autoAcceptMinLevelOffset="
         .. tostring(db.autoAcceptMinLevelOffset or ns.defaults.autoAcceptMinLevelOffset)
     parts[#parts + 1] = "iconScale=" .. tostring(db.iconScale or 100)
+    parts[#parts + 1] = "bookIconScale=" .. tostring(db.bookIconScale or ns.defaults.bookIconScale)
     parts[#parts + 1] = "trivialLevelGap=" .. tostring(db.trivialLevelGap or ns.defaults.trivialLevelGap)
     parts[#parts + 1] = "highLevelGap=" .. tostring(db.highLevelGap or ns.defaults.highLevelGap)
     parts[#parts + 1] = "trackerSort=" .. tostring(db.trackerSort or ns.defaults.trackerSort)
@@ -1930,6 +1939,29 @@ local function BuildMapPinsSettings(self)
         control:ApplySaved()
     end)
     optionChecks[#optionChecks + 1] = iconScale
+
+    local bookScale = CreateFrame("Slider", nil, self, "OptionsSliderTemplate")
+    bookScale:SetPoint("TOPLEFT", iconScale, "TOPLEFT", 270, 0)
+    bookScale:SetSize(220, 16)
+    bookScale:SetMinMaxValues(25, 150)
+    bookScale:SetValueStep(5)
+    if bookScale.Low then bookScale.Low:SetText("25%") end
+    if bookScale.High then bookScale.High:SetText("150%") end
+    local bookScaleLabel = bookScale:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    bookScaleLabel:SetPoint("BOTTOM", bookScale, "TOP", 0, 4)
+    bookScale.ApplySaved = function(control)
+        control.syncing = true
+        local value = ns.GetOption("bookIconScale")
+        control:SetValue(value)
+        bookScaleLabel:SetText((L["Book icon size: %d%%"]):format(value))
+        control.syncing = false
+    end
+    bookScale:SetScript("OnValueChanged", function(control, value)
+        if control.syncing then return end
+        ns.SetOption("bookIconScale", value)
+        control:ApplySaved()
+    end)
+    optionChecks[#optionChecks + 1] = bookScale
 end
 
 local function BuildAutomationSettings(self)
