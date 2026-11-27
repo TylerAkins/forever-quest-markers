@@ -29,7 +29,7 @@ local dungeonSelection
 local searchText = ""
 local searchRefreshToken = 0
 local progressToken = 0
-local showAllZoneQuests = false
+local showAll = { false, false, false }
 local RefreshRows
 local SelectDungeon
 local ScheduleSearchRefresh
@@ -414,6 +414,38 @@ local function QuestStatus(questID, data, checkAvailable)
     return L["Available"], 1, 1, 1
 end
 
+local function StatusSortOrder(status)
+    if status == L["In log"] then
+        return 1
+    end
+    if status == L["Available"] then
+        return 2
+    end
+    if status == L["Unavailable"] then
+        return 3
+    end
+    if status == L["Complete"] then
+        return 4
+    end
+    return 5
+end
+
+local function GroupStatusOrder(status)
+    if status == L["Complete"] then
+        return 1
+    end
+    if status == L["In log"] then
+        return 2
+    end
+    if status == L["Available"] then
+        return 3
+    end
+    if status == L["Unavailable"] then
+        return 4
+    end
+    return 5
+end
+
 local function QuestTagParts(questID, data)
     local parts = {}
     if ns.IsInstanceQuest and ns.IsInstanceQuest(questID, data) then
@@ -707,25 +739,75 @@ local function ZoneNamesForMaps(maps)
     return names
 end
 
-local function BreadcrumbEntries(mapID)
-    local groups = {}
-    for questID, data in pairs(ns.Quests or {}) do
-        if data.isBreadcrumb
-            and not ns.IsQuestFlaggedCompleted(questID)
-            and not ns.IsOnQuest(questID)
-            and not (ns.IsQuestHidden and ns.IsQuestHidden(questID)) then
-            local altActive = false
-            for _, altID in ipairs(data.altQuests or {}) do
-                if altID ~= questID and ns.IsOnQuest(altID) then
-                    altActive = true
+local function PlayerMatches(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 and ns.GetPlayerRaceID then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
                     break
                 end
             end
-            if not altActive and not FollowUpSatisfied(questID) and IsFinderAvailable(questID, data) then
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 and ns.GetPlayerClassID then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
+
+local function BreadcrumbEntries(mapID, includeAll)
+    local groups = {}
+    for questID, data in pairs(ns.Quests or {}) do
+        if data.isBreadcrumb and PlayerMatches(data, nil) then
+            local include = includeAll
+            if not includeAll then
+                local altActive = false
+                for _, altID in ipairs(data.altQuests or {}) do
+                    if altID ~= questID and ns.IsOnQuest(altID) then
+                        altActive = true
+                        break
+                    end
+                end
+                include = not ns.IsQuestFlaggedCompleted(questID)
+                    and not ns.IsOnQuest(questID)
+                    and not (ns.IsQuestHidden and ns.IsQuestHidden(questID))
+                    and not altActive
+                    and not FollowUpSatisfied(questID)
+                    and IsFinderAvailable(questID, data)
+            end
+            if include then
                 local locations = QuestLocations(questID, data)
                 local startLocations = {}
                 for i = 1, #locations do
-                    if LocationExplored(locations[i]) then
+                    if includeAll or LocationExplored(locations[i]) then
                         startLocations[#startLocations + 1] = locations[i]
                     end
                 end
@@ -776,6 +858,16 @@ local function BreadcrumbEntries(mapID)
                     if not group.level then
                         group.level = QuestLevel(questID, data)
                     end
+                    if includeAll then
+                        local status, statusR, statusG, statusB, statusReason = QuestStatus(questID, data, true)
+                        local order = GroupStatusOrder(status)
+                        if not group.statusOrder or order < group.statusOrder then
+                            group.status = status
+                            group.statusR, group.statusG, group.statusB = statusR, statusG, statusB
+                            group.statusReason = statusReason
+                            group.statusOrder = order
+                        end
+                    end
                     for i = 1, #startLocations do
                         local location = startLocations[i]
                         local locationKey = location.mapID .. ":" .. location.x .. ":" .. location.y
@@ -808,7 +900,14 @@ local function BreadcrumbEntries(mapID)
         end
         local parts = QuestTagParts(group.questID, group.data)
         local startNames = StartZoneNames(group.startLocations)
-        local subtitle = #startNames > 0 and table.concat(startNames, ", ") or L["No start map"]
+        local startText = #startNames > 0 and table.concat(startNames, ", ") or L["No start map"]
+        local subtitle
+        if includeAll and group.status then
+            subtitle = ColorText(group.status, group.statusR, group.statusG, group.statusB)
+                .. "  |cff9d9d9d" .. startText .. "|r"
+        else
+            subtitle = startText
+        end
         if #group.startLocations > 1 then
             subtitle = subtitle .. " |cff9d9d9d(" .. (#group.startLocations) .. " " .. L["locations"] .. ")|r"
         end
@@ -844,6 +943,9 @@ local function BreadcrumbEntries(mapID)
         if #targetNames > 0 then
             tooltipParts[#tooltipParts + 1] = string.format(L["Leads to %s."],
                 table.concat(targetNames, ", "))
+        end
+        if includeAll and group.statusReason then
+            tooltipParts[#tooltipParts + 1] = UnavailableReason(group.statusReason)
         end
         if insideDungeon then
             tooltipParts[#tooltipParts + 1] =
@@ -953,50 +1055,6 @@ end
 
 -- The full dungeon view keeps quests that are locked behind progression, but
 -- opposite-faction, wrong-race, and wrong-class steps are never relevant.
-local function PlayerMatches(data, faction)
-    faction = (data and data.faction) or faction
-    if faction and faction ~= "Both" then
-        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
-        if playerFaction and playerFaction ~= faction then
-            return false
-        end
-    end
-    if not data then
-        return true
-    end
-    if data.races and #data.races > 0 and ns.GetPlayerRaceID then
-        local raceID = ns.GetPlayerRaceID()
-        if raceID then
-            local match = false
-            for i = 1, #data.races do
-                if data.races[i] == raceID then
-                    match = true
-                    break
-                end
-            end
-            if not match then
-                return false
-            end
-        end
-    end
-    if data.classes and #data.classes > 0 and ns.GetPlayerClassID then
-        local classID = ns.GetPlayerClassID()
-        if classID then
-            local match = false
-            for i = 1, #data.classes do
-                if data.classes[i] == classID then
-                    match = true
-                    break
-                end
-            end
-            if not match then
-                return false
-            end
-        end
-    end
-    return true
-end
-
 local function DungeonNamesForQuest(questID)
     local info = ns.DungeonChains
         and ns.DungeonChains.quests
@@ -1088,22 +1146,6 @@ local function ZoneQuestIDs(mapID)
     return zoneQuestIndex[mapID] or {}
 end
 
-local function StatusSortOrder(status)
-    if status == L["In log"] then
-        return 1
-    end
-    if status == L["Available"] then
-        return 2
-    end
-    if status == L["Unavailable"] then
-        return 3
-    end
-    if status == L["Complete"] then
-        return 4
-    end
-    return 5
-end
-
 local function ZoneQuestEntries(mapID)
     local entries = {}
     local questIDs = ZoneQuestIDs(mapID)
@@ -1169,13 +1211,16 @@ local function ZoneQuestEntries(mapID)
     return entries
 end
 
-local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable)
+local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable, includeCompleted)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
     if not PlayerMatches(data, quest.faction) then
         return
     end
     if not includeUnavailable and not IsDungeonQuestAvailable(questID, data, quest) then
+        return
+    end
+    if includeUnavailable and not includeCompleted and ns.IsQuestFlaggedCompleted(questID) then
         return
     end
     local visibleChain = {}
@@ -1234,6 +1279,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
         local step = item.step
         local stepData = item.data
         local stepID = step.id
+        if includeCompleted or not ns.IsQuestFlaggedCompleted(stepID) then
         local stepLocations = QuestLocations(stepID, stepData)
         if #stepLocations == 0 and step.mapID then
             stepLocations[1] = { mapID = step.mapID, x = step.x, y = step.y }
@@ -1270,13 +1316,15 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
             indent = 18,
             tooltip = stepTooltip,
         })
+        end
     end
 end
-local function DungeonHeader(dungeonName, dungeon, availableCount)
+local function DungeonHeader(dungeonName, dungeon, availableCount, countLabel)
     local total = #(dungeon.quests or {})
     local subtitle
     if availableCount and availableCount ~= total then
-        subtitle = availableCount .. " " .. L["available"] .. "  |cff6b6b6b·|r  "
+        subtitle = availableCount .. " " .. (countLabel or L["available"])
+            .. "  |cff6b6b6b·|r  "
             .. total .. " " .. (total == 1 and L["quest"] or L["quests"])
     else
         subtitle = total .. " " .. (total == 1 and L["quest"] or L["quests"])
@@ -1294,7 +1342,7 @@ local function DungeonHeader(dungeonName, dungeon, availableCount)
     }
 end
 
-local function AllDungeonEntries()
+local function AllDungeonEntries(includeAll)
     local entries = {}
     local dungeons = ns.DungeonChains and ns.DungeonChains.dungeons or {}
     local order = ns.DungeonChains and ns.DungeonChains.order or {}
@@ -1304,10 +1352,10 @@ local function AllDungeonEntries()
         if dungeon then
             local questEntries = {}
             for _, quest in ipairs(dungeon.quests or {}) do
-                AddDungeonQuestRows(questEntries, dungeon, quest, false, false)
+                AddDungeonQuestRows(questEntries, dungeon, quest, false, includeAll, includeAll)
             end
             if #questEntries > 0 then
-                AddEntry(entries, DungeonHeader(name, dungeon, #questEntries))
+                AddEntry(entries, DungeonHeader(name, dungeon, includeAll and nil or #questEntries))
                 for j = 1, #questEntries do
                     entries[#entries + 1] = questEntries[j]
                 end
@@ -1317,7 +1365,7 @@ local function AllDungeonEntries()
     return entries
 end
 
-local function DungeonQuestEntries(dungeonName)
+local function DungeonQuestEntries(dungeonName, includeAll)
     local dungeon = ns.DungeonChains
         and ns.DungeonChains.dungeons
         and ns.DungeonChains.dungeons[dungeonName]
@@ -1325,9 +1373,16 @@ local function DungeonQuestEntries(dungeonName)
         return {}
     end
     local entries = {}
-    AddEntry(entries, DungeonHeader(dungeonName, dungeon))
+    local remaining = 0
     for _, quest in ipairs(dungeon.quests or {}) do
-        AddDungeonQuestRows(entries, dungeon, quest, true, true)
+        local data = ns.Quests and ns.Quests[quest.id]
+        if PlayerMatches(data, quest.faction) and not ns.IsQuestFlaggedCompleted(quest.id) then
+            remaining = remaining + 1
+        end
+    end
+    AddEntry(entries, DungeonHeader(dungeonName, dungeon, remaining, L["remaining"]))
+    for _, quest in ipairs(dungeon.quests or {}) do
+        AddDungeonQuestRows(entries, dungeon, quest, true, true, includeAll)
     end
     return entries
 end
@@ -1343,19 +1398,19 @@ end
 
 local function BuildEntries()
     if activeTab == 1 then
-        return BreadcrumbEntries(CurrentZoneID())
+        return BreadcrumbEntries(CurrentZoneID(), showAll[1])
     end
     if activeTab == 2 then
         local mapID = CurrentZoneID()
-        if showAllZoneQuests and mapID then
+        if showAll[2] and mapID then
             return ZoneQuestEntries(mapID)
         end
         return AvailableEntries(mapID)
     end
     if dungeonSelection and dungeonSelection ~= "all" then
-        return DungeonQuestEntries(dungeonSelection)
+        return DungeonQuestEntries(dungeonSelection, showAll[3])
     end
-    return AllDungeonEntries()
+    return AllDungeonEntries(showAll[3])
 end
 
 local function UpdateCount(entries)
@@ -1493,6 +1548,31 @@ local function UpdateZoneProgress()
     bar:Show()
 end
 
+local SHOW_ALL_LABELS = {
+    L["Show all breadcrumbs"],
+    L["Show all zone quests"],
+    L["Show all dungeon quests"],
+}
+local SHOW_ALL_TOOLTIPS = {
+    L["Lists all breadcrumbs for the zone, including completed and in-log breadcrumbs."],
+    L["Lists every Loremaster quest assigned to the zone, including quests in your log, chain-locked quests, and quests that start in other zones."],
+    L["Lists every dungeon quest, including completed and unavailable quests."],
+}
+
+local function UpdateShowAllControl()
+    local control = frame and frame.showAll
+    if not control then
+        return
+    end
+    control.Text:SetText(SHOW_ALL_LABELS[activeTab] or "")
+    control:SetChecked(showAll[activeTab] and true or false)
+    control:SetShown(true)
+    local enabled = activeTab ~= 2 or CurrentZoneID() ~= nil
+    control:SetEnabled(enabled)
+    control.Text:SetAlpha(enabled and 1 or 0.5)
+    control.tooltip = SHOW_ALL_TOOLTIPS[activeTab]
+end
+
 local function RenderRows()
     if not frame then
         return
@@ -1546,16 +1626,7 @@ local function RenderRows()
     if frame.zoneCaption then
         frame.zoneCaption:SetText(activeTab == 3 and L["Dungeon"] or L["Zone"])
     end
-    if frame.showAll then
-        local mapID = CurrentZoneID()
-        local visible = activeTab == 2
-        local enabled = visible and mapID ~= nil
-        frame.showAll:SetShown(visible)
-        frame.showAll:SetEnabled(enabled)
-        if frame.showAll.Text then
-            frame.showAll.Text:SetAlpha(enabled and 1 or 0.5)
-        end
-    end
+    UpdateShowAllControl()
 end
 
 RefreshRows = function()
@@ -1891,9 +1962,8 @@ local function EnsureFrame()
         showAllText:ClearAllPoints()
         showAllText:SetPoint("LEFT", showAll, "RIGHT", 4, 1)
     end
-    showAllText:SetText(L["Show all zone quests"])
     showAll:SetScript("OnClick", function(self)
-        showAllZoneQuests = self:GetChecked() and true or false
+        showAll[activeTab] = self:GetChecked() and true or false
         RefreshRows()
     end)
     showAll:SetScript("OnEnter", function(self)
@@ -1901,10 +1971,10 @@ local function EnsureFrame()
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["Show all zone quests"], 1, 0.82, 0)
-        GameTooltip:AddLine(
-            L["Lists every Loremaster quest assigned to the zone, including quests in your log, chain-locked quests, and quests that start in other zones."],
-            1, 1, 1, true)
+        GameTooltip:SetText(showAllText:GetText() or "", 1, 0.82, 0)
+        if self.tooltip then
+            GameTooltip:AddLine(self.tooltip, 1, 1, 1, true)
+        end
         GameTooltip:Show()
     end)
     showAll:SetScript("OnLeave", function()

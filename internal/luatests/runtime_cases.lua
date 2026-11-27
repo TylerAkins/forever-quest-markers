@@ -7201,6 +7201,38 @@ cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] =
     assert(#ns.QuestFinder.FilterEntries(entries, "") == 4)
 end
 
+cases["quest_finder_runtime.show_all_breadcrumbs_includes_completed"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Zone One", mapType = 3 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 100 end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return false end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [100] = {
+            title = "Done Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 10,
+            minLevel = 10,
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    assert(#ns.QuestFinder.BreadcrumbEntries(1) == 0, "completed breadcrumbs are normally hidden")
+    local all = ns.QuestFinder.BreadcrumbEntries(1, true)
+    assert(#all == 1, "show all brings the completed breadcrumb back")
+    assert(all[1].subtitle:find("Complete", 1, true))
+end
+
 cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns = {}
     C_Map = {
@@ -7211,10 +7243,10 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     }
     C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
     ns.GetOption = function() return true end
-    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 206 or questID == 207 end
     ns.IsOnQuest = function() return false end
-    ns.IsQuestAvailable = function(questID) return questID ~= 203 end
-    ns.IsQuestAcceptable = function(questID) return questID ~= 203 end
+    ns.IsQuestAvailable = function(questID) return questID ~= 203 and questID ~= 206 and questID ~= 207 end
+    ns.IsQuestAcceptable = function(questID) return questID ~= 203 and questID ~= 206 and questID ~= 207 end
     ns.IsInstanceQuest = function() return true end
     ns.IsPvPQuest = function() return false end
     ns.IsBookQuest = function() return false end
@@ -7228,6 +7260,8 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
         [203] = { mapID = 1, x = 30, y = 30, title = "Unavailable Quest" },
         [204] = { title = "Alliance Step", faction = "Alliance" },
         [205] = { title = "Alliance Quest", faction = "Alliance" },
+        [206] = { mapID = 1, x = 40, y = 40, title = "Completed Quest" },
+        [207] = { mapID = 1, x = 50, y = 50, title = "Completed Step" },
     }
     ns.DungeonChains = {
         order = { "Test Dungeon" },
@@ -7242,6 +7276,7 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
                         level = 20,
                         mapID = 1, x = 10, y = 10,
                         chain = {
+                            { id = 207, name = "Completed Step", level = 10, mapID = 1, x = 50, y = 50 },
                             { id = 201, name = "Pre One", level = 10, mapID = 1, x = 20, y = 20 },
                             { id = 202, name = "Pre Two", level = 12 },
                             { id = 204, name = "Alliance Step", level = 10 },
@@ -7260,13 +7295,19 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
                         faction = "Alliance",
                         mapID = 1, x = 40, y = 40,
                     },
+                    {
+                        id = 206,
+                        name = "Completed Quest",
+                        level = 20,
+                        mapID = 1, x = 40, y = 40,
+                    },
                 },
             },
         },
     }
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
     local entries = ns.QuestFinder.DungeonQuestEntries("Test Dungeon")
-    assert(#entries == 5, "opposite-faction steps and quests are hidden")
+    assert(#entries == 5, "completed and opposite-faction quests are hidden")
     local ids = {}
     for i = 1, #entries do
         if entries[i].questID then
@@ -7275,9 +7316,11 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     end
     assert(not ids[204], "an Alliance chain step is hidden from a Horde player")
     assert(not ids[205], "an Alliance dungeon quest is hidden from a Horde player")
+    assert(not ids[206], "a completed dungeon quest is hidden")
+    assert(not ids[207], "a completed chain step is hidden")
     assert(entries[2].title == "Dungeon Quest")
-    assert(entries[3].subtitle:find("Chain #1 of 3", 1, true))
-    assert(entries[4].subtitle:find("Chain #2 of 3", 1, true))
+    assert(entries[3].subtitle:find("Chain #2 of 4", 1, true))
+    assert(entries[4].subtitle:find("Chain #3 of 4", 1, true))
     assert(entries[4].location == nil, "a chain step without a map has no pin")
     assert(entries[5].title == "Unavailable Quest")
     assert(entries[5].subtitle:find("Unavailable", 1, true))
@@ -7287,6 +7330,17 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     assert(all[1].kind == "header" and all[1].dungeon == "Test Dungeon")
     assert(all[1].subtitle:find("Level 1-2", 1, true))
     assert(all[2].title == "Dungeon Quest")
+
+    local shownAll = ns.QuestFinder.DungeonQuestEntries("Test Dungeon", true)
+    local shownIDs = {}
+    for i = 1, #shownAll do
+        if shownAll[i].questID then
+            shownIDs[shownAll[i].questID] = true
+        end
+    end
+    assert(shownIDs[206] and shownIDs[207], "show all includes completed quests and steps")
+    local shownAllList = ns.QuestFinder.AllDungeonEntries(true)
+    assert(#shownAllList == 4, "show all lists every player-eligible dungeon quest")
 end
 
 cases["quest_finder_runtime.zone_list_includes_quest_level_ranges"] = function()
