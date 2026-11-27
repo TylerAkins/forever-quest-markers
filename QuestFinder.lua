@@ -1739,7 +1739,7 @@ local function EnsureFrame()
     progress:SetPoint("TOPLEFT", PADDING, -156)
     progress:SetSize(260, 14)
     progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-    progress:SetStatusBarColor(0.30, 0.62, 0.35)
+    progress:SetStatusBarColor(0.72, 0.53, 0.20)
     progress:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -1750,7 +1750,7 @@ local function EnsureFrame()
     progress:SetBackdropBorderColor(0.8, 0.61, 0.3, 0.55)
     progress:SetMinMaxValues(0, 1)
     progress:SetValue(0)
-    progress.label = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    progress.label = progress:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     progress.label:SetPoint("CENTER", progress, "CENTER", 0, 0)
     progress.label:SetJustifyH("CENTER")
     progress.label:SetShadowColor(0, 0, 0, 0.85)
