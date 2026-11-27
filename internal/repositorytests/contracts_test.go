@@ -81,7 +81,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		}
 	}
 	metadata := read(t, base, ".pkgmeta")
-	for _, excluded := range []string{"tests", "cmd", "internal", "go.mod", "go.sum", "Database/build_report.json"} {
+	for _, excluded := range []string{"tests", "cmd", "internal", "tools", "go.mod", "go.sum", "Database/build_report.json"} {
 		if !strings.Contains(metadata, "- "+excluded) {
 			t.Errorf("packager does not exclude %s", excluded)
 		}
