@@ -1538,8 +1538,9 @@ local function UpdateRouteButton()
     local enabled = false
     if activeTab == 3 then
         enabled = dungeonSelection ~= nil
-            and ns.DungeonRoutes ~= nil
-            and ns.DungeonRoutes[dungeonSelection] ~= nil
+            and ns.QuestRoute ~= nil
+            and ns.QuestRoute.HasGuide ~= nil
+            and ns.QuestRoute.HasGuide(dungeonSelection)
     elseif activeTab == 2 then
         local mapID = CurrentZoneID()
         enabled = mapID ~= nil
@@ -1975,7 +1976,11 @@ local function EnsureFrame()
         end
         if activeTab == 3 then
             if dungeonSelection and not ns.QuestRoute.ShowDungeon(dungeonSelection) then
-                SetStatus(L["No guide route for this dungeon yet."], true)
+                if ns.DungeonRoutes and ns.DungeonRoutes[dungeonSelection] then
+                    SetStatus(L["No guide steps for your faction."], true)
+                else
+                    SetStatus(L["No guide route for this dungeon yet."], true)
+                end
             end
         elseif activeTab == 2 then
             local mapID = CurrentZoneID()
@@ -1996,6 +2001,11 @@ local function EnsureFrame()
             elseif not (ns.DungeonRoutes and ns.DungeonRoutes[dungeonSelection]) then
                 GameTooltip:AddLine(
                     L["No guide route for this dungeon yet."],
+                    1, 1, 1, true)
+            elseif ns.QuestRoute and ns.QuestRoute.HasGuide
+                and not ns.QuestRoute.HasGuide(dungeonSelection) then
+                GameTooltip:AddLine(
+                    L["No guide steps for your faction."],
                     1, 1, 1, true)
             else
                 GameTooltip:AddLine(

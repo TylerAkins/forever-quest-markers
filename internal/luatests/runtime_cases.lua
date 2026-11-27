@@ -7749,6 +7749,9 @@ cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = functio
     assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
 
     local route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(ns.QuestRoute.HasGuide("Test Dungeon"))
+    assert(not ns.QuestRoute.HasGuide("Alliance Dungeon"),
+        "a route with only opposite-faction steps is not available")
     assert(route.total == 3 and route.unit == "steps")
     assert(route.steps[1].action == "accept" and route.steps[1].quest == 100)
     assert(route.steps[1].title == "Quest 100")

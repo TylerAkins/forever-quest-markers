@@ -979,9 +979,23 @@ local function ShowRoute(kind, target, label)
     return true
 end
 
-function ns.QuestRoute.ShowDungeon(dungeonName)
+function ns.QuestRoute.HasGuide(dungeonName)
     local route = ns.DungeonRoutes and ns.DungeonRoutes[dungeonName]
     if not route then
+        return false
+    end
+    local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction() or nil
+    for _, step in ipairs(route.steps or {}) do
+        if type(step.quest) == "number" and step.quest > 0
+            and GuideStepAllowed(step, playerFaction) then
+            return true
+        end
+    end
+    return false
+end
+
+function ns.QuestRoute.ShowDungeon(dungeonName)
+    if not ns.QuestRoute.HasGuide(dungeonName) then
         return false
     end
     return ShowRoute("dungeon", dungeonName, dungeonName)
