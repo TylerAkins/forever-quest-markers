@@ -7227,6 +7227,65 @@ cases["eligibility_runtime.finder_availability_skips_level_loads"] = function()
     assert(requests == 0, "Quest Finder must not request a difficulty load for every quest")
 end
 
+cases["chat_links_runtime.translates_questie_plain_links"] = function()
+    ns = {}
+    ns.GetOption = function(key)
+        if key == "translateQuestieLinks" then return true end
+        return true
+    end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function(_, skipRequest)
+        return skipRequest and "Chasing A-Me 01" or nil
+    end
+    C_AddOns = { IsAddOnLoaded = function() return false end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local out = ns.ChatQuestLinks.Translate("anyone for [[53] Chasing A-Me 01 (4243)]?")
+    assert(out:find("|Hquest:4243:53|h[Chasing A-Me 01]|h", 1, true))
+    assert(not out:find("(4243)", 1, true), "the raw Questie id is replaced")
+end
+
+cases["chat_links_runtime.leaves_hyperlinks_and_unknown_plain_links_alone"] = function()
+    ns = {}
+    ns.GetOption = function() return true end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function() return "Chasing A-Me 01" end
+    C_AddOns = { IsAddOnLoaded = function() return false end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local link = "|Hitem:123|h[Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(link) == link, "existing hyperlinks are copied through")
+    assert(ns.ChatQuestLinks.Translate("[Unknown (999)]") == "[Unknown (999)]")
+end
+
+cases["chat_links_runtime.stands_down_for_questie_and_the_option"] = function()
+    ns = {}
+    local enabled = true
+    ns.GetOption = function(key)
+        if key == "translateQuestieLinks" then return enabled end
+        return true
+    end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function() return "Chasing A-Me 01" end
+    local questie = false
+    C_AddOns = { IsAddOnLoaded = function() return questie end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local message = "[[53] Chasing A-Me 01 (4243)]"
+    local hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated:find("|Hquest:", 1, true))
+    questie = true
+    hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated == nil, "Questie handles its own links")
+    questie = false
+    enabled = false
+    hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated == nil, "the option disables conversion")
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

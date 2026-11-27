@@ -41,6 +41,7 @@ Breadcrumbs.lua
 MapPins.lua
 AutoQuests.lua
 QuestLinks.lua
+ChatQuestLinks.lua
 TrackerData.lua
 Tracker.lua
 MinimapButton.lua

@@ -44,6 +44,7 @@ ns.defaults = {
     selectNearestQuest = false,
     showNPCTooltips = true,
     showNameplateIcons = true,
+    translateQuestieLinks = true,
     sparkleQuestItems = false,
     debug = false,
 }
@@ -868,6 +869,7 @@ function ns.SlashCommand(msg)
         print(L["  /fqp breadcrumbtest Preview the skipped-breadcrumb dialog"])
         print(L["  /fqp npctooltip Toggle quest accept and ready turn-in lines on NPC mouseover"])
         print(L["  /fqp nameplates Toggle quest icons on nameplates (on by default)"])
+        print(L["  /fqp chatlinks Toggle clickable Questie chat links (on by default)"])
         print(L["  /fqp nameplatedebug Print visible nameplate icon state"])
         print(L["  /fqp hidden   List quest pins hidden with Shift-click on this character"])
         print(L["  /fqp unhide <id|all> Restore one or all hidden quest pins"])
@@ -943,6 +945,10 @@ function ns.SlashCommand(msg)
     end
     if msg == "nameplates" or msg == "nameplate" then
         ToggleFlag("showNameplateIcons", L["Nameplate quest icons"])
+        return
+    end
+    if msg == "chatlinks" then
+        ToggleFlag("translateQuestieLinks", L["Make Questie chat links clickable"])
         return
     end
     if msg == "nameplatedebug" then
@@ -2224,6 +2230,13 @@ local function BuildInterfaceSettings(self)
         L["The minimap button opens Quest Finder on left-click and addon settings on right-click."]
     )
     minimap:SetPoint("TOPLEFT", sparkles, "BOTTOMLEFT", 0, 0)
+    local chatLinks = CreateOptionCheckbox(
+        self,
+        "translateQuestieLinks",
+        L["Make Questie chat links clickable"],
+        L["Turns Questie's plain-text quest links into the game's own clickable quest links. Does nothing while Questie is loaded."]
+    )
+    chatLinks:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, 0)
 end
 
 function ns.TryRegisterSettings()

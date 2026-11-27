@@ -21,6 +21,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `QuestItemKeybind.lua` | Keybind that uses the special item on the tracked quest |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `QuestLinks.lua` | Copy Wowhead URL menu entry for tracked quest blocks |
+| `ChatQuestLinks.lua` | Turns Questie's plain-text chat links into clickable quest links |
 | `TrackerData.lua` | Quest-log zone headers, current-zone chain, distance, and the tracker sort/filter view |
 | `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
 | `MinimapButton.lua` | Draggable minimap button that opens Quest Finder and settings |

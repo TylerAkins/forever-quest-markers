@@ -23,6 +23,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
+- Questie's plain-text chat links, such as `[[53] Chasing A-Me 01 (4243)]`, become the game's own clickable quest links. Existing hyperlinks and clients with Questie loaded are left alone, and the conversion can be turned off in Interface settings or with `/fqp chatlinks`.
 - A keybind under **Key Bindings > AddOns > Forever Quest Pins** uses the special item on the tracked quest the tracker highlights, including the quest chosen by **Select nearest quest**. It does nothing when the selected quest has no usable item.
 - A minimap button opens **Quest Finder** on left-click and addon settings on right-click. Drag it around the minimap; hide it in **Interface** settings.
 - **Quest Finder** lists breadcrumbs for the current or selected zone, quests available in a zone, and available dungeon quests with their required pre-quest chains. Zone selectors use Leatrix Maps' zone levels, dungeon selectors use the journal's dungeon levels, and every row shows the quest level, start zone, and type tags such as Dungeon, Repeatable, Profession, Class, PvP, Breadcrumb, or Book. Click a row to set a Blizzard map pin from any zone. The breadcrumb and available-quest lists use the same eligibility and display filters as the map pins.
@@ -93,6 +94,7 @@ Escape > Options > AddOns > **Forever Quest Pins**, the world map's tracking men
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
 | Show quest item sparkles | Off (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
 | Show minimap button | On (left-click opens Quest Finder; right-click opens settings) |
+| Make Questie chat links clickable | On (does nothing while Questie is loaded) |
 | Enhance quest tracker (BETA) | Off (zone groups, sorting, filters, and mouse-wheel scrolling; unavailable in gamepad UI) |
 | Sort quests | Blizzard order (distance, level, or title optional) |
 | Show quests | All quests (tracked only, current zone only, instance quests, or completed quests optional) |
@@ -135,6 +137,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp breadcrumbtest` | Preview the skipped-breadcrumb dialog |
 | `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
 | `/fqp nameplates` | Toggle quest icons on nameplates |
+| `/fqp chatlinks` | Toggle clickable Questie chat links |
 | `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |
