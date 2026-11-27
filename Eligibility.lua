@@ -430,6 +430,52 @@ function ns.GetPlayerFaction()
     return UnitFactionGroup("player")
 end
 
+--- Whether a quest record's faction, race, and class restrictions allow this
+--- player. A faction passed directly covers journal entries without a record.
+function ns.PlayerMatches(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 local knownProfessionSkills
 local professionSkillsKnown = false
 

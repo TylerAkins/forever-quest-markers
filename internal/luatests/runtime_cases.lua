@@ -1,4 +1,50 @@
 local cases = {}
+
+-- Quest Finder tests load QuestFinder.lua alone, so mirror the eligibility
+-- policy it normally gets from Eligibility.lua.
+local function PlayerMatchesStub(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 then
+        local raceID = ns.GetPlayerRaceID and ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 then
+        local classID = ns.GetPlayerClassID and ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
 cases["eligibility_runtime.test_completed_id_list_wins_over_account_completion"] = function()
 ns = {}; C_QuestLog = {}
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
@@ -6963,6 +7009,7 @@ end
 
 cases["quest_finder_runtime.breadcrumbs_respect_alt_quests_and_locations"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7003,6 +7050,7 @@ end
 
 cases["quest_finder_runtime.breadcrumbs_use_the_target_zone"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7067,6 +7115,7 @@ end
 
 cases["quest_finder_runtime.groups_alternate_breadcrumbs"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 2 end,
         GetMapInfo = function(mapID)
@@ -7116,6 +7165,7 @@ end
 
 cases["quest_finder_runtime.zone_quest_progress_uses_eligible_quests"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     ns.GetPlayerFaction = function() return "Horde" end
     ns.IsQuestFlaggedCompleted = function(questID) return questID == 2 end
     ns.Quests = {
@@ -7138,6 +7188,7 @@ end
 
 cases["quest_finder_runtime.zone_quest_entries_show_every_status"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7181,6 +7232,7 @@ end
 
 cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
     local entries = {
         { kind = "header", title = "Blackrock Depths" },
@@ -7203,6 +7255,7 @@ end
 
 cases["quest_finder_runtime.show_all_breadcrumbs_includes_completed"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7235,6 +7288,7 @@ end
 
 cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7345,6 +7399,7 @@ end
 
 cases["quest_finder_runtime.zone_list_includes_quest_level_ranges"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7368,6 +7423,7 @@ end
 
 cases["quest_finder_runtime.zone_list_prefers_leatrix_levels"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7398,6 +7454,7 @@ end
 
 cases["quest_finder_runtime.tags_quests_that_start_inside_a_dungeon"] = function()
     ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
     C_Map = {
         GetBestMapForUnit = function() return 1 end,
         GetMapInfo = function(mapID)
@@ -7644,6 +7701,152 @@ cases["eligibility_runtime.acceptability_ignores_display_filters"] = function()
     assert(acceptable == true, "a trivial quest is still acceptable")
     local high = ns.IsQuestAcceptable(998, { minLevel = 58 })
     assert(high == false, "a quest above the player's level is not acceptable")
+end
+
+cases["eligibility_runtime.player_matches_checks_faction_race_and_class"] = function()
+    ns = {}; C_QuestLog = {}
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    assert(ns.PlayerMatches(nil, "Horde"))
+    assert(not ns.PlayerMatches(nil, "Alliance"))
+    assert(ns.PlayerMatches({ races = { 2 } }))
+    assert(not ns.PlayerMatches({ races = { 1 } }))
+    assert(ns.PlayerMatches({ classes = { 1 } }))
+    assert(not ns.PlayerMatches({ classes = { 4 } }))
+    assert(ns.PlayerMatches({ faction = "Both" }))
+end
+
+cases["dungeon_route_runtime.orders_shared_chains_and_filters_faction"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    C_Map = { GetMapInfo = function(mapID) return { name = "Zone " .. mapID } end }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.IsQuestAcceptable = function() return true end
+    C_QuestLog.GetNextWaypoint = function() return 2, 0.5, 0.5 end
+    ns.Quests = {}
+    ns.DungeonChains = {
+        order = { "Test Dungeon" },
+        dungeons = {
+            ["Test Dungeon"] = {
+                name = "Test Dungeon",
+                quests = {
+                    {
+                        id = 300, name = "Main A", faction = "Horde",
+                        mapID = 1, x = 30, y = 30,
+                        chain = {
+                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
+                            { id = 302, name = "Two", mapID = 1, x = 20, y = 20 },
+                        },
+                    },
+                    {
+                        id = 310, name = "Main B", faction = "Horde",
+                        mapID = 1, x = 40, y = 40,
+                        chain = {
+                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
+                            { id = 302, name = "Two", mapID = 1, x = 20, y = 20 },
+                        },
+                    },
+                    {
+                        id = 320, name = "Main C", faction = "Horde",
+                        mapID = 1, x = 50, y = 50,
+                        chain = {
+                            { id = 301, name = "One", mapID = 1, x = 10, y = 10 },
+                        },
+                    },
+                    {
+                        id = 330, name = "Alliance Only", faction = "Alliance",
+                        mapID = 1, x = 60, y = 60,
+                    },
+                },
+            },
+        },
+    }
+    assert(loadfile("DungeonRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.DungeonRoute.Build("Test Dungeon", {})
+    assert(route.total == 5, "shared chain steps count once and opposite-faction quests are excluded")
+    assert(#route.steps == 5)
+    local order = {}
+    for i = 1, #route.steps do
+        order[i] = route.steps[i].id
+    end
+    assert(table.concat(order, ",") == "301,302,320,300,310",
+        "chain depth orders the steps and shared chain steps are deduplicated")
+
+    ns.IsOnQuest = function(questID) return questID == 301 end
+    ns.IsQuestReadyForTurnIn = function(questID) return questID == 301 end
+    route = ns.DungeonRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].action == "turnin", "an on-log ready quest is a turn-in step")
+    assert(route.steps[2].action == "accept", "the next quest is still an accept step")
+    assert(route.steps[1].locationMapID == 2, "objective and turn-in points follow the client waypoint")
+
+    ns.IsOnQuest = function(questID) return questID == 301 end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    route = ns.DungeonRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].id == 301 and route.steps[1].action == "complete",
+        "an on-log quest without a completed objective is a complete step")
+end
+
+cases["dungeon_route_runtime.skips_completed_and_manual_steps"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    local completed = { [302] = true }
+    ns.IsQuestFlaggedCompleted = function(questID) return completed[questID] or false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.IsQuestAcceptable = function() return true end
+    ns.Quests = {}
+    ns.DungeonChains = {
+        order = { "Test Dungeon" },
+        dungeons = {
+            ["Test Dungeon"] = {
+                name = "Test Dungeon",
+                quests = {
+                    {
+                        id = 300, name = "Main A", faction = "Horde",
+                        chain = {
+                            { id = 301, name = "One" },
+                            { id = 302, name = "Two" },
+                        },
+                    },
+                    {
+                        id = 310, name = "Main B", faction = "Horde",
+                        chain = {
+                            { id = 301, name = "One" },
+                            { id = 302, name = "Two" },
+                        },
+                    },
+                },
+            },
+        },
+    }
+    assert(loadfile("DungeonRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.DungeonRoute.Build("Test Dungeon", {})
+    assert(route.total == 4 and route.completed == 1)
+    for i = 1, #route.steps do
+        assert(route.steps[i].id ~= 302, "a completed chain step leaves the route")
+    end
+
+    route = ns.DungeonRoute.Build("Test Dungeon", { [301] = true })
+    assert(#route.steps == 2, "a skipped step leaves the route")
+    for i = 1, #route.steps do
+        assert(route.steps[i].id ~= 301, "the skipped step stays out")
+    end
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

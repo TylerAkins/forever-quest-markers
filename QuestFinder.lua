@@ -739,54 +739,10 @@ local function ZoneNamesForMaps(maps)
     return names
 end
 
-local function PlayerMatches(data, faction)
-    faction = (data and data.faction) or faction
-    if faction and faction ~= "Both" then
-        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
-        if playerFaction and playerFaction ~= faction then
-            return false
-        end
-    end
-    if not data then
-        return true
-    end
-    if data.races and #data.races > 0 and ns.GetPlayerRaceID then
-        local raceID = ns.GetPlayerRaceID()
-        if raceID then
-            local match = false
-            for i = 1, #data.races do
-                if data.races[i] == raceID then
-                    match = true
-                    break
-                end
-            end
-            if not match then
-                return false
-            end
-        end
-    end
-    if data.classes and #data.classes > 0 and ns.GetPlayerClassID then
-        local classID = ns.GetPlayerClassID()
-        if classID then
-            local match = false
-            for i = 1, #data.classes do
-                if data.classes[i] == classID then
-                    match = true
-                    break
-                end
-            end
-            if not match then
-                return false
-            end
-        end
-    end
-    return true
-end
-
 local function BreadcrumbEntries(mapID, includeAll)
     local groups = {}
     for questID, data in pairs(ns.Quests or {}) do
-        if data.isBreadcrumb and PlayerMatches(data, nil) then
+        if data.isBreadcrumb and ns.PlayerMatches(data, nil) then
             local include = includeAll
             if not includeAll then
                 local altActive = false
@@ -1083,7 +1039,7 @@ local function BuildZoneQuestIndex()
             and not data.isYearly
             and not data.event
             and not data.requireSkill
-        if include and PlayerMatches(data, nil) then
+        if include and ns.PlayerMatches(data, nil) then
             local seen = {}
             local function addMap(mapID)
                 if type(mapID) ~= "number" or seen[mapID] then
@@ -1214,7 +1170,7 @@ end
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable, includeCompleted)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
-    if not PlayerMatches(data, quest.faction) then
+    if not ns.PlayerMatches(data, quest.faction) then
         return
     end
     if not includeUnavailable and not IsDungeonQuestAvailable(questID, data, quest) then
@@ -1226,7 +1182,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, inclu
     local visibleChain = {}
     for _, step in ipairs(quest.chain or {}) do
         local stepData = ns.Quests and ns.Quests[step.id]
-        if PlayerMatches(stepData, step.faction or quest.faction) then
+        if ns.PlayerMatches(stepData, step.faction or quest.faction) then
             visibleChain[#visibleChain + 1] = { step = step, data = stepData }
         end
     end
@@ -1376,7 +1332,7 @@ local function DungeonQuestEntries(dungeonName, includeAll)
     local remaining = 0
     for _, quest in ipairs(dungeon.quests or {}) do
         local data = ns.Quests and ns.Quests[quest.id]
-        if PlayerMatches(data, quest.faction) and not ns.IsQuestFlaggedCompleted(quest.id) then
+        if ns.PlayerMatches(data, quest.faction) and not ns.IsQuestFlaggedCompleted(quest.id) then
             remaining = remaining + 1
         end
     end
@@ -1573,6 +1529,16 @@ local function UpdateShowAllControl()
     control.tooltip = SHOW_ALL_TOOLTIPS[activeTab]
 end
 
+local function UpdateRouteButton()
+    local button = frame and frame.routeButton
+    if not button then
+        return
+    end
+    local visible = activeTab == 3
+    button:SetShown(visible)
+    button:SetEnabled(visible and dungeonSelection ~= nil)
+end
+
 local function RenderRows()
     if not frame then
         return
@@ -1627,6 +1593,7 @@ local function RenderRows()
         frame.zoneCaption:SetText(activeTab == 3 and L["Dungeon"] or L["Zone"])
     end
     UpdateShowAllControl()
+    UpdateRouteButton()
 end
 
 RefreshRows = function()
@@ -1984,6 +1951,38 @@ local function EnsureFrame()
     end)
     showAllButton:Hide()
     panel.showAll = showAllButton
+
+    local routeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    routeButton:SetSize(140, 20)
+    routeButton:SetPoint("TOPLEFT", PADDING, -153)
+    routeButton:SetText(L["Auto route"])
+    routeButton:SetScript("OnClick", function()
+        if dungeonSelection and ns.DungeonRoute then
+            ns.DungeonRoute.Show(dungeonSelection)
+        end
+    end)
+    routeButton:SetScript("OnEnter", function(self)
+        if not GameTooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Auto route"], 1, 0.82, 0)
+        if dungeonSelection then
+            GameTooltip:AddLine(
+                L["Builds a step-by-step route through this dungeon's quests and follows it as you play."],
+                1, 1, 1, true)
+        else
+            GameTooltip:AddLine(L["Choose a dungeon first."], 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    routeButton:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    routeButton:Hide()
+    panel.routeButton = routeButton
 
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", PADDING, -176)

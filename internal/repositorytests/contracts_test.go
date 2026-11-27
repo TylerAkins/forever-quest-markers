@@ -46,6 +46,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\BreadcrumbTargets.lua`,
 		"MinimapButton.lua",
 		"QuestFinder.lua",
+		"DungeonRoute.lua",
 		"ChatQuestLinks.lua",
 		"Events.lua",
 		"Localization.lua",
@@ -83,6 +84,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"QuestLinks.lua":                    "TrackerData.lua",
 		"TrackerData.lua":                   "Tracker.lua",
 		"Tracker.lua":                       "Core.lua",
+		"QuestFinder.lua":                   "DungeonRoute.lua",
+		"DungeonRoute.lua":                  "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -700,6 +703,21 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	}
 	if strings.Contains(questFinder, "local showAll = CreateFrame") {
 		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
+	}
+	if !strings.Contains(questFinder, "ns.DungeonRoute.Show(dungeonSelection)") {
+		t.Fatal("QuestFinder.lua does not open the dungeon route for the selected dungeon")
+	}
+	dungeonRoute := read(t, base, "DungeonRoute.lua")
+	for _, contract := range []string{
+		"function ns.DungeonRoute.Show(dungeonName)",
+		"local function Build(dungeonName, skipSet)",
+		"ns.DungeonRoute.Build = Build",
+		"ns.TrackQuest(step.id, step.data, true)",
+		`"PLAYER_REGEN_ENABLED"`,
+	} {
+		if !strings.Contains(dungeonRoute, contract) {
+			t.Errorf("DungeonRoute.lua missing %q", contract)
+		}
 	}
 	core := read(t, base, "Core.lua")
 	if !strings.Contains(core, `"SKILL_LINES_CHANGED"`) || !strings.Contains(core, "NPCTooltips:Initialize") || !strings.Contains(core, "InvalidateInstanceQuestCache") {
