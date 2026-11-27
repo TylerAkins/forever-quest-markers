@@ -328,8 +328,7 @@ local function BuildDungeonGuide(dungeonName, skipSet)
                 quest = raw.quest,
                 action = raw.type,
                 type = raw.type,
-                title = (route.titles and route.titles[raw.quest])
-                    or (ns.GetQuestTitle and ns.GetQuestTitle(raw.quest, true))
+                title = (ns.GetQuestTitle and ns.GetQuestTitle(raw.quest, true))
                     or (L["Quest "] .. tostring(raw.quest)),
                 text = raw.text,
                 npcKey = raw.npc,

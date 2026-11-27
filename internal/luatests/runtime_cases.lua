@@ -7744,7 +7744,6 @@ cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = functio
                 n2 = { id = 2, name = "Target", map = 1, x = 20, y = 20 },
                 n3 = { id = 3, name = "Turn In", map = 1, x = 30, y = 30 },
             },
-            titles = { [100] = "Guide Quest" },
         },
     }
     assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
@@ -7752,7 +7751,7 @@ cases["dungeon_route_runtime.follows_guide_steps_and_filters_faction"] = functio
     local route = ns.QuestRoute.Build("Test Dungeon", {})
     assert(route.total == 3 and route.unit == "steps")
     assert(route.steps[1].action == "accept" and route.steps[1].quest == 100)
-    assert(route.steps[1].title == "Guide Quest")
+    assert(route.steps[1].title == "Quest 100")
     assert(route.steps[1].locationName == "Giver")
     assert(route.steps[2].action == "do" and route.steps[2].text == "Do the thing.")
     assert(route.steps[2].locationName == "Target")
@@ -7947,7 +7946,9 @@ cases["dungeon_route_runtime.brd_guide_data_is_present"] = function()
     assert(route, "Blackrock Depths guide data is missing")
     assert(#route.steps == 176, "the BRD guide step count changed")
     assert(route.npcs.n9536 and route.npcs.n9536.name == "Maxwort Uberglint")
-    assert(route.titles[4123] == "The Heart of the Mountain")
+    local quests = {}
+    assert(loadfile("Database/ForeverQuests.lua"))("ForeverQuestPins", quests)
+    assert(quests.Quests[4123].title == "The Heart of the Mountain")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
