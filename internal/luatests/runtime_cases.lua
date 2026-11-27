@@ -7073,6 +7073,7 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns.IsQuestFlaggedCompleted = function() return false end
     ns.IsOnQuest = function() return false end
     ns.IsQuestAvailable = function(questID) return questID ~= 203 end
+    ns.IsQuestAcceptable = function(questID) return questID ~= 203 end
     ns.IsInstanceQuest = function() return true end
     ns.IsPvPQuest = function() return false end
     ns.IsBookQuest = function() return false end
@@ -7213,6 +7214,7 @@ cases["quest_finder_runtime.tags_quests_that_start_inside_a_dungeon"] = function
     ns.IsQuestFlaggedCompleted = function() return false end
     ns.IsOnQuest = function() return false end
     ns.IsQuestAvailable = function() return true end
+    ns.IsQuestAcceptable = function() return true end
     ns.IsInstanceQuest = function() return true end
     ns.IsPvPQuest = function() return false end
     ns.IsBookQuest = function() return false end
@@ -7426,6 +7428,27 @@ cases["chat_links_runtime.stands_down_for_questie_and_the_option"] = function()
     enabled = false
     hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
     assert(hidden == false and translated == nil, "the option disables conversion")
+end
+
+cases["eligibility_runtime.acceptability_ignores_display_filters"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.GetOption = function(key)
+        if key == "showTrivial" then return false end
+        if key == "trivialLevelGap" then return 9 end
+        if key == "highLevelGap" then return 15 end
+        return true
+    end
+    UnitLevel = function() return 55 end
+    local data = { minLevel = 40 }
+    local shown, showReason = ns.IsQuestAvailable(999, data, { skipLevelRequest = true })
+    assert(shown == false and showReason == "trivial",
+        "the map filter still hides a trivial pin")
+    local acceptable = ns.IsQuestAcceptable(999, data)
+    assert(acceptable == true, "a trivial quest is still acceptable")
+    local high = ns.IsQuestAcceptable(998, { minLevel = 58 })
+    assert(high == false, "a quest above the player's level is not acceptable")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

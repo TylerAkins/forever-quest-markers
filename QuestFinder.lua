@@ -390,7 +390,7 @@ local function QuestStatus(questID, data, checkAvailable)
         return L["Unknown"], 0.65, 0.65, 0.65
     end
     if checkAvailable and data then
-        local available, reason = ns.IsQuestAvailable(questID, data, { skipLevelRequest = true })
+        local available, reason = ns.IsQuestAcceptable(questID, data)
         if not available then
             return L["Unavailable"], 0.80, 0.55, 0.55, reason
         end
@@ -807,7 +807,7 @@ end
 
 local function IsDungeonQuestAvailable(questID, data, quest)
     if data then
-        return IsFinderAvailable(questID, data)
+        return ns.IsQuestAcceptable(questID, data)
     end
     if ns.IsQuestFlaggedCompleted and ns.IsQuestFlaggedCompleted(questID) then
         return false

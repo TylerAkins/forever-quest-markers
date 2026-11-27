@@ -960,6 +960,86 @@ end
 --- Conservative availability check. Unknown restrictions keep the pin visible.
 -- @return available boolean
 -- @return reason string
+--- Whether the player can accept this quest once its prerequisites are done.
+-- Unlike IsQuestAvailable, map display filters do not apply: trivial level,
+-- configured level range, categories, repeatable, seasonal, war effort, book,
+-- hidden, and excluded settings are ignored.
+function ns.IsQuestAcceptable(questID, data)
+    if not questID or not data then
+        return false, "bad-data"
+    end
+    if ns.IsQuestFlaggedCompleted(questID) then
+        return false, "completed"
+    end
+    if ns.IsOnQuest(questID) then
+        return false, "in-log"
+    end
+    local altQuests = data.altQuests
+    if altQuests then
+        for i = 1, #altQuests do
+            local altID = altQuests[i]
+            if altID ~= questID and ns.IsQuestFlaggedCompleted(altID) then
+                return false, "alt-completed"
+            end
+        end
+    end
+    if ns.IsOffered and ns.IsOffered(questID) then
+        return true, "npc-offered"
+    end
+    local prereqOk, prereqReason = SourceQuestsMet(data)
+    if not prereqOk then
+        return false, prereqReason
+    end
+    local faction = data.faction
+    if faction then
+        local playerFaction = ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false, "faction"
+        end
+    end
+    local races = data.races
+    if races and #races > 0 then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #races do
+                if races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false, "race"
+            end
+        end
+    end
+    local classes = data.classes
+    if classes and #classes > 0 then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #classes do
+                if classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false, "class"
+            end
+        end
+    end
+    if data.requireSkill and not ns.HasRequiredSkill(data.requireSkill) then
+        return false, "profession"
+    end
+    local minLevel = data.minLevel
+    local playerLevel = UnitLevel("player") or 1
+    if minLevel and playerLevel < minLevel then
+        return false, "low-level"
+    end
+    return true, prereqReason or "ok"
+end
+
 function ns.IsQuestAvailable(questID, data, options)
     if not questID or not data then
         return false, "bad-data"
