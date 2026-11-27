@@ -7065,6 +7065,75 @@ cases["quest_finder_runtime.breadcrumbs_use_the_target_zone"] = function()
     assert(#ns.QuestFinder.BreadcrumbEntries(3) == 0, "unrelated zones stay empty")
 end
 
+cases["quest_finder_runtime.groups_alternate_breadcrumbs"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 2 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Stormwind City", mapType = 3 },
+                [2] = { name = "Ironforge", mapType = 3 },
+                [3] = { name = "Darnassus", mapType = 3 },
+                [4] = { name = "Western Plaguelands", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 50 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    local title = "A Call to Arms: The Plaguelands!"
+    ns.Quests = {
+        [5066] = { title = title, isBreadcrumb = true, mapID = 1, x = 10, y = 10,
+            minLevel = 50, altQuests = { 5090, 5091 } },
+        [5090] = { title = title, isBreadcrumb = true, mapID = 2, x = 20, y = 20,
+            minLevel = 50, altQuests = { 5066, 5091 } },
+        [5091] = { title = title, isBreadcrumb = true, mapID = 3, x = 30, y = 30,
+            minLevel = 50, altQuests = { 5066, 5090 } },
+        [5092] = { title = "Clear the Way", mapID = 4, x = 40, y = 40,
+            sourceQuestSingle = { 5066, 5090, 5091 }, sourceQuestNumRequired = 1,
+            minLevel = 50 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.BreadcrumbEntries(4)
+    assert(#entries == 1, "alternate capital versions become one row")
+    local entry = entries[1]
+    assert(#entry.questIDs == 3, "all alternate quest IDs are grouped")
+    assert(entry.location.mapID == 2, "the pin prefers the player's current city")
+    assert(entry.subtitle:find("Stormwind City", 1, true))
+    assert(entry.subtitle:find("Ironforge", 1, true))
+    assert(entry.subtitle:find("Darnassus", 1, true))
+    assert(entry.subtitle:find("Leads to Western Plaguelands", 1, true))
+end
+
+cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] = function()
+    ns = {}
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = {
+        { kind = "header", title = "Blackrock Depths" },
+        { kind = "quest", title = "Alpha", subtitle = "Burning Steppes" },
+        { kind = "header", title = "Sunken Temple" },
+        { kind = "quest", title = "Beta", subtitle = "Un'Goro Crater" },
+    }
+    local filtered = ns.QuestFinder.FilterEntries(entries, "goro")
+    assert(#filtered == 2, "the matching dungeon group is kept")
+    assert(filtered[1].title == "Sunken Temple")
+    assert(filtered[2].title == "Beta")
+
+    filtered = ns.QuestFinder.FilterEntries(entries, "blackrock")
+    assert(#filtered == 2, "a matching header keeps its quests")
+    assert(filtered[1].title == "Blackrock Depths")
+    assert(filtered[2].title == "Alpha")
+
+    assert(#ns.QuestFinder.FilterEntries(entries, "") == 4)
+end
+
 cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     ns = {}
     C_Map = {

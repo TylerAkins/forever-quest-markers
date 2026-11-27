@@ -26,8 +26,11 @@ local rows = {}
 local zoneList
 local zoneSelection = "current"
 local dungeonSelection
+local searchText = ""
+local searchRefreshToken = 0
 local RefreshRows
 local SelectDungeon
+local ScheduleSearchRefresh
 
 local mapInfoCache = {}
 
@@ -641,8 +644,21 @@ local function AddEntry(entries, entry)
     entries[#entries + 1] = entry
 end
 
+local function ZoneNamesForMaps(maps)
+    local names = {}
+    local seen = {}
+    for i = 1, #maps do
+        local name = MapName(maps[i])
+        if name and name ~= L["Unknown zone"] and not seen[name] then
+            seen[name] = true
+            names[#names + 1] = name
+        end
+    end
+    return names
+end
+
 local function BreadcrumbEntries(mapID)
-    local entries = {}
+    local groups = {}
     for questID, data in pairs(ns.Quests or {}) do
         if data.isBreadcrumb
             and not ns.IsQuestFlaggedCompleted(questID)
@@ -683,65 +699,117 @@ local function BreadcrumbEntries(mapID)
                     end
                 end
                 if matchesStart or matchesTarget then
-                    local location = PickLocation(startLocations, mapID)
-                    local insideDungeon = location and IsDungeonMap(location.mapID) or false
-                    local level = QuestLevel(questID, data)
-                    local parts = QuestTagParts(questID, data)
-                    local startNames = StartZoneNames(startLocations)
-                    local subtitle = #startNames > 0 and table.concat(startNames, ", ") or L["No start map"]
-                    if #startLocations > 1 then
-                        subtitle = subtitle .. " |cff9d9d9d(" .. (#startLocations) .. " " .. L["locations"] .. ")|r"
+                    local sortedTargets = {}
+                    for i = 1, #targetMaps do
+                        sortedTargets[i] = targetMaps[i]
                     end
-                    if level then
-                        subtitle = "[" .. level .. "] " .. subtitle
+                    table.sort(sortedTargets)
+                    local targetKey = table.concat(sortedTargets, ",")
+                    local title = data.title or ns.GetQuestTitle(questID) or tostring(questID)
+                    local key = title .. "|" .. targetKey
+                    local group = groups[key]
+                    if not group then
+                        group = {
+                            title = title,
+                            questID = questID,
+                            questIDs = {},
+                            level = QuestLevel(questID, data),
+                            data = data,
+                            startLocations = {},
+                            startSeen = {},
+                            targetMaps = {},
+                            targetSeen = {},
+                        }
+                        groups[key] = group
                     end
-                    if #parts > 0 then
-                        subtitle = subtitle .. "  " .. TagText(parts)
+                    group.questIDs[#group.questIDs + 1] = questID
+                    if not group.level then
+                        group.level = QuestLevel(questID, data)
                     end
-                    local targetNames = TargetZoneNames(questID)
-                    local visibleTargets = {}
-                    local startNameSet = {}
-                    for i = 1, #startNames do
-                        startNameSet[startNames[i]] = true
-                    end
-                    for i = 1, #targetNames do
-                        if not startNameSet[targetNames[i]] then
-                            visibleTargets[#visibleTargets + 1] = targetNames[i]
+                    for i = 1, #startLocations do
+                        local location = startLocations[i]
+                        local locationKey = location.mapID .. ":" .. location.x .. ":" .. location.y
+                        if not group.startSeen[locationKey] then
+                            group.startSeen[locationKey] = true
+                            group.startLocations[#group.startLocations + 1] = location
                         end
                     end
-                    if #visibleTargets > 0 then
-                        subtitle = subtitle .. "  |cff9d9d9d"
-                            .. string.format(L["Leads to %s"], table.concat(visibleTargets, ", ")) .. "|r"
+                    for i = 1, #targetMaps do
+                        local target = targetMaps[i]
+                        if not group.targetSeen[target] then
+                            group.targetSeen[target] = true
+                            group.targetMaps[#group.targetMaps + 1] = target
+                        end
                     end
-                    if insideDungeon then
-                        subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
-                    end
-                    local tooltipParts = {}
-                    local chain = ChainText(questID)
-                    if chain then
-                        tooltipParts[#tooltipParts + 1] = chain
-                    end
-                    if #targetNames > 0 then
-                        tooltipParts[#tooltipParts + 1] = string.format(L["Leads to %s."],
-                            table.concat(targetNames, ", "))
-                    end
-                    if insideDungeon then
-                        tooltipParts[#tooltipParts + 1] =
-                            L["This quest starts inside the dungeon, so a map pin is not available."]
-                    end
-                    AddEntry(entries, {
-                        kind = "quest",
-                        questID = questID,
-                        title = data.title or ns.GetQuestTitle(questID) or tostring(questID),
-                        subtitle = subtitle,
-                        level = level,
-                        location = location,
-                        insideDungeon = insideDungeon,
-                        tooltip = #tooltipParts > 0 and table.concat(tooltipParts, "\n") or nil,
-                    })
                 end
             end
         end
+    end
+
+    local entries = {}
+    for _, group in pairs(groups) do
+        local location = PickLocation(group.startLocations, mapID)
+        local insideDungeon = false
+        for i = 1, #group.startLocations do
+            if IsDungeonMap(group.startLocations[i].mapID) then
+                insideDungeon = true
+                break
+            end
+        end
+        local parts = QuestTagParts(group.questID, group.data)
+        local startNames = StartZoneNames(group.startLocations)
+        local subtitle = #startNames > 0 and table.concat(startNames, ", ") or L["No start map"]
+        if #group.startLocations > 1 then
+            subtitle = subtitle .. " |cff9d9d9d(" .. (#group.startLocations) .. " " .. L["locations"] .. ")|r"
+        end
+        if group.level then
+            subtitle = "[" .. group.level .. "] " .. subtitle
+        end
+        if #parts > 0 then
+            subtitle = subtitle .. "  " .. TagText(parts)
+        end
+        local targetNames = ZoneNamesForMaps(group.targetMaps)
+        local visibleTargets = {}
+        local startNameSet = {}
+        for i = 1, #startNames do
+            startNameSet[startNames[i]] = true
+        end
+        for i = 1, #targetNames do
+            if not startNameSet[targetNames[i]] then
+                visibleTargets[#visibleTargets + 1] = targetNames[i]
+            end
+        end
+        if #visibleTargets > 0 then
+            subtitle = subtitle .. "  |cff9d9d9d"
+                .. string.format(L["Leads to %s"], table.concat(visibleTargets, ", ")) .. "|r"
+        end
+        if insideDungeon then
+            subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
+        end
+        local tooltipParts = {}
+        local chain = ChainText(group.questID)
+        if chain then
+            tooltipParts[#tooltipParts + 1] = chain
+        end
+        if #targetNames > 0 then
+            tooltipParts[#tooltipParts + 1] = string.format(L["Leads to %s."],
+                table.concat(targetNames, ", "))
+        end
+        if insideDungeon then
+            tooltipParts[#tooltipParts + 1] =
+                L["This quest starts inside the dungeon, so a map pin is not available."]
+        end
+        entries[#entries + 1] = {
+            kind = "quest",
+            questID = group.questID,
+            questIDs = group.questIDs,
+            title = group.title,
+            subtitle = subtitle,
+            level = group.level,
+            location = location,
+            insideDungeon = insideDungeon,
+            tooltip = #tooltipParts > 0 and table.concat(tooltipParts, "\n") or nil,
+        }
     end
     table.sort(entries, function(a, b)
         if a.title == b.title then
@@ -1129,11 +1197,65 @@ local function EmptyEntry()
     }
 end
 
+local function FilterEntries(entries, query)
+    if not query or query == "" then
+        return entries
+    end
+    local needle = query:lower()
+    local result = {}
+    local header
+    local headerMatch = false
+    local group = {}
+    local matched = {}
+    local function flush()
+        if header then
+            if headerMatch then
+                result[#result + 1] = header
+                for i = 1, #group do
+                    result[#result + 1] = group[i]
+                end
+            elseif #matched > 0 then
+                result[#result + 1] = header
+                for i = 1, #matched do
+                    result[#result + 1] = matched[i]
+                end
+            end
+        else
+            for i = 1, #matched do
+                result[#result + 1] = matched[i]
+            end
+        end
+        header = nil
+        headerMatch = false
+        group = {}
+        matched = {}
+    end
+    for i = 1, #entries do
+        local entry = entries[i]
+        if entry.kind == "header" then
+            flush()
+            header = entry
+            headerMatch = entry.title
+                and entry.title:lower():find(needle, 1, true) ~= nil
+        else
+            local text = ((entry.title or "") .. " "
+                .. (entry.subtitle or "") .. " "
+                .. (entry.tooltip or "")):lower()
+            group[#group + 1] = entry
+            if text:find(needle, 1, true) then
+                matched[#matched + 1] = entry
+            end
+        end
+    end
+    flush()
+    return result
+end
+
 local function RenderRows()
     if not frame then
         return
     end
-    local entries = BuildEntries()
+    local entries = FilterEntries(BuildEntries(), searchText)
     local hasQuest = false
     for i = 1, #entries do
         if entries[i].kind == "quest" then
@@ -1187,6 +1309,20 @@ RefreshRows = function()
         if ns.GetOption("debug") then
             print("|cffffd100Forever Quest Pins:|r Quest Finder: " .. tostring(err))
         end
+    end
+end
+
+ScheduleSearchRefresh = function()
+    searchRefreshToken = searchRefreshToken + 1
+    local token = searchRefreshToken
+    if C_Timer and type(C_Timer.After) == "function" then
+        C_Timer.After(0.12, function()
+            if token == searchRefreshToken then
+                RefreshRows()
+            end
+        end)
+    else
+        RefreshRows()
     end
 end
 
@@ -1426,6 +1562,27 @@ local function EnsureFrame()
     panel.count:SetPoint("TOPRIGHT", -PADDING, -132)
     panel.count:SetJustifyH("RIGHT")
 
+    local searchCreated, search = pcall(CreateFrame, "EditBox",
+        "ForeverQuestPinsQuestFinderSearch", panel, "SearchBoxTemplate")
+    if not searchCreated or not search then
+        search = CreateFrame("EditBox", "ForeverQuestPinsQuestFinderSearch", panel, "InputBoxTemplate")
+    end
+    search:SetSize(230, 26)
+    search:SetPoint("TOPLEFT", PADDING + 280, -126)
+    search:SetAutoFocus(false)
+    search:SetMaxLetters(80)
+    search:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+    search:SetScript("OnTextChanged", function(self)
+        if type(SearchBoxTemplate_OnTextChanged) == "function" then
+            SearchBoxTemplate_OnTextChanged(self)
+        end
+        searchText = self:GetText() or ""
+        ScheduleSearchRefresh()
+    end)
+    panel.search = search
+
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", PADDING, -160)
     scroll:SetPoint("BOTTOMRIGHT", -44, 54)
@@ -1516,6 +1673,7 @@ ns.QuestFinder = {
     AllDungeonEntries = AllDungeonEntries,
     DungeonQuestEntries = DungeonQuestEntries,
     QuestLocations = QuestLocations,
+    FilterEntries = FilterEntries,
     ResetPosition = function()
         if frame then
             frame:ClearAllPoints()
