@@ -8,9 +8,9 @@ ns.QuestRoute = ns.QuestRoute or {}
 -- locations. Objective and turn-in locations come from the client once a
 -- quest is in the log, so the modal follows the tracker instead of guessing.
 
-local FRAME_WIDTH = 440
-local FRAME_HEIGHT = 260
-local PADDING = 24
+local FRAME_WIDTH = 360
+local FRAME_HEIGHT = 190
+local PADDING = 18
 
 local frame
 local currentKind
@@ -489,7 +489,7 @@ local function Render()
     local step = steps[1]
     local action = frame.action
     local panel = frame
-    panel.hint:SetText(L["Re-evaluates after each quest."])
+    panel.hint:SetText(L["Auto-updates."])
 
     if step then
         local label = ACTION_LABELS[step.action] or step.action
@@ -604,24 +604,24 @@ local function EnsureFrame()
     panel:SetBackdropBorderColor(0.8, 0.61, 0.3, 1)
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", PADDING, -22)
+    title:SetPoint("TOPLEFT", PADDING, -16)
     title:SetText("|cffffd100Dungeon|r |cff65b9ffRoute|r")
     panel.title = title
 
     local subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
     panel.subtitle = subtitle
 
     local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -5, -5)
+    close:SetPoint("TOPRIGHT", -4, -4)
     close:SetScript("OnClick", function()
         panel:Hide()
     end)
 
     local drag = CreateFrame("Frame", nil, panel)
-    drag:SetPoint("TOPLEFT", 14, -14)
+    drag:SetPoint("TOPLEFT", 12, -12)
     drag:SetPoint("TOPRIGHT", close, "TOPLEFT", -4, 0)
-    drag:SetHeight(48)
+    drag:SetHeight(38)
     drag:EnableMouse(true)
     drag:RegisterForDrag("LeftButton")
     drag:SetScript("OnDragStart", function()
@@ -633,27 +633,27 @@ local function EnsureFrame()
     end)
 
     local action = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    action:SetPoint("TOPLEFT", PADDING, -82)
+    action:SetPoint("TOPLEFT", PADDING, -60)
     panel.action = action
 
-    local quest = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    quest:SetPoint("TOPLEFT", PADDING, -110)
-    quest:SetPoint("TOPRIGHT", -PADDING, -110)
+    local quest = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    quest:SetPoint("TOPLEFT", PADDING, -84)
+    quest:SetPoint("TOPRIGHT", -PADDING, -84)
     quest:SetJustifyH("LEFT")
     quest:SetWordWrap(false)
     panel.quest = quest
 
     local location = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    location:SetPoint("TOPLEFT", PADDING, -138)
-    location:SetPoint("TOPRIGHT", -PADDING, -138)
+    location:SetPoint("TOPLEFT", PADDING, -102)
+    location:SetPoint("TOPRIGHT", -PADDING, -102)
     location:SetJustifyH("LEFT")
     location:SetTextColor(0.72, 0.72, 0.72)
     panel.location = location
 
     local progress = CreateFrame("StatusBar", nil, panel, "BackdropTemplate")
-    progress:SetPoint("TOPLEFT", PADDING, -168)
-    progress:SetPoint("TOPRIGHT", -PADDING, -168)
-    progress:SetHeight(14)
+    progress:SetPoint("TOPLEFT", PADDING, -130)
+    progress:SetPoint("TOPRIGHT", -PADDING, -130)
+    progress:SetHeight(12)
     progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     progress:SetStatusBarColor(0.72, 0.53, 0.20)
     progress:SetBackdrop({
@@ -674,8 +674,8 @@ local function EnsureFrame()
     panel.progress = progress
 
     local pin = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    pin:SetSize(100, 24)
-    pin:SetPoint("BOTTOMLEFT", PADDING, 20)
+    pin:SetSize(88, 22)
+    pin:SetPoint("BOTTOMLEFT", PADDING, 14)
     pin:SetText(L["Pin"])
     pin:SetScript("OnClick", function()
         local step = steps[1]
@@ -701,8 +701,8 @@ local function EnsureFrame()
     panel.pin = pin
 
     local skip = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    skip:SetSize(100, 24)
-    skip:SetPoint("LEFT", pin, "RIGHT", 8, 0)
+    skip:SetSize(88, 22)
+    skip:SetPoint("LEFT", pin, "RIGHT", 6, 0)
     skip:SetText(L["Skip"])
     skip:SetScript("OnClick", function()
         local step = steps[1]
@@ -730,8 +730,8 @@ local function EnsureFrame()
     panel.skip = skip
 
     local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    reset:SetSize(100, 24)
-    reset:SetPoint("LEFT", skip, "RIGHT", 8, 0)
+    reset:SetSize(88, 22)
+    reset:SetPoint("LEFT", skip, "RIGHT", 6, 0)
     reset:SetText(L["Reset"])
     reset:SetScript("OnClick", function()
         skipped = {}
@@ -755,9 +755,9 @@ local function EnsureFrame()
     panel.reset = reset
 
     local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hint:SetPoint("BOTTOMRIGHT", -PADDING, 52)
+    hint:SetPoint("BOTTOMRIGHT", -PADDING, 37)
     hint:SetJustifyH("RIGHT")
-    hint:SetText(L["Re-evaluates after each quest."])
+    hint:SetText(L["Auto-updates."])
     hint:SetTextColor(0.55, 0.55, 0.55)
     panel.hint = hint
 
@@ -855,6 +855,8 @@ if type(CreateFrame) == "function" then
         "QUEST_TURNED_IN",
         "QUEST_LOG_UPDATE",
         "PLAYER_REGEN_ENABLED",
+        "ZONE_CHANGED_NEW_AREA",
+        "PLAYER_ENTERING_WORLD",
     }
     for i = 1, #watched do
         pcall(events.RegisterEvent, events, watched[i])
