@@ -6261,8 +6261,17 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
             self.unregisteredEvents = self.unregisteredEvents or {}
             self.unregisteredEvents[event] = true
         end
-        function frame:SetPoint() end
-        function frame:ClearAllPoints() end
+        function frame:SetPoint(point, relativeTo, relativePoint, x, y)
+            self.points = self.points or {}
+            self.points[#self.points + 1] = {
+                point = point,
+                relativeTo = relativeTo,
+                relativePoint = relativePoint,
+                x = x,
+                y = y,
+            }
+        end
+        function frame:ClearAllPoints() self.points = {} end
         function frame:SetParent(parent) self.parent = parent end
         function frame:GetParent() return self.parent end
         function frame:SetHeight(height) self.height = height end
@@ -6305,7 +6314,12 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetVerticalScroll(value) self.scroll = value end
         function frame:GetVerticalScroll() return self.scroll or 0 end
         function frame:GetVerticalScrollRange() return self.range or 0 end
-        function frame:UpdateScrollChildRect() end
+        function frame:UpdateScrollChildRect()
+            local child = self.scrollChild
+            if child and child.GetHeight then
+                self.range = math.max(0, (child:GetHeight() or 0) - (self.height or 0))
+            end
+        end
         function frame:SetScrollChild(child) self.scrollChild = child end
         function frame:SetHeader(text) self.headerText = text end
         function frame:CreateFontString()
@@ -6384,8 +6398,10 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     }
     ObjectiveTrackerFrame = fakeFrame("Frame", "ObjectiveTrackerFrame")
     ObjectiveTrackerFrame.modules = {}
+    ObjectiveTrackerFrame.height = 800
     function ObjectiveTrackerFrame:AddModule(module)
         table.insert(self.modules, module)
+        if module.SetContainer then module:SetContainer(self) end
         added = added + 1
     end
     function ObjectiveTrackerFrame:RemoveModule(module)
@@ -6397,6 +6413,12 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
             end
         end
     end
+    function ObjectiveTrackerFrame:HasModule(module)
+        for i = 1, #self.modules do
+            if self.modules[i] == module then return true end
+        end
+        return false
+    end
     function ObjectiveTrackerFrame:IsCollapsed() return false end
     QuestObjectiveTracker = fakeFrame("Frame", "QuestObjectiveTracker")
     QuestObjectiveTracker.uiOrder = 4
@@ -6404,6 +6426,27 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     function QuestObjectiveTracker:MarkDirty() self.dirty = true end
     function QuestObjectiveTracker:GetContextMenuParent() return ObjectiveTrackerFrame end
     QuestObjectiveTracker.shown = true
+    ProfessionsRecipeTracker = fakeFrame("Frame", "ProfessionsRecipeTracker")
+    ProfessionsRecipeTracker.uiOrder = 9
+    ProfessionsRecipeTracker.headerHeight = 25
+    ProfessionsRecipeTracker.contentsHeight = 25
+    ProfessionsRecipeTracker.shown = false
+    function ProfessionsRecipeTracker:SetContainer(container)
+        self.parentContainer = container
+        self:SetParent(container)
+    end
+    function ProfessionsRecipeTracker:Update(availableHeight)
+        self.availableHeight = availableHeight
+        self.dirty = false
+        if availableHeight >= self.headerHeight then
+            self.height = self.headerHeight
+            self:Show()
+        else
+            self.height = 0
+            self:Hide()
+        end
+        return self.height, false
+    end
     ObjectiveTrackerManager = { moduleToContainerMap = {} }
     function ObjectiveTrackerManager:SetModuleContainer(module, container)
         local previous = self.moduleToContainerMap[module]
@@ -6415,7 +6458,9 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         return self.moduleToContainerMap[module]
     end
     ObjectiveTrackerManager.moduleToContainerMap[QuestObjectiveTracker] = ObjectiveTrackerFrame
+    ObjectiveTrackerManager.moduleToContainerMap[ProfessionsRecipeTracker] = ObjectiveTrackerFrame
     ObjectiveTrackerFrame.modules[1] = QuestObjectiveTracker
+    ObjectiveTrackerFrame.modules[2] = ProfessionsRecipeTracker
 
     local watches = 0
     C_QuestLog = {
@@ -6456,22 +6501,35 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end
     assert(ourModule, "the addon must create its tracker module")
     assert(standaloneTracker, "the addon must create its standalone tracker container")
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
-        "the beta starts off with Blizzard's module")
+    assert(#ObjectiveTrackerFrame.modules == 2
+        and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
+        and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
+        "the beta starts off with Blizzard's quest and professions modules")
 
     options.enhanceQuestTracker = true
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 0,
-        "the standalone tracker removes Blizzard's quest module from its container")
+        "the standalone tracker removes Blizzard's modules from its container")
     assert(standaloneTracker.module == ourModule,
         "the standalone tracker owns the custom quest module")
+    assert(standaloneTracker.professionsModule == ProfessionsRecipeTracker,
+        "the standalone tracker owns the tracked professions module")
+    assert(ProfessionsRecipeTracker.parentContainer == standaloneTracker,
+        "the professions module moves into the standalone tracker")
+    assert(ProfessionsRecipeTracker.availableHeight == 392,
+        "professions are capped at half the tracker height")
+    assert(ProfessionsRecipeTracker.shown == true,
+        "the professions module remains visible below the quest module")
+    assert(ourModule.availableHeight == 750,
+        "the quest module gets the tracker height above the professions module")
     assert(QuestObjectiveTracker.shown == false)
     assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
         "the standalone module's context menu parent is its own container")
-    assert(secureDelegates == 1, "the tracker builds one secure quest-click delegate")
+    assert(secureDelegates >= 1, "the tracker builds secure delegates for quest clicks and module moves")
     assert(ns.trackerClickSecured == "delegate", "the client's secure delegate is used for quest clicks")
     assert(ourModule.OnBlockHeaderClick ~= QuestObjectiveTrackerMixin.OnBlockHeaderClick,
         "quest clicks run through a secure delegate rather than a tainted direct call")
+    secureClickCalls = 0
     ourModule.OnBlockHeaderClick(ourModule, {}, "LeftButton")
     assert(secureClickCalls == 1 and questClicks == 1,
         "the secure delegate still calls Blizzard's quest click handler")
@@ -6516,8 +6574,15 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
 
     options.enhanceQuestTracker = false
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker)
+    assert(#ObjectiveTrackerFrame.modules == 2
+        and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
+        and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
+        "disabling the beta restores both Blizzard modules")
     assert(standaloneTracker.module == nil, "disabling the beta clears the standalone tracker")
+    assert(standaloneTracker.professionsModule == nil,
+        "disabling the beta clears the standalone professions module")
+    assert(ProfessionsRecipeTracker.parentContainer == ObjectiveTrackerFrame,
+        "the professions module returns to Blizzard's tracker")
     assert(ourModule.shown == false)
     assert(QuestObjectiveTracker.events.QUEST_LOG_UPDATE == true,
         "Blizzard's quest events are restored with its module")
@@ -6527,24 +6592,31 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     gamepad = true
     options.enhanceQuestTracker = true
     ns.ApplyTrackerState()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
+    assert(#ObjectiveTrackerFrame.modules == 2
+        and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
+        and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
         "gamepad UI must keep Blizzard's tracker")
     assert(standaloneTracker.module == nil, "gamepad UI hides the standalone tracker")
 
     gamepad = false
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 0,
-        "the standalone tracker replaces Blizzard's quest module")
+        "the standalone tracker replaces Blizzard's modules")
     assert(standaloneTracker.module == ourModule)
+    assert(standaloneTracker.professionsModule == ProfessionsRecipeTracker)
     assert(ourModule.events.QUEST_LOG_UPDATE == true,
         "our module's quest events are restored with the beta")
 
     gamepad = true
     InCombatLockdown = function() return true end
     gamepadInit()
-    assert(#ObjectiveTrackerFrame.modules == 1 and ObjectiveTrackerFrame.modules[1] == QuestObjectiveTracker,
-        "gamepad init must restore Blizzard's module even in combat")
+    assert(#ObjectiveTrackerFrame.modules == 2
+        and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
+        and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
+        "gamepad init must restore Blizzard's modules even in combat")
     assert(standaloneTracker.module == nil, "gamepad init hides the standalone tracker")
+    assert(standaloneTracker.professionsModule == nil,
+        "gamepad init restores the professions module to Blizzard's tracker")
 
     gamepad = false
     InCombatLockdown = function() return false end
@@ -6552,6 +6624,8 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ns.ApplyTrackerState()
     assert(#ObjectiveTrackerFrame.modules == 0, "the standalone tracker stays active")
     assert(standaloneTracker.module == ourModule)
+    assert(standaloneTracker.professionsModule == ProfessionsRecipeTracker,
+        "the standalone tracker keeps the professions module after combat")
     local eventFrame
     for _, frame in ipairs(frames) do
         if frame.events and frame.events.PLAYER_REGEN_DISABLED then eventFrame = frame end
@@ -6575,9 +6649,9 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(standaloneTracker.module == ourModule,
         "the standalone tracker remains active after combat")
 
+    ourModule.bottomInset = nil
     ourModule.availableHeight = 125
     ourModule.contentsHeight = 425
-    ourModule.ScrollFrame.range = 400
     ourModule:UpdateScrollViewport()
     assert(ourModule.contentsHeight == 110, "the module height leaves room above the action bars")
     assert(ourModule.ScrollFrame.height == 85)
@@ -6588,12 +6662,32 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule:Scroll(1)
     assert(ourModule.ScrollFrame.scroll == 0)
 
+    ourModule.bottomInset = 0
+    ourModule.availableHeight = 125
+    ourModule.contentsHeight = 425
+    ourModule:UpdateScrollViewport()
+    assert(ourModule.contentsHeight == 125,
+        "the quest module fills the space above the professions module")
+    assert(ourModule.ScrollFrame.height == 100)
+    ourModule.bottomInset = nil
+
     ourModule.availableHeight = 500
     ourModule.contentsHeight = 125
-    ourModule.ScrollFrame.range = 0
     ourModule:UpdateScrollViewport()
-    assert(ourModule.contentsHeight == 485, "short content fills the available height")
-    assert(ourModule.ContentsFrame.height == 460, "the scroll viewport fills the available height")
+    assert(ourModule.contentsHeight == 133, "short content keeps the module near its content height")
+    assert(ourModule.ScrollFrame.height == 108, "the scroll viewport follows short content")
+    assert(ourModule.ContentsFrame.height == 108, "short content has no scroll range")
+    assert(ourModule.ScrollFrame.range == 0, "short content does not scroll")
+
+    ourModule.collapsed = true
+    ourModule.shown = true
+    standaloneTracker:Update()
+    local collapsedPoint = ProfessionsRecipeTracker.points[1]
+    assert(collapsedPoint and collapsedPoint.point == "TOPLEFT"
+        and collapsedPoint.relativeTo == ourModule
+        and collapsedPoint.y == -35,
+        "collapsed quests keep the professions header just below the quest header")
+    ourModule.collapsed = false
 
     local zoneInfos = {
         { zoneName = "Ashenvale", quest = { id = 102 } },

@@ -31,6 +31,9 @@ local CONTENT_TOP_PADDING = 8
 local CONTENT_RIGHT_PADDING = 8
 local DEFAULT_BOTTOM_INSET = 15
 local SCROLL_LEFT_INSET = 0
+-- Keep tracked professions at the bottom of the tracker without letting them
+-- take more than half of the viewport from the quest list.
+local PROFESSIONS_MAX_SHARE = 0.5
 
 local function BottomViewportInset()
     local value = tonumber(ns.GetOption("trackerBottomInset"))
@@ -38,6 +41,74 @@ local function BottomViewportInset()
         return DEFAULT_BOTTOM_INSET
     end
     return math.max(0, math.min(60, value))
+end
+
+local function ModuleSpacing()
+    local value = ObjectiveTrackerFrame and ObjectiveTrackerFrame.moduleSpacing
+    if type(value) ~= "number" then
+        return 10
+    end
+    return math.max(0, value)
+end
+
+-- The source tracker and its modules are protected Blizzard frames. Calling
+-- their container methods from addon code taints the source container's
+-- layout fields, and the next in-combat map open is refused. Run those calls
+-- through a secure delegate or secure call so the client keeps the layout
+-- secure.
+local function SecureCall(handler, ...)
+    if type(handler) ~= "function" then
+        return nil
+    end
+    if type(CreateSecureDelegate) == "function" then
+        local ok, delegate = pcall(CreateSecureDelegate, handler)
+        if ok and type(delegate) == "function" then
+            return delegate(...)
+        end
+        if type(securecallfunction) == "function" then
+            ok, delegate = pcall(securecallfunction, CreateSecureDelegate, handler)
+            if ok and type(delegate) == "function" then
+                return delegate(...)
+            end
+        end
+    end
+    if type(securecallfunction) == "function" then
+        return securecallfunction(handler, ...)
+    end
+    -- The target client exposes both secure call paths. This fallback keeps
+    -- the tracker usable on a client that exposes neither, but the handler then
+    -- runs as ordinary addon code and can taint protected frames.
+    return handler(...)
+end
+
+local function RemoveModuleSecurely(container, module)
+    return SecureCall(function(target, value)
+        target:RemoveModule(value)
+    end, container, module)
+end
+
+local function AddModuleSecurely(container, module)
+    return SecureCall(function(target, value)
+        target:AddModule(value)
+    end, container, module)
+end
+
+local function SetModuleContainerSecurely(manager, module, container)
+    return SecureCall(function(target, value, destination)
+        target:SetModuleContainer(value, destination)
+    end, manager, module, container)
+end
+
+local function SetModuleMapSecurely(manager, module, container)
+    return SecureCall(function(target, value, destination)
+        target.moduleToContainerMap[value] = destination
+    end, manager, module, container)
+end
+
+local function SetContainerSecurely(module, container)
+    return SecureCall(function(target, destination)
+        target:SetContainer(destination)
+    end, module, container)
 end
 
 local trackerMixin
@@ -124,8 +195,9 @@ local function CreateStandaloneContainer()
     local frame = CreateFrame("Frame", "FQPStandaloneTracker", UIParent)
     CopyFrameLayout(frame, ObjectiveTrackerFrame)
     frame.module = nil
+    frame.professionsModule = nil
     frame.dirty = false
-    -- The frame fills the source tracker's height. The module scrolls inside
+    -- The frame fills the source tracker's height. The modules scroll inside
     -- it, using the same height as its viewport.
     frame.availableHeight = frame:GetHeight()
     local sourceHeight = SourceTrackerHeight()
@@ -173,28 +245,46 @@ local function CreateStandaloneContainer()
 
     function frame:AddModule(module)
         self.module = module
-        module:SetContainer(self)
+        SetContainerSecurely(module, self)
+        self:MarkDirty()
+    end
+
+    function frame:SetProfessionsModule(professions)
+        self.professionsModule = professions
+        if professions and professions.SetContainer then
+            SetContainerSecurely(professions, self)
+        end
+        self:MarkDirty()
+    end
+
+    function frame:ClearProfessionsModule()
+        self.professionsModule = nil
         self:MarkDirty()
     end
 
     function frame:RemoveModule(module)
         if self.module == module then
             self.module = nil
+        elseif self.professionsModule == module then
+            self.professionsModule = nil
         end
         self:MarkDirty()
     end
 
     function frame:HasAnyModule()
-        return self.module ~= nil
+        return self.module ~= nil or self.professionsModule ~= nil
     end
 
     function frame:HasAnyModules()
-        return self.module ~= nil
+        return self.module ~= nil or self.professionsModule ~= nil
     end
 
     function frame:ForEachModule(fn)
         if self.module then
             fn(self.module)
+        end
+        if self.professionsModule then
+            fn(self.professionsModule)
         end
     end
 
@@ -203,16 +293,76 @@ local function CreateStandaloneContainer()
 
     function frame:Update()
         self.dirty = false
-        local module = self.module
-        if not module then
+        local quest = self.module
+        local professions = self.professionsModule
+        if not quest and not professions then
             self:Hide()
             return
         end
-        module:SetWidth(self:GetWidth())
+
+        local width = self:GetWidth()
         local available = self:GetAvailableHeight()
-        module:Update(available, true)
+        local bottomInset = BottomViewportInset()
+        local spacing = ModuleSpacing()
+        local contentHeight = math.max(0, available - bottomInset)
+        local professionsHeight = 0
+
+        if professions then
+            -- ProfessionsRecipeTracker is a protected Blizzard module. Run its
+            -- layout writes through a secure delegate so a combat map open does
+            -- not see ForeverQuestPins as the taint source.
+            local shown, height = SecureCall(function()
+                professions:SetWidth(width)
+                if professions.Header and professions.Header.SetWidth and width > 1 then
+                    professions.Header:SetWidth(width)
+                end
+                local maxProfessions = contentHeight
+                if quest then
+                    local questHeaderHeight = quest.headerHeight or 0
+                    maxProfessions = math.min(
+                        math.max(0, contentHeight - questHeaderHeight - spacing),
+                        math.floor(contentHeight * PROFESSIONS_MAX_SHARE))
+                end
+                professions:Update(maxProfessions, true)
+                return professions:IsShown(), professions:GetHeight() or 0
+            end)
+            if shown then
+                professionsHeight = height or 0
+            end
+        end
+
+        if quest then
+            quest:SetWidth(width)
+            if professionsHeight > 0 then
+                quest.bottomInset = 0
+                quest:Update(math.max(0, contentHeight - professionsHeight - spacing), true)
+            else
+                quest.bottomInset = nil
+                quest:Update(available, true)
+            end
+        end
+
+        if professions and professions:IsShown() then
+            SecureCall(function()
+                professions:ClearAllPoints()
+                if quest and quest:IsShown() then
+                    if quest.IsCollapsed and quest:IsCollapsed() then
+                        local headerHeight = quest.headerHeight or 0
+                        professions:SetPoint("TOPLEFT", quest, "TOPLEFT", 0, -headerHeight - spacing)
+                        professions:SetPoint("TOPRIGHT", quest, "TOPRIGHT", 0, -headerHeight - spacing)
+                    else
+                        professions:SetPoint("TOPLEFT", quest, "BOTTOMLEFT", 0, -spacing)
+                        professions:SetPoint("TOPRIGHT", quest, "BOTTOMRIGHT", 0, -spacing)
+                    end
+                else
+                    professions:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+                    professions:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
+                end
+            end)
+        end
+
         self:SetHeight(available)
-        self:SetShown(module:IsShown())
+        self:SetShown((quest and quest:IsShown()) or (professions and professions:IsShown()) or false)
     end
 
     -- Edit Mode changes the source frame's height without an event our tracker
@@ -232,6 +382,57 @@ local function CreateStandaloneContainer()
 
     standaloneFrame = frame
     return frame
+end
+
+local function ProfessionsModule()
+    local tracker = _G.ProfessionsRecipeTracker
+    if type(tracker) ~= "table" then
+        return nil
+    end
+    return tracker
+end
+
+local function MoveProfessionsModule(container)
+    local professions = ProfessionsModule()
+    if not professions or not container then
+        return false
+    end
+    local current = ObjectiveTrackerManager
+        and ObjectiveTrackerManager.GetContainerForModule
+        and ObjectiveTrackerManager:GetContainerForModule(professions)
+    if current == container then
+        return true
+    end
+    if not ObjectiveTrackerFrame or type(ObjectiveTrackerFrame.RemoveModule) ~= "function" then
+        return false
+    end
+    if current ~= ObjectiveTrackerFrame
+        and not (ObjectiveTrackerFrame.HasModule
+            and ObjectiveTrackerFrame:HasModule(professions)) then
+        return false
+    end
+    RemoveModuleSecurely(ObjectiveTrackerFrame, professions)
+    if ObjectiveTrackerManager and ObjectiveTrackerManager.moduleToContainerMap then
+        SetModuleMapSecurely(ObjectiveTrackerManager, professions, container)
+    end
+    container:SetProfessionsModule(professions)
+    return true
+end
+
+local function RestoreProfessionsModule()
+    local container = standaloneFrame
+    local professions = container and container.professionsModule
+    if not professions then
+        return false
+    end
+    container:ClearProfessionsModule()
+    if ObjectiveTrackerManager and ObjectiveTrackerManager.moduleToContainerMap then
+        SetModuleMapSecurely(ObjectiveTrackerManager, professions, ObjectiveTrackerFrame)
+    end
+    if ObjectiveTrackerFrame and type(ObjectiveTrackerFrame.AddModule) == "function" then
+        AddModuleSecurely(ObjectiveTrackerFrame, professions)
+    end
+    return true
 end
 
 local function InCombat()
@@ -993,14 +1194,31 @@ local function BuildTrackerMixin()
         local fullHeight = self.contentsHeight or headerHeight
         local contentHeight = math.max(0, fullHeight - headerHeight)
         local available = self.availableHeight or 0
-        local viewport = math.max(0, available - headerHeight - BottomViewportInset())
+        local bottomInset = self.bottomInset
+        if bottomInset == nil then
+            bottomInset = BottomViewportInset()
+        end
+        local viewport = math.max(0, available - headerHeight - bottomInset)
         if self:IsCollapsed() then
             viewport = 0
         end
-        self.contentsHeight = headerHeight + viewport
-        scroll:SetHeight(math.max(viewport, 1))
-        scroll:SetShown(viewport > 0)
-        content:SetHeight(math.max(contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING, viewport, 1))
+        local fits = contentHeight <= viewport
+        local scrollHeight = math.min(viewport, contentHeight)
+        if fits then
+            -- The scroll child starts below the top padding. Cover that offset
+            -- so a short list has no scroll range at all.
+            scrollHeight = math.min(contentHeight + CONTENT_TOP_PADDING, viewport)
+        end
+        self.contentsHeight = headerHeight + scrollHeight
+        scroll:SetHeight(math.max(scrollHeight, 1))
+        scroll:SetShown(scrollHeight > 0)
+        local contentFrameHeight = contentHeight + CONTENT_BOTTOM_PADDING + CONTENT_TOP_PADDING
+        if fits then
+            -- Keep the child inside the scroll frame; padding is only needed
+            -- while the list actually scrolls.
+            contentFrameHeight = scrollHeight
+        end
+        content:SetHeight(math.max(contentFrameHeight, scrollHeight, 1))
         scroll:UpdateScrollChildRect()
         local range = scroll:GetVerticalScrollRange() or 0
         local offset = scroll:GetVerticalScroll() or 0
@@ -1294,7 +1512,7 @@ local function AddTrackerModule()
         return false
     end
     module.uiOrder = (QuestObjectiveTracker and QuestObjectiveTracker.uiOrder) or 4
-    ObjectiveTrackerFrame:RemoveModule(QuestObjectiveTracker)
+    RemoveModuleSecurely(ObjectiveTrackerFrame, QuestObjectiveTracker)
     if QuestObjectiveTracker.Hide then
         QuestObjectiveTracker:Hide()
     end
@@ -1306,6 +1524,7 @@ local function AddTrackerModule()
     end
     local container = CreateStandaloneContainer()
     container:AddModule(module)
+    MoveProfessionsModule(container)
     container:Show()
     -- SetContainer only registers events on the module's first container. The
     -- standalone container is created after the module and may not be that
@@ -1327,12 +1546,13 @@ local function RemoveTrackerModule()
         return
     end
     if standaloneFrame then
+        RestoreProfessionsModule()
         standaloneFrame:RemoveModule(module)
         standaloneFrame:Hide()
     end
     module:Hide()
     UnregisterModuleEvents()
-    ObjectiveTrackerManager:SetModuleContainer(QuestObjectiveTracker, ObjectiveTrackerFrame)
+    SetModuleContainerSecurely(ObjectiveTrackerManager, QuestObjectiveTracker, ObjectiveTrackerFrame)
     if blizzardEventsSuspended and type(QuestObjectiveTracker.events) == "table" then
         blizzardEventsSuspended = false
         for i = 1, #QuestObjectiveTracker.events do

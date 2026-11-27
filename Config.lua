@@ -1580,6 +1580,7 @@ local TAINT_SCAN_GLOBALS = {
     "WorldMapFrame",
     "QuestObjectiveTracker",
     "ObjectiveTrackerFrame",
+    "ProfessionsRecipeTracker",
     "QuestMapFrame",
     "QuestScrollFrame",
     "QuestLogFrame",
