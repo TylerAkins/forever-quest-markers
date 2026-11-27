@@ -7136,6 +7136,49 @@ cases["quest_finder_runtime.zone_quest_progress_uses_eligible_quests"] = functio
     assert(other.total == 1, "an assigned zone wins over a coordinate map")
 end
 
+cases["quest_finder_runtime.zone_quest_entries_show_every_status"] = function()
+    ns = {}
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = {
+        GetQuestDifficultyLevel = function(questID)
+            return ns.Quests[questID] and ns.Quests[questID].minLevel
+        end,
+    }
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 2 end
+    ns.IsOnQuest = function(questID) return questID == 3 end
+    ns.IsQuestAcceptable = function(questID) return questID == 1 end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [1] = { zone = 1, mapID = 1, x = 10, y = 10, minLevel = 50, title = "Available Quest" },
+        [2] = { zone = 1, mapID = 1, x = 20, y = 20, minLevel = 50, title = "Complete Quest" },
+        [3] = { zone = 1, mapID = 1, x = 30, y = 30, minLevel = 50, title = "In Log Quest" },
+        [4] = { zone = 1, minLevel = 50, title = "No Start Quest" },
+        [5] = { zone = 1, mapID = 2, x = 10, y = 20, minLevel = 50, title = "Starts Elsewhere" },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.ZoneQuestEntries(1)
+    assert(#entries == 5, "every eligible quest assigned to the zone is listed")
+    assert(entries[1].title == "In Log Quest", "in-log quests come first")
+    local byTitle = {}
+    for i = 1, #entries do byTitle[entries[i].title] = entries[i] end
+    assert(byTitle["Available Quest"].subtitle:find("Available", 1, true))
+    assert(byTitle["Complete Quest"].subtitle:find("Complete", 1, true))
+    assert(byTitle["No Start Quest"].location == nil)
+    assert(byTitle["Starts Elsewhere"].location.mapID == 2)
+end
+
 cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] = function()
     ns = {}
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)

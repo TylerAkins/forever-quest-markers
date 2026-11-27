@@ -29,6 +29,7 @@ local dungeonSelection
 local searchText = ""
 local searchRefreshToken = 0
 local progressToken = 0
+local showAllZoneQuests = false
 local RefreshRows
 local SelectDungeon
 local ScheduleSearchRefresh
@@ -1077,6 +1078,97 @@ local function ZoneProgress(mapID)
     return ZoneQuestProgress(mapID)
 end
 
+local function ZoneQuestIDs(mapID)
+    if type(mapID) ~= "number" then
+        return {}
+    end
+    if not zoneQuestIndex then
+        zoneQuestIndex = BuildZoneQuestIndex()
+    end
+    return zoneQuestIndex[mapID] or {}
+end
+
+local function StatusSortOrder(status)
+    if status == L["In log"] then
+        return 1
+    end
+    if status == L["Available"] then
+        return 2
+    end
+    if status == L["Unavailable"] then
+        return 3
+    end
+    if status == L["Complete"] then
+        return 4
+    end
+    return 5
+end
+
+local function ZoneQuestEntries(mapID)
+    local entries = {}
+    local questIDs = ZoneQuestIDs(mapID)
+    for i = 1, #questIDs do
+        local questID = questIDs[i]
+        local data = ns.Quests and ns.Quests[questID]
+        if data then
+            local locations = QuestLocations(questID, data)
+            if #locations == 0 and data.mapID then
+                locations[1] = { mapID = data.mapID, x = data.x, y = data.y }
+            end
+            local location = PickLocation(locations, mapID)
+            local insideDungeon = location and IsDungeonMap(location.mapID) or false
+            local status, statusR, statusG, statusB, statusReason = QuestStatus(questID, data, true)
+            local level = QuestLevel(questID, data)
+            local parts = QuestTagParts(questID, data)
+            local subtitle = ColorText(status, statusR, statusG, statusB)
+            if level then
+                subtitle = "[" .. level .. "] " .. subtitle
+            end
+            subtitle = subtitle .. "  |cff9d9d9d"
+                .. (location and MapName(location.mapID) or L["No start map"]) .. "|r"
+            if #parts > 0 then
+                subtitle = subtitle .. "  " .. TagText(parts)
+            end
+            if insideDungeon then
+                subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
+            end
+            local tooltip = statusReason and UnavailableReason(statusReason)
+                or (insideDungeon
+                    and L["This quest starts inside the dungeon, so a map pin is not available."])
+                or (not location and L["No map location is available for this quest."])
+                or L["Click to set a Blizzard map pin."]
+            AddEntry(entries, {
+                kind = "quest",
+                questID = questID,
+                title = data.title or ns.GetQuestTitle(questID) or tostring(questID),
+                subtitle = subtitle,
+                level = level,
+                location = location,
+                locations = locations,
+                multiLocation = #UniqueLocationsByMap(locations) > 1,
+                insideDungeon = insideDungeon,
+                statusOrder = StatusSortOrder(status),
+                tooltip = tooltip,
+            })
+        end
+    end
+    table.sort(entries, function(a, b)
+        if a.statusOrder ~= b.statusOrder then
+            return a.statusOrder < b.statusOrder
+        end
+        local aLevel = a.level or 999
+        local bLevel = b.level or 999
+        if aLevel ~= bLevel then
+            return aLevel < bLevel
+        end
+        if a.title == b.title then
+            return a.questID < b.questID
+        end
+        return a.title < b.title
+    end)
+    return entries
+end
+
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
@@ -1254,7 +1346,11 @@ local function BuildEntries()
         return BreadcrumbEntries(CurrentZoneID())
     end
     if activeTab == 2 then
-        return AvailableEntries(CurrentZoneID())
+        local mapID = CurrentZoneID()
+        if showAllZoneQuests and mapID then
+            return ZoneQuestEntries(mapID)
+        end
+        return AvailableEntries(mapID)
     end
     if dungeonSelection and dungeonSelection ~= "all" then
         return DungeonQuestEntries(dungeonSelection)
@@ -1449,6 +1545,16 @@ local function RenderRows()
     end
     if frame.zoneCaption then
         frame.zoneCaption:SetText(activeTab == 3 and L["Dungeon"] or L["Zone"])
+    end
+    if frame.showAll then
+        local mapID = CurrentZoneID()
+        local visible = activeTab == 2
+        local enabled = visible and mapID ~= nil
+        frame.showAll:SetShown(visible)
+        frame.showAll:SetEnabled(enabled)
+        if frame.showAll.Text then
+            frame.showAll.Text:SetAlpha(enabled and 1 or 0.5)
+        end
     end
 end
 
@@ -1773,6 +1879,42 @@ local function EnsureFrame()
     progress:Hide()
     panel.progressBar = progress
 
+    local showAll = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    showAll:SetSize(24, 24)
+    showAll:SetPoint("TOPLEFT", PADDING + 276, -150)
+    local showAllText = showAll.Text
+    if not showAllText then
+        showAllText = showAll:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        showAllText:SetPoint("LEFT", showAll, "RIGHT", 4, 1)
+        showAll.Text = showAllText
+    else
+        showAllText:ClearAllPoints()
+        showAllText:SetPoint("LEFT", showAll, "RIGHT", 4, 1)
+    end
+    showAllText:SetText(L["Show all zone quests"])
+    showAll:SetScript("OnClick", function(self)
+        showAllZoneQuests = self:GetChecked() and true or false
+        RefreshRows()
+    end)
+    showAll:SetScript("OnEnter", function(self)
+        if not GameTooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Show all zone quests"], 1, 0.82, 0)
+        GameTooltip:AddLine(
+            L["Lists every Loremaster quest assigned to the zone, including quests in your log, chain-locked quests, and quests that start in other zones."],
+            1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showAll:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    showAll:Hide()
+    panel.showAll = showAll
+
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", PADDING, -176)
     scroll:SetPoint("BOTTOMRIGHT", -44, 54)
@@ -1866,6 +2008,8 @@ ns.QuestFinder = {
     FilterEntries = FilterEntries,
     ZoneProgress = ZoneProgress,
     ZoneQuestProgress = ZoneQuestProgress,
+    ZoneQuestIDs = ZoneQuestIDs,
+    ZoneQuestEntries = ZoneQuestEntries,
     ResetPosition = function()
         if frame then
             frame:ClearAllPoints()
