@@ -420,7 +420,7 @@ func TestGeneratedDatabaseMatchesReportAndStableContracts(t *testing.T) {
 		t.Fatal("generation produced no turn-in targets")
 	}
 	for questID, pattern := range map[string]string{
-		"754":   `\[754\] = \{ mapID=1412, x=47\.52, y=63\.58`,
+		"754":   `\[754\] = \{ zone=1412, mapID=1412, x=47\.52, y=63\.58`,
 		"8673":  `\[8673\] = \{[^\n]*isYearly=true`,
 		"17":    `\[17\] = \{[^\n]*isInstanceQuest=true`,
 		"96102": `\[96102\] = \{[^\n]*requireSkill=197`,
