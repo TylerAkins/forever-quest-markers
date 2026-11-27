@@ -6946,6 +6946,21 @@ cases["quest_item_runtime.ignores_missing_items_and_quests"] = function()
     assert(ns.UseTrackedQuestItem() == false, "no selected quest is a quiet false")
 end
 
+cases["eligibility_runtime.dungeon_chain_quests_count_as_instance_quests"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.DungeonChains = {
+        quests = {
+            [65] = { dungeons = { "The Deadmines" }, chains = {} },
+        },
+    }
+    assert(ns.IsInstanceQuest(65, {}) == true,
+        "a required pre-quest for a dungeon chain is a dungeon pin")
+    assert(ns.IsInstanceQuest(66, {}) == false,
+        "quests outside a dungeon chain keep the client tag")
+end
+
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")
 assert(cases[name], "unknown LuaJIT case: " .. name)()
 print("PASS " .. name)

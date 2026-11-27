@@ -847,10 +847,19 @@ function ns.IsInstanceQuest(questID, data)
     end
     local tagID, tagName = QuestTagInfo(questID)
     local correction = ns.QuestTagCorrections and ns.QuestTagCorrections[questID]
+    local chainQuest = ns.DungeonChains
+        and ns.DungeonChains.quests
+        and ns.DungeonChains.quests[questID] ~= nil
     local result
     if IsInstanceTag(tagID, tagName) then
         result = true
     elseif IsInstanceTag(correction, nil) then
+        result = true
+    elseif chainQuest then
+        -- ForeverDungeonJournal lists the required pre-quests for dungeon
+        -- chains. Those quests start outdoors but lead into the instance, so
+        -- they belong with the dungeon pins even when the client tags them as
+        -- ordinary quests.
         result = true
     elseif tagID ~= nil or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
         result = false
@@ -858,7 +867,8 @@ function ns.IsInstanceQuest(questID, data)
         data = data or (ns.Quests and ns.Quests[questID])
         result = data ~= nil and data.isInstanceQuest == true
     end
-    if tagID ~= nil or correction ~= nil or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
+    if tagID ~= nil or correction ~= nil or chainQuest
+        or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
         instanceQuestCache[questID] = result
     end
     return result

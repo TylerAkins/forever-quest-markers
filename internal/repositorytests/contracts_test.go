@@ -84,6 +84,30 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 	}
 }
 
+func TestDungeonChainDatabaseContract(t *testing.T) {
+	base := root(t)
+	source := read(t, base, "Database/DungeonChains.lua")
+	for _, header := range []string{
+		"-- AUTO-GENERATED FILE",
+		"-- DO NOT EDIT MANUALLY",
+		"-- Source: ForeverDungeonJournal",
+		"ns.DungeonChains = {",
+	} {
+		if !strings.Contains(source, header) {
+			t.Errorf("Database/DungeonChains.lua missing %q", header)
+		}
+	}
+	for _, contract := range []string{
+		`["The Deadmines"] = {`,
+		`[65] = { dungeons = { "The Deadmines" }, chains = { { dungeon = "The Deadmines", index = 1, total = 7, target = 166 }`,
+		`[166] = { dungeons = { "The Deadmines" }, chains = { { dungeon = "The Deadmines", index = 7, total = 7, target = 166 }`,
+	} {
+		if !strings.Contains(source, contract) {
+			t.Errorf("Database/DungeonChains.lua missing %q", contract)
+		}
+	}
+}
+
 func TestBookQuestListMatchesGeneratedDatabase(t *testing.T) {
 	base := root(t)
 	source := read(t, base, "Database/BookQuests.lua")

@@ -18,6 +18,7 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
 - Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker. Book icons have their own size slider and default to 75% of a quest pin.
+- Dungeon chain pre-quests use the dungeon pin color too. ForeverDungeonJournal's required chain data marks outdoor steps that unlock a dungeon quest, so they appear under **Show dungeon / raid quest pins** instead of hiding among normal yellow pins.
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
