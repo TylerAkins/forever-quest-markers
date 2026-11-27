@@ -377,7 +377,8 @@ local function Render()
 
     panel.progress:SetMinMaxValues(0, math.max(totalSteps, 1))
     panel.progress:SetValue(completedSteps)
-    panel.progress.label:SetText(("%d / %d"):format(completedSteps, totalSteps))
+    local unit = totalSteps == 1 and L["quest"] or L["quests"]
+    panel.progress.label:SetText(("%d / %d %s"):format(completedSteps, totalSteps, unit))
     panel.progress:SetShown(totalSteps > 0)
     panel.reset:SetEnabled(next(skipped) ~= nil)
 end
@@ -428,22 +429,26 @@ local function EnsureFrame()
     local panel = CreateFrame("Frame", "ForeverQuestPinsDungeonRoute", UIParent, "BackdropTemplate")
     panel:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
     local savedX, savedY = SavedPosition()
-    panel:SetPoint("CENTER", UIParent, "CENTER", savedX, savedY)
+    local finder = _G and _G["ForeverQuestPinsQuestFinder"]
+    if type(ns.db) == "table" and ns.db.dungeonRouteX ~= nil then
+        panel:SetPoint("CENTER", UIParent, "CENTER", savedX, savedY)
+    elseif finder and finder:IsShown() then
+        panel:SetPoint("TOPLEFT", finder, "TOPRIGHT", 16, 0)
+    else
+        panel:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    end
     panel:SetFrameStrata("DIALOG")
     panel:SetClampedToScreen(true)
     panel:SetMovable(true)
     panel:EnableMouse(true)
     panel:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
         tile = true, tileSize = 32, edgeSize = 32,
         insets = { left = 11, right = 12, top = 12, bottom = 11 },
     })
+    panel:SetBackdropColor(0.055, 0.045, 0.035, 1)
     panel:SetBackdropBorderColor(0.8, 0.61, 0.3, 1)
-    local background = panel:CreateTexture(nil, "BACKGROUND", nil, -8)
-    background:SetPoint("TOPLEFT", 12, -12)
-    background:SetPoint("BOTTOMRIGHT", -12, 12)
-    background:SetColorTexture(0.055, 0.045, 0.035, 1)
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", PADDING, -22)
