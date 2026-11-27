@@ -6261,8 +6261,17 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
             self.unregisteredEvents = self.unregisteredEvents or {}
             self.unregisteredEvents[event] = true
         end
-        function frame:SetPoint() end
-        function frame:ClearAllPoints() end
+        function frame:SetPoint(point, relativeTo, relativePoint, x, y)
+            self.points = self.points or {}
+            self.points[#self.points + 1] = {
+                point = point,
+                relativeTo = relativeTo,
+                relativePoint = relativePoint,
+                x = x,
+                y = y,
+            }
+        end
+        function frame:ClearAllPoints() self.points = {} end
         function frame:SetParent(parent) self.parent = parent end
         function frame:GetParent() return self.parent end
         function frame:SetHeight(height) self.height = height end
@@ -6511,10 +6520,11 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(QuestObjectiveTracker.shown == false)
     assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
         "the standalone module's context menu parent is its own container")
-    assert(secureDelegates == 1, "the tracker builds one secure quest-click delegate")
+    assert(secureDelegates >= 1, "the tracker builds secure delegates for quest clicks and module moves")
     assert(ns.trackerClickSecured == "delegate", "the client's secure delegate is used for quest clicks")
     assert(ourModule.OnBlockHeaderClick ~= QuestObjectiveTrackerMixin.OnBlockHeaderClick,
         "quest clicks run through a secure delegate rather than a tainted direct call")
+    secureClickCalls = 0
     ourModule.OnBlockHeaderClick(ourModule, {}, "LeftButton")
     assert(secureClickCalls == 1 and questClicks == 1,
         "the secure delegate still calls Blizzard's quest click handler")
@@ -6663,6 +6673,16 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     ourModule:UpdateScrollViewport()
     assert(ourModule.contentsHeight == 485, "short content fills the available height")
     assert(ourModule.ContentsFrame.height == 460, "the scroll viewport fills the available height")
+
+    ourModule.collapsed = true
+    ourModule.shown = true
+    standaloneTracker:Update()
+    local collapsedPoint = ProfessionsRecipeTracker.points[1]
+    assert(collapsedPoint and collapsedPoint.point == "TOPLEFT"
+        and collapsedPoint.relativeTo == ourModule
+        and collapsedPoint.y == -35,
+        "collapsed quests keep the professions header just below the quest header")
+    ourModule.collapsed = false
 
     local zoneInfos = {
         { zoneName = "Ashenvale", quest = { id = 102 } },

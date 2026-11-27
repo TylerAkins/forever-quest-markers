@@ -51,6 +51,63 @@ local function ModuleSpacing()
     return math.max(0, value)
 end
 
+-- The source tracker and its modules are protected Blizzard frames. Calling
+-- their container methods from addon code taints the source container's
+-- layout fields, and the next in-combat map open is refused. Run those calls
+-- through a secure delegate or secure call so the client keeps the layout
+-- secure.
+local function SecureCall(handler, ...)
+    if type(handler) ~= "function" then
+        return nil
+    end
+    if type(CreateSecureDelegate) == "function" then
+        local ok, delegate = pcall(CreateSecureDelegate, handler)
+        if ok and type(delegate) == "function" then
+            return delegate(...)
+        end
+        if type(securecallfunction) == "function" then
+            ok, delegate = pcall(securecallfunction, CreateSecureDelegate, handler)
+            if ok and type(delegate) == "function" then
+                return delegate(...)
+            end
+        end
+    end
+    if type(securecallfunction) == "function" then
+        return securecallfunction(handler, ...)
+    end
+    return handler(...)
+end
+
+local function RemoveModuleSecurely(container, module)
+    return SecureCall(function(target, value)
+        target:RemoveModule(value)
+    end, container, module)
+end
+
+local function AddModuleSecurely(container, module)
+    return SecureCall(function(target, value)
+        target:AddModule(value)
+    end, container, module)
+end
+
+local function SetModuleContainerSecurely(manager, module, container)
+    return SecureCall(function(target, value, destination)
+        target:SetModuleContainer(value, destination)
+    end, manager, module, container)
+end
+
+local function SetModuleMapSecurely(manager, module, container)
+    return SecureCall(function(target, value, destination)
+        target.moduleToContainerMap[value] = destination
+    end, manager, module, container)
+end
+
+local function SetContainerSecurely(module, container)
+    return SecureCall(function(target, destination)
+        target:SetContainer(destination)
+    end, module, container)
+end
+
 local trackerMixin
 local module
 local registered = false
@@ -185,14 +242,14 @@ local function CreateStandaloneContainer()
 
     function frame:AddModule(module)
         self.module = module
-        module:SetContainer(self)
+        SetContainerSecurely(module, self)
         self:MarkDirty()
     end
 
     function frame:SetProfessionsModule(professions)
         self.professionsModule = professions
         if professions and professions.SetContainer then
-            professions:SetContainer(self)
+            SetContainerSecurely(professions, self)
         end
         self:MarkDirty()
     end
@@ -279,8 +336,14 @@ local function CreateStandaloneContainer()
         if professions and professions:IsShown() then
             professions:ClearAllPoints()
             if quest and quest:IsShown() then
-                professions:SetPoint("TOPLEFT", quest, "BOTTOMLEFT", 0, -spacing)
-                professions:SetPoint("TOPRIGHT", quest, "BOTTOMRIGHT", 0, -spacing)
+                if quest.IsCollapsed and quest:IsCollapsed() then
+                    local headerHeight = quest.headerHeight or 0
+                    professions:SetPoint("TOPLEFT", quest, "TOPLEFT", 0, -headerHeight - spacing)
+                    professions:SetPoint("TOPRIGHT", quest, "TOPRIGHT", 0, -headerHeight - spacing)
+                else
+                    professions:SetPoint("TOPLEFT", quest, "BOTTOMLEFT", 0, -spacing)
+                    professions:SetPoint("TOPRIGHT", quest, "BOTTOMRIGHT", 0, -spacing)
+                end
             else
                 professions:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
                 professions:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
@@ -337,9 +400,9 @@ local function MoveProfessionsModule(container)
             and ObjectiveTrackerFrame:HasModule(professions)) then
         return false
     end
-    ObjectiveTrackerFrame:RemoveModule(professions)
+    RemoveModuleSecurely(ObjectiveTrackerFrame, professions)
     if ObjectiveTrackerManager and ObjectiveTrackerManager.moduleToContainerMap then
-        ObjectiveTrackerManager.moduleToContainerMap[professions] = container
+        SetModuleMapSecurely(ObjectiveTrackerManager, professions, container)
     end
     container:SetProfessionsModule(professions)
     return true
@@ -353,10 +416,10 @@ local function RestoreProfessionsModule()
     end
     container:ClearProfessionsModule()
     if ObjectiveTrackerManager and ObjectiveTrackerManager.moduleToContainerMap then
-        ObjectiveTrackerManager.moduleToContainerMap[professions] = ObjectiveTrackerFrame
+        SetModuleMapSecurely(ObjectiveTrackerManager, professions, ObjectiveTrackerFrame)
     end
     if ObjectiveTrackerFrame and type(ObjectiveTrackerFrame.AddModule) == "function" then
-        ObjectiveTrackerFrame:AddModule(professions)
+        AddModuleSecurely(ObjectiveTrackerFrame, professions)
     end
     return true
 end
@@ -1425,7 +1488,7 @@ local function AddTrackerModule()
         return false
     end
     module.uiOrder = (QuestObjectiveTracker and QuestObjectiveTracker.uiOrder) or 4
-    ObjectiveTrackerFrame:RemoveModule(QuestObjectiveTracker)
+    RemoveModuleSecurely(ObjectiveTrackerFrame, QuestObjectiveTracker)
     if QuestObjectiveTracker.Hide then
         QuestObjectiveTracker:Hide()
     end
@@ -1465,7 +1528,7 @@ local function RemoveTrackerModule()
     end
     module:Hide()
     UnregisterModuleEvents()
-    ObjectiveTrackerManager:SetModuleContainer(QuestObjectiveTracker, ObjectiveTrackerFrame)
+    SetModuleContainerSecurely(ObjectiveTrackerManager, QuestObjectiveTracker, ObjectiveTrackerFrame)
     if blizzardEventsSuspended and type(QuestObjectiveTracker.events) == "table" then
         blizzardEventsSuspended = false
         for i = 1, #QuestObjectiveTracker.events do

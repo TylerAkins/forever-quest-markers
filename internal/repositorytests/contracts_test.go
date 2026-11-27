@@ -147,7 +147,8 @@ func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 	}
 	tracker := read(t, base, "Tracker.lua")
 	for _, contract := range []string{
-		"ObjectiveTrackerManager:SetModuleContainer",
+		"SetModuleContainerSecurely",
+		"target:SetModuleContainer",
 		"InputUtil.IsGamepadUIEnabled",
 		"InputUtil.RegisterForInterfaceTransitions",
 		"C_XMLUtil.GetTemplateInfo",
