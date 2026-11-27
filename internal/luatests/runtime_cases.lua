@@ -7791,6 +7791,34 @@ cases["dungeon_route_runtime.no_guide_route"] = function()
     assert(#route.steps == 0 and route.total == 0)
 end
 
+cases["dungeon_route_runtime.handles_inside_steps_without_locations"] = function()
+    ns = {}
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function(questID) return questID == 100 end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.GetQuestTitle = function(questID) return "Quest " .. questID end
+    ns.DungeonRoutes = {
+        ["Test Dungeon"] = {
+            steps = {
+                { type = "accept", quest = 100, npc = "n1" },
+                { type = "do", quest = 100 },
+                { type = "do", quest = 101, targets = { "missing" } },
+                { type = "turnin", quest = 100, npc = "n1" },
+            },
+            npcs = {
+                n1 = { id = 1, name = "Giver", map = 1428, x = 50, y = 50 },
+            },
+            titles = {},
+        },
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+    local route = ns.QuestRoute.Build("Test Dungeon", {})
+    assert(route.steps[1].action == "do" and route.steps[1].data == nil)
+    assert(route.steps[2].action == "do" and route.steps[2].data == nil)
+    assert(route.steps[3].action == "turnin" and route.steps[3].mapID == 1428)
+end
+
 cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
     ns = {}
     C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
