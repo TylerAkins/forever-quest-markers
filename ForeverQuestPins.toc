@@ -15,7 +15,6 @@
 ## OptionalDeps: TomTom, Spoken, Spoken_Quests
 ## DefaultState: enabled
 
-Bindings.xml
 Database\Metadata.lua
 Database\ForeverQuests.lua
 Database\QuestTagCorrections.lua

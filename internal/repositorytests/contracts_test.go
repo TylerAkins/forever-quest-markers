@@ -42,7 +42,6 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\EventPolicy.lua`,
 		`Database\DungeonChains.lua`,
 		`Database\BookQuests.lua`,
-		"Bindings.xml",
 		"MinimapButton.lua",
 		"QuestFinder.lua",
 		"Events.lua",
@@ -51,6 +50,12 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		if !strings.Contains(toc, required) {
 			t.Errorf("TOC missing %q", required)
 		}
+	}
+	if _, err := os.Stat(filepath.Join(base, "Bindings.xml")); err != nil {
+		t.Errorf("Bindings.xml is missing: %v", err)
+	}
+	if strings.Contains(toc, "Bindings.xml") {
+		t.Error("Bindings.xml is loaded automatically and must not be listed in the TOC")
 	}
 	if _, err := os.Stat(filepath.Join(base, "Media/QuestBook.tga")); err != nil {
 		t.Errorf("book pin texture is missing: %v", err)
