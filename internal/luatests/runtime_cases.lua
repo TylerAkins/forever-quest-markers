@@ -7973,6 +7973,7 @@ cases["dungeon_route_runtime.brd_guide_data_is_present"] = function()
     assert(route, "Blackrock Depths guide data is missing")
     assert(#route.steps == 176, "the BRD guide step count changed")
     assert(route.npcs.n9536 and route.npcs.n9536.name == "Maxwort Uberglint")
+    assert(route.npcs.n8479 and route.npcs.n8479.name == "Velarok Windblade")
     local quests = {}
     assert(loadfile("Database/ForeverQuests.lua"))("ForeverQuestPins", quests)
     assert(quests.Quests[4123].title == "The Heart of the Mountain")

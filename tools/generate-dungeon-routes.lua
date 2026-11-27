@@ -136,6 +136,11 @@ local ROUTE_TEXT = {
     [4362] = "Rescue Princess Moira Bronzebeard in Blackrock Depths.",
 }
 
+-- Client names that differ from the source guide.
+local NPC_NAME_CORRECTIONS = {
+    [8479] = "Velarok Windblade",
+}
+
 local function FirstTargetName(step, npcs)
     for _, key in ipairs(step.targets or {}) do
         local npc = npcs[key]
@@ -304,7 +309,7 @@ for _, target in ipairs(SortedKeys(routes)) do
         if npc then
             local parts = {
                 "id = " .. Quote(npc.id),
-                "name = " .. Quote(npc.name),
+                "name = " .. Quote(NPC_NAME_CORRECTIONS[npc.id] or npc.name),
             }
             if npc.map then
                 parts[#parts + 1] = "map = " .. Quote(npc.map)

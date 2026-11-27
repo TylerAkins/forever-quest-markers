@@ -428,7 +428,7 @@ ns.DungeonRoutes = {
             n741 = { id = 741, name = "Dreaming Whelp", map = 1435, x = 14.5, y = 64.2 },
             n8281 = { id = 8281, name = "Scald", map = 1427, x = 51.1, y = 46.8 },
             n8419 = { id = 8419, name = "Twilight Idolater", map = 1427, x = 29.1, y = 26.7 },
-            n8479 = { id = 8479, name = "Kalaran Windblade", map = 1427, x = 39.1, y = 39 },
+            n8479 = { id = 8479, name = "Velarok Windblade", map = 1427, x = 39.1, y = 39 },
             n8509 = { id = 8509, name = "Squire Maltrake", map = 1427, x = 39.2, y = 39 },
             n8879 = { id = 8879, name = "Royal Historian Archesonus", map = 1455, x = 38.4, y = 55.3 },
             n8888 = { id = 8888, name = "Franclorn Forgewright" },

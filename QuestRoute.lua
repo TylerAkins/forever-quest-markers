@@ -298,20 +298,46 @@ local function GuideStepAllowed(step, playerFaction)
 end
 
 local function GuideLocation(route, step)
-    if step.map and step.x and step.y then
-        return step.map, step.x, step.y, nil
+    local function targetFor(key)
+        return key and route.npcs and route.npcs[key] or nil
     end
-    local npc = step.npc and route.npcs and route.npcs[step.npc]
+    if step.map and step.x and step.y then
+        local npc = targetFor(step.npc)
+        if npc then
+            return step.map, step.x, step.y, npc.name, npc.id
+        end
+        for _, targetKey in ipairs(step.targets or {}) do
+            local target = targetFor(targetKey)
+            if target then
+                return step.map, step.x, step.y, target.name, target.id
+            end
+        end
+        return step.map, step.x, step.y, nil, nil
+    end
+    local npc = targetFor(step.npc)
     if npc and npc.map and npc.x and npc.y then
-        return npc.map, npc.x, npc.y, npc.name
+        return npc.map, npc.x, npc.y, npc.name, npc.id
     end
     for _, targetKey in ipairs(step.targets or {}) do
-        local target = route.npcs and route.npcs[targetKey]
+        local target = targetFor(targetKey)
         if target and target.map and target.x and target.y then
-            return target.map, target.x, target.y, target.name
+            return target.map, target.x, target.y, target.name, target.id
         end
     end
     return nil
+end
+
+local function DisplayLocationName(step)
+    if not step then
+        return nil
+    end
+    if step.locationNPCID and ns.GetNPCName then
+        local name = ns.GetNPCName(step.locationNPCID)
+        if name and name ~= "" then
+            return name
+        end
+    end
+    return step.locationName
 end
 
 local function BuildDungeonGuide(dungeonName, skipSet)
@@ -339,7 +365,8 @@ local function BuildDungeonGuide(dungeonName, skipSet)
                 targetKeys = raw.targets,
                 guide = true,
             }
-            step.mapID, step.x, step.y, step.locationName = GuideLocation(route, raw)
+            step.mapID, step.x, step.y, step.locationName, step.locationNPCID =
+                GuideLocation(route, raw)
             step.locationMapID, step.locationX, step.locationY = step.mapID, step.x, step.y
             step.data = step.mapID and {
                 mapID = step.mapID, x = step.x, y = step.y,
@@ -613,11 +640,12 @@ local function Render()
         action:SetTextColor(color[1], color[2], color[3])
         panel.quest:SetText(step.title)
         panel.quest:SetTextColor(1, 0.82, 0)
+        local locationName = DisplayLocationName(step)
         if step.guide and step.action == "do" then
             panel.location:SetText(step.text or L["Complete the quest objective."])
         elseif step.locationMapID then
             SetLocationMapName(panel, step.action, step.locationMapID,
-                step.locationX, step.locationY, step.locationName)
+                step.locationX, step.locationY, locationName)
         elseif step.text then
             panel.location:SetText(step.text)
         elseif step.action == "accept" then
@@ -796,8 +824,9 @@ local function EnsureFrame()
         if step and step.text then
             GameTooltip:AddLine(step.text, 1, 1, 1, true)
         end
-        if step and step.locationName then
-            GameTooltip:AddLine(step.locationName, 0.8, 0.8, 0.8)
+        local locationName = DisplayLocationName(step)
+        if locationName then
+            GameTooltip:AddLine(locationName, 0.8, 0.8, 0.8)
         end
         GameTooltip:Show()
     end)
