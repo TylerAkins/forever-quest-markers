@@ -514,18 +514,25 @@ func TestLuaFilesAndDocumentationDescribeGoTooling(t *testing.T) {
 	}
 }
 
-func TestMapCodeAvoidsTaintingBlizzardsMapExecution(t *testing.T) {
+func TestMapFiltersUseBlizzardsTrackingMenu(t *testing.T) {
 	base := root(t)
 	mapPins := read(t, base, "MapPins.lua")
 	if strings.Contains(mapPins, "hooksecurefunc(WorldMapFrame") {
 		t.Fatal("MapPins.lua must not post-hook WorldMapFrame: the rest of Blizzard's map-open execution inherits the addon's taint")
 	}
 	config := read(t, base, "Config.lua")
-	if strings.Contains(config, `"MENU_WORLD_MAP_TRACKING"`) || strings.Contains(config, "Menu.ModifyMenu(") {
-		t.Fatal("Config.lua must not modify MENU_WORLD_MAP_TRACKING: the world map regenerates that menu from OnShow, so an addon callback taints the map-open execution")
+	for _, contract := range []string{
+		"function ns.TryRegisterWorldMapDropdown()",
+		`Menu.ModifyMenu`,
+		`"MENU_WORLD_MAP_TRACKING"`,
+		`"showBooks"`,
+	} {
+		if !strings.Contains(config, contract) {
+			t.Errorf("Config.lua missing map menu contract %q", contract)
+		}
 	}
-	if strings.Contains(config, "MenuUtil.CreateContextMenu") {
-		t.Fatal("Config.lua must not open a game menu over the map: the map reads the frame under the pointer, so addon menu entries taint it")
+	if strings.Contains(config, "EnsureWorldMapFilterButton") {
+		t.Fatal("Config.lua must not add a second filter button over the map")
 	}
 }
 

@@ -426,75 +426,50 @@ end
             assert(ns.IsQuestAvailable(101, { classes = { 1 }, requireSkill = 164 }))
 
 end
-cases["pin_filters_runtime.map_filter_button_builds_its_own_menu"] = function()
+cases["pin_filters_runtime.map_filters_register_with_blizzard_tracking_menu"] = function()
     ns = {}
     print = function() end
-    WorldMapFrame = {
-        GetFrameStrata = function() return "FULLSCREEN_DIALOG" end,
-        GetFrameLevel = function() return 1 end,
-        GetCanvasContainer = function() return nil end,
+    local registered
+    Menu = {
+        ModifyMenu = function(menu, callback)
+            registered = { menu = menu, callback = callback }
+        end,
     }
-    local frames = {}
-    local function region()
-        return {
-            SetAllPoints = function() end,
-            SetSize = function() end,
-            SetPoint = function() end,
-            SetColorTexture = function() end,
-            SetAtlas = function() end,
-            SetTexture = function() end,
-            SetText = function() end,
-            SetTextColor = function() end,
-            SetShown = function(self, value) self.shown = value and true or false end,
-        }
-    end
-    CreateFrame = function(kind, name, parent)
-        local frame = { kind = kind, name = name, parent = parent, scripts = {}, shown = true }
-        frame.SetSize = function() end
-        frame.SetPoint = function() end
-        frame.ClearAllPoints = function() end
-        frame.SetClampedToScreen = function() end
-        frame.SetFrameStrata = function() end
-        frame.SetFrameLevel = function() end
-        frame.EnableMouse = function() end
-        frame.CreateTexture = function() return region() end
-        frame.CreateFontString = function() return region() end
-        frame.SetScript = function(self, event, callback) self.scripts[event] = callback end
-        frame.Show = function(self) self.shown = true end
-        frame.Hide = function(self) self.shown = false end
-        frame.SetShown = function(self, value) self.shown = value and true or false end
-        frame.IsShown = function(self) return self.shown end
-        frame.SetChecked = function(self, value) self.checked = value and true or false end
-        frame.GetChecked = function(self) return self.checked end
-        frame.Enable = function(self) self.enabled = true end
-        frame.Disable = function(self) self.enabled = false end
-        frames[#frames + 1] = frame
-        return frame
-    end
+    MenuUtil = {
+        CreateCheckbox = function(label, getter, setter)
+            return {
+                label = label,
+                getter = getter,
+                setter = setter,
+                SetEnabled = function() end,
+            }
+        end,
+    }
     assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
-    assert(ns.EnsureWorldMapFilterButton)
-    ns.EnsureWorldMapFilterButton()
-    local button
-    for _, frame in ipairs(frames) do
-        if frame.kind == "Button" then button = frame end
-    end
-    assert(button and button.scripts.OnClick, "the map filter button must exist")
+    ns.GetOption = function(key) return key ~= "showPvP" end
+    ns.SetOption = function() end
+    assert(ns.TryRegisterWorldMapDropdown())
+    assert(registered and registered.menu == "MENU_WORLD_MAP_TRACKING",
+        "pin filters must live in Blizzard's world map tracking menu")
 
-    button.scripts.OnClick(button)
-    local list
-    for _, frame in ipairs(frames) do
-        if frame.name == "ForeverQuestPinsMapFilterList" then list = frame end
+    local inserted = {}
+    local root = {
+        CreateDivider = function() end,
+        CreateTitle = function() end,
+        Insert = function(_, button) inserted[#inserted + 1] = button end,
+    }
+    registered.callback(nil, root)
+    assert(#inserted == 14, "the menu keeps the full filter set")
+    local labels = {}
+    for i = 1, #inserted do labels[inserted[i].label] = true end
+    for _, label in ipairs({
+        "Quest start",
+        "Dungeon / raid quest",
+        "Collectible book quest",
+        "Click pins to track quest starts",
+    }) do
+        assert(labels[label], "missing filter: " .. label)
     end
-    assert(list, "clicking the button must build the addon's own list")
-    assert(list.shown == true, "the list opens on click")
-    local rows = 0
-    for _, frame in ipairs(frames) do
-        if frame.kind == "CheckButton" then rows = rows + 1 end
-    end
-    assert(rows == 14, "the list keeps the full filter set")
-
-    button.scripts.OnClick(button)
-    assert(list.shown == false, "clicking the button again closes the list")
 end
 
 cases["pin_filters_runtime.test_options_category_controls_disable_without_losing_selections"] = function()

@@ -84,6 +84,7 @@ local pinCategoryOptions = {
 local MIRROR_CVAR = "ForeverQuestPinsSettings"
 local TRIVIAL_GAP_MIN, TRIVIAL_GAP_MAX = 3, 15
 local HIGH_LEVEL_GAP_MIN, HIGH_LEVEL_GAP_MAX = 3, 15
+local worldMapDropdownHooked = false
 
 local AUTO_ACCEPT_OFFSET_MIN, AUTO_ACCEPT_OFFSET_MAX = -10, 5
 
@@ -726,13 +727,9 @@ function ns.SetOption(key, value)
     end
 end
 
--- The game's menus spread addon taint into the map: the map reads the frame
--- under the pointer every frame, so menu entries made by an addon taint the
--- map's own code. Leatrix Maps reaches the same conclusion and uses its own
--- pop-up lists for everything shown over the map. The filters use frames of the
--- addon's own for the same reason. Never register Menu.ModifyMenu for
--- MENU_WORLD_MAP_TRACKING either; the map regenerates that menu from OnShow
--- inside the map-open execution.
+-- The map's own tracking menu is the one place players already look for
+-- filter options. Register the addon's filters there instead of drawing a
+-- second button and list over the map.
 local WORLD_MAP_FILTERS = {
     { "enabled", L["Quest start"] },
     { "showWorldMapPins", L["World and continent quest pins"] },
@@ -749,184 +746,39 @@ local WORLD_MAP_FILTERS = {
     { "showBooks", L["Collectible book quest"] },
     { "enablePinTracking", L["Click pins to track quest starts"] },
 }
-local worldMapFilterButton
-local worldMapFilterList
-local WORLD_MAP_FILTER_ROW = 20
-local WORLD_MAP_FILTER_CHECK = 16
 
-local function BuildWorldMapFilterList()
-    local created, list = pcall(CreateFrame, "Frame", "ForeverQuestPinsMapFilterList", WorldMapFrame, "BackdropTemplate")
-    if not created or not list then
-        list = CreateFrame("Frame", "ForeverQuestPinsMapFilterList", WorldMapFrame)
+function ns.TryRegisterWorldMapDropdown()
+    if worldMapDropdownHooked then
+        return true
     end
-    list:SetSize(240, 36 + #WORLD_MAP_FILTERS * WORLD_MAP_FILTER_ROW)
-    list:SetClampedToScreen(true)
-    local strata = WorldMapFrame.GetFrameStrata and WorldMapFrame:GetFrameStrata()
-    list:SetFrameStrata(strata or "DIALOG")
-    list:SetFrameLevel((WorldMapFrame:GetFrameLevel() or 0) + 200)
-    list:EnableMouse(true)
-    if list.SetBackdrop then
-        list:SetBackdrop({
-            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile = true, tileSize = 16, edgeSize = 16,
-            insets = { left = 4, right = 4, top = 4, bottom = 4 },
-        })
-        list:SetBackdropColor(0, 0, 0, 0.92)
-        list:SetBackdropBorderColor(0.8, 0.65, 0.3, 1)
-    else
-        local background = list:CreateTexture(nil, "BACKGROUND")
-        background:SetAllPoints()
-        background:SetColorTexture(0, 0, 0, 0.92)
+    if not MenuUtil
+        or type(MenuUtil.CreateCheckbox) ~= "function"
+        or not Menu
+        or type(Menu.ModifyMenu) ~= "function" then
+        return false
     end
-    local title = list:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    title:SetPoint("TOPLEFT", 12, -10)
-    title:SetText("Forever Quest Pins")
-    title:SetTextColor(1, 0.82, 0)
-    local close = CreateFrame("Button", nil, list)
-    close:SetSize(18, 18)
-    close:SetPoint("TOPRIGHT", -8, -8)
-    local closeText = close:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    closeText:SetAllPoints()
-    closeText:SetText("x")
-    close:SetScript("OnClick", function()
-        list:Hide()
-    end)
-    local rows = {}
-    for i, filter in ipairs(WORLD_MAP_FILTERS) do
-        local key, text = filter[1], filter[2]
-        local ok, row = pcall(CreateFrame, "CheckButton", nil, list, "UICheckButtonTemplate")
-        if not ok or not row then
-            row = CreateFrame("CheckButton", nil, list)
-        end
-        -- UICheckButtonTemplate anchors its text to the button's right edge
-        -- and stretches its art to the button's size. Keep the button at the
-        -- size of the check mark and place the text next to it.
-        row:SetSize(WORLD_MAP_FILTER_CHECK, WORLD_MAP_FILTER_CHECK)
-        row:SetPoint("TOPLEFT", 8, -26 - (i - 1) * WORLD_MAP_FILTER_ROW)
-        if row.GetNormalTexture then
-            local textures = {
-                row:GetNormalTexture(),
-                row:GetPushedTexture(),
-                row:GetHighlightTexture(),
-                row:GetCheckedTexture(),
-                row:GetDisabledCheckedTexture(),
-            }
-            for _, texture in ipairs(textures) do
-                if texture then
-                    texture:ClearAllPoints()
-                    texture:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
-                    texture:SetSize(WORLD_MAP_FILTER_CHECK, WORLD_MAP_FILTER_CHECK)
-                end
+
+    local ok = pcall(Menu.ModifyMenu, "MENU_WORLD_MAP_TRACKING", function(_, rootDescription)
+        rootDescription:CreateDivider()
+        rootDescription:CreateTitle("Forever Quest Pins")
+        for _, filter in ipairs(WORLD_MAP_FILTERS) do
+            local key = filter[1]
+            local button = MenuUtil.CreateCheckbox(filter[2], function()
+                return ns.GetOption(key)
+            end, function()
+                ns.SetOption(key, not ns.GetOption(key))
+            end)
+            if pinCategoryOptions[key] then
+                button:SetEnabled(function() return ns.GetOption("enabled") end)
             end
-        end
-        local label = row.Text
-        if label then
-            label:ClearAllPoints()
-            label:SetPoint("LEFT", row, "RIGHT", 4, 0)
-        else
-            label = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-            label:SetPoint("LEFT", row, "RIGHT", 4, 0)
-        end
-        label:SetText(text)
-        local highlight = row:CreateTexture(nil, "HIGHLIGHT")
-        highlight:SetAllPoints()
-        highlight:SetColorTexture(1, 1, 1, 0.06)
-        row.optionKey = key
-        row.label = label
-        row:SetScript("OnClick", function(self)
-            if pinCategoryOptions[key] and not ns.GetOption("enabled") then
-                return
-            end
-            ns.SetOption(key, not ns.GetOption(key))
-            list:Refresh()
-        end)
-        rows[#rows + 1] = row
-    end
-    function list:Refresh()
-        for _, row in ipairs(rows) do
-            local on = ns.GetOption(row.optionKey) and true or false
-            row:SetChecked(on)
-            if pinCategoryOptions[row.optionKey] and not ns.GetOption("enabled") then
-                row:Disable()
-                row.label:SetTextColor(0.45, 0.45, 0.45)
-            else
-                row:Enable()
-                row.label:SetTextColor(1, 0.92, 0.75)
-            end
-        end
-    end
-    list:Hide()
-    return list
-end
-
-local function PositionWorldMapFilterButton()
-    local button = worldMapFilterButton
-    if not button or not WorldMapFrame then
-        return
-    end
-    local anchor = WorldMapFrame
-    if type(WorldMapFrame.GetCanvasContainer) == "function" then
-        local ok, container = pcall(WorldMapFrame.GetCanvasContainer, WorldMapFrame)
-        if ok and container then
-            anchor = container
-        end
-    end
-    button:ClearAllPoints()
-    button:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", -40, -4)
-end
-
-function ns.EnsureWorldMapFilterButton()
-    if worldMapFilterButton or not WorldMapFrame then
-        return
-    end
-    local ok, button = pcall(CreateFrame, "Button", "ForeverQuestPinsMapFilterButton", WorldMapFrame)
-    if not ok or not button then
-        return
-    end
-    button:SetSize(24, 24)
-    -- Match the map frame's strata. Forcing HIGH pulled frames behind the map
-    -- art on Forever, which is why the pins stay on the canvas strata.
-    local strata = WorldMapFrame.GetFrameStrata and WorldMapFrame:GetFrameStrata()
-    button:SetFrameStrata(strata or "HIGH")
-    button:SetFrameLevel((WorldMapFrame:GetFrameLevel() or 0) + 100)
-    local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints()
-    if not pcall(icon.SetAtlas, icon, "Map-Filter-Button") then
-        icon:SetTexture("Interface\\ICONS\\INV_Misc_Spyglass_03")
-    end
-    button:SetScript("OnClick", function(self)
-        if not worldMapFilterList then
-            worldMapFilterList = BuildWorldMapFilterList()
-        end
-        worldMapFilterList:ClearAllPoints()
-        worldMapFilterList:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -2)
-        if worldMapFilterList:IsShown() then
-            worldMapFilterList:Hide()
-        else
-            worldMapFilterList:Refresh()
-            worldMapFilterList:Show()
+            rootDescription:Insert(button)
         end
     end)
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Forever Quest Pins")
-        GameTooltip:AddLine(L["Pin filters"], 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    button:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-    worldMapFilterButton = button
-    PositionWorldMapFilterButton()
-end
-
-function ns.RefreshWorldMapFilterButton()
-    if not worldMapFilterButton then
-        ns.EnsureWorldMapFilterButton()
-        return
+    if not ok then
+        return false
     end
-    PositionWorldMapFilterButton()
+    worldMapDropdownHooked = true
+    return true
 end
 
 local function Print(message)

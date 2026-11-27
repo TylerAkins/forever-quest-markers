@@ -2290,9 +2290,6 @@ end
 local function OnDisplayStateChanged()
     InvalidateCanvas()
     HideSpawnCloud()
-    if ns.RefreshWorldMapFilterButton then
-        ns.RefreshWorldMapFilterButton()
-    end
     local viewedMapID = ns.GetViewedMapID()
     if MapPins:IsRefreshingOtherMap(viewedMapID) then
         MapPins:CancelPendingRefresh()
@@ -2317,10 +2314,6 @@ local function OnMapOpen()
     lastCanvasScale = CurrentCanvasScale()
     ResetSizeSnapshots()
     InvalidateCanvas()
-    if ns.EnsureWorldMapFilterButton then
-        ns.EnsureWorldMapFilterButton()
-        ns.RefreshWorldMapFilterButton()
-    end
     ns.RequestRefresh("map-show")
     if C_Timer and C_Timer.After then
         C_Timer.After(0, function()
