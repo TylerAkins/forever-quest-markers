@@ -7770,9 +7770,9 @@ cases["dungeon_route_runtime.orders_shared_chains_and_filters_faction"] = functi
             },
         },
     }
-    assert(loadfile("DungeonRoute.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
 
-    local route = ns.DungeonRoute.Build("Test Dungeon", {})
+    local route = ns.QuestRoute.Build("Test Dungeon", {})
     assert(route.total == 5, "shared chain steps count once and opposite-faction quests are excluded")
     assert(#route.steps == 5)
     local order = {}
@@ -7784,14 +7784,14 @@ cases["dungeon_route_runtime.orders_shared_chains_and_filters_faction"] = functi
 
     ns.IsOnQuest = function(questID) return questID == 301 end
     ns.IsQuestReadyForTurnIn = function(questID) return questID == 301 end
-    route = ns.DungeonRoute.Build("Test Dungeon", {})
+    route = ns.QuestRoute.Build("Test Dungeon", {})
     assert(route.steps[1].action == "turnin", "an on-log ready quest is a turn-in step")
     assert(route.steps[2].action == "accept", "the next quest is still an accept step")
     assert(route.steps[1].locationMapID == 2, "objective and turn-in points follow the client waypoint")
 
     ns.IsOnQuest = function(questID) return questID == 301 end
     ns.IsQuestReadyForTurnIn = function() return false end
-    route = ns.DungeonRoute.Build("Test Dungeon", {})
+    route = ns.QuestRoute.Build("Test Dungeon", {})
     assert(route.steps[1].id == 301 and route.steps[1].action == "complete",
         "an on-log quest without a completed objective is a complete step")
 end
@@ -7834,19 +7834,75 @@ cases["dungeon_route_runtime.skips_completed_and_manual_steps"] = function()
             },
         },
     }
-    assert(loadfile("DungeonRoute.lua"))("ForeverQuestPins", ns)
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
 
-    local route = ns.DungeonRoute.Build("Test Dungeon", {})
+    local route = ns.QuestRoute.Build("Test Dungeon", {})
     assert(route.total == 4 and route.completed == 1)
     for i = 1, #route.steps do
         assert(route.steps[i].id ~= 302, "a completed chain step leaves the route")
     end
 
-    route = ns.DungeonRoute.Build("Test Dungeon", { [301] = true })
+    route = ns.QuestRoute.Build("Test Dungeon", { [301] = true })
     assert(#route.steps == 2, "a skipped step leaves the route")
     for i = 1, #route.steps do
         assert(route.steps[i].id ~= 301, "the skipped step stays out")
     end
+end
+
+cases["zone_route_runtime.orders_zone_quests_by_source_prerequisites"] = function()
+    ns = {}
+    C_QuestLog = { GetAllCompletedQuestIDs = function() return {} end }
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+
+    local completed = {}
+    ns.IsQuestFlaggedCompleted = function(questID) return completed[questID] or false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestReadyForTurnIn = function() return false end
+    ns.IsQuestAcceptable = function() return true end
+    ns.Quests = {
+        [400] = { mapID = 1, x = 10, y = 10, title = "Root", minLevel = 10 },
+        [401] = {
+            mapID = 1, x = 20, y = 20, title = "Second", minLevel = 12,
+            sourceQuestSingle = { 400 }, sourceQuestNumRequired = 1,
+        },
+        [402] = {
+            mapID = 1, x = 30, y = 30, title = "Third", minLevel = 14,
+            sourceQuestGroup = { 400, 401 },
+        },
+        [403] = {
+            mapID = 1, x = 40, y = 40, title = "Alternative", minLevel = 11,
+        },
+        [404] = {
+            mapID = 1, x = 50, y = 50, title = "Either One", minLevel = 13,
+            sourceQuestSingle = { 400, 403 }, sourceQuestNumRequired = 1,
+        },
+    }
+    ns.QuestFinder = {
+        ZoneQuestIDs = function() return { 402, 404, 403, 401, 400 } end,
+    }
+    assert(loadfile("QuestRoute.lua"))("ForeverQuestPins", ns)
+
+    local route = ns.QuestRoute.BuildZone(1, {})
+    assert(route.total == 5)
+    local order = {}
+    for i = 1, #route.steps do
+        order[i] = route.steps[i].id
+    end
+    assert(table.concat(order, ",") == "400,403,404,401,402",
+        "AND prerequisites add depth and OR prerequisites do not require every alternative")
+
+    completed[400] = true
+    route = ns.QuestRoute.BuildZone(1, {})
+    assert(route.total == 5 and route.completed == 1)
+    order = {}
+    for i = 1, #route.steps do
+        order[i] = route.steps[i].id
+    end
+    assert(table.concat(order, ",") == "403,401,404,402",
+        "a completed prerequisite leaves the route and stops gating its dependents")
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

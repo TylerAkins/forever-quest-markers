@@ -47,6 +47,6 @@ TrackerData.lua
 Tracker.lua
 MinimapButton.lua
 QuestFinder.lua
-DungeonRoute.lua
+QuestRoute.lua
 Core.lua
 SpokenTracker.lua

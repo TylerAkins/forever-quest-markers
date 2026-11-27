@@ -1,19 +1,21 @@
 local ADDON_NAME, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
-ns.DungeonRoute = ns.DungeonRoute or {}
+ns.QuestRoute = ns.QuestRoute or {}
 
--- A small, always-re-evaluated route through one dungeon's quest chains.
--- The journal gives us the required order and start locations. Objective and
--- turn-in locations come from the client once a quest is in the log, so the
--- modal follows the quest tracker instead of guessing those points.
+-- A small, always-re-evaluated route through one zone or dungeon.
+-- Quest prerequisites and the journal give us the required order and start
+-- locations. Objective and turn-in locations come from the client once a
+-- quest is in the log, so the modal follows the tracker instead of guessing.
 
 local FRAME_WIDTH = 440
 local FRAME_HEIGHT = 260
 local PADDING = 24
 
 local frame
-local currentDungeon
+local currentKind
+local currentTarget
+local currentLabel
 local steps = {}
 local totalSteps = 0
 local completedSteps = 0
@@ -242,7 +244,7 @@ local function AddNode(nodes, orderList, quest, depth, prereqID)
     return node
 end
 
-local function Build(dungeonName, skipSet)
+local function BuildDungeon(dungeonName, skipSet)
     local dungeon = ns.DungeonChains
         and ns.DungeonChains.dungeons
         and ns.DungeonChains.dungeons[dungeonName]
@@ -281,8 +283,150 @@ local function Build(dungeonName, skipSet)
     return { steps = ordered, total = total, completed = completed }
 end
 
+local function ZonePrereqs(questID, data, nodes)
+    local prereqs = {}
+    if not data then
+        return prereqs
+    end
+    local function add(prereqID)
+        if type(prereqID) ~= "number" or prereqID == questID or not nodes[prereqID] then
+            return
+        end
+        local prereqData = ns.Quests and ns.Quests[prereqID]
+        if prereqData and prereqData.isBreadcrumb then
+            return
+        end
+        if not ns.IsQuestFlaggedCompleted(prereqID) then
+            prereqs[prereqID] = true
+        end
+    end
+
+    for _, prereqID in ipairs(data.sourceQuestGroup or {}) do
+        add(prereqID)
+    end
+    local single = data.sourceQuestSingle or {}
+    if #single > 0 and (data.sourceQuestNumRequired or 1) >= #single then
+        for i = 1, #single do
+            add(single[i])
+        end
+    end
+    local legacy = data.sourceQuests or {}
+    if #legacy > 0 and (data.sourceQuestNumRequired or 1) >= #legacy then
+        for i = 1, #legacy do
+            add(legacy[i])
+        end
+    end
+    return prereqs
+end
+
+local function ComputeZoneDepths(nodes, orderList)
+    local function Depth(questID, visiting)
+        local node = nodes[questID]
+        if not node then
+            return 0
+        end
+        if node.zoneDepth then
+            return node.zoneDepth
+        end
+        if visiting[questID] then
+            return 1
+        end
+        visiting[questID] = true
+        local depth = 1
+        for prereqID in pairs(node.prereqs) do
+            local value = Depth(prereqID, visiting) + 1
+            if value > depth then
+                depth = value
+            end
+        end
+        visiting[questID] = nil
+        node.zoneDepth = depth
+        return depth
+    end
+
+    for i = 1, #orderList do
+        local node = nodes[orderList[i]]
+        node.depth = Depth(node.id, {})
+    end
+end
+
+local function BuildZone(mapID, skipSet)
+    if type(mapID) ~= "number" then
+        return { steps = {}, total = 0, completed = 0 }
+    end
+    local zoneIDs = ns.QuestFinder
+        and ns.QuestFinder.ZoneQuestIDs
+        and ns.QuestFinder.ZoneQuestIDs(mapID)
+        or {}
+    local ids = {}
+    for i = 1, #zoneIDs do
+        ids[i] = zoneIDs[i]
+    end
+    table.sort(ids, function(a, b)
+        local da = ns.Quests and ns.Quests[a]
+        local db = ns.Quests and ns.Quests[b]
+        local la = (da and da.minLevel) or 0
+        local lb = (db and db.minLevel) or 0
+        if la ~= lb then
+            return la < lb
+        end
+        local ta = (da and da.title) or ""
+        local tb = (db and db.title) or ""
+        if ta ~= tb then
+            return ta < tb
+        end
+        return a < b
+    end)
+
+    local nodes, orderList = {}, {}
+    for i = 1, #ids do
+        local questID = ids[i]
+        local data = ns.Quests and ns.Quests[questID]
+        if data then
+            AddNode(nodes, orderList, {
+                id = questID,
+                name = data.title,
+                mapID = data.mapID,
+                x = data.x,
+                y = data.y,
+            }, 1, nil)
+        end
+    end
+    for i = 1, #orderList do
+        local questID = orderList[i]
+        local data = ns.Quests and ns.Quests[questID]
+        nodes[questID].prereqs = ZonePrereqs(questID, data, nodes)
+    end
+    ComputeZoneDepths(nodes, orderList)
+
+    local total = #orderList
+    local completed = 0
+    for i = 1, total do
+        if ns.IsQuestFlaggedCompleted(orderList[i]) then
+            completed = completed + 1
+        end
+    end
+
+    local ordered = BuildOrder(nodes, orderList, skipSet)
+    for i = 1, #ordered do
+        local node = ordered[i]
+        node.action = StepAction(node)
+        node.locationMapID, node.locationX, node.locationY = StepLocation(node, node.action)
+    end
+
+    return { steps = ordered, total = total, completed = completed }
+end
+
+local function BuildCurrent(skipSet)
+    if currentKind == "zone" then
+        return BuildZone(currentTarget, skipSet)
+    end
+    return BuildDungeon(currentTarget, skipSet)
+end
+
 local function StepKey(step)
-    return tostring(currentDungeon) .. ":" .. tostring(step.id) .. ":" .. step.action
+    return tostring(currentKind) .. ":" .. tostring(currentTarget) .. ":"
+        .. tostring(step.id) .. ":" .. step.action
 end
 
 local function TrackStep(step, report)
@@ -299,7 +443,12 @@ local function TrackStep(step, report)
             ns.ClearWaypoint()
         end
         if report and frame and frame.hint then
-            frame.hint:SetText(L["This quest has no world start location."])
+            if currentKind == "dungeon" then
+                frame.hint:SetText(string.format(
+                    L["No world start location. Check inside %s."], currentLabel))
+            else
+                frame.hint:SetText(L["This quest has no world start location."])
+            end
         end
         return
     end
@@ -357,8 +506,12 @@ local function Render()
             SetLocationMapName(panel, step.action, step.locationMapID,
                 step.locationX, step.locationY)
         elseif step.action == "accept" then
-            panel.location:SetText(string.format(
-                L["No world start location. Check inside %s."], currentDungeon))
+            if currentKind == "dungeon" then
+                panel.location:SetText(string.format(
+                    L["No world start location. Check inside %s."], currentLabel))
+            else
+                panel.location:SetText(L["No world start location."])
+            end
         else
             panel.location:SetText(
                 L["Follow the quest tracker for the objective or turn-in."])
@@ -384,10 +537,10 @@ local function Render()
 end
 
 local function Refresh(force)
-    if not frame or not frame:IsShown() or not currentDungeon then
+    if not frame or not frame:IsShown() or not currentKind then
         return
     end
-    local route = Build(currentDungeon, skipped)
+    local route = BuildCurrent(skipped)
     steps = route.steps
     totalSteps = route.total
     completedSteps = route.completed
@@ -426,7 +579,7 @@ local function EnsureFrame()
     if frame then
         return frame
     end
-    local panel = CreateFrame("Frame", "ForeverQuestPinsDungeonRoute", UIParent, "BackdropTemplate")
+    local panel = CreateFrame("Frame", "ForeverQuestPinsQuestRoute", UIParent, "BackdropTemplate")
     panel:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
     local savedX, savedY = SavedPosition()
     local finder = _G and _G["ForeverQuestPinsQuestFinder"]
@@ -453,6 +606,7 @@ local function EnsureFrame()
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", PADDING, -22)
     title:SetText("|cffffd100Dungeon|r |cff65b9ffRoute|r")
+    panel.title = title
 
     local subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
@@ -609,7 +763,7 @@ local function EnsureFrame()
 
     panel:Hide()
     if UISpecialFrames and type(UISpecialFrames) == "table" then
-        local name = "ForeverQuestPinsDungeonRoute"
+        local name = "ForeverQuestPinsQuestRoute"
         local found = false
         for i = 1, #UISpecialFrames do
             if UISpecialFrames[i] == name then
@@ -625,18 +779,20 @@ local function EnsureFrame()
     return panel
 end
 
-function ns.DungeonRoute.Show(dungeonName)
-    local dungeon = ns.DungeonChains
-        and ns.DungeonChains.dungeons
-        and ns.DungeonChains.dungeons[dungeonName]
-    if not dungeon then
+local function ShowRoute(kind, target, label)
+    if not label then
         return false
     end
-    currentDungeon = dungeonName
+    currentKind = kind
+    currentTarget = target
+    currentLabel = label
     skipped = {}
     autoPinnedKey = nil
     EnsureFrame()
-    frame.subtitle:SetText(dungeonName)
+    frame.title:SetText(kind == "dungeon"
+        and "|cffffd100Dungeon|r |cff65b9ffRoute|r"
+        or "|cffffd100Zone|r |cff65b9ffRoute|r")
+    frame.subtitle:SetText(label)
     frame:Show()
     if frame.Raise then
         frame:Raise()
@@ -645,21 +801,51 @@ function ns.DungeonRoute.Show(dungeonName)
     return true
 end
 
-function ns.DungeonRoute.Hide()
+function ns.QuestRoute.ShowDungeon(dungeonName)
+    local dungeon = ns.DungeonChains
+        and ns.DungeonChains.dungeons
+        and ns.DungeonChains.dungeons[dungeonName]
+    if not dungeon then
+        return false
+    end
+    return ShowRoute("dungeon", dungeonName, dungeonName)
+end
+
+function ns.QuestRoute.ShowZone(mapID)
+    if type(mapID) ~= "number" then
+        return false
+    end
+    local zoneIDs = ns.QuestFinder
+        and ns.QuestFinder.ZoneQuestIDs
+        and ns.QuestFinder.ZoneQuestIDs(mapID)
+        or {}
+    if #zoneIDs == 0 then
+        return false
+    end
+    return ShowRoute("zone", mapID, MapName(mapID))
+end
+
+function ns.QuestRoute.Show(dungeonName)
+    return ns.QuestRoute.ShowDungeon(dungeonName)
+end
+
+function ns.QuestRoute.Hide()
     if frame then
         frame:Hide()
     end
 end
 
-function ns.DungeonRoute.IsShown()
+function ns.QuestRoute.IsShown()
     return frame and frame:IsShown() or false
 end
 
-function ns.DungeonRoute.Current()
+function ns.QuestRoute.Current()
     return steps[1]
 end
 
-ns.DungeonRoute.Build = Build
+ns.QuestRoute.Build = BuildDungeon
+ns.QuestRoute.BuildDungeon = BuildDungeon
+ns.QuestRoute.BuildZone = BuildZone
 
 if type(CreateFrame) == "function" then
     local events = CreateFrame("Frame")

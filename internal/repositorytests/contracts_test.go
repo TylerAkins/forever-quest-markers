@@ -46,7 +46,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\BreadcrumbTargets.lua`,
 		"MinimapButton.lua",
 		"QuestFinder.lua",
-		"DungeonRoute.lua",
+		"QuestRoute.lua",
 		"ChatQuestLinks.lua",
 		"Events.lua",
 		"Localization.lua",
@@ -84,8 +84,8 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"QuestLinks.lua":                    "TrackerData.lua",
 		"TrackerData.lua":                   "Tracker.lua",
 		"Tracker.lua":                       "Core.lua",
-		"QuestFinder.lua":                   "DungeonRoute.lua",
-		"DungeonRoute.lua":                  "Core.lua",
+		"QuestFinder.lua":                   "QuestRoute.lua",
+		"QuestRoute.lua":                    "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -704,19 +704,22 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	if strings.Contains(questFinder, "local showAll = CreateFrame") {
 		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
 	}
-	if !strings.Contains(questFinder, "ns.DungeonRoute.Show(dungeonSelection)") {
-		t.Fatal("QuestFinder.lua does not open the dungeon route for the selected dungeon")
+	if !strings.Contains(questFinder, "ns.QuestRoute.ShowDungeon(dungeonSelection)") || !strings.Contains(questFinder, "ns.QuestRoute.ShowZone(mapID)") {
+		t.Fatal("QuestFinder.lua does not open the route for the selected dungeon or zone")
 	}
-	dungeonRoute := read(t, base, "DungeonRoute.lua")
+	questRoute := read(t, base, "QuestRoute.lua")
 	for _, contract := range []string{
-		"function ns.DungeonRoute.Show(dungeonName)",
-		"local function Build(dungeonName, skipSet)",
-		"ns.DungeonRoute.Build = Build",
+		"function ns.QuestRoute.ShowDungeon(dungeonName)",
+		"function ns.QuestRoute.ShowZone(mapID)",
+		"local function BuildDungeon(dungeonName, skipSet)",
+		"local function BuildZone(mapID, skipSet)",
+		"ns.QuestRoute.BuildDungeon = BuildDungeon",
+		"ns.QuestRoute.BuildZone = BuildZone",
 		"ns.TrackQuest(step.id, step.data, true)",
 		`"PLAYER_REGEN_ENABLED"`,
 	} {
-		if !strings.Contains(dungeonRoute, contract) {
-			t.Errorf("DungeonRoute.lua missing %q", contract)
+		if !strings.Contains(questRoute, contract) {
+			t.Errorf("QuestRoute.lua missing %q", contract)
 		}
 	}
 	core := read(t, base, "Core.lua")
