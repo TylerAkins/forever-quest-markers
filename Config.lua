@@ -2225,7 +2225,7 @@ local function BuildInterfaceSettings(self)
         self,
         "showMinimapButton",
         L["Show minimap button"],
-        L["The minimap button opens Quest Finder on left-click, toggles the last route on shift-left-click, and opens addon settings on right-click."]
+        L["The minimap button opens Quest Finder on left-click and addon settings on right-click."]
     )
     minimap:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", -4, -12)
     local npcTooltips = CreateOptionCheckbox(

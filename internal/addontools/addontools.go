@@ -16,7 +16,7 @@ import (
 var rootFiles = []string{
 	"ATTRIBUTION.md", "AutoQuests.lua", "Bindings.xml", "Breadcrumbs.lua", "CHANGELOG.md", "Config.lua", "Core.lua",
 	"Eligibility.lua", "Events.lua", "HiddenQuests.lua", "MinimapButton.lua", "NPCTooltips.lua", "Nameplates.lua",
-	"QuestFinder.lua", "QuestRoute.lua", "QuestItemKeybind.lua", "QuestLinks.lua", "ChatQuestLinks.lua",
+	"QuestFinder.lua", "QuestItemKeybind.lua", "QuestLinks.lua", "ChatQuestLinks.lua",
 	"ForeverQuestPins.toc", "LICENSE", "Localization.lua", "MapPins.lua", "README.md",
 	"RELEASE_NOTES.md", "Setup.lua", "Sparkle.lua", "SpokenTracker.lua", "Tracker.lua", "TrackerData.lua", "WarEffort.lua",
 	"WhatsNew.lua", "Waypoints.lua",

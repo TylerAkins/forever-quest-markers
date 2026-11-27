@@ -637,7 +637,7 @@ local function CreateRow(index)
     row:SetHeight(ROW_HEIGHT)
     row:SetPoint("LEFT", 0, 0)
     row:SetPoint("RIGHT", 0, 0)
-    row:RegisterForClicks("LeftButtonUp")
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row:EnableMouse(true)
     row:EnableMouseWheel(true)
 
@@ -657,7 +657,7 @@ local function CreateRow(index)
     row.hover:SetAllPoints()
     row.hover:SetColorTexture(1, 1, 1, 0.06)
 
-    row:SetScript("OnClick", function(self)
+    row:SetScript("OnClick", function(self, mouseButton)
         local entry = self.entry
         if not entry then
             return
@@ -669,6 +669,12 @@ local function CreateRow(index)
             return
         end
         if entry.kind == "quest" then
+            if mouseButton == "RightButton"
+                and entry.questID
+                and ns.ShowWowheadQuestURL then
+                ns.ShowWowheadQuestURL(entry.questID)
+                return
+            end
             SetPin(entry, self)
         end
     end)
@@ -703,6 +709,9 @@ local function CreateRow(index)
             GameTooltip:AddLine(L["Click to set a Blizzard map pin."], 0.8, 0.8, 0.8)
         else
             GameTooltip:AddLine(L["No map location is available for this quest."], 0.8, 0.6, 0.6, true)
+        end
+        if entry.kind == "quest" and entry.questID and ns.ShowWowheadQuestURL then
+            GameTooltip:AddLine(L["Right-click to open the Wowhead URL."], 0.8, 0.8, 0.8)
         end
         GameTooltip:Show()
     end)
@@ -1536,25 +1545,6 @@ local function UpdateShowAllControl()
     control.tooltip = SHOW_ALL_TOOLTIPS[activeTab]
 end
 
-local function UpdateRouteButton()
-    local button = frame and frame.routeButton
-    if not button then
-        return
-    end
-    local visible = activeTab == 2
-    local enabled = false
-    if activeTab == 2 then
-        local mapID = CurrentZoneID()
-        enabled = mapID ~= nil
-            and ns.QuestFinder ~= nil
-            and ns.QuestFinder.ZoneQuestIDs ~= nil
-            and #ns.QuestFinder.ZoneQuestIDs(mapID) > 0
-    end
-    button:SetText(L["Zone checklist"])
-    button:SetShown(visible)
-    button:SetEnabled(enabled)
-end
-
 local function RenderRows()
     if not frame then
         return
@@ -1609,7 +1599,6 @@ local function RenderRows()
         frame.zoneCaption:SetText(activeTab == 3 and L["Dungeon"] or L["Zone"])
     end
     UpdateShowAllControl()
-    UpdateRouteButton()
 end
 
 RefreshRows = function()
@@ -1879,7 +1868,7 @@ local function EnsureFrame()
     if not searchCreated or not search then
         search = CreateFrame("EditBox", "ForeverQuestPinsQuestFinderSearch", panel, "InputBoxTemplate")
     end
-    search:SetSize(230, 26)
+    search:SetSize(360, 26)
     search:SetPoint("TOPLEFT", PADDING + 280, -126)
     search:SetAutoFocus(false)
     search:SetMaxLetters(80)
@@ -1896,7 +1885,7 @@ local function EnsureFrame()
     panel.search = search
 
     local progress = CreateFrame("StatusBar", nil, panel, "BackdropTemplate")
-    progress:SetPoint("TOPLEFT", PADDING, -156)
+    progress:SetPoint("TOPLEFT", PADDING, -160)
     progress:SetSize(260, 14)
     progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     progress:SetStatusBarColor(0.72, 0.53, 0.20)
@@ -1935,7 +1924,7 @@ local function EnsureFrame()
 
     local showAllButton = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
     showAllButton:SetSize(24, 24)
-    showAllButton:SetPoint("TOPLEFT", PADDING + 276, -150)
+    showAllButton:SetPoint("TOPLEFT", PADDING + 276, -154)
     local showAllText = showAllButton.Text
     if not showAllText then
         showAllText = showAllButton:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -1968,56 +1957,8 @@ local function EnsureFrame()
     showAllButton:Hide()
     panel.showAll = showAllButton
 
-    local routeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    routeButton:SetSize(120, 22)
-    routeButton:SetPoint("LEFT", search, "RIGHT", 8, 0)
-    routeButton:SetText(L["Zone checklist"])
-    routeButton:SetScript("OnClick", function()
-        if not ns.QuestRoute or activeTab ~= 2 then
-            return
-        end
-        local mapID = CurrentZoneID()
-        if mapID and not ns.QuestRoute.ShowZone(mapID) then
-            SetStatus(L["No quests are assigned to this zone."], true)
-        end
-    end)
-    routeButton:SetScript("OnEnter", function(self)
-        if not GameTooltip then
-            return
-        end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self:GetText() or L["Zone checklist"], 1, 0.82, 0)
-        GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
-        local mapID = CurrentZoneID()
-        if not mapID then
-            GameTooltip:AddLine(L["Choose a zone first."], 1, 1, 1, true)
-        elseif #ns.QuestFinder.ZoneQuestIDs(mapID) == 0 then
-            GameTooltip:AddLine(
-                L["No quests are assigned to this zone."],
-                1, 1, 1, true)
-        else
-            GameTooltip:AddLine(
-                L["Lists every Loremaster quest assigned to this zone, including locked and low-level quests."],
-                1, 1, 1, true)
-            GameTooltip:AddLine(
-                L["Picks up quests that start on your current map and turns in after the objectives."],
-                1, 1, 1, true)
-        end
-        GameTooltip:AddLine(
-            L["Lazy cleanup, not an optimal route."],
-            0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    routeButton:SetScript("OnLeave", function()
-        if GameTooltip then
-            GameTooltip:Hide()
-        end
-    end)
-    routeButton:Hide()
-    panel.routeButton = routeButton
-
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", PADDING, -176)
+    scroll:SetPoint("TOPLEFT", PADDING, -184)
     scroll:SetPoint("BOTTOMRIGHT", -44, 54)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(_, delta) ScrollBy(delta) end)
@@ -2039,7 +1980,7 @@ local function EnsureFrame()
     panel.status:SetPoint("BOTTOMLEFT", PADDING, 20)
     panel.status:SetPoint("BOTTOMRIGHT", -PADDING, 20)
     panel.status:SetJustifyH("LEFT")
-    panel.status:SetText(L["Click a quest to set a Blizzard map pin."])
+    panel.status:SetText(L["Click a quest to set a Blizzard map pin. Right-click for the Wowhead URL."])
     panel.status:SetTextColor(0.65, 0.65, 0.65)
 
     panel:SetScript("OnShow", function()

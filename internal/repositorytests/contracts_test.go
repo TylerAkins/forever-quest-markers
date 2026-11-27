@@ -46,7 +46,6 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		`Database\BreadcrumbTargets.lua`,
 		"MinimapButton.lua",
 		"QuestFinder.lua",
-		"QuestRoute.lua",
 		"ChatQuestLinks.lua",
 		"Events.lua",
 		"Localization.lua",
@@ -54,6 +53,9 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		if !strings.Contains(toc, required) {
 			t.Errorf("TOC missing %q", required)
 		}
+	}
+	if strings.Contains(toc, "QuestRoute.lua") {
+		t.Error("TOC still loads the removed QuestRoute.lua")
 	}
 	if _, err := os.Stat(filepath.Join(base, "Bindings.xml")); err != nil {
 		t.Errorf("Bindings.xml is missing: %v", err)
@@ -85,8 +87,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"QuestLinks.lua":                    "TrackerData.lua",
 		"TrackerData.lua":                   "Tracker.lua",
 		"Tracker.lua":                       "Core.lua",
-		"QuestFinder.lua":                   "QuestRoute.lua",
-		"QuestRoute.lua":                    "Core.lua",
+		"QuestFinder.lua":                   "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
@@ -705,68 +706,33 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	if strings.Contains(questFinder, "local showAll = CreateFrame") {
 		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
 	}
-	if !strings.Contains(questFinder, "ns.QuestRoute.ShowZone(mapID)") ||
-		!strings.Contains(questFinder, `L["Zone checklist"]`) {
-		t.Fatal("QuestFinder.lua does not open the zone checklist")
+	if strings.Contains(questFinder, "QuestRoute") ||
+		strings.Contains(questFinder, "Zone checklist") {
+		t.Fatal("QuestFinder.lua still contains the removed zone checklist")
 	}
-	if strings.Contains(questFinder, "ShowDungeon") {
-		t.Fatal("QuestFinder.lua still opens the removed dungeon guide route")
-	}
-	questRoute := read(t, base, "QuestRoute.lua")
 	for _, contract := range []string{
-		"function ns.QuestRoute.ShowZone(mapID)",
-		"function ns.QuestRoute.HasRoute()",
-		"function ns.QuestRoute.Toggle()",
-		"local function BuildZone(mapID, skipSet)",
-		"local function AcceptBlockReason(step)",
-		"node.acceptReason",
-		"ns.QuestRoute.BuildZone = BuildZone",
-		"ns.AddOnActionsRestricted",
-		"ns.TrackQuest(step.id, step.data, true)",
-		"node.batchPickup",
-		"node.batchTurnIn = true",
-		"ns.ShowWowheadQuestURL(step.quest)",
-		`panel:SetFrameStrata("LOW")`,
-		`"PLAYER_LEVEL_UP"`,
-		`"PLAYER_REGEN_ENABLED"`,
-		`"GOSSIP_SHOW"`,
+		`row:RegisterForClicks("LeftButtonUp", "RightButtonUp")`,
+		"ns.ShowWowheadQuestURL(entry.questID)",
+		`L["Right-click to open the Wowhead URL."]`,
 	} {
-		if !strings.Contains(questRoute, contract) {
-			t.Errorf("QuestRoute.lua missing %q", contract)
+		if !strings.Contains(questFinder, contract) {
+			t.Errorf("QuestFinder.lua missing %q", contract)
 		}
 	}
-	if strings.Contains(questRoute, "ns.DungeonRoutes") ||
-		strings.Contains(questRoute, "BuildDungeonGuide") ||
-		strings.Contains(questRoute, "ShowDungeon") {
-		t.Error("QuestRoute.lua still contains the removed dungeon guide route")
-	}
-	if strings.Contains(questRoute, "table.insert(UISpecialFrames") {
-		t.Error("QuestRoute.lua adds the route window to UISpecialFrames, so Escape would close it")
-	}
-	if strings.Contains(questRoute, "type(UISpecialFrames)") ||
-		strings.Contains(questRoute, "table.remove(UISpecialFrames") {
-		t.Error("QuestRoute.lua touches UISpecialFrames, which can taint secure Blizzard panel handling")
+	if _, err := os.Stat(filepath.Join(base, "QuestRoute.lua")); err == nil {
+		t.Error("QuestRoute.lua should be removed")
 	}
 	minimap := read(t, base, "MinimapButton.lua")
 	for _, contract := range []string{
-		"ns.QuestRoute.Toggle()",
-		`"Shift-left-click: show or hide the zone checklist"`,
+		"ns.ShowQuestFinder()",
+		`L["Right-click: addon settings"]`,
 	} {
 		if !strings.Contains(minimap, contract) {
 			t.Errorf("MinimapButton.lua missing %q", contract)
 		}
 	}
-	for _, forbidden := range []string{
-		"C_Map.SetUserWaypoint",
-		"C_Map.ClearUserWaypoint",
-		"C_SuperTrack.SetSuperTracked",
-		"AcceptQuest",
-		"CompleteQuest",
-		"SelectGossip",
-	} {
-		if strings.Contains(questRoute, forbidden) {
-			t.Errorf("QuestRoute.lua calls %q directly instead of the guarded waypoint layer", forbidden)
-		}
+	if strings.Contains(minimap, "QuestRoute") || strings.Contains(minimap, "IsShiftKeyDown") {
+		t.Error("MinimapButton.lua still contains the removed route toggle")
 	}
 	core := read(t, base, "Core.lua")
 	if !strings.Contains(core, `"SKILL_LINES_CHANGED"`) || !strings.Contains(core, "NPCTooltips:Initialize") || !strings.Contains(core, "InvalidateInstanceQuestCache") {
