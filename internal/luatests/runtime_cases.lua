@@ -7052,14 +7052,16 @@ cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
     }
     assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
     local entries = ns.QuestFinder.DungeonQuestEntries("Test Dungeon")
-    assert(#entries == 4, "header, dungeon quest, and two chain steps")
+    assert(#entries == 5, "header, available quest, two chain steps, and the unavailable quest")
     assert(entries[2].title == "Dungeon Quest")
     assert(entries[3].subtitle:find("Chain #1 of 3", 1, true))
     assert(entries[4].subtitle:find("Chain #2 of 3", 1, true))
     assert(entries[4].location == nil, "a chain step without a map has no pin")
+    assert(entries[5].title == "Unavailable Quest")
+    assert(entries[5].subtitle:find("Unavailable", 1, true))
 
     local all = ns.QuestFinder.AllDungeonEntries()
-    assert(#all == 2, "the all-dungeons view lists the header and direct quests only")
+    assert(#all == 2, "the all-dungeons view lists the available header and quests only")
     assert(all[1].kind == "header" and all[1].dungeon == "Test Dungeon")
     assert(all[1].subtitle:find("Level 1-2", 1, true))
     assert(all[2].title == "Dungeon Quest")
@@ -7289,6 +7291,21 @@ cases["chat_links_runtime.translates_questie_plain_links"] = function()
     local out = ns.ChatQuestLinks.Translate("anyone for [[53] Chasing A-Me 01 (4243)]?")
     assert(out:find("|Hquest:4243:53|h[Chasing A-Me 01]|h", 1, true))
     assert(not out:find("(4243)", 1, true), "the raw Questie id is replaced")
+
+    local questieLink = "|Hquestie:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(questieLink)
+        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "Questie hyperlinks are rewritten")
+
+    local rawNative = "|Hquest:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(rawNative)
+        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "raw text inside a quest hyperlink is cleaned")
+
+    local cleanNative = "|Hquest:4243:53|h[Chasing A-Me 01]|h"
+    assert(ns.ChatQuestLinks.Translate(cleanNative) == cleanNative)
+
+    local cleanQuestie = "|Hquestie:4243:53|h[Chasing A-Me 01]|h"
+    assert(ns.ChatQuestLinks.Translate(cleanQuestie)
+        == "|Hquest:4243:53|h[Chasing A-Me 01]|h", "clean Questie hyperlinks become native")
 end
 
 cases["chat_links_runtime.leaves_hyperlinks_and_unknown_plain_links_alone"] = function()

@@ -257,7 +257,41 @@ local function QuestLevel(questID, data)
     return data and data.minLevel
 end
 
-local function QuestStatus(questID, data)
+local function ColorText(text, r, g, b)
+    return string.format("|cff%02x%02x%02x%s|r",
+        math.floor((r or 1) * 255),
+        math.floor((g or 1) * 255),
+        math.floor((b or 1) * 255),
+        tostring(text))
+end
+
+local UNAVAILABLE_REASONS = {
+    ["prereq-and"] = L["Requires another quest first."],
+    ["prereq-count"] = L["Requires another quest first."],
+    ["prereq-single"] = L["Requires another quest first."],
+    ["low-level"] = L["Requires a higher level."],
+    ["faction"] = L["Not available to your faction."],
+    ["class"] = L["Not available to your class."],
+    ["profession"] = L["Requires a profession."],
+    ["trivial"] = L["Too low level for your character."],
+    ["high-level"] = L["Above your configured level range."],
+    ["category-hidden"] = L["Hidden by the current map filters."],
+    ["alt-completed"] = L["Another version of this quest was completed."],
+    ["user-hidden"] = L["Hidden with Shift-click."],
+    ["excluded"] = L["Excluded from quest pins."],
+    ["book"] = L["Book quests are hidden."],
+    ["repeatable"] = L["Repeatable quest pins are hidden."],
+    ["seasonal"] = L["Seasonal quest pins are hidden."],
+    ["war-effort"] = L["War effort quest pins are hidden."],
+    ["war-effort-unconfirmed"] = L["The war effort phase is not confirmed."],
+    ["event-unknown"] = L["The event window is unknown."],
+}
+
+local function UnavailableReason(reason)
+    return UNAVAILABLE_REASONS[reason] or L["Not available yet."]
+end
+
+local function QuestStatus(questID, data, checkAvailable)
     if ns.IsQuestFlaggedCompleted and ns.IsQuestFlaggedCompleted(questID) then
         return L["Complete"], 0.55, 0.55, 0.55
     end
@@ -266,6 +300,12 @@ local function QuestStatus(questID, data)
     end
     if not data and not (ns.Quests and ns.Quests[questID]) then
         return L["Unknown"], 0.65, 0.65, 0.65
+    end
+    if checkAvailable and data then
+        local available, reason = ns.IsQuestAvailable(questID, data, { skipLevelRequest = true })
+        if not available then
+            return L["Unavailable"], 0.80, 0.55, 0.55, reason
+        end
     end
     return L["Available"], 1, 1, 1
 end
@@ -471,7 +511,7 @@ local function CreateRow(index)
         end
         if entry.kind == "header" then
             if entry.dungeon then
-                GameTooltip:AddLine(L["Click to show this dungeon's full chains."], 0.8, 0.8, 0.8, true)
+                GameTooltip:AddLine(L["Click to show this dungeon's full quest list and chains."], 0.8, 0.8, 0.8, true)
             end
         elseif entry.insideDungeon then
             -- The reason is already in entry.tooltip.
@@ -667,10 +707,10 @@ local function StartsInsideDungeon(questID, location)
     return dungeons ~= nil and #dungeons > 0
 end
 
-local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
+local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
-    if not IsDungeonQuestAvailable(questID, data, quest) then
+    if not includeUnavailable and not IsDungeonQuestAvailable(questID, data, quest) then
         return
     end
     local locations = QuestLocations(questID, data)
@@ -680,9 +720,9 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
     local location = PickLocation(locations, CurrentMapID())
     local insideDungeon = StartsInsideDungeon(questID, location)
     local level = quest.level or QuestLevel(questID, data)
-    local status = QuestStatus(questID, data)
+    local status, statusR, statusG, statusB, statusReason = QuestStatus(questID, data, includeUnavailable)
     local total = #(quest.chain or {}) + 1
-    local subtitle = status
+    local subtitle = ColorText(status, statusR, statusG, statusB)
     if level then
         subtitle = "[" .. level .. "] " .. subtitle
     end
@@ -698,6 +738,12 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
     if insideDungeon then
         subtitle = subtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
     end
+    local tooltip = insideDungeon
+        and L["This quest starts inside the dungeon, so a map pin is not available."]
+        or (statusReason and UnavailableReason(statusReason))
+        or (#(quest.chain or {}) > 0
+            and string.format(L["Dungeon chain step %d of %d."], total, total)
+            or L["Dungeon quest."])
     AddEntry(entries, {
         kind = "quest",
         questID = questID,
@@ -706,11 +752,7 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
         level = level,
         location = location,
         insideDungeon = insideDungeon,
-        tooltip = insideDungeon
-            and L["This quest starts inside the dungeon, so a map pin is not available."]
-            or (#(quest.chain or {}) > 0
-                and string.format(L["Dungeon chain step %d of %d."], total, total)
-                or L["Dungeon quest."]),
+        tooltip = tooltip,
     })
     if not includeChains then
         return
@@ -727,9 +769,9 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
             or (stepLocation and IsDungeonMap(stepLocation.mapID))
             or (not stepLocation and step.needsDungeon)
         local stepLevel = step.level or QuestLevel(stepID, stepData)
-        local stepStatus = QuestStatus(stepID, stepData)
+        local stepStatus, stepR, stepG, stepB, stepReason = QuestStatus(stepID, stepData, includeUnavailable)
         local stepSubtitle = string.format(L["Chain #%d of %d"], index, total)
-        stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. stepStatus .. "|r"
+        stepSubtitle = stepSubtitle .. "  " .. ColorText(stepStatus, stepR, stepG, stepB)
         if stepLevel then
             stepSubtitle = stepSubtitle .. "  [" .. stepLevel .. "]"
         end
@@ -739,6 +781,10 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
         if stepInsideDungeon then
             stepSubtitle = stepSubtitle .. "  |cff9d9d9d" .. L["In dungeon"] .. "|r"
         end
+        local stepTooltip = stepInsideDungeon
+            and L["This quest starts inside the dungeon, so a map pin is not available."]
+            or (stepReason and UnavailableReason(stepReason))
+            or string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or "")
         AddEntry(entries, {
             kind = "quest",
             questID = stepID,
@@ -748,16 +794,20 @@ local function AddDungeonQuestRows(entries, dungeon, quest, includeChains)
             location = stepLocation,
             insideDungeon = stepInsideDungeon,
             indent = 18,
-            tooltip = stepInsideDungeon
-                and L["This quest starts inside the dungeon, so a map pin is not available."]
-                or string.format(L["Required pre-quest %d of %d for %s."], index, total, quest.name or ""),
+            tooltip = stepTooltip,
         })
     end
 end
 
-local function DungeonHeader(dungeonName, dungeon)
-    local count = #(dungeon.quests or {})
-    local subtitle = count .. " " .. (count == 1 and L["quest"] or L["quests"])
+local function DungeonHeader(dungeonName, dungeon, availableCount)
+    local total = #(dungeon.quests or {})
+    local subtitle
+    if availableCount and availableCount ~= total then
+        subtitle = availableCount .. " " .. L["available"] .. "  |cff6b6b6b·|r  "
+            .. total .. " " .. (total == 1 and L["quest"] or L["quests"])
+    else
+        subtitle = total .. " " .. (total == 1 and L["quest"] or L["quests"])
+    end
     if dungeon.level then
         subtitle = string.format(L["Level %s"], dungeon.level) .. "  |cff6b6b6b·|r  " .. subtitle
     end
@@ -768,7 +818,6 @@ local function DungeonHeader(dungeonName, dungeon)
         subtitle = subtitle,
         r = DUNGEON_R, g = DUNGEON_G, b = DUNGEON_B,
         bgR = DUNGEON_R, bgG = DUNGEON_G, bgB = DUNGEON_B, bgA = 0.08,
-        tooltip = L["Click to show this dungeon's full chains."],
     }
 end
 
@@ -782,10 +831,10 @@ local function AllDungeonEntries()
         if dungeon then
             local questEntries = {}
             for _, quest in ipairs(dungeon.quests or {}) do
-                AddDungeonQuestRows(questEntries, dungeon, quest, false)
+                AddDungeonQuestRows(questEntries, dungeon, quest, false, false)
             end
             if #questEntries > 0 then
-                AddEntry(entries, DungeonHeader(name, dungeon))
+                AddEntry(entries, DungeonHeader(name, dungeon, #questEntries))
                 for j = 1, #questEntries do
                     entries[#entries + 1] = questEntries[j]
                 end
@@ -805,7 +854,7 @@ local function DungeonQuestEntries(dungeonName)
     local entries = {}
     AddEntry(entries, DungeonHeader(dungeonName, dungeon))
     for _, quest in ipairs(dungeon.quests or {}) do
-        AddDungeonQuestRows(entries, dungeon, quest, true)
+        AddDungeonQuestRows(entries, dungeon, quest, true, true)
     end
     return entries
 end
