@@ -28,6 +28,7 @@ local zoneSelection = "current"
 local dungeonSelection
 local searchText = ""
 local searchRefreshToken = 0
+local progressToken = 0
 local RefreshRows
 local SelectDungeon
 local ScheduleSearchRefresh
@@ -961,6 +962,136 @@ local function StartsInsideDungeon(questID, location)
     return dungeons ~= nil and #dungeons > 0
 end
 
+local zoneQuestIndex
+local loremasterCriteria
+
+local function BuildZoneQuestIndex()
+    local index = {}
+    for questID, data in pairs(ns.Quests or {}) do
+        local include = not data.repeatable
+            and not data.isMonthly
+            and not data.isYearly
+            and not data.event
+            and not data.requireSkill
+        if include and PlayerMatches(data, nil) then
+            local seen = {}
+            local function addMap(mapID)
+                if type(mapID) ~= "number" or seen[mapID] then
+                    return
+                end
+                seen[mapID] = true
+                local list = index[mapID]
+                if not list then
+                    list = {}
+                    index[mapID] = list
+                end
+                list[#list + 1] = questID
+            end
+            addMap(data.mapID)
+            for _, coord in ipairs(data.coords or {}) do
+                addMap(coord[3])
+            end
+        end
+    end
+    return index
+end
+
+local function ZoneQuestProgress(mapID)
+    if type(mapID) ~= "number" then
+        return nil
+    end
+    if not zoneQuestIndex then
+        zoneQuestIndex = BuildZoneQuestIndex()
+    end
+    local questIDs = zoneQuestIndex[mapID]
+    if not questIDs or #questIDs == 0 then
+        return nil
+    end
+    local completed = 0
+    for i = 1, #questIDs do
+        if ns.IsQuestFlaggedCompleted(questIDs[i]) then
+            completed = completed + 1
+        end
+    end
+    return { completed = completed, total = #questIDs, estimated = true }
+end
+
+local function BuildLoremasterCriteria()
+    local criteria = {}
+    if type(GetCategoryList) ~= "function"
+        or type(GetCategoryNumAchievements) ~= "function"
+        or type(GetAchievementInfo) ~= "function"
+        or type(GetAchievementNumCriteria) ~= "function"
+        or type(GetAchievementCriteriaInfo) ~= "function" then
+        return criteria
+    end
+    local okCategories, categories = pcall(GetCategoryList)
+    if not okCategories or type(categories) ~= "table" then
+        return criteria
+    end
+    for _, categoryID in ipairs(categories) do
+        local okCount, count, categoryName = pcall(GetCategoryNumAchievements, categoryID, true)
+        local questCategory = type(categoryName) ~= "string"
+            or categoryName:lower():find("quest", 1, true) ~= nil
+        if okCount and type(count) == "number" and questCategory then
+            for i = 1, count do
+                local okInfo, achievementID, name = pcall(GetAchievementInfo, categoryID, i)
+                if okInfo and achievementID and type(name) == "string"
+                    and name:lower():find("loremaster", 1, true) then
+                    local okCriteria, criteriaCount = pcall(GetAchievementNumCriteria, achievementID)
+                    if okCriteria and type(criteriaCount) == "number" then
+                        for index = 1, criteriaCount do
+                            local okCrit, text, _, _, _, required =
+                                pcall(GetAchievementCriteriaInfo, achievementID, index)
+                            if okCrit and type(text) == "string"
+                                and type(required) == "number" and required > 0 then
+                                local plain = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+                                criteria[plain] = {
+                                    achievementID = achievementID,
+                                    criteriaIndex = index,
+                                    total = required,
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return criteria
+end
+
+local function ZoneProgress(mapID)
+    local zoneName = MapName(mapID)
+    if not loremasterCriteria then
+        loremasterCriteria = BuildLoremasterCriteria()
+    end
+    local substringMatch
+    for text, info in pairs(loremasterCriteria) do
+        if text == zoneName then
+            substringMatch = { text = text, info = info, exact = true }
+            break
+        end
+        if not substringMatch and text:find(zoneName, 1, true) then
+            substringMatch = { text = text, info = info }
+        end
+    end
+    if substringMatch then
+        local info = substringMatch.info
+        local ok, _, _, _, quantity, required =
+            pcall(GetAchievementCriteriaInfo, info.achievementID, info.criteriaIndex)
+        if ok then
+            return {
+                completed = tonumber(quantity) or 0,
+                total = tonumber(required) or info.total,
+                official = true,
+                text = substringMatch.text,
+            }
+        end
+    end
+    return ZoneQuestProgress(mapID)
+end
+
 local function AddDungeonQuestRows(entries, dungeon, quest, includeChains, includeUnavailable)
     local questID = quest.id
     local data = ns.Quests and ns.Quests[questID]
@@ -1251,6 +1382,39 @@ local function FilterEntries(entries, query)
     return result
 end
 
+local function UpdateZoneProgress()
+    if not frame or not frame.progressBar then
+        return
+    end
+    local bar = frame.progressBar
+    if activeTab == 3 then
+        bar:Hide()
+        return
+    end
+    local mapID = CurrentZoneID()
+    if not mapID then
+        bar:Hide()
+        return
+    end
+    local progress = ZoneProgress(mapID)
+    if not progress or not progress.total or progress.total <= 0 then
+        bar:Hide()
+        return
+    end
+    bar:SetMinMaxValues(0, progress.total)
+    bar:SetValue(progress.completed)
+    local percent = math.floor((progress.completed / progress.total) * 100 + 0.5)
+    bar.label:SetText(string.format("%s: %d / %d (%d%%)",
+        progress.official and L["Loremaster"] or L["Zone quests"],
+        progress.completed, progress.total, percent))
+    bar.tooltip = progress.official
+        and string.format(L["Loremaster progress for %s. %d of %d quests completed."],
+            MapName(mapID), progress.completed, progress.total)
+        or string.format(L["Estimated zone quest progress for %s. %d of %d quests completed. This counts quests that start in the zone and match your faction, race, and class."],
+            MapName(mapID), progress.completed, progress.total)
+    bar:Show()
+end
+
 local function RenderRows()
     if not frame then
         return
@@ -1290,6 +1454,7 @@ local function RenderRows()
     frame.scrollChild:SetHeight(math.max(y, 1))
     frame.scroll:SetVerticalScroll(0)
     UpdateCount(entries)
+    UpdateZoneProgress()
 
     if frame.zoneControl then
         frame.zoneControl:SetShown(activeTab ~= 3)
@@ -1583,8 +1748,38 @@ local function EnsureFrame()
     end)
     panel.search = search
 
+    local progress = CreateFrame("StatusBar", nil, panel)
+    progress:SetPoint("TOPLEFT", PADDING, -158)
+    progress:SetSize(260, 10)
+    progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    progress:SetStatusBarColor(0.20, 0.75, 0.20)
+    progress:SetMinMaxValues(0, 1)
+    progress:SetValue(0)
+    local progressBG = progress:CreateTexture(nil, "BACKGROUND")
+    progressBG:SetAllPoints()
+    progressBG:SetColorTexture(0, 0, 0, 0.65)
+    progress.label = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    progress.label:SetPoint("LEFT", progress, "RIGHT", 8, 0)
+    progress.label:SetJustifyH("LEFT")
+    progress:SetScript("OnEnter", function(self)
+        if not GameTooltip or not self.tooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.label:GetText() or "", 1, 0.82, 0)
+        GameTooltip:AddLine(self.tooltip, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    progress:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    progress:Hide()
+    panel.progressBar = progress
+
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", PADDING, -160)
+    scroll:SetPoint("TOPLEFT", PADDING, -176)
     scroll:SetPoint("BOTTOMRIGHT", -44, 54)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(_, delta) ScrollBy(delta) end)
@@ -1674,6 +1869,8 @@ ns.QuestFinder = {
     DungeonQuestEntries = DungeonQuestEntries,
     QuestLocations = QuestLocations,
     FilterEntries = FilterEntries,
+    ZoneProgress = ZoneProgress,
+    ZoneQuestProgress = ZoneQuestProgress,
     ResetPosition = function()
         if frame then
             frame:ClearAllPoints()
@@ -1700,4 +1897,27 @@ function ns.QuestFinder.Debug()
         tostring(ns.GetOption("showTrivial")),
         tostring(ns.GetOption("showDungeon")),
         tostring(ns.GetOption("showUnexplored"))))
+end
+
+if type(CreateFrame) == "function" then
+    local progressEvents = CreateFrame("Frame")
+    progressEvents:RegisterEvent("QUEST_TURNED_IN")
+    progressEvents:RegisterEvent("QUEST_ACCEPTED")
+    progressEvents:RegisterEvent("QUEST_REMOVED")
+    progressEvents:SetScript("OnEvent", function()
+        if not frame or not frame:IsShown() then
+            return
+        end
+        progressToken = progressToken + 1
+        local token = progressToken
+        if C_Timer and type(C_Timer.After) == "function" then
+            C_Timer.After(0.5, function()
+                if token == progressToken and frame and frame:IsShown() then
+                    RefreshRows()
+                end
+            end)
+        else
+            RefreshRows()
+        end
+    end)
 end

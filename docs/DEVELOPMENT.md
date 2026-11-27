@@ -77,6 +77,8 @@ go run ./cmd/fqp build-db \
 
 `Database/BreadcrumbTargets.lua` is hand-maintained. Quest Finder derives a breadcrumb's target zone from the follow-up quests that list it in `sourceQuestSingle` or `sourceQuestGroup`. Add an override there when the follow-up starts outside the zone the breadcrumb is meant for, or when the follow-up is missing. Values are a UiMapID or a list of map IDs.
 
+Quest Finder's zone progress bar prefers Loremaster achievement criteria when a criterion matches the zone name. Otherwise it estimates progress from quests with starts in the zone that match the player's faction, race, and class, excluding repeatable, monthly, seasonal, and profession quests.
+
 The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
 
 `Database/DungeonChains.lua` comes from a local ForeverDungeonJournal install, not QuestieDB. It carries each dungeon's quest list, the required pre-quest chain, and the journal's start coordinates. Regenerate it after a journal update:
