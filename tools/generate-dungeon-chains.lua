@@ -18,6 +18,22 @@ local FDJ = {
         ALBA_FAIRMOON_LOCATION = "Alba Fairmoon, Sentinel Hill inn, Westfall",
     },
 }
+-- QuestUpdates.lua also carries required chains and start maps, and it touches
+-- many journal-only tables that this generator does not need. Create empty
+-- tables on demand and give its event-frame setup a harmless stub.
+setmetatable(FDJ, {
+    __index = function(target, key)
+        local value = {}
+        rawset(target, key, value)
+        return value
+    end,
+})
+CreateFrame = function()
+    return {
+        RegisterEvent = function() end,
+        SetScript = function() end,
+    }
+end
 
 local function Run(relative)
     local path = fdjPath .. relative
@@ -27,6 +43,7 @@ end
 
 Run("Data/Dungeons.lua")
 Run("Data/QuestChains.lua")
+Run("Data/QuestUpdates.lua")
 
 local function ReadVersion()
     local file = assert(io.open(fdjPath .. "ForeverDungeonJournal.toc", "r"))
