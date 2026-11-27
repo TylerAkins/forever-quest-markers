@@ -1987,6 +1987,7 @@ local function EnsureFrame()
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["Auto route"], 1, 0.82, 0)
+        GameTooltip:AddLine(L["BETA"], 1, 0.35, 0.30)
         if activeTab == 3 then
             if dungeonSelection then
                 GameTooltip:AddLine(
@@ -2009,6 +2010,9 @@ local function EnsureFrame()
                     1, 1, 1, true)
             end
         end
+        GameTooltip:AddLine(
+            L["This is not an optimal route. It is lazy questing only."],
+            0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     routeButton:SetScript("OnLeave", function()
