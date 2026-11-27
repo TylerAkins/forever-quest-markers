@@ -115,6 +115,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 |---------|--------|
 | `/fqp` | Help |
 | `/fqp finder` | Open Quest Finder |
+| `/fqp finderdebug` | Print Quest Finder counts and active filters |
 | `/fqp options` | Open the addon settings |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |

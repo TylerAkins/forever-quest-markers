@@ -1034,3 +1034,19 @@ ns.QuestFinder = {
     DungeonQuestEntries = DungeonQuestEntries,
     QuestLocations = QuestLocations,
 }
+
+function ns.QuestFinder.Debug()
+    local zone = CurrentZoneID()
+    local zoneName = zone and MapName(zone) or L["All zones"]
+    print("|cffffd100Forever Quest Pins:|r Quest Finder")
+    print(("  zone=%s mapID=%s"):format(zoneName, tostring(zone)))
+    print(("  breadcrumbs=%d available=%d dungeonRows=%d"):format(
+        #BreadcrumbEntries(zone),
+        #AvailableEntries(zone),
+        #AllDungeonEntries()))
+    print(("  filters: enabled=%s showTrivial=%s showDungeon=%s showUnexplored=%s"):format(
+        tostring(ns.GetOption("enabled")),
+        tostring(ns.GetOption("showTrivial")),
+        tostring(ns.GetOption("showDungeon")),
+        tostring(ns.GetOption("showUnexplored"))))
+end

@@ -830,6 +830,10 @@ function ns.SlashCommand(msg)
         ns.ShowQuestFinder()
         return
     end
+    if msg == "finderdebug" and ns.QuestFinder and ns.QuestFinder.Debug then
+        ns.QuestFinder.Debug()
+        return
+    end
     if msg == "options" and ns.OpenSettings then
         ns.OpenSettings()
         return
@@ -838,6 +842,7 @@ function ns.SlashCommand(msg)
         Print(L["Commands:"])
         print(L["  /fqp setup   Open the setup guide"])
         print(L["  /fqp finder  Open Quest Finder"])
+        print(L["  /fqp finderdebug Print Quest Finder counts and active filters"])
         print(L["  /fqp options Open addon settings"])
         print(L["  /fqp track <id> Track a quest start, objective, or turn-in"])
         print(L["  /fqp nearest  Select the nearest tracked quest"])
