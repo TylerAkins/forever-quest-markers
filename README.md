@@ -184,6 +184,25 @@ For settings that reset despite being saved to disk, close WoW completely and ru
 - Quest **policy** mistakes (holiday membership or instance tags) belong in [Questie](https://github.com/Questie/Questie) corrections, or in the matching parser here
 - If you ran a **0.1.10–0.1.16** build and options still reset after `/reload`, close the game and delete leftover `ForeverQuestPins.lua` (and `.bak`) under `WTF\Account\...\SavedVariables\` and `WTF\Account\...\<realm>\<char>\SavedVariables\`. New users can ignore this.
 
+## Languages
+
+The addon UI is available in:
+
+- 🇺🇸 English
+- 🇪🇸 Spanish (Spain) and 🇲🇽 Spanish (Latin America)
+- 🇩🇪 German
+- 🇫🇷 French
+- 🇧🇷 Brazilian Portuguese
+- 🇨🇳 Simplified Chinese
+- 🇹🇼 Traditional Chinese
+- 🇰🇷 Korean
+- 🇮🇹 Italian
+- 🇷🇺 Russian
+
+Quest names, zone names, and dungeon names come from the game client and follow its language setting.
+
+Contributors must keep every player-facing string localized in all supported languages. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 Addon code is **GPL-3.0-or-later** ([LICENSE](LICENSE)). Quest records come from [QuestieDB](https://github.com/Questie/QuestieDB), with policy data from [Questie](https://github.com/Questie/Questie). See [ATTRIBUTION.md](ATTRIBUTION.md).

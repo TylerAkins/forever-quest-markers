@@ -26,6 +26,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
 | `MinimapButton.lua` | Draggable minimap button that opens Quest Finder and settings |
 | `QuestFinder.lua` | Quest Finder window for breadcrumbs, available quests, and dungeon chains |
+| `Localization.lua` | English source keys and translation tables for supported client locales |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
@@ -138,6 +139,16 @@ go vet ./...
 The Go Lua-runtime tests require LuaJIT on `PATH`. On macOS with Homebrew, install it with `brew install luajit`; CI installs the Ubuntu `luajit` package.
 
 CI (`validate`) runs the Go tests, checks release intent, and dry-runs the packager. Database regeneration runs in the automated update workflow, not CI.
+
+## Localization
+
+`Localization.lua` holds the English source strings as table keys and translations for `esES`, `esMX`, `deDE`, `frFR`, `ptBR`, `zhCN`, `zhTW`, `koKR`, `itIT`, and `ruRU`. The `esMX` client reuses the `esES` table and applies Latin American dungeon terms at load time. A missing key falls back to the English text.
+
+Add player-facing text through `ns.L["..."]` and add the same English key to every locale table. `TestEveryLocaleCoversEveryUsedString` scans the Lua files listed in the TOC and fails when a locale misses a key that code uses. The Lua runtime tests also check placeholder order, `/fqp` command names, and that every Spanish key exists in each other locale.
+
+Keep format placeholders (`%s`, `%d`, `%%`) in the same order, keep `/fqp` command names unchanged, and keep color codes such as `|cffffd100` intact. `Quest Finder`, `Blizzard`, `Wowhead`, `Questie`, and `TomTom` stay in English. Translate `Loremaster` with the official World of Warcraft term for the locale.
+
+Contributor requirements and the supported locale list are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Local builds
 

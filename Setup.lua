@@ -2,44 +2,44 @@ local _, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local pages = {
-    { title = "Map pins", options = {
-        { "enabled", "Show quest start pins" },
-        { "showWorldMapPins", "Show quest pins on world and continent maps" },
-        { "showUnexplored", "Show quests in unexplored areas" },
-        { "showRepeatable", "Show repeatable quest pins" },
-        { "showSeasonal", "Show seasonal / holiday quest pins" },
-        { "showWarEffort", "Show AQ war effort pins" },
-        { "showTrivial", "Show low-level quests" },
+    { title = L["Map pins"], options = {
+        { "enabled", L["Show quest start pins"] },
+        { "showWorldMapPins", L["Show quest pins on world and continent maps"] },
+        { "showUnexplored", L["Show quests in unexplored areas"] },
+        { "showRepeatable", L["Show repeatable quest pins"] },
+        { "showSeasonal", L["Show seasonal / holiday quest pins"] },
+        { "showWarEffort", L["Show AQ war effort pins"] },
+        { "showTrivial", L["Show low-level quests"] },
     } },
-    { title = "Quest categories", options = {
-        { "showNormal", "Show normal quest start pins" },
-        { "showClass", "Show class quest pins" },
-        { "showDungeon", "Show dungeon / raid quest pins" },
-        { "showPvP", "Show PvP quest pins" },
-        { "showProfession", "Show profession quest pins" },
-        { "showWarEffortAlways", "Always show AQ war effort pins" },
-        { "showBooks", "Show collectible book quest pins" },
+    { title = L["Quest categories"], options = {
+        { "showNormal", L["Show normal quest start pins"] },
+        { "showClass", L["Show class quest pins"] },
+        { "showDungeon", L["Show dungeon / raid quest pins"] },
+        { "showPvP", L["Show PvP quest pins"] },
+        { "showProfession", L["Show profession quest pins"] },
+        { "showWarEffortAlways", L["Always show AQ war effort pins"] },
+        { "showBooks", L["Show collectible book quest pins"] },
     } },
-    { title = "Navigation", options = {
-        { "enablePinTracking", "Click pins to track quest starts" },
-        { "trackOnWorldMaps", "Track from world and continent maps" },
-        { "showNPCTooltips", "Show quests on NPC tooltips" },
-        { "showNameplateIcons", "Show quest icons on nameplates" },
-        { "showSpawnClusters", "Show spawn clusters" },
-        { "highlightNewQuests", "Show tint for quests new in WoW Forever" },
-        { "sparkleQuestItems", "Show quest item sparkles" },
+    { title = L["Navigation"], options = {
+        { "enablePinTracking", L["Click pins to track quest starts"] },
+        { "trackOnWorldMaps", L["Track from world and continent maps"] },
+        { "showNPCTooltips", L["Show quests on NPC tooltips"] },
+        { "showNameplateIcons", L["Show quest icons on nameplates"] },
+        { "showSpawnClusters", L["Show spawn clusters"] },
+        { "highlightNewQuests", L["Show tint for quests new in WoW Forever"] },
+        { "sparkleQuestItems", L["Show quest item sparkles"] },
     } },
-    { title = "Quest tracker", options = {
+    { title = L["Quest tracker"], tracker = true, options = {
         { "enhanceQuestTracker", L["Enhance quest tracker"] .. " (BETA)" },
-        { "selectNearestQuest", "Select nearest quest" },
+        { "selectNearestQuest", L["Select nearest quest"] },
     } },
-    { title = "Quest automation", options = {
-        { "autoAccept", "Auto-accept quests" },
-        { "autoAcceptRangeEnabled", "Limit auto-accept quest level" },
-        { "autoAcceptSkipGrey", "Don't auto-accept grey quests" },
-        { "autoTurnIn", "Auto-turn in quests" },
-        { "hideQuestTrackerInCombat", "Hide quest tracker in combat" },
-        { "warnSkippedBreadcrumb", "Warn on skipped breadcrumbs" },
+    { title = L["Quest automation"], options = {
+        { "autoAccept", L["Auto-accept quests"] },
+        { "autoAcceptRangeEnabled", L["Limit auto-accept quest level"] },
+        { "autoAcceptSkipGrey", L["Don't auto-accept grey quests"] },
+        { "autoTurnIn", L["Auto-turn in quests"] },
+        { "hideQuestTrackerInCombat", L["Hide quest tracker in combat"] },
+        { "warnSkippedBreadcrumb", L["Warn on skipped breadcrumbs"] },
     } },
 }
 
@@ -53,7 +53,7 @@ local function MakeButton(parent, label, x, y, width, callback)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(width, 24)
     button:SetPoint("BOTTOMLEFT", x, y)
-    button:SetText(L[label])
+    button:SetText(label)
     button:SetScript("OnClick", callback)
     return button
 end
@@ -135,10 +135,10 @@ local function CreateSetup()
         local gamepad = InputUtil
             and type(InputUtil.IsGamepadUIEnabled) == "function"
             and InputUtil.IsGamepadUIEnabled()
-        local trackerPage = guided and pages[page].title == "Quest tracker"
+        local trackerPage = guided and pages[page].tracker
         panel:SetHeight(guided and (page == #pages and 450 or 400) or 200)
         progress:SetText(guided and (page .. " / " .. #pages) or "")
-        heading:SetText(guided and L[pages[page].title] or L["Choose your options"])
+        heading:SetText(guided and pages[page].title or L["Choose your options"])
         help:SetText(guided and (trackerPage and gamepad
                 and L["The quest tracker is unavailable in gamepad UI."]
                 or L["Choose what works for you. You can change these later in the addon options."])
@@ -160,7 +160,7 @@ local function CreateSetup()
                 box.disabledForGamepad = disabled
                 box:SetEnabled(not disabled)
                 box.Text:SetAlpha(disabled and 0.5 or 1)
-                box.Text:SetText(L[option[2]])
+                box.Text:SetText(option[2])
                 box:SetChecked(panel.pending[box.key])
                 box:Show()
             else
@@ -177,24 +177,24 @@ local function CreateSetup()
         panel.guide:SetShown(not guided)
         back:SetShown(guided)
         nextButton:SetShown(guided)
-        nextButton:SetText(L[page == #pages and "Apply" or "Next"])
+        nextButton:SetText(page == #pages and L["Apply"] or L["Next"])
     end
-    panel.keep = MakeButton(panel, "Use Current Settings", 25, 30, 140, Complete)
-    panel.defaults = MakeButton(panel, "Use Defaults", 180, 30, 140, function()
+    panel.keep = MakeButton(panel, L["Use Current Settings"], 25, 30, 140, Complete)
+    panel.defaults = MakeButton(panel, L["Use Defaults"], 180, 30, 140, function()
         ns.WipeSettings()
         if ns.SyncQuestTrackerCombatVisibility then ns.SyncQuestTrackerCombatVisibility() end
         if ns.RequestRefresh then ns.RequestRefresh("settings") end
         Complete()
     end)
-    panel.guide = MakeButton(panel, "Choose Options", 335, 30, 140, function()
+    panel.guide = MakeButton(panel, L["Choose Options"], 335, 30, 140, function()
         panel.page = 1
         Render()
     end)
-    back = MakeButton(panel, "Back", 25, 30, 140, function()
+    back = MakeButton(panel, L["Back"], 25, 30, 140, function()
         panel.page = panel.page - 1
         Render()
     end)
-    nextButton = MakeButton(panel, "Next", 335, 30, 140, function()
+    nextButton = MakeButton(panel, L["Next"], 335, 30, 140, function()
         if panel.page < #pages then
             panel.page = panel.page + 1
             Render()

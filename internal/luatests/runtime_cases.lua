@@ -3894,6 +3894,10 @@ cases["localization.client_locale_and_fallback"] = function()
             local festival = localNS.L["Event quests appear only while the event is live. Darkmoon Faire stays hidden on Forever."]
             assert(festival:find("Feria de la Luna Negra", 1, true))
             assert(localNS.L["Dungeon / raid quest"]:find(locale == "esES" and "mazmorra" or "calabozo", 1, true))
+            if locale == "esMX" then
+                assert(localNS.L["All dungeons"] == "Todos los calabozos")
+                assert(localNS.L["This quest starts inside the dungeon, so a map pin is not available."]:find("del calabozo", 1, true))
+            end
         elseif locale == "deDE" then
             assert(localNS.L["Show quest start pins"] == "Queststart-Markierungen anzeigen")
             assert(localNS.L["Quest %d (title unavailable)"]:format(123) == "Quest 123 (Titel nicht verfügbar)")

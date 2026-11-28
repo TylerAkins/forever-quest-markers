@@ -20,6 +20,7 @@ ignore:
   - tools
   - go.mod
   - go.sum
+  - CONTRIBUTING.md
   - Database/build_report.json
   - "**/.DS_Store"
   - "**/Thumbs.db"
