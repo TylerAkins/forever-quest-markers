@@ -187,6 +187,11 @@ func (builder *recordBuilder) build(quest *questiedb.Quest) (Record, error) {
 		record.SourceQuestNumRequired = 1
 	}
 	record.AltQuests = uniqueSorted(quest.ExclusiveTo)
+	if quest.ZoneOrSort > 0 {
+		if mapID, ok := builder.zones.ResolveArea(quest.ZoneOrSort); ok {
+			record.Zone = mapID
+		}
+	}
 	if quest.RequiredSkill != nil {
 		skill := *quest.RequiredSkill
 		record.RequireSkill = &skill

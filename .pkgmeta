@@ -17,6 +17,7 @@ ignore:
   - tests
   - cmd
   - internal
+  - tools
   - go.mod
   - go.sum
   - Database/build_report.json

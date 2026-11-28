@@ -40,13 +40,31 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"## X-Website: https://github.com/TylerAkins/forever-quest-markers",
 		`Database\QuestTagCorrections.lua`,
 		`Database\EventPolicy.lua`,
+		`Database\DungeonChains.lua`,
 		`Database\BookQuests.lua`,
+		`Database\ZoneLevels.lua`,
+		`Database\BreadcrumbTargets.lua`,
+		"MinimapButton.lua",
+		"QuestFinder.lua",
+		"ChatQuestLinks.lua",
 		"Events.lua",
 		"Localization.lua",
 	} {
 		if !strings.Contains(toc, required) {
 			t.Errorf("TOC missing %q", required)
 		}
+	}
+	if strings.Contains(toc, "QuestRoute.lua") {
+		t.Error("TOC still loads the removed QuestRoute.lua")
+	}
+	if strings.Contains(toc, "DungeonRoutes.lua") {
+		t.Error("TOC still loads the removed Database/DungeonRoutes.lua")
+	}
+	if _, err := os.Stat(filepath.Join(base, "Bindings.xml")); err != nil {
+		t.Errorf("Bindings.xml is missing: %v", err)
+	}
+	if strings.Contains(toc, "Bindings.xml") {
+		t.Error("Bindings.xml is loaded automatically and must not be listed in the TOC")
 	}
 	if _, err := os.Stat(filepath.Join(base, "Media/QuestBook.tga")); err != nil {
 		t.Errorf("book pin texture is missing: %v", err)
@@ -55,6 +73,7 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"Database\\ForeverQuests.lua":       "Database\\QuestTagCorrections.lua",
 		"Database\\QuestTagCorrections.lua": "Database\\EventPolicy.lua",
 		"Database\\EventPolicy.lua":         "Config.lua",
+		"Database\\DungeonChains.lua":       "Database\\ExcludedQuests.lua",
 		"Database\\VanillaQuests.lua":       "Database\\BookQuests.lua",
 		"Database\\BookQuests.lua":          "Localization.lua",
 		"Localization.lua":                  "Config.lua",
@@ -71,15 +90,40 @@ func TestAddonTOCAndPackagingContract(t *testing.T) {
 		"QuestLinks.lua":                    "TrackerData.lua",
 		"TrackerData.lua":                   "Tracker.lua",
 		"Tracker.lua":                       "Core.lua",
+		"QuestFinder.lua":                   "Core.lua",
 	} {
 		if strings.Index(toc, before) < 0 || strings.Index(toc, after) < strings.Index(toc, before) {
 			t.Errorf("TOC load order does not place %s before %s", before, after)
 		}
 	}
 	metadata := read(t, base, ".pkgmeta")
-	for _, excluded := range []string{"tests", "cmd", "internal", "go.mod", "go.sum", "Database/build_report.json"} {
+	for _, excluded := range []string{"tests", "cmd", "internal", "tools", "go.mod", "go.sum", "Database/build_report.json"} {
 		if !strings.Contains(metadata, "- "+excluded) {
 			t.Errorf("packager does not exclude %s", excluded)
+		}
+	}
+}
+
+func TestDungeonChainDatabaseContract(t *testing.T) {
+	base := root(t)
+	source := read(t, base, "Database/DungeonChains.lua")
+	for _, header := range []string{
+		"-- AUTO-GENERATED FILE",
+		"-- DO NOT EDIT MANUALLY",
+		"-- Source: ForeverDungeonJournal",
+		"ns.DungeonChains = {",
+	} {
+		if !strings.Contains(source, header) {
+			t.Errorf("Database/DungeonChains.lua missing %q", header)
+		}
+	}
+	for _, contract := range []string{
+		`["The Deadmines"] = {`,
+		`[65] = { dungeons = { "The Deadmines" }, chains = { { dungeon = "The Deadmines", index = 1, total = 7, target = 166 }`,
+		`[166] = { dungeons = { "The Deadmines" }, chains = { { dungeon = "The Deadmines", index = 7, total = 7, target = 166 }`,
+	} {
+		if !strings.Contains(source, contract) {
+			t.Errorf("Database/DungeonChains.lua missing %q", contract)
 		}
 	}
 }
@@ -159,9 +203,22 @@ func TestAddonLeavesBlizzardTrackerNavigationAlone(t *testing.T) {
 		"UnregisterModuleEvents",
 		"UnregisterEvent(QuestObjectiveTracker.events[i])",
 		"RegisterEvent(QuestObjectiveTracker.events[i])",
+		"CopyFramePosition",
+		"FramePositionKey",
+		"self.sourcePoint",
 	} {
 		if !strings.Contains(tracker, contract) {
 			t.Errorf("Tracker.lua missing %q", contract)
+		}
+	}
+	for _, forbidden := range []string{
+		"StartMoving",
+		"SetMovable(true)",
+		"SetUserPlaced(true)",
+		"RegisterForDrag",
+	} {
+		if strings.Contains(tracker, forbidden) {
+			t.Errorf("Tracker.lua still makes the tracker movable outside Edit Mode with %q", forbidden)
 		}
 	}
 	if strings.Contains(tracker, "HookTrackerMenu(QuestObjectiveTracker") {
@@ -384,7 +441,7 @@ func TestGeneratedDatabaseMatchesReportAndStableContracts(t *testing.T) {
 		t.Fatal("generation produced no turn-in targets")
 	}
 	for questID, pattern := range map[string]string{
-		"754":   `\[754\] = \{ mapID=1412, x=47\.52, y=63\.58`,
+		"754":   `\[754\] = \{ zone=1412, mapID=1412, x=47\.52, y=63\.58`,
 		"8673":  `\[8673\] = \{[^\n]*isYearly=true`,
 		"17":    `\[17\] = \{[^\n]*isInstanceQuest=true`,
 		"96102": `\[96102\] = \{[^\n]*requireSkill=197`,
@@ -514,18 +571,25 @@ func TestLuaFilesAndDocumentationDescribeGoTooling(t *testing.T) {
 	}
 }
 
-func TestMapCodeAvoidsTaintingBlizzardsMapExecution(t *testing.T) {
+func TestMapFiltersUseBlizzardsTrackingMenu(t *testing.T) {
 	base := root(t)
 	mapPins := read(t, base, "MapPins.lua")
 	if strings.Contains(mapPins, "hooksecurefunc(WorldMapFrame") {
 		t.Fatal("MapPins.lua must not post-hook WorldMapFrame: the rest of Blizzard's map-open execution inherits the addon's taint")
 	}
 	config := read(t, base, "Config.lua")
-	if strings.Contains(config, `"MENU_WORLD_MAP_TRACKING"`) || strings.Contains(config, "Menu.ModifyMenu(") {
-		t.Fatal("Config.lua must not modify MENU_WORLD_MAP_TRACKING: the world map regenerates that menu from OnShow, so an addon callback taints the map-open execution")
+	for _, contract := range []string{
+		"function ns.TryRegisterWorldMapDropdown()",
+		`Menu.ModifyMenu`,
+		`"MENU_WORLD_MAP_TRACKING"`,
+		`"showBooks"`,
+	} {
+		if !strings.Contains(config, contract) {
+			t.Errorf("Config.lua missing map menu contract %q", contract)
+		}
 	}
-	if strings.Contains(config, "MenuUtil.CreateContextMenu") {
-		t.Fatal("Config.lua must not open a game menu over the map: the map reads the frame under the pointer, so addon menu entries taint it")
+	if strings.Contains(config, "EnsureWorldMapFilterButton") {
+		t.Fatal("Config.lua must not add a second filter button over the map")
 	}
 }
 
@@ -533,7 +597,7 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 	base := root(t)
 	eligibility := read(t, base, "Eligibility.lua")
 	for _, contract := range []string{
-		"function ns.IsQuestAvailable(questID, data)",
+		"function ns.IsQuestAvailable(questID, data, options)",
 		"function ns.IsSourceSatisfied(questID)",
 		"function ns.HasQuestGiver(data)",
 		"function ns.HasRequiredSkill(requiredSkill)",
@@ -640,10 +704,55 @@ func TestAddonSourceKeepsImportantRuntimeContracts(t *testing.T) {
 		}
 	}
 	config := read(t, base, "Config.lua")
-	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showWarEffortAlways = false", "warnSkippedBreadcrumb = true", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
+	for _, contract := range []string{"showNPCTooltips = true", "showNameplateIcons = true", "showMinimapButton = true", "Show minimap button", "showWarEffortAlways = false", "warnSkippedBreadcrumb = true", `key == "iconScale"`, `key == "showInGameNavigation"`, "Dungeon, raid, and attunement quest starts."} {
 		if !strings.Contains(config, contract) {
 			t.Errorf("Config.lua missing %q", contract)
 		}
+	}
+	questFinder := read(t, base, "QuestFinder.lua")
+	for _, contract := range []string{
+		"local showAll = { false, false, false }",
+		`local showAllButton = CreateFrame("CheckButton"`,
+		"showAll[activeTab] = self:GetChecked() and true or false",
+	} {
+		if !strings.Contains(questFinder, contract) {
+			t.Errorf("QuestFinder.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(questFinder, "local showAll = CreateFrame") {
+		t.Fatal("QuestFinder.lua shadows the show-all state table with its checkbox frame")
+	}
+	if strings.Contains(questFinder, "QuestRoute") ||
+		strings.Contains(questFinder, "Zone checklist") {
+		t.Fatal("QuestFinder.lua still contains the removed zone checklist")
+	}
+	for _, contract := range []string{
+		`row:RegisterForClicks("LeftButtonUp", "RightButtonUp")`,
+		`mouseButton == "RightButton"`,
+		"ns.ShowWowheadQuestURL(entry.questID)",
+		`L["Right-click to open the Wowhead URL."]`,
+	} {
+		if !strings.Contains(questFinder, contract) {
+			t.Errorf("QuestFinder.lua missing %q", contract)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(base, "QuestRoute.lua")); err == nil {
+		t.Error("QuestRoute.lua should be removed")
+	}
+	if _, err := os.Stat(filepath.Join(base, "Database", "DungeonRoutes.lua")); err == nil {
+		t.Error("Database/DungeonRoutes.lua should be removed")
+	}
+	minimap := read(t, base, "MinimapButton.lua")
+	for _, contract := range []string{
+		"ns.ShowQuestFinder()",
+		`L["Right-click: addon settings"]`,
+	} {
+		if !strings.Contains(minimap, contract) {
+			t.Errorf("MinimapButton.lua missing %q", contract)
+		}
+	}
+	if strings.Contains(minimap, "QuestRoute") || strings.Contains(minimap, "IsShiftKeyDown") {
+		t.Error("MinimapButton.lua still contains the removed route toggle")
 	}
 	core := read(t, base, "Core.lua")
 	if !strings.Contains(core, `"SKILL_LINES_CHANGED"`) || !strings.Contains(core, "NPCTooltips:Initialize") || !strings.Contains(core, "InvalidateInstanceQuestCache") {

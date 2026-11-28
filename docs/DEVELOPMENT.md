@@ -9,6 +9,7 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | Path | Role |
 |------|------|
 | `ForeverQuestPins.toc` | Load order, Interface 16001, packager metadata |
+| `Bindings.xml` | Key binding for using the tracked quest's special item |
 | `Config.lua` | Saved variables, slash commands, settings panel |
 | `Sparkle.lua` | Native quest item sparkle CVar, login and graphics-change reapply, combat deferral |
 | `HiddenQuests.lua` | Per-character Shift-click hidden quest pins, stored in the account DB under `hiddenQuests["Name-Surname"]`; pre-1.1.0 realm-keyed buckets are adopted on first access |
@@ -17,17 +18,24 @@ Repository tools use Go 1.27 or later. The Lua runtime tests also require LuaJIT
 | `MapPins.lua` | World-map start pins |
 | `Nameplates.lua` | Quest start, turn-in, and objective icons on NPC nameplates |
 | `Waypoints.lua` | Optional Blizzard / TomTom navigation and selected quest lifecycle |
+| `QuestItemKeybind.lua` | Keybind that uses the special item on the tracked quest |
 | `Breadcrumbs.lua` | Skipped-breadcrumb detection, warning dialog, and quest actions |
 | `QuestLinks.lua` | Copy Wowhead URL menu entry for tracked quest blocks |
+| `ChatQuestLinks.lua` | Turns Questie's plain-text chat links into clickable quest links |
 | `TrackerData.lua` | Quest-log zone headers, current-zone chain, distance, and the tracker sort/filter view |
 | `Tracker.lua` | Optional beta quest module inside Blizzard's tracker, zone headers, scroll viewport, and gamepad fallback |
+| `MinimapButton.lua` | Draggable minimap button that opens Quest Finder and settings |
+| `QuestFinder.lua` | Quest Finder window for breadcrumbs, available quests, and dungeon chains |
 | `AutoQuests.lua` | Optional auto-accept / auto-turn-in |
 | `Core.lua` | Events and refresh |
 | `Database/ForeverQuests.lua` | Generated quest records (do not edit by hand) |
 | `Database/Metadata.lua` | Pinned QuestieDB artifact, checksum, policy commit, and counts |
 | `Database/QuestTagCorrections.lua` | Generated static instance-tag corrections |
+| `Database/DungeonChains.lua` | Generated dungeon quests and required pre-quest chains from ForeverDungeonJournal |
 | `Database/EventPolicy.lua` | Generated holiday windows, per-quest overrides, Lunar Festival years, and AQ war effort IDs |
 | `Database/BookQuests.lua` | Hand-maintained library book pickup quest IDs for the collectible book category |
+| `Database/ZoneLevels.lua` | Hand-maintained zone level ranges copied from Leatrix Maps |
+| `Database/BreadcrumbTargets.lua` | Hand-maintained breadcrumb quest to target-zone overrides |
 | `Database/ExcludedQuests.lua` | Hand-maintained quest IDs that should never show map pins |
 | `Database/build_report.json` | Build stats (not shipped in the player zip) |
 | `VERSION` | Current stable release used by automated version checks |
@@ -65,7 +73,23 @@ go run ./cmd/fqp build-db \
 
 `Database/BookQuests.lua` is hand-maintained. The generated artifact has no objective text, so the build cannot reliably identify the library pickup quests. The list matches the quests whose objective is "Collect '<book title>' and bring it to ..." and excludes the Friend of the Library turn-ins (78150, 79536, 82208, 84394). `TestBookQuestListMatchesGeneratedDatabase` pins the 40 IDs, checks that each exists in `Database/ForeverQuests.lua`, and fails when the list or generated data diverges.
 
-The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
+`Database/ZoneLevels.lua` is hand-maintained from Leatrix Maps' "Level range table" under **Show zone levels**. Quest Finder prefers these ranges. City entries are `false`, which suppresses a computed range. Maps Leatrix does not list fall back to the minimum levels of quests with starts in that zone.
+
+`Database/BreadcrumbTargets.lua` is hand-maintained. Quest Finder derives a breadcrumb's target zone from the follow-up quests that list it in `sourceQuestSingle` or `sourceQuestGroup`. Add an override there when the follow-up starts outside the zone the breadcrumb is meant for, or when the follow-up is missing. Values are a UiMapID or a list of map IDs.
+
+Quest Finder's Loremaster bar counts quests assigned to the selected zone, including chain steps with no start coordinates. It uses Questie's `zone` field first and falls back to start coordinates for records without one. It keeps quests that match the player's faction, race, and class, and excludes repeatable, monthly, seasonal, and profession quests. Completed counts come from the quest completion API.
+
+The generated records separate prerequisites into AND (`sourceQuestGroup`) and OR (`sourceQuestSingle`, required count 1) lists. Coordless records stay in the database for tooltips and prerequisites but are excluded from `ns.ByMap`; gossip-learned starts fill their coordinates at runtime. Each record also carries Questie's assigned quest zone as `zone` when it maps to a UiMapID, so Quest Finder can count chain steps without start coordinates. Turn-in NPC and object ids are compiled into the database and shown on NPC tooltips when the quest is active and complete. Nameplate objective icons use the client's unit tooltip (`C_TooltipInfo.GetUnit`) instead of generated objective NPC data.
+
+`Database/DungeonChains.lua` comes from a local ForeverDungeonJournal install, not QuestieDB. It carries each dungeon's quest list, the required pre-quest chain, and the journal's start coordinates. Regenerate it after a journal update:
+
+```bash
+luajit tools/generate-dungeon-chains.lua \
+  "/Applications/World of Warcraft/_forever_/Interface/AddOns/ForeverDungeonJournal" \
+  Database/DungeonChains.lua
+```
+
+The addon marks chain quests as dungeon quests, so a normal outdoor pre-quest that unlocks a dungeon step uses the dungeon pin color and the **Show dungeon / raid quest pins** filter.
 
 Optional parity review against an older database:
 
@@ -79,7 +103,7 @@ This adds recovered/lost starts, coordinate changes, flag changes, and conflicts
 
 Workflow **Update QuestieDB database** (`.github/workflows/update-questie-db.yml`):
 
-- Daily at 06:00 UTC and on manual **Run workflow**
+- Wednesday, Friday, Saturday, and Sunday at 06:00 UTC and on manual **Run workflow**
 - Resolves the latest non-prerelease QuestieDB release and fails when none exists
 - Downloads that stable `v*` Forever artifact and records its tag and SHA-256 in the PR
 - Checks out Questie at the policy commit already pinned in `Database/Metadata.lua`
@@ -185,7 +209,7 @@ Addon map pins are ordinary buttons parented to the map canvas and never enter B
 
 Never post-hook `WorldMapFrame`. A `hooksecurefunc` post-hook runs inside Blizzard's map execution, so the rest of that execution inherits the addon's taint. In 1.1.1 the `Show`, `Hide`, `OnMapChanged`, `OnCanvasScaleChanged`, and `SynchronizeDisplayState` hooks made `SetDisplayState` write the quest log list and scroll container fields after `ShowUIPanel` as ForeverQuestPins. The next map opened in combat read those fields while placing its pins, and the client refused `SetPassThroughButtons` and `SetPropagateMouseClicks` with this addon named. Open, close, map changes, and canvas scale changes are watched from `mapWatch`'s `OnUpdate`, which runs in the addon's own execution. The watch skips map calls during combat and replays a pending open or close after combat, so opening the map in combat cannot taint Blizzard's pin placement.
 
-Do not register `Menu.ModifyMenu` callbacks for menus the world map generates, and do not open a game menu over the map. `WorldMapTrackingOptionsButtonMixin:OnShow` calls `SetupMenu`, which generates the menu while the map opens, so an addon callback runs inside that execution and taints everything Blizzard writes afterwards. The map also reads the frame under the pointer every frame, so addon entries in a game menu taint the map while the menu is open. Leatrix Maps avoids both with its own pop-up lists. The pin filters use the addon's own button and list of addon frames (`Config.lua`), built only on click, and remain in the settings panel and the `/fqp` commands.
+The pin filters live in Blizzard's world map tracking menu (`MENU_WORLD_MAP_TRACKING`). Register the menu callback from `ns.TryRegisterWorldMapDropdown` after `Blizzard_WorldMap` loads; the map rebuilds that menu from `OnShow`. The addon no longer draws a second filter button or list over the map. If a future client reports a blocked map action, compare the map-open stack with this callback before changing the menu registration.
 
 `/fqp taint` scans the map, quest log, and tracker frames with `issecurevariable` and names the addon that last wrote each tainted field; run it before `/reload` after a block, and check that no map field is tainted.
 
@@ -273,10 +297,10 @@ Disabling the option restores it. The addon never assigns Blizzard's
 `SelectFirstButton`, or `UpdateSmartNavigationOverrides`; the repository contract
 test checks that.
 
-The standalone frame copies Blizzard's position and size when it is created. Drag
-the **Quests** header to move it. The frame fills the Edit Mode height; the module
-scrolls inside it. The height follows Edit Mode's height slider, but moving the
-source frame in Edit Mode does not move the standalone tracker.
+The standalone frame copies Blizzard's position and size when it is created and
+follows later Edit Mode position and height changes. The frame fills the Edit Mode
+height; the module scrolls inside it. It has no separate drag handler, so moving it
+outside Edit Mode does nothing.
 
 `Tracker.lua` is a beta feature and `enhanceQuestTracker` defaults off. A new
 `_trackerBetaSeenV2` marker forces the option off once for installs that had the
@@ -326,9 +350,8 @@ out-of-combat layout. Filters never call `AddQuestWatch` or `RemoveQuestWatch`.
   updates preserve it and clamp it when the content shrinks.
 - Edit Mode is Blizzard's existing Objective Tracker system. Moving the tracker,
   changing its height, text size, or opacity needs no custom mover; the viewport
-  follows the height setting. The standalone tracker copies the size and position
-  when it is created and follows later height changes, but not later position
-  changes; drag its header to move it.
+  follows the height setting. The standalone tracker follows the source tracker's
+  Edit Mode position and height; there is no separate header drag.
 - `InputUtil.IsGamepadUIEnabled()` is a hard gate. When gamepad UI is active the
   module is not added, the settings controls are disabled with a note, and the
   setup guide disables the same Quest tracker choices. `/fqp nearest` reports
@@ -372,16 +395,16 @@ Runtime cases cover grouping, every sort and filter, the current-zone match,
 combat caching, combat retention of the standalone tracker, module registration and
 restoration, secure quest-click delegation, gamepad fallback, zone header insertion,
 collapse skipping, and the scroll viewport math. In-game checks still cover the
-side-by-side look, the header drag, scrolling over every control, animations,
+side-by-side look, Edit Mode position and height changes, scrolling over every
+control, animations,
 combat, taint, and the gamepad transition.
 
 Known limits: the module relies on Blizzard's tracker internals; if a client patch
 renames them, `CanUseQuestTracker` leaves Blizzard's tracker unchanged. Third-party
 addons that enumerate tracker blocks by the `quest` tag also see zone header blocks;
 those blocks use string IDs and are ignored by normal quest consumers. The standalone
-tracker is not part of Blizzard's Edit Mode system, so moving it uses the header drag.
-Its height follows the Edit Mode slider, but moving the source frame in Edit Mode does
-not move the standalone tracker.
+tracker is not part of Blizzard's Edit Mode system, so it follows the source tracker's
+position and height through a poll instead of owning an Edit Mode layout.
 
 ## Quest item sparkles
 

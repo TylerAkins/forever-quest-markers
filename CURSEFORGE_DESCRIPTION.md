@@ -15,7 +15,9 @@ It adds quest-start markers to the world map, quest icons to NPC nameplates, and
 - Shows quest-start markers for unaccepted quests on the world map.
 - Shows nameplate icons for NPCs that offer a quest, accept a turn-in, or are an active quest objective. The icon goes away when the objective is done.
 - Lists quests you can accept and quests ready to turn in on NPC tooltips.
-- Adds an optional beta quest tracker layout with zone groups, sort and filter menus, and mouse-wheel scrolling inside Blizzard's tracker. Edit Mode moves and resizes it normally. Off by default.
+- Adds a draggable minimap button that opens Quest Finder and addon settings.
+- Adds **Quest Finder** with tabs for breadcrumbs, available zone quests, and dungeon quests with their pre-quest chains. It shows per-zone Loremaster progress, filters by search text, and sets Blizzard map pins from any zone. Right-click a quest row to open its Wowhead Forever URL.
+- Adds an optional beta quest tracker layout with zone groups, sort and filter menus, and mouse-wheel scrolling. It follows Blizzard's tracker position and height in Edit Mode. Off by default.
 - Tracks a quest start with Blizzard map pins or TomTom when you click a marker.
 - Groups nearby spawn points into one marker. Hover to see the count and every location.
 - Hides a marker for the current character with Shift-click. Restore it in settings or with `/fqp unhide`.
@@ -36,6 +38,8 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 | `/fqp nameplates` | Toggle nameplate icons |
 | `/fqp npctooltip` | Toggle NPC quest lines |
 | `/fqp nearest` | Select the closest tracked quest once (uses the beta tracker's active filter) |
+| `/fqp finderreset` | Center Quest Finder if it was moved off screen |
+| `/fqp chatlinks` | Toggle clickable Questie chat links |
 | `/fqp books` | Toggle collectible book quest markers |
 | `/fqp spawns` | Toggle grouped spawn markers |
 | `/fqp seasonal` | Toggle holiday markers |

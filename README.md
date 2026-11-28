@@ -17,11 +17,18 @@ TomTom is an optional waypoint provider. The default is **Blizzard Map Pins**.
 ## Features
 
 - Yellow `!` pins for normal quest starts, blue `!` for repeatable, red-orange `!` for dungeon and raid, class-colored `!` for class quests, and copper `!` for profession quests
-- Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker
+- Collectible library book pickups have their own pin category, off by default. Turn it on to show their map pins, NPC tooltip lines, and nameplate icons, and to include them in auto-accept. Book-only pins use a bundled transparent book icon with a subtle drop shadow when **Show book icon for book quest pins** is on; stacks mixed with other quests keep the normal marker. Book icons have their own size slider and default to 75% of a quest pin.
+- Dungeon chain pre-quests use the dungeon pin color too. ForeverDungeonJournal's required chain data marks outdoor steps that unlock a dungeon quest, so they appear under **Show dungeon / raid quest pins** instead of hiding among normal yellow pins.
 - Map pin tooltips with `[level] quest name` (Forever tracker level when available; Questie inline name when the client has not loaded a title) and NPC names (IDs only if debug is on)
 - NPC mouseover tooltips listing quests you can accept and quests ready to turn in (on by default)
 - Quest icons beside NPC nameplates for quests you can accept, turn in, or are working on (on by default)
 - Nameplate icons show `!` for an acceptable quest, `?` for a ready turn-in, and a quest bullet for an active objective. Completed objectives drop the icon.
+- Questie's plain-text and Questie chat links, such as `[[53] Chasing A-Me 01 (4243)]`, become the game's own yellow clickable quest links. Existing native links and clients with Questie loaded are left alone, and the conversion can be turned off in Interface settings or with `/fqp chatlinks`.
+- A keybind under **Key Bindings > AddOns > Forever Quest Pins** uses the special item on the tracked quest the tracker highlights, including the quest chosen by **Select nearest quest**. It does nothing when the selected quest has no usable item.
+- A minimap button opens **Quest Finder** on left-click and addon settings on right-click. Drag it around the minimap; hide it in **Interface** settings. The Quest Finder header is also draggable, and its position is remembered.
+- Quest Finder shows a per-zone Loremaster progress bar for the current or selected zone, calculated from eligible quests assigned to the zone, including chain steps with no map pin, and your completed quests. Repeatable, monthly, seasonal, and profession quests are excluded.
+- Each Quest Finder tab has a show-all option: **Show all breadcrumbs**, **Show all zone quests**, and **Show all dungeon quests**. Breadcrumbs adds completed and in-log breadcrumbs, zone quests lists every Loremaster quest assigned to the zone, and dungeon quests adds completed and unavailable dungeon quests and chain steps.
+- **Quest Finder** lists breadcrumbs for the current or selected zone, quests available in a zone, and available dungeon quests with their required pre-quest chains. Breadcrumbs are matched by the zone they lead to, so a capital-city breadcrumb for the Plaguelands appears under the Plaguelands, and breadcrumbs whose follow-up is already complete or in the log are hidden. Alternate capital-city versions are grouped into one row that lists every start city, and clicking a row with multiple start zones opens a start-zone chooser. A search box filters the current view by quest, dungeon, zone, or status text. Zone selectors use Leatrix Maps' zone levels, dungeon selectors use the journal's dungeon levels, and every row shows the quest level, start zone, and type tags such as Dungeon, Repeatable, Profession, Class, PvP, Breadcrumb, or Book. The **All dungeons** view shows only acceptable quests and an available-versus-total count. Clicking a dungeon opens its full quest list and chains, including quests you cannot pick up yet, with Complete, In log, Unavailable, and Unknown statuses. Availability uses the player's level and quest prerequisites, not the map pin level filters. Opposite-faction, wrong-race, and wrong-class quests and chain steps stay hidden. Quests that start inside a dungeon are tagged **In dungeon** and do not offer a map pin. Click a row to set a Blizzard map pin from any zone, or right-click a quest row to open its Wowhead Forever URL. The breadcrumb and available-quest lists use the same eligibility and display filters as the map pins.
 - Optional **beta** quest tracker layout with zone groups, collapsible zone headers, sort options (Blizzard order, distance, level, title), view filters, and mouse-wheel scrolling. It uses Blizzard's own tracker header, quest blocks, item buttons, and POI buttons, and Edit Mode moves and resizes it normally. Off by default.
 - Pins stay on the map art in windowed and fullscreen layouts
 - Nearby spawn points for one quest group share one pin (up to six per quest). Hover to see the spawn count in the tooltip and every spawn location on the map. Turn off **Show spawn clusters** to show one pin per quest instead
@@ -52,11 +59,11 @@ The optional **Don't auto-accept grey quests** checkbox defaults off. It skips q
 
 **Warn on skipped breadcrumbs** defaults on. When you accept a quest before its breadcrumb quest is completed or in your quest log, a dialog names both quests. **Set Waypoint** uses your configured waypoint provider, **Abandon Quest** removes the quest you just accepted, and **Ignore** hides the warning for that quest until you reload. **Abandon Quest** selects the quest in your quest log from addon code, which can make the map report a blocked action in combat until you reload. Abandon it from the quest log instead if you want to avoid that.
 
-**Enhance quest tracker (BETA)** is off by default. Turn it on in settings or the setup guide. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. Once it is on, right-click the **Quests** header for the same controls. A filter with no matches keeps the **Quests** header visible with a short note, so the menu is still reachable. Zone headers collapse and remember their state per character. The tracker scrolls with the mouse wheel when it has more quests than fit; the **Quests** header stays fixed. Edit Mode moves the tracker, changes its height, text size, and opacity, and the scroll viewport follows the height. In combat the tracker uses cached zone data and returns to a fresh view after combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove tracked quests, and Shift-click still untracks. **Select nearest quest** is off by default; when on, it super-tracks the closest tracked quest and updates it as you move. With the beta on, it uses the active **Show quests** filter, so a current-zone filter only considers current-zone quests. With the beta off, it uses every tracked quest. Use `/fqp nearest` to select it once. The beta is unavailable while gamepad UI is active; Blizzard's tracker runs unchanged there.
+**Enhance quest tracker (BETA)** is off by default. Turn it on in settings or the setup guide. It groups Blizzard's tracked quests under the zone headers from your quest log, puts the current zone first, and adds **Sort quests** and **Show quests** dropdowns. **All quests** includes every quest in your quest log, including quests that are not on Blizzard's watch list; **Tracked only** keeps the old watch-list view. Once it is on, right-click the **Quests** header for the same controls. A filter with no matches keeps the **Quests** header visible with a short note, so the menu is still reachable. Zone headers collapse and remember their state per character. The tracker scrolls with the mouse wheel when it has more quests than fit; the **Quests** header stays fixed. Edit Mode moves the tracker, changes its height, text size, and opacity, and the scroll viewport follows the height. In combat the tracker uses cached zone data and returns to a fresh view after combat. **Current zone only**, **Instance quests**, and **Completed quests only** are view filters: they never add or remove quests from the log. **Select nearest quest** is off by default; when on, it super-tracks the closest quest in the active view and updates it as you move. With the beta on, it uses the active **Show quests** filter, so a current-zone filter only considers current-zone quests. With the beta off, it uses every tracked quest. Use `/fqp nearest` to select it once. The beta is unavailable while gamepad UI is active; Blizzard's tracker runs unchanged there.
 
 **Show quest item sparkles** is off by default and is also offered on the setup guide's **Navigation** page. Turning it on keeps the client's native quest item sparkle enabled, including after a graphics preset resets it. The client has one switch for quest items and quest givers, so quest givers sparkle too. Turning the option off writes the native setting back to off, but the game keeps drawing sparkles until you restart it; `/reload` is not enough. With the option off the addon never writes the setting, so your own choice in the game's graphics options stands.
 
-Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
+Escape > Options > AddOns > **Forever Quest Pins**, the world map's tracking menu, or the slash commands below. The settings page is split into **General**, **Map pins**, **Quest automation**, **Navigation**, **Quest tracker**, and **Interface** sections in the Settings sidebar. The addon synchronizes choices across account-wide and per-character SavedVariables, plus a small CVar mirror. Revision numbers let the newest copy win without stale defaults overwriting saved choices.
 
 | Option | Default |
 |--------|---------|
@@ -81,15 +88,18 @@ Escape > Options > AddOns > **Forever Quest Pins**, the map's filter button, or 
 | Show in-world destination marker | Uses Blizzard’s current shared navigation setting |
 | Waypoint provider | Blizzard Map Pins (TomTom optional) |
 | Map pin size | 100% (adjustable from 50% to 150%) |
+| Book icon size | 75% (adjustable from 25% to 150%) |
 | Auto-accept quests | Off |
 | Warn on skipped breadcrumbs | On (dialog offers Set Waypoint, Abandon Quest, and Ignore) |
 | Auto-turn in quests | Off (will not pick when there are multiple rewards) |
 | Show quests on NPC tooltips | On (available accepts and ready turn-ins) |
 | Show quest icons on nameplates | On (quest start, ready turn-in, and active objective icons beside NPC names) |
 | Show quest item sparkles | Off (keeps the native quest item sparkle on; quest givers sparkle too, and turning it off needs a full game restart) |
+| Show minimap button | On (left-click opens Quest Finder, right-click opens settings) |
+| Make Questie chat links clickable | On (does nothing while Questie is loaded) |
 | Enhance quest tracker (BETA) | Off (zone groups, sorting, filters, and mouse-wheel scrolling; unavailable in gamepad UI) |
 | Sort quests | Blizzard order (distance, level, or title optional) |
-| Show quests | All tracked quests (current zone only, instance quests, or completed quests optional) |
+| Show quests | All quests (tracked only, current zone only, instance quests, or completed quests optional) |
 | Tracker bottom spacing | 15px (slider 0-60px; space kept above the action bars) |
 | Select nearest quest | Off (super-track the closest tracked quest; `/fqp nearest` selects it once) |
 | Debug tooltips | Off |
@@ -108,6 +118,10 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | Command | Action |
 |---------|--------|
 | `/fqp` | Help |
+| `/fqp finder` | Open Quest Finder |
+| `/fqp finderreset` | Reset Quest Finder to the screen center |
+| `/fqp finderdebug` | Print Quest Finder counts and active filters |
+| `/fqp options` | Open the addon settings |
 | `/fqp on` / `/fqp off` | Enable or disable pins |
 | `/fqp trivial` | Toggle low-level / trivial pins |
 | `/fqp trivial <3-15>` | Hide quests this many levels below you |
@@ -126,6 +140,7 @@ Right-click a quest title in Blizzard’s quest tracker and choose **Copy Wowhea
 | `/fqp breadcrumbtest` | Preview the skipped-breadcrumb dialog |
 | `/fqp npctooltip` | Toggle NPC quest accept and ready turn-in tooltips |
 | `/fqp nameplates` | Toggle quest icons on nameplates |
+| `/fqp chatlinks` | Toggle clickable Questie chat links |
 | `/fqp nameplatedebug` | Print visible nameplate icon state |
 | `/fqp debug` | Toggle debug tooltips |
 | `/fqp track <id>` | Track a quest start, or Blizzard-provided objective / turn-in |

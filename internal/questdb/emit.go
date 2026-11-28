@@ -146,6 +146,9 @@ func renderRecord(record Record) string {
 	add := func(key, value string) {
 		fields = append(fields, key+"="+value)
 	}
+	if record.Zone > 0 {
+		add("zone", strconv.Itoa(record.Zone))
+	}
 	if len(record.Coords) > 0 {
 		first := record.Coords[0]
 		add("mapID", strconv.Itoa(first.MapID))

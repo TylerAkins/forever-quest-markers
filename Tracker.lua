@@ -15,7 +15,8 @@ local SORT_LABELS = ns.TrackerSortLabels or {
     title = L["Title"],
 }
 local FILTER_LABELS = ns.TrackerFilterLabels or {
-    all = L["All tracked quests"],
+    all = L["All quests"],
+    tracked = L["Tracked only"],
     current = L["Current zone only"],
     instance = L["Instance quests"],
     completed = L["Completed quests only"],
@@ -127,18 +128,37 @@ local registerRetries = 0
 local blizzardEventsSuspended = false
 local standaloneFrame
 
+local function CopyFramePosition(target, source)
+    if not target or not source or not source.GetPoint then
+        return false
+    end
+    local point, relativeTo, relativePoint, x, y = source:GetPoint(1)
+    if not point then
+        return false
+    end
+    target:ClearAllPoints()
+    target:SetPoint(point, relativeTo or UIParent, relativePoint or point, x or 0, y or 0)
+    return true
+end
+
+local function FramePositionKey(source)
+    if not source or not source.GetPoint then
+        return nil
+    end
+    local point, relativeTo, relativePoint, x, y = source:GetPoint(1)
+    if not point then
+        return nil
+    end
+    return tostring(point) .. ":" .. tostring(relativeTo) .. ":"
+        .. tostring(relativePoint) .. ":" .. tostring(x or 0) .. ":"
+        .. tostring(y or 0)
+end
+
 local function CopyFrameLayout(target, source)
     if not source then
         return
     end
-    local point, relativeTo, relativePoint, x, y
-    if source.GetPoint then
-        point, relativeTo, relativePoint, x, y = source:GetPoint(1)
-    end
-    if point then
-        target:ClearAllPoints()
-        target:SetPoint(point, relativeTo or UIParent, relativePoint or point, x or 0, y or 0)
-    else
+    if not CopyFramePosition(target, source) then
         target:ClearAllPoints()
         target:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -20)
     end
@@ -163,10 +183,6 @@ local function CopyFrameLayout(target, source)
     if source.GetClampedToScreen and target.SetClampedToScreen then
         target:SetClampedToScreen(source:GetClampedToScreen())
     end
-    target:SetMovable(true)
-    target:SetResizable(true)
-    target:SetUserPlaced(true)
-    target:SetDontSavePosition(false)
 end
 
 -- The standalone frame is not part of Edit Mode. Read the tracker's current
@@ -194,6 +210,7 @@ local function CreateStandaloneContainer()
     end
     local frame = CreateFrame("Frame", "FQPStandaloneTracker", UIParent)
     CopyFrameLayout(frame, ObjectiveTrackerFrame)
+    frame.sourcePoint = FramePositionKey(ObjectiveTrackerFrame)
     frame.module = nil
     frame.professionsModule = nil
     frame.dirty = false
@@ -365,14 +382,19 @@ local function CreateStandaloneContainer()
         self:SetShown((quest and quest:IsShown()) or (professions and professions:IsShown()) or false)
     end
 
-    -- Edit Mode changes the source frame's height without an event our tracker
-    -- listens to. Poll it cheaply and relayout when it changes.
+    -- Edit Mode changes the source frame's position and height without an event
+    -- our tracker listens to. Poll it cheaply and follow both.
     frame:SetScript("OnUpdate", function(self, elapsed)
         self.heightCheck = (self.heightCheck or 0) + elapsed
         if self.heightCheck < 0.25 then
             return
         end
         self.heightCheck = 0
+        local sourcePoint = FramePositionKey(ObjectiveTrackerFrame)
+        if sourcePoint and sourcePoint ~= self.sourcePoint then
+            self.sourcePoint = sourcePoint
+            CopyFramePosition(self, ObjectiveTrackerFrame)
+        end
         local height = SourceTrackerHeight()
         if height and height ~= sourceHeight then
             sourceHeight = height
@@ -511,6 +533,61 @@ local function CanUseQuestTracker()
         and type(QuestCache) == "table"
         and QuestObjectiveTracker.uiOrder ~= nil
         and ObjectiveTrackerManager:GetContainerForModule(QuestObjectiveTracker) == ObjectiveTrackerFrame
+end
+
+-- The "All quests" and zone views also include quests that are in the log but
+-- not on Blizzard's watch list. QuestCache holds the same quest objects the
+-- tracker builds watched blocks from, so untracked quests can use the normal
+-- block, item button, and click behavior.
+local function QuestLogEntries()
+    if not C_QuestLog
+        or type(C_QuestLog.GetNumQuestLogEntries) ~= "function"
+        or type(C_QuestLog.GetInfo) ~= "function" then
+        return nil
+    end
+    local okCount, count = pcall(C_QuestLog.GetNumQuestLogEntries)
+    if not okCount or type(count) ~= "number" or count <= 0 then
+        return nil
+    end
+    local entries = {}
+    for index = 1, count do
+        local ok, info = pcall(C_QuestLog.GetInfo, index)
+        if ok and type(info) == "table" and not info.isHeader then
+            local questID = info.questID or info.questId
+            if type(questID) == "number" and questID > 0 then
+                entries[#entries + 1] = { questID = questID, index = index }
+            end
+        end
+    end
+    return entries
+end
+
+local function QuestCacheObject(questID)
+    if type(QuestCache) ~= "table" then
+        return nil
+    end
+    if type(QuestCache.Get) == "function" then
+        local ok, quest = pcall(QuestCache.Get, QuestCache, questID)
+        if ok and quest then
+            return quest
+        end
+        ok, quest = pcall(QuestCache.Get, questID)
+        if ok and quest then
+            return quest
+        end
+    end
+    return QuestCache[questID]
+end
+
+local function ShouldDisplayQuest(tracker, quest)
+    if not quest or type(tracker.ShouldDisplayQuest) ~= "function" then
+        return true
+    end
+    local ok, shown = pcall(tracker.ShouldDisplayQuest, tracker, quest)
+    if ok then
+        return shown == true
+    end
+    return true
 end
 
 local function ResetTrackerScroll()
@@ -1058,6 +1135,7 @@ local function BuildTrackerMixin()
         -- A turned-in quest can linger in the watch list for a frame or more.
         -- Keep only quests that are still in the quest log so the tracker
         -- drops them as soon as the client reports the turn-in.
+        local watched = {}
         if C_QuestLog and type(C_QuestLog.GetLogIndexForQuestID) == "function" then
             local inLog = {}
             for i = 1, #infos do
@@ -1066,11 +1144,44 @@ local function BuildTrackerMixin()
                 if type(questID) == "number" then
                     local logIndex = C_QuestLog.GetLogIndexForQuestID(questID)
                     if type(logIndex) == "number" and logIndex > 0 then
+                        infos[i].isTracked = true
+                        watched[questID] = true
                         inLog[#inLog + 1] = infos[i]
                     end
                 end
             end
             infos = inLog
+        else
+            for i = 1, #infos do
+                local quest = infos[i].quest
+                local questID = quest and quest.GetID and quest:GetID()
+                if type(questID) == "number" then
+                    watched[questID] = true
+                end
+                infos[i].isTracked = true
+            end
+        end
+        -- "Tracked only" and "Completed quests only" keep Blizzard's watch
+        -- list. The other views add the rest of the quest log so players can
+        -- see every quest they hold, not just the first 25 watched quests.
+        local filter = ns.GetOption("trackerFilter")
+        if filter ~= "tracked" and filter ~= "completed" then
+            local entries = QuestLogEntries()
+            if entries then
+                for i = 1, #entries do
+                    local entry = entries[i]
+                    if not watched[entry.questID] then
+                        local quest = QuestCacheObject(entry.questID)
+                        if ShouldDisplayQuest(self, quest) then
+                            infos[#infos + 1] = {
+                                quest = quest,
+                                index = entry.index,
+                                isTracked = false,
+                            }
+                        end
+                    end
+                end
+            end
         end
         return ns.EnhanceQuestWatchInfos(self, infos)
     end
@@ -1149,7 +1260,7 @@ local function BuildTrackerMixin()
         if ObjectiveTrackerLineFont and block.HeaderText and block.HeaderText.SetFontObject then
             block.HeaderText:SetFontObject(ObjectiveTrackerLineFont)
         end
-        block.HeaderText:SetText(L["No tracked quests match this filter."])
+        block.HeaderText:SetText(L["No quests match this filter."])
         block.HeaderText:SetTextColor(0.6, 0.6, 0.6)
         if block.HeaderText.SetMaxLines then
             block.HeaderText:SetMaxLines(0)
@@ -1446,20 +1557,6 @@ local function CreateModule()
     frame.Header:HookScript("OnMouseWheel", function(_, delta)
         frame:Scroll(delta)
     end)
-    local container = frame:GetParent()
-    if frame.Header.RegisterForDrag then
-        frame.Header:RegisterForDrag("LeftButton")
-        frame.Header:SetScript("OnDragStart", function()
-            if container and container.StartMoving then
-                container:StartMoving()
-            end
-        end)
-        frame.Header:SetScript("OnDragStop", function()
-            if container and container.StopMovingOrSizing then
-                container:StopMovingOrSizing()
-            end
-        end)
-    end
     HookTrackerMenu(frame.Header)
     if ns.InstallSpokenTrackerBridge then
         ns.InstallSpokenTrackerBridge(frame)

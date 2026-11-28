@@ -9,6 +9,7 @@ import (
 // Record is one compact quest-start record written to ForeverQuests.lua.
 type Record struct {
 	QuestID                int
+	Zone                   int
 	Coords                 []questiedb.Coord
 	QG                     int
 	QGs                    []int

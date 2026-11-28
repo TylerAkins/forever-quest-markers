@@ -1,4 +1,50 @@
 local cases = {}
+
+-- Quest Finder tests load QuestFinder.lua alone, so mirror the eligibility
+-- policy it normally gets from Eligibility.lua.
+local function PlayerMatchesStub(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction and ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 then
+        local raceID = ns.GetPlayerRaceID and ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 then
+        local classID = ns.GetPlayerClassID and ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
 cases["eligibility_runtime.test_completed_id_list_wins_over_account_completion"] = function()
 ns = {}; C_QuestLog = {}
 assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
@@ -426,75 +472,50 @@ end
             assert(ns.IsQuestAvailable(101, { classes = { 1 }, requireSkill = 164 }))
 
 end
-cases["pin_filters_runtime.map_filter_button_builds_its_own_menu"] = function()
+cases["pin_filters_runtime.map_filters_register_with_blizzard_tracking_menu"] = function()
     ns = {}
     print = function() end
-    WorldMapFrame = {
-        GetFrameStrata = function() return "FULLSCREEN_DIALOG" end,
-        GetFrameLevel = function() return 1 end,
-        GetCanvasContainer = function() return nil end,
+    local registered
+    Menu = {
+        ModifyMenu = function(menu, callback)
+            registered = { menu = menu, callback = callback }
+        end,
     }
-    local frames = {}
-    local function region()
-        return {
-            SetAllPoints = function() end,
-            SetSize = function() end,
-            SetPoint = function() end,
-            SetColorTexture = function() end,
-            SetAtlas = function() end,
-            SetTexture = function() end,
-            SetText = function() end,
-            SetTextColor = function() end,
-            SetShown = function(self, value) self.shown = value and true or false end,
-        }
-    end
-    CreateFrame = function(kind, name, parent)
-        local frame = { kind = kind, name = name, parent = parent, scripts = {}, shown = true }
-        frame.SetSize = function() end
-        frame.SetPoint = function() end
-        frame.ClearAllPoints = function() end
-        frame.SetClampedToScreen = function() end
-        frame.SetFrameStrata = function() end
-        frame.SetFrameLevel = function() end
-        frame.EnableMouse = function() end
-        frame.CreateTexture = function() return region() end
-        frame.CreateFontString = function() return region() end
-        frame.SetScript = function(self, event, callback) self.scripts[event] = callback end
-        frame.Show = function(self) self.shown = true end
-        frame.Hide = function(self) self.shown = false end
-        frame.SetShown = function(self, value) self.shown = value and true or false end
-        frame.IsShown = function(self) return self.shown end
-        frame.SetChecked = function(self, value) self.checked = value and true or false end
-        frame.GetChecked = function(self) return self.checked end
-        frame.Enable = function(self) self.enabled = true end
-        frame.Disable = function(self) self.enabled = false end
-        frames[#frames + 1] = frame
-        return frame
-    end
+    MenuUtil = {
+        CreateCheckbox = function(label, getter, setter)
+            return {
+                label = label,
+                getter = getter,
+                setter = setter,
+                SetEnabled = function() end,
+            }
+        end,
+    }
     assert(loadfile("Config.lua"))("ForeverQuestPins", ns)
-    assert(ns.EnsureWorldMapFilterButton)
-    ns.EnsureWorldMapFilterButton()
-    local button
-    for _, frame in ipairs(frames) do
-        if frame.kind == "Button" then button = frame end
-    end
-    assert(button and button.scripts.OnClick, "the map filter button must exist")
+    ns.GetOption = function(key) return key ~= "showPvP" end
+    ns.SetOption = function() end
+    assert(ns.TryRegisterWorldMapDropdown())
+    assert(registered and registered.menu == "MENU_WORLD_MAP_TRACKING",
+        "pin filters must live in Blizzard's world map tracking menu")
 
-    button.scripts.OnClick(button)
-    local list
-    for _, frame in ipairs(frames) do
-        if frame.name == "ForeverQuestPinsMapFilterList" then list = frame end
+    local inserted = {}
+    local root = {
+        CreateDivider = function() end,
+        CreateTitle = function() end,
+        Insert = function(_, button) inserted[#inserted + 1] = button end,
+    }
+    registered.callback(nil, root)
+    assert(#inserted == 14, "the menu keeps the full filter set")
+    local labels = {}
+    for i = 1, #inserted do labels[inserted[i].label] = true end
+    for _, label in ipairs({
+        "Quest start",
+        "Dungeon / raid quest",
+        "Collectible book quest",
+        "Click pins to track quest starts",
+    }) do
+        assert(labels[label], "missing filter: " .. label)
     end
-    assert(list, "clicking the button must build the addon's own list")
-    assert(list.shown == true, "the list opens on click")
-    local rows = 0
-    for _, frame in ipairs(frames) do
-        if frame.kind == "CheckButton" then rows = rows + 1 end
-    end
-    assert(rows == 14, "the list keeps the full filter set")
-
-    button.scripts.OnClick(button)
-    assert(list.shown == false, "clicking the button again closes the list")
 end
 
 cases["pin_filters_runtime.test_options_category_controls_disable_without_losing_selections"] = function()
@@ -6113,6 +6134,10 @@ cases["tracker_runtime.zone_groups_sorts_and_filters"] = function()
     assert(trackerIDs(data.EnhanceQuestWatchInfos(nil, infos)) == "105")
     options.trackerFilter = "all"
     assert(#data.EnhanceQuestWatchInfos(nil, infos) == 5)
+    infos[1].isTracked = false
+    options.trackerFilter = "tracked"
+    assert(trackerIDs(data.EnhanceQuestWatchInfos(nil, infos)) == "102,103,104,105")
+    infos[1].isTracked = nil
 end
 
 cases["tracker_runtime.completed_filter_shows_only_complete_quests"] = function()
@@ -6279,7 +6304,10 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetWidth(width) self.width = width end
         function frame:GetWidth() return self.width or 0 end
         function frame:SetSize(width, height) self.width, self.height = width, height end
-        function frame:GetPoint() return "TOPRIGHT", UIParent, "TOPRIGHT", -20, -20 end
+        function frame:GetPoint()
+            return self.point or "TOPRIGHT", self.relativeTo or UIParent,
+                self.relativePoint or "TOPRIGHT", self.x or -20, self.y or -20
+        end
         function frame:SetScale() end
         function frame:GetScale() return 1 end
         function frame:SetAlpha() end
@@ -6294,7 +6322,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
         function frame:SetResizable(value) self.resizable = value end
         function frame:SetUserPlaced(value) self.userPlaced = value end
         function frame:SetDontSavePosition(value) self.dontSavePosition = value end
-        function frame:RegisterForDrag() end
+        function frame:RegisterForDrag() self.dragRegistered = true end
         function frame:StartMoving() end
         function frame:StopMovingOrSizing() end
         function frame:EnableMouse(enabled)
@@ -6501,6 +6529,12 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end
     assert(ourModule, "the addon must create its tracker module")
     assert(standaloneTracker, "the addon must create its standalone tracker container")
+    assert(standaloneTracker.movable ~= true,
+        "the standalone tracker must not be movable outside Edit Mode")
+    assert(standaloneTracker.userPlaced ~= true,
+        "the standalone tracker must not save an independent position")
+    assert(ourModule.Header and ourModule.Header.dragRegistered ~= true,
+        "the quest header must not drag the tracker outside Edit Mode")
     assert(#ObjectiveTrackerFrame.modules == 2
         and ObjectiveTrackerFrame:HasModule(QuestObjectiveTracker)
         and ObjectiveTrackerFrame:HasModule(ProfessionsRecipeTracker),
@@ -6525,6 +6559,14 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     assert(QuestObjectiveTracker.shown == false)
     assert(ObjectiveTrackerManager:GetContainerForModule(ourModule) == standaloneTracker,
         "the standalone module's context menu parent is its own container")
+    ObjectiveTrackerFrame.point = "TOPLEFT"
+    ObjectiveTrackerFrame.relativePoint = "TOPLEFT"
+    ObjectiveTrackerFrame.x, ObjectiveTrackerFrame.y = 10, -10
+    standaloneTracker.scripts.OnUpdate(standaloneTracker, 1)
+    local moved = standaloneTracker.points and standaloneTracker.points[#standaloneTracker.points]
+    assert(moved and moved.point == "TOPLEFT"
+        and moved.x == 10 and moved.y == -10,
+        "the standalone tracker follows Edit Mode position changes")
     assert(secureDelegates >= 1, "the tracker builds secure delegates for quest clicks and module moves")
     assert(ns.trackerClickSecured == "delegate", "the client's secure delegate is used for quest clicks")
     assert(ourModule.OnBlockHeaderClick ~= QuestObjectiveTrackerMixin.OnBlockHeaderClick,
@@ -6750,7 +6792,7 @@ cases["tracker_runtime.module_registration_and_gamepad_fallback"] = function()
     end)
     assert(#seen == 0)
     local empty = headers["fqp-filter-empty"]
-    assert(empty and empty.HeaderText.text == "No tracked quests match this filter.",
+    assert(empty and empty.HeaderText.text == "No quests match this filter.",
         "a zero-match filter must keep the module header available")
     assert(empty.offsetX == 7, "the empty-filter message aligns with zone headers")
 
@@ -6924,6 +6966,773 @@ cases["spoken_tracker_runtime.attaches_play_button_to_quest_blocks"] = function(
     Spoken = nil
     VoiceOver = nil
     module:AddBlock({ id = 124, GetFrameLevel = function() return 5 end })
+end
+
+cases["quest_item_runtime.uses_the_super_tracked_quest_item"] = function()
+    ns = {}
+    C_SuperTrack = {
+        GetSuperTrackedQuestID = function() return 42 end,
+    }
+    C_QuestLog = {
+        GetLogIndexForQuestID = function(questID)
+            assert(questID == 42, "the super-tracked quest wins")
+            return 3
+        end,
+    }
+    local used
+    GetQuestLogSpecialItemInfo = function(index)
+        assert(index == 3)
+        return 123, "texture", 1, nil, true
+    end
+    UseQuestLogSpecialItem = function(index) used = index end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == true)
+    assert(used == 3, "the quest log item is used")
+end
+
+cases["quest_item_runtime.ignores_missing_items_and_quests"] = function()
+    ns = {}
+    C_SuperTrack = { GetSuperTrackedQuestID = function() return 0 end }
+    C_QuestLog = {
+        GetSelectedQuest = function() return 7 end,
+        GetQuestIDForLogIndex = function() return 0 end,
+        GetLogIndexForQuestID = function() return 4 end,
+    }
+    local used = false
+    GetQuestLogSpecialItemInfo = function() return nil end
+    UseQuestLogSpecialItem = function() used = true end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == false)
+    assert(used == false, "a quest without a special item is ignored")
+
+    C_QuestLog.GetSelectedQuest = function() return 0 end
+    assert(ns.UseTrackedQuestItem() == false, "no selected quest is a quiet false")
+end
+
+cases["eligibility_runtime.dungeon_chain_quests_count_as_instance_quests"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.DungeonChains = {
+        quests = {
+            [65] = { dungeons = { "The Deadmines" }, chains = {} },
+        },
+    }
+    assert(ns.IsInstanceQuest(65, {}) == true,
+        "a required pre-quest for a dungeon chain is a dungeon pin")
+    assert(ns.IsInstanceQuest(66, {}) == false,
+        "quests outside a dungeon chain keep the client tag")
+end
+
+cases["quest_finder_runtime.breadcrumbs_respect_alt_quests_and_locations"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function(questID) return questID == 101 end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [100] = {
+            title = "Shared Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 20,
+            coords = { { 10, 20, 1 }, { 30, 40, 2 } },
+            altQuests = { 101 },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    assert(#ns.QuestFinder.BreadcrumbEntries(nil) == 0,
+        "an alternate breadcrumb already in the log hides the shared breadcrumb")
+    ns.IsOnQuest = function() return false end
+    local entries = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#entries == 1)
+    assert(entries[1].location.mapID == 2, "the selected zone chooses its own location")
+    assert(entries[1].subtitle:find("Zone Two", 1, true))
+end
+
+cases["quest_finder_runtime.breadcrumbs_use_the_target_zone"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Stormwind City", mapType = 3 },
+                [2] = { name = "Western Plaguelands", mapType = 3 },
+                [3] = { name = "Unrelated Zone", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 50 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [5066] = {
+            title = "A Call to Arms: The Plaguelands!",
+            isBreadcrumb = true,
+            mapID = 1, x = 56.39, y = 74.09,
+            minLevel = 50,
+        },
+        [5092] = {
+            title = "Clear the Way",
+            mapID = 2, x = 42.70, y = 84.03,
+            sourceQuestSingle = { 5066 },
+            sourceQuestNumRequired = 1,
+            minLevel = 50,
+        },
+        [5000] = {
+            title = "Override Target Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 20,
+            minLevel = 10,
+        },
+    }
+    ns.BreadcrumbTargets = { [5000] = 2 }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+
+    local entries = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#entries == 2, "both the derived and override breadcrumbs target this zone")
+    local byID = {}
+    for i = 1, #entries do byID[entries[i].questID] = entries[i] end
+    assert(byID[5066], "the capital breadcrumb is listed under its target zone")
+    assert(byID[5066].location.mapID == 1, "the pin still points at the breadcrumb's start")
+    assert(byID[5066].subtitle:find("Stormwind City", 1, true))
+    assert(byID[5066].subtitle:find("Leads to Western Plaguelands", 1, true))
+    assert(byID[5000], "the override target is honored")
+
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 5092 end
+    local after = ns.QuestFinder.BreadcrumbEntries(2)
+    assert(#after == 1 and after[1].questID == 5000,
+        "a breadcrumb whose follow-up is complete is no longer needed")
+
+    assert(#ns.QuestFinder.BreadcrumbEntries(3) == 0, "unrelated zones stay empty")
+end
+
+cases["quest_finder_runtime.groups_alternate_breadcrumbs"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 2 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Stormwind City", mapType = 3 },
+                [2] = { name = "Ironforge", mapType = 3 },
+                [3] = { name = "Darnassus", mapType = 3 },
+                [4] = { name = "Western Plaguelands", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 50 end }
+    ns.GetOption = function() return true end
+    ns.IsMapPositionExplored = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    local title = "A Call to Arms: The Plaguelands!"
+    ns.Quests = {
+        [5066] = { title = title, isBreadcrumb = true, mapID = 1, x = 10, y = 10,
+            minLevel = 50, altQuests = { 5090, 5091 } },
+        [5090] = { title = title, isBreadcrumb = true, mapID = 2, x = 20, y = 20,
+            minLevel = 50, altQuests = { 5066, 5091 } },
+        [5091] = { title = title, isBreadcrumb = true, mapID = 3, x = 30, y = 30,
+            minLevel = 50, altQuests = { 5066, 5090 } },
+        [5092] = { title = "Clear the Way", mapID = 4, x = 40, y = 40,
+            sourceQuestSingle = { 5066, 5090, 5091 }, sourceQuestNumRequired = 1,
+            minLevel = 50 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.BreadcrumbEntries(4)
+    assert(#entries == 1, "alternate capital versions become one row")
+    local entry = entries[1]
+    assert(#entry.questIDs == 3, "all alternate quest IDs are grouped")
+    assert(#entry.locations == 3, "all start locations are kept for the chooser")
+    assert(entry.multiLocation == true, "multiple start zones open a chooser")
+    assert(entry.location.mapID == 2, "the pin prefers the player's current city")
+    assert(entry.subtitle:find("Stormwind City", 1, true))
+    assert(entry.subtitle:find("Ironforge", 1, true))
+    assert(entry.subtitle:find("Darnassus", 1, true))
+    assert(entry.subtitle:find("Leads to Western Plaguelands", 1, true))
+end
+
+cases["quest_finder_runtime.zone_quest_progress_uses_eligible_quests"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 2 end
+    ns.Quests = {
+        [1] = { mapID = 1, title = "A" },
+        [2] = { mapID = 1, title = "B" },
+        [3] = { mapID = 1, title = "Alliance", faction = "Alliance" },
+        [4] = { mapID = 1, title = "Repeatable", repeatable = true },
+        [5] = { mapID = 1, title = "Profession", requireSkill = 164 },
+        [6] = { mapID = 1, title = "Same zone again", coords = { { 10, 20, 1 } } },
+        [7] = { zone = 1, title = "No pin but in the zone" },
+        [8] = { zone = 2, title = "Assigned elsewhere", coords = { { 10, 20, 1 } } },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local progress = ns.QuestFinder.ZoneQuestProgress(1)
+    assert(progress.total == 4, "eligible quests count once per zone")
+    assert(progress.completed == 1)
+    local other = ns.QuestFinder.ZoneQuestProgress(2)
+    assert(other.total == 1, "an assigned zone wins over a coordinate map")
+end
+
+cases["quest_finder_runtime.zone_quest_entries_show_every_status"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    C_QuestLog = {
+        GetQuestDifficultyLevel = function(questID)
+            return ns.Quests[questID] and ns.Quests[questID].minLevel
+        end,
+    }
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 2 end
+    ns.IsOnQuest = function(questID) return questID == 3 end
+    ns.IsQuestAcceptable = function(questID) return questID == 1 end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [1] = { zone = 1, mapID = 1, x = 10, y = 10, minLevel = 50, title = "Available Quest" },
+        [2] = { zone = 1, mapID = 1, x = 20, y = 20, minLevel = 50, title = "Complete Quest" },
+        [3] = { zone = 1, mapID = 1, x = 30, y = 30, minLevel = 50, title = "In Log Quest" },
+        [4] = { zone = 1, minLevel = 50, title = "No Start Quest" },
+        [5] = { zone = 1, mapID = 2, x = 10, y = 20, minLevel = 50, title = "Starts Elsewhere" },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.ZoneQuestEntries(1)
+    assert(#entries == 5, "every eligible quest assigned to the zone is listed")
+    assert(entries[1].title == "In Log Quest", "in-log quests come first")
+    local byTitle = {}
+    for i = 1, #entries do byTitle[entries[i].title] = entries[i] end
+    assert(byTitle["Available Quest"].subtitle:find("Available", 1, true))
+    assert(byTitle["Complete Quest"].subtitle:find("Complete", 1, true))
+    assert(byTitle["No Start Quest"].location == nil)
+    assert(byTitle["Starts Elsewhere"].location.mapID == 2)
+end
+
+cases["quest_finder_runtime.search_filters_quests_and_keeps_matching_headers"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = {
+        { kind = "header", title = "Blackrock Depths" },
+        { kind = "quest", title = "Alpha", subtitle = "Burning Steppes" },
+        { kind = "header", title = "Sunken Temple" },
+        { kind = "quest", title = "Beta", subtitle = "Un'Goro Crater" },
+    }
+    local filtered = ns.QuestFinder.FilterEntries(entries, "goro")
+    assert(#filtered == 2, "the matching dungeon group is kept")
+    assert(filtered[1].title == "Sunken Temple")
+    assert(filtered[2].title == "Beta")
+
+    filtered = ns.QuestFinder.FilterEntries(entries, "blackrock")
+    assert(#filtered == 2, "a matching header keeps its quests")
+    assert(filtered[1].title == "Blackrock Depths")
+    assert(filtered[2].title == "Alpha")
+
+    assert(#ns.QuestFinder.FilterEntries(entries, "") == 4)
+end
+
+cases["quest_finder_runtime.show_all_breadcrumbs_includes_completed"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Zone One", mapType = 3 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 100 end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return false end
+    ns.IsInstanceQuest = function() return false end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [100] = {
+            title = "Done Breadcrumb",
+            isBreadcrumb = true,
+            mapID = 1, x = 10, y = 10,
+            minLevel = 10,
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    assert(#ns.QuestFinder.BreadcrumbEntries(1) == 0, "completed breadcrumbs are normally hidden")
+    local all = ns.QuestFinder.BreadcrumbEntries(1, true)
+    assert(#all == 1, "show all brings the completed breadcrumb back")
+    assert(all[1].subtitle:find("Complete", 1, true))
+end
+
+cases["quest_finder_runtime.dungeon_chains_are_numbered"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Dungeon", mapType = 4 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 10 end }
+    ns.GetOption = function() return true end
+    ns.IsQuestFlaggedCompleted = function(questID) return questID == 206 or questID == 207 end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function(questID) return questID ~= 203 and questID ~= 206 and questID ~= 207 end
+    ns.IsQuestAcceptable = function(questID) return questID ~= 203 and questID ~= 206 and questID ~= 207 end
+    ns.IsInstanceQuest = function() return true end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.GetPlayerFaction = function() return "Horde" end
+    ns.GetPlayerRaceID = function() return 2 end
+    ns.GetPlayerClassID = function() return 1 end
+    ns.Quests = {
+        [200] = { mapID = 1, x = 10, y = 10, title = "Dungeon Quest" },
+        [201] = { mapID = 1, x = 20, y = 20, title = "Pre One" },
+        [203] = { mapID = 1, x = 30, y = 30, title = "Unavailable Quest" },
+        [204] = { title = "Alliance Step", faction = "Alliance" },
+        [205] = { title = "Alliance Quest", faction = "Alliance" },
+        [206] = { mapID = 1, x = 40, y = 40, title = "Completed Quest" },
+        [207] = { mapID = 1, x = 50, y = 50, title = "Completed Step" },
+    }
+    ns.DungeonChains = {
+        order = { "Test Dungeon" },
+        dungeons = {
+            ["Test Dungeon"] = {
+                name = "Test Dungeon",
+                level = "1-2",
+                quests = {
+                    {
+                        id = 200,
+                        name = "Dungeon Quest",
+                        level = 20,
+                        mapID = 1, x = 10, y = 10,
+                        chain = {
+                            { id = 207, name = "Completed Step", level = 10, mapID = 1, x = 50, y = 50 },
+                            { id = 201, name = "Pre One", level = 10, mapID = 1, x = 20, y = 20 },
+                            { id = 202, name = "Pre Two", level = 12 },
+                            { id = 204, name = "Alliance Step", level = 10 },
+                        },
+                    },
+                    {
+                        id = 203,
+                        name = "Unavailable Quest",
+                        level = 20,
+                        mapID = 1, x = 30, y = 30,
+                    },
+                    {
+                        id = 205,
+                        name = "Alliance Quest",
+                        level = 20,
+                        faction = "Alliance",
+                        mapID = 1, x = 40, y = 40,
+                    },
+                    {
+                        id = 206,
+                        name = "Completed Quest",
+                        level = 20,
+                        mapID = 1, x = 40, y = 40,
+                    },
+                },
+            },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.DungeonQuestEntries("Test Dungeon")
+    assert(#entries == 5, "completed and opposite-faction quests are hidden")
+    local ids = {}
+    for i = 1, #entries do
+        if entries[i].questID then
+            ids[entries[i].questID] = true
+        end
+    end
+    assert(not ids[204], "an Alliance chain step is hidden from a Horde player")
+    assert(not ids[205], "an Alliance dungeon quest is hidden from a Horde player")
+    assert(not ids[206], "a completed dungeon quest is hidden")
+    assert(not ids[207], "a completed chain step is hidden")
+    assert(entries[2].title == "Dungeon Quest")
+    assert(entries[3].subtitle:find("Chain #2 of 4", 1, true))
+    assert(entries[4].subtitle:find("Chain #3 of 4", 1, true))
+    assert(entries[4].location == nil, "a chain step without a map has no pin")
+    assert(entries[5].title == "Unavailable Quest")
+    assert(entries[5].subtitle:find("Unavailable", 1, true))
+
+    local all = ns.QuestFinder.AllDungeonEntries()
+    assert(#all == 2, "the all-dungeons view lists the available header and quests only")
+    assert(all[1].kind == "header" and all[1].dungeon == "Test Dungeon")
+    assert(all[1].subtitle:find("Level 1-2", 1, true))
+    assert(all[2].title == "Dungeon Quest")
+
+    local shownAll = ns.QuestFinder.DungeonQuestEntries("Test Dungeon", true)
+    local shownIDs = {}
+    for i = 1, #shownAll do
+        if shownAll[i].questID then
+            shownIDs[shownAll[i].questID] = true
+        end
+    end
+    assert(shownIDs[206] and shownIDs[207], "show all includes completed quests and steps")
+    local shownAllList = ns.QuestFinder.AllDungeonEntries(true)
+    assert(#shownAllList == 4, "show all lists every player-eligible dungeon quest")
+end
+
+cases["quest_finder_runtime.zone_list_includes_quest_level_ranges"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Zone One", mapType = 3 },
+                [2] = { name = "Zone Two", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    ns.Quests = {
+        [1] = { mapID = 1, minLevel = 10, coords = { { 10, 20, 2 } } },
+        [2] = { mapID = 1, minLevel = 20 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local list = ns.QuestFinder.BuildZoneList()
+    local ranges = {}
+    for i = 1, #list do ranges[list[i].id] = list[i].levelRange end
+    assert(ranges[1] == "10-20", "the current zone shows its quest level range")
+    assert(ranges[2] == "10", "a secondary coordinate zone gets the same range")
+end
+
+cases["quest_finder_runtime.zone_list_prefers_leatrix_levels"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({
+                [1] = { name = "Leatrix Zone", mapType = 3 },
+                [2] = { name = "Leatrix City", mapType = 3 },
+                [3] = { name = "Fallback Zone", mapType = 3 },
+            })[mapID]
+        end,
+    }
+    ns.ZoneLevels = {
+        [1] = { min = 35, max = 45 },
+        [2] = false,
+    }
+    ns.Quests = {
+        [1] = { mapID = 1, minLevel = 10 },
+        [2] = { mapID = 2, minLevel = 10 },
+        [3] = { mapID = 3, minLevel = 10 },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local list = ns.QuestFinder.BuildZoneList()
+    local ranges = {}
+    for i = 1, #list do ranges[list[i].id] = list[i].levelRange end
+    assert(ranges[1] == "35-45", "Leatrix levels win over computed levels")
+    assert(ranges[2] == nil, "a Leatrix city entry suppresses a computed range")
+    assert(ranges[3] == "10", "unlisted maps keep the computed fallback")
+end
+
+cases["quest_finder_runtime.tags_quests_that_start_inside_a_dungeon"] = function()
+    ns = {}
+    ns.PlayerMatches = PlayerMatchesStub
+    C_Map = {
+        GetBestMapForUnit = function() return 1 end,
+        GetMapInfo = function(mapID)
+            return ({ [1] = { name = "Blackrock Depths", mapType = 4 } })[mapID]
+        end,
+    }
+    C_QuestLog = { GetQuestDifficultyLevel = function() return 56 end }
+    ns.GetOption = function() return true end
+    ns.IsQuestFlaggedCompleted = function() return false end
+    ns.IsOnQuest = function() return false end
+    ns.IsQuestAvailable = function() return true end
+    ns.IsQuestAcceptable = function() return true end
+    ns.IsInstanceQuest = function() return true end
+    ns.IsPvPQuest = function() return false end
+    ns.IsBookQuest = function() return false end
+    ns.GetQuestDifficultyRGB = function() return 1, 0.82, 0 end
+    ns.Quests = {
+        [82062] = { title = "Ever After", minLevel = 56 },
+    }
+    ns.DungeonChains = {
+        order = { "Blackrock Depths" },
+        dungeons = {
+            ["Blackrock Depths"] = {
+                name = "Blackrock Depths",
+                level = "52-60",
+                quests = {
+                    { id = 82062, name = "Ever After", level = 56 },
+                },
+            },
+        },
+        quests = {
+            [82062] = { dungeons = { "Blackrock Depths" }, chains = {} },
+        },
+    }
+    assert(loadfile("QuestFinder.lua"))("ForeverQuestPins", ns)
+    local entries = ns.QuestFinder.DungeonQuestEntries("Blackrock Depths")
+    assert(#entries == 2, "header and the dungeon-start quest")
+    local quest = entries[2]
+    assert(quest.title == "Ever After")
+    assert(quest.location == nil)
+    assert(quest.insideDungeon == true, "a quest with no start map but a dungeon is tagged")
+    assert(quest.subtitle:find("In dungeon", 1, true))
+end
+
+cases["quest_item_runtime.falls_back_to_the_quest_log_selection"] = function()
+    ns = {}
+    C_QuestLog = {
+        GetLogIndexForQuestID = function(questID)
+            assert(questID == 55, "the selected quest ID comes from the quest log title")
+            return 2
+        end,
+    }
+    GetQuestLogSelection = function() return 4 end
+    GetQuestLogTitle = function(index)
+        assert(index == 4)
+        return "A Quest", 20, 0, false, false, false, 0, 55
+    end
+    local used
+    GetQuestLogSpecialItemInfo = function(index) return 99, "texture", 1, nil, true end
+    UseQuestLogSpecialItem = function(index) used = index end
+    assert(loadfile("QuestItemKeybind.lua"))("ForeverQuestPins", ns)
+    assert(ns.UseTrackedQuestItem() == true)
+    assert(used == 2)
+end
+
+cases["minimap_button_runtime.left_click_opens_finder_and_right_click_opens_settings"] = function()
+    ns = { db = {} }
+    local shown = true
+    local openedFinder, openedSettings = 0, 0
+    ns.ShowQuestFinder = function() openedFinder = openedFinder + 1 end
+    ns.OpenSettings = function() openedSettings = openedSettings + 1 end
+    ns.GetOption = function(key)
+        if key == "showMinimapButton" then return shown end
+        return true
+    end
+    local function texture()
+        return {
+            SetSize = function() end,
+            SetPoint = function() end,
+            SetTexture = function() end,
+        }
+    end
+    local minimap = {
+        GetWidth = function() return 140 end,
+        GetCenter = function() return 0, 0 end,
+        GetEffectiveScale = function() return 1 end,
+        HookScript = function() end,
+    }
+    Minimap = minimap
+    GetCursorPosition = function() return 0, 0 end
+    GameTooltip = {
+        SetOwner = function() end,
+        SetText = function() end,
+        AddLine = function() end,
+        Show = function() end,
+        Hide = function() end,
+    }
+    local buttons = {}
+    CreateFrame = function(kind, name, parent)
+        local frame = { kind = kind, name = name, parent = parent, scripts = {}, shown = true }
+        function frame:SetSize() end
+        function frame:SetPoint() end
+        function frame:ClearAllPoints() end
+        function frame:SetFrameStrata() end
+        function frame:SetFrameLevel() end
+        function frame:EnableMouse() end
+        function frame:RegisterForClicks() end
+        function frame:RegisterForDrag() end
+        function frame:SetHighlightTexture() end
+        function frame:SetScript(event, callback) self.scripts[event] = callback end
+        function frame:Show() self.shown = true end
+        function frame:Hide() self.shown = false end
+        function frame:IsShown() return self.shown end
+        function frame:CreateTexture() return texture() end
+        function frame:RegisterEvent() end
+        buttons[#buttons + 1] = frame
+        return frame
+    end
+    assert(loadfile("MinimapButton.lua"))("ForeverQuestPins", ns)
+    ns.RefreshMinimapButton()
+    local button
+    for _, frame in ipairs(buttons) do
+        if frame.name == "ForeverQuestPinsMinimapButton" then button = frame end
+    end
+    assert(button and button.shown, "the minimap button is created and shown")
+    button.scripts.OnClick(button, "LeftButton")
+    assert(openedFinder == 1, "left-click opens Quest Finder")
+    button.scripts.OnClick(button, "RightButton")
+    assert(openedSettings == 1, "right-click opens settings")
+    shown = false
+    ns.RefreshMinimapButton()
+    assert(button.shown == false, "the button can be hidden from settings")
+end
+
+cases["eligibility_runtime.finder_availability_skips_level_loads"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.GetOption = function(key)
+        if key == "showTrivial" then return false end
+        if key == "trivialLevelGap" then return 9 end
+        if key == "highLevelGap" then return 15 end
+        return true
+    end
+    UnitLevel = function() return 60 end
+    local requests = 0
+    C_QuestLog.RequestLoadQuestByID = function() requests = requests + 1 end
+    C_QuestLog.GetQuestDifficultyLevel = function() return nil end
+    local available = ns.IsQuestAvailable(123, { minLevel = 55 }, { skipLevelRequest = true })
+    assert(available == true)
+    assert(requests == 0, "Quest Finder must not request a difficulty load for every quest")
+end
+
+cases["chat_links_runtime.translates_questie_plain_links"] = function()
+    ns = {}
+    ns.GetOption = function(key)
+        if key == "translateQuestieLinks" then return true end
+        return true
+    end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function(_, skipRequest)
+        return skipRequest and "Chasing A-Me 01" or nil
+    end
+    C_AddOns = { IsAddOnLoaded = function() return false end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local out = ns.ChatQuestLinks.Translate("anyone for [[53] Chasing A-Me 01 (4243)]?")
+    assert(out:find("|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", 1, true))
+    assert(not out:find("(4243)", 1, true), "the raw Questie id is replaced")
+
+    local questieLink = "|Hquestie:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(questieLink)
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "Questie hyperlinks are rewritten")
+
+    local rawNative = "|Hquest:4243:53|h[[53] Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(rawNative)
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "raw text inside a quest hyperlink is cleaned")
+
+    local cleanNative = "|Hquest:4243:53|h[Chasing A-Me 01]|h"
+    assert(ns.ChatQuestLinks.Translate(cleanNative) == cleanNative)
+
+    local cleanQuestie = "|Hquestie:4243:53|h[Chasing A-Me 01]|h"
+    assert(ns.ChatQuestLinks.Translate(cleanQuestie)
+        == "|cffffd100|Hquest:4243:53|h[Chasing A-Me 01]|h|r", "clean Questie hyperlinks become native")
+end
+
+cases["chat_links_runtime.leaves_hyperlinks_and_unknown_plain_links_alone"] = function()
+    ns = {}
+    ns.GetOption = function() return true end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function() return "Chasing A-Me 01" end
+    C_AddOns = { IsAddOnLoaded = function() return false end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local link = "|Hitem:123|h[Chasing A-Me 01 (4243)]|h"
+    assert(ns.ChatQuestLinks.Translate(link) == link, "existing hyperlinks are copied through")
+    assert(ns.ChatQuestLinks.Translate("[Unknown (999)]") == "[Unknown (999)]")
+end
+
+cases["chat_links_runtime.stands_down_for_questie_and_the_option"] = function()
+    ns = {}
+    local enabled = true
+    ns.GetOption = function(key)
+        if key == "translateQuestieLinks" then return enabled end
+        return true
+    end
+    ns.Quests = { [4243] = { title = "Chasing A-Me 01" } }
+    ns.GetQuestTitle = function() return "Chasing A-Me 01" end
+    local questie = false
+    C_AddOns = { IsAddOnLoaded = function() return questie end }
+    C_QuestLog = { GetTitleForQuestID = function() return "Chasing A-Me 01" end }
+    ChatFrame_AddMessageEventFilter = function() end
+    assert(loadfile("ChatQuestLinks.lua"))("ForeverQuestPins", ns)
+    local message = "[[53] Chasing A-Me 01 (4243)]"
+    local hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated:find("|Hquest:", 1, true))
+    questie = true
+    hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated == nil, "Questie handles its own links")
+    questie = false
+    enabled = false
+    hidden, translated = ns.ChatQuestLinks.Filter(nil, nil, message)
+    assert(hidden == false and translated == nil, "the option disables conversion")
+end
+
+cases["eligibility_runtime.acceptability_ignores_display_filters"] = function()
+    ns = {}; C_QuestLog = {}
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    ns.QuestTagCorrections = {}
+    ns.GetOption = function(key)
+        if key == "showTrivial" then return false end
+        if key == "trivialLevelGap" then return 9 end
+        if key == "highLevelGap" then return 15 end
+        return true
+    end
+    UnitLevel = function() return 55 end
+    local data = { minLevel = 40 }
+    local shown, showReason = ns.IsQuestAvailable(999, data, { skipLevelRequest = true })
+    assert(shown == false and showReason == "trivial",
+        "the map filter still hides a trivial pin")
+    local acceptable = ns.IsQuestAcceptable(999, data)
+    assert(acceptable == true, "a trivial quest is still acceptable")
+    local high = ns.IsQuestAcceptable(998, { minLevel = 58 })
+    assert(high == false, "a quest above the player's level is not acceptable")
+end
+
+cases["eligibility_runtime.player_matches_checks_faction_race_and_class"] = function()
+    ns = {}; C_QuestLog = {}
+    UnitFactionGroup = function() return "Horde" end
+    UnitRace = function() return "Orc", "Orc", 2 end
+    UnitClass = function() return "Warrior", "WARRIOR", 1 end
+    assert(loadfile("Eligibility.lua"))("ForeverQuestPins", ns)
+    assert(ns.PlayerMatches(nil, "Horde"))
+    assert(not ns.PlayerMatches(nil, "Alliance"))
+    assert(ns.PlayerMatches({ races = { 2 } }))
+    assert(not ns.PlayerMatches({ races = { 1 } }))
+    assert(ns.PlayerMatches({ classes = { 1 } }))
+    assert(not ns.PlayerMatches({ classes = { 4 } }))
+    assert(ns.PlayerMatches({ faction = "Both" }))
 end
 
 local name = assert(os.getenv("FQP_LUA_CASE"), "FQP_LUA_CASE is required")

@@ -430,6 +430,52 @@ function ns.GetPlayerFaction()
     return UnitFactionGroup("player")
 end
 
+--- Whether a quest record's faction, race, and class restrictions allow this
+--- player. A faction passed directly covers journal entries without a record.
+function ns.PlayerMatches(data, faction)
+    faction = (data and data.faction) or faction
+    if faction and faction ~= "Both" then
+        local playerFaction = ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false
+        end
+    end
+    if not data then
+        return true
+    end
+    if data.races and #data.races > 0 then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #data.races do
+                if data.races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    if data.classes and #data.classes > 0 then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #data.classes do
+                if data.classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 local knownProfessionSkills
 local professionSkillsKnown = false
 
@@ -755,10 +801,12 @@ function ns.CaptureOfferContext()
     ns.SetLastOfferNPC(qg, mapID, x, y)
 end
 
-local function QuestLevelForTrivial(questID, data)
-    local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
-    if type(level) == "number" and level > 0 then
-        return level, true
+local function QuestLevelForTrivial(questID, data, skipRequest)
+    if not skipRequest then
+        local level = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        if type(level) == "number" and level > 0 then
+            return level, true
+        end
     end
     local minLevel = data and data.minLevel
     if minLevel then
@@ -847,10 +895,19 @@ function ns.IsInstanceQuest(questID, data)
     end
     local tagID, tagName = QuestTagInfo(questID)
     local correction = ns.QuestTagCorrections and ns.QuestTagCorrections[questID]
+    local chainQuest = ns.DungeonChains
+        and ns.DungeonChains.quests
+        and ns.DungeonChains.quests[questID] ~= nil
     local result
     if IsInstanceTag(tagID, tagName) then
         result = true
     elseif IsInstanceTag(correction, nil) then
+        result = true
+    elseif chainQuest then
+        -- ForeverDungeonJournal lists the required pre-quests for dungeon
+        -- chains. Those quests start outdoors but lead into the instance, so
+        -- they belong with the dungeon pins even when the client tags them as
+        -- ordinary quests.
         result = true
     elseif tagID ~= nil or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
         result = false
@@ -858,7 +915,8 @@ function ns.IsInstanceQuest(questID, data)
         data = data or (ns.Quests and ns.Quests[questID])
         result = data ~= nil and data.isInstanceQuest == true
     end
-    if tagID ~= nil or correction ~= nil or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
+    if tagID ~= nil or correction ~= nil or chainQuest
+        or (tagName ~= nil and (not GetLocale or GetLocale() == "enUS" or GetLocale() == "enGB")) then
         instanceQuestCache[questID] = result
     end
     return result
@@ -925,8 +983,8 @@ function ns.InvalidatePvPQuestCache(questID)
     end
 end
 
-local function IsTrivial(questID, data)
-    local questLevel, reliable = QuestLevelForTrivial(questID, data)
+local function IsTrivial(questID, data, skipRequest)
+    local questLevel, reliable = QuestLevelForTrivial(questID, data, skipRequest)
     if not reliable or not questLevel then
         return false, false
     end
@@ -948,10 +1006,91 @@ end
 --- Conservative availability check. Unknown restrictions keep the pin visible.
 -- @return available boolean
 -- @return reason string
-function ns.IsQuestAvailable(questID, data)
+--- Whether the player can accept this quest once its prerequisites are done.
+-- Unlike IsQuestAvailable, map display filters do not apply: trivial level,
+-- configured level range, categories, repeatable, seasonal, war effort, book,
+-- hidden, and excluded settings are ignored.
+function ns.IsQuestAcceptable(questID, data)
     if not questID or not data then
         return false, "bad-data"
     end
+    if ns.IsQuestFlaggedCompleted(questID) then
+        return false, "completed"
+    end
+    if ns.IsOnQuest(questID) then
+        return false, "in-log"
+    end
+    local altQuests = data.altQuests
+    if altQuests then
+        for i = 1, #altQuests do
+            local altID = altQuests[i]
+            if altID ~= questID and ns.IsQuestFlaggedCompleted(altID) then
+                return false, "alt-completed"
+            end
+        end
+    end
+    if ns.IsOffered and ns.IsOffered(questID) then
+        return true, "npc-offered"
+    end
+    local prereqOk, prereqReason = SourceQuestsMet(data)
+    if not prereqOk then
+        return false, prereqReason
+    end
+    local faction = data.faction
+    if faction then
+        local playerFaction = ns.GetPlayerFaction()
+        if playerFaction and playerFaction ~= faction then
+            return false, "faction"
+        end
+    end
+    local races = data.races
+    if races and #races > 0 then
+        local raceID = ns.GetPlayerRaceID()
+        if raceID then
+            local match = false
+            for i = 1, #races do
+                if races[i] == raceID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false, "race"
+            end
+        end
+    end
+    local classes = data.classes
+    if classes and #classes > 0 then
+        local classID = ns.GetPlayerClassID()
+        if classID then
+            local match = false
+            for i = 1, #classes do
+                if classes[i] == classID then
+                    match = true
+                    break
+                end
+            end
+            if not match then
+                return false, "class"
+            end
+        end
+    end
+    if data.requireSkill and not ns.HasRequiredSkill(data.requireSkill) then
+        return false, "profession"
+    end
+    local minLevel = data.minLevel
+    local playerLevel = UnitLevel("player") or 1
+    if minLevel and playerLevel < minLevel then
+        return false, "low-level"
+    end
+    return true, prereqReason or "ok"
+end
+
+function ns.IsQuestAvailable(questID, data, options)
+    if not questID or not data then
+        return false, "bad-data"
+    end
+    local skipLevelRequest = type(options) == "table" and options.skipLevelRequest == true
     if ns.IsQuestFlaggedCompleted(questID) then
         return false, "completed"
     end
@@ -1085,7 +1224,7 @@ function ns.IsQuestAvailable(questID, data)
     end
 
     if not ns.GetOption("showTrivial") then
-        local trivial, reliable = IsTrivial(questID, data)
+        local trivial, reliable = IsTrivial(questID, data, skipLevelRequest)
         if reliable and trivial then
             return false, "trivial"
         end
@@ -1093,7 +1232,12 @@ function ns.IsQuestAvailable(questID, data)
 
     local highLevelGap = ns.GetOption("highLevelGap") or HIGH_LEVEL_GAP_MAX
     if type(highLevelGap) == "number" and highLevelGap < HIGH_LEVEL_GAP_MAX then
-        local questLevel = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        local questLevel
+        if skipLevelRequest then
+            questLevel = data.minLevel
+        else
+            questLevel = ns.GetQuestDifficultyLevel and ns.GetQuestDifficultyLevel(questID)
+        end
         if questLevel and (questLevel - playerLevel) >= highLevelGap then
             return false, "high-level"
         end
