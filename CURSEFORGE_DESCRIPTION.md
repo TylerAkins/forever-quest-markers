@@ -60,6 +60,23 @@ Install from CurseForge and choose the Forever game flavor. If you install by ha
 
 Report bugs on [GitHub Issues](https://github.com/TylerAkins/forever-quest-markers/issues). Include `/fqp stats`. For nameplate icon issues, include `/fqp nameplatedebug`.
 
+## Languages
+
+The addon UI is available in:
+
+- 🇺🇸 English
+- 🇪🇸 Spanish (Spain) and 🇲🇽 Spanish (Latin America)
+- 🇩🇪 German
+- 🇫🇷 French
+- 🇧🇷 Brazilian Portuguese
+- 🇨🇳 Simplified Chinese
+- 🇹🇼 Traditional Chinese
+- 🇰🇷 Korean
+- 🇮🇹 Italian
+- 🇷🇺 Russian
+
+Quest names, zone names, and dungeon names come from the game client and follow its language setting.
+
 ## Credits
 
 Quest data from [QuestieDB](https://github.com/Questie/QuestieDB) and [Questie](https://github.com/Questie/Questie). Addon code is GPL-3.0-or-later. See `ATTRIBUTION.md` in the repository.
