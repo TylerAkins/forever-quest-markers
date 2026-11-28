@@ -8,6 +8,7 @@
 - Add a keybind that uses the special item on the tracked quest.
 - Turn Questie's plain-text chat links into the game's own yellow clickable quest links. Existing links and clients with Questie loaded are left alone. Toggle it with `/fqp chatlinks`.
 - The beta tracker's **All quests** view now includes every quest in the log, not only Blizzard's watched quests. **Tracked only** keeps the old view.
+- Make the beta quest tracker follow the Blizzard tracker's Edit Mode position. It no longer has a separate header drag, so moving it outside Edit Mode does nothing.
 - Move pin filters back into Blizzard's world map tracking menu.
 - Give book-only pins their own size slider, defaulting to 75% of a quest pin.
 - Run QuestieDB updates Wednesday, Friday, Saturday, and Sunday.

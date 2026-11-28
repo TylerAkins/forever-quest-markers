@@ -11,6 +11,7 @@ ns.WhatsNew = {
         "Add a keybind under Key Bindings > AddOns > Forever Quest Pins that uses the special item on the tracked quest, including the quest chosen by Select nearest quest.",
         "Turn Questie's plain-text chat links, such as [[53] Chasing A-Me 01 (4243)], into the game's own yellow clickable quest links. Existing native links and clients with Questie loaded are left alone. Toggle it in Interface settings or with /fqp chatlinks.",
         "The beta tracker's All quests view now includes every quest in the quest log, not only Blizzard's watched quests. Tracked only keeps the old watch-list view, and the current-zone and instance views also include untracked quests.",
+        "Make the beta quest tracker follow the Blizzard tracker's Edit Mode position. It no longer has a separate header drag, so moving it outside Edit Mode does nothing.",
         "Move the pin filters back into Blizzard's world map tracking menu and remove the addon's separate map filter button and list. The collectible book filter is included in that menu.",
         "Give book-only pins their own size slider. They default to 75% of a quest pin and can be adjusted from 25% to 150%.",
         "Run the QuestieDB update on Wednesday, Friday, Saturday, and Sunday at 06:00 UTC instead of every day.",
